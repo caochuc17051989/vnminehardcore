@@ -119,7 +119,7 @@ public class CombatListener implements Listener {
                         deathListener.tagCombat(player);
                         logger.fine("[Combat] " + player.getName() + " mob from " + damager.getType() + ": " + original + "->" + newDamage);
                     } else if (damager instanceof Player attacker) {
-                        newDamage = original * config.pvpDamageMultiplier;
+                        newDamage = original * config.pvpDamageMultiplier * deathPenaltyManager.getDamageDealtMultiplier(attacker);
                         player.sendActionBar("§c§l⚔ PvP! §7Sát thương x" + config.pvpDamageMultiplier + "!");
                         deathListener.tagCombat(player);
                         deathListener.tagCombat(attacker);
@@ -128,12 +128,15 @@ public class CombatListener implements Listener {
                 }
             }
             case PROJECTILE -> {
-                if (event instanceof EntityDamageByEntityEvent entityEvent && entityEvent.getDamager() instanceof Arrow arrow) {
-                    ProjectileSource shooter = arrow.getShooter();
-                    if (shooter instanceof Skeleton || shooter instanceof Stray) {
+                if (event instanceof EntityDamageByEntityEvent entityEvent && entityEvent.getDamager() instanceof Projectile projectile) {
+                    ProjectileSource shooter = projectile.getShooter();
+                    if (projectile instanceof Arrow && (shooter instanceof Skeleton || shooter instanceof Stray)) {
                         newDamage = original * config.mobDamageMultiplier;
                         player.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 100, 0));
                         player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, 0));
+                    } else if (shooter instanceof Player attacker) {
+                        newDamage = original * config.pvpDamageMultiplier * deathPenaltyManager.getDamageDealtMultiplier(attacker);
+                        deathListener.tagCombat(attacker);
                     }
                     deathListener.tagCombat(player);
                 }
@@ -223,7 +226,7 @@ public class CombatListener implements Listener {
 
     @EventHandler
     public void onEntityRegainHealth(EntityRegainHealthEvent event) {
-        if (!(event.getEntity() instanceof Player)) return;
+        if (!(event.getEntity() instanceof Player player)) return;
 
         EntityRegainHealthEvent.RegainReason reason = event.getRegainReason();
 
@@ -238,11 +241,12 @@ public class CombatListener implements Listener {
             }
 
             // Apply regen multiplier if less than 1.0
-            if (config.regenMultiplier < 1.0) {
+            double penaltyAdjustedRegen = config.regenMultiplier * deathPenaltyManager.getRegenMultiplier(player);
+            if (penaltyAdjustedRegen < 1.0) {
                 double original = event.getAmount();
-                double newAmount = original * config.regenMultiplier;
+                double newAmount = original * penaltyAdjustedRegen;
                 event.setAmount(newAmount);
-                logger.fine("[Combat] Regen: " + original + " -> " + newAmount + " (x" + config.regenMultiplier + ")");
+                logger.fine("[Combat] Regen: " + original + " -> " + newAmount + " (x" + penaltyAdjustedRegen + ")");
             }
         }
     }

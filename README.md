@@ -2,7 +2,7 @@
 
 **Hell Difficulty Plugin for Paper 1.21.4**
 
-Plugin nâng độ khó Minecraft lên mức khó gấp đôi. **Chết 1 lần = Ban vĩnh viễn!**
+Plugin Paper 1.21.4 bổ sung các hệ thống sinh tồn khó hơn. Người chơi không bị ban khi chết.
 
 ---
 
@@ -24,23 +24,13 @@ Plugin nâng độ khó Minecraft lên mức khó gấp đôi. **Chết 1 lần 
 ## 🎯 Features
 
 ### ☠️ Death System
-- **Chết = Ban vĩnh viễn** (Username + IP)
-- Combat tag: Logout khi combat → bị ban
-- Broadcast death + âm thanh wither
-- Death counter + thống kê
+- Ghi nhận số lần chết, broadcast và âm thanh Wither; không ban người chơi
+- Combat tag 30 giây để hiển thị trạng thái giao chiến; thoát game không bị phạt
 
 ### 💀 Death Penalty System
-- **Giảm chỉ số mỗi lần chết**: Max HP, sát thương gây ra, tăng sát thương nhận vào
-- **Phục hồi sau thời gian sống sót** (configurable, mặc định 300s)
-- **Tối đa 5 stack** penalty, tránh penalty quá lớn
-- **Các chỉ số bị ảnh hưởng**:
-  - Max Health (giảm %)
-  - Damage Dealt (giảm %)
-  - Incoming Damage (tăng %)
-  - Regen (giảm %)
-  - Food Drain (tăng %)
-  - Thirst Drain (tăng %)
-  - Max Thirst (giảm)
+- Mỗi lần chết cộng 1 stack, tối đa 5; mặc định mỗi stack giảm max HP 10%
+- Áp dụng giảm damage gây ra, tăng damage nhận vào, giảm regen, tăng drain đói/khát và giảm max thirst theo các mức trong config
+- Penalty bắt đầu hồi sau respawn và tự gỡ sau 300 giây theo thời gian thực
 
 ### 🏷 Death Rename System
 - **Tự động đổi tên hiển thị** trong CHAT và TAB LIST sau khi chết
@@ -52,8 +42,8 @@ Plugin nâng độ khó Minecraft lên mức khó gấp đôi. **Chết 1 lần 
 - **Damage multipliers**: Mob x2, Fall x2, Fire x2, Drowning x2, Explosion x1.5, PvP x1.25
 - Mobs có thêm máu (x1.5) + armor ngẫu nhiên
 - **Natural Regen**: Có thể tắt hoàn toàn hoặc giảm % (configurable regen-multiplier)
-- **Combat Tag**: Thời gian tag combat configurable. Thoát game khi đang combat = ban
-- Ender Pearl gây sát thương 5♥
+- **Combat Tag**: 30 giây mặc định; chỉ hiển thị trạng thái giao chiến
+- Ender Pearl gây 1 HP sát thương theo config mặc định
 - Táo vàng enchanted (Notch Apple) phát nổ
 - Friendly mobs không kích hoạt combat tag
 - **Witch Speed Boost**: Witch có Speed II vĩnh viễn
@@ -61,7 +51,7 @@ Plugin nâng độ khó Minecraft lên mức khó gấp đôi. **Chết 1 lần 
 - **Skeleton Arrow Poison**: Mũi tên Skeleton gây Poison + Slowness
 
 ### 🍔 Hunger System
-- Đói nhanh (mỗi 4s), chết đói 1♥/4s
+- Mỗi 180 giây giảm 1 food; đói gây 1 HP sát thương mỗi nhịp
 - Ăn hồi 50% (configurable), không saturation
 - Ngộ độc thức ăn sống: thịt thối, cá nóc, khoai tây độc...
 - **Nghẹn** khi ăn >3 lần trong 10s
@@ -69,7 +59,7 @@ Plugin nâng độ khó Minecraft lên mức khó gấp đôi. **Chết 1 lần 
 
 ### 💧 Thirst System
 - Thanh khát (action bar) với màu sắc & trạng thái
-- Drain mỗi 8s, mất máu khi hết khát
+- Mỗi 120 giây giảm 1 điểm; hết khát gây 2 HP sát thương mỗi nhịp
 - Uống từ: chai nước, xô nước, nguồn nước (sông/biển/vạc)
 - **Natural Water**: Uống nước sông/biển = damage mỗi giây + Nausea + Hunger
 - Tất cả thông số đều configurable
@@ -80,7 +70,7 @@ Plugin nâng độ khó Minecraft lên mức khó gấp đôi. **Chết 1 lần 
 - **Chặn ngủ**: Damage khi cố ngủ
 - **Cây chậm**: 25% chậm hơn
 - **Công cụ hao mòn**: 1.5x nhanh hơn
-- **Cấm bay** (trừ permission bypass)
+- **Chặn bay** (mặc định tắt; permission bypass nếu bật)
 - **Sợ hầm**: Mining Fatigue + Darkness dưới y=30 (giảm khi cầm đuốc)
 - **Chóng mặt**: Nausea + Slowness trên y=200 (giảm khi đeo elytra)
 - **Nước lạnh**: Damage khi ở dưới nước lạnh
@@ -108,7 +98,7 @@ Plugin nâng độ khó Minecraft lên mức khó gấp đôi. **Chết 1 lần 
 - Hỗ trợ blackstone/cobbled deepslate generation
 
 ### 👹 Boss Events (12 types)
-Tất cả boss đều **enabled by default**:
+11/12 boss bật mặc định; `ender_dragon` tắt mặc định:
 
 | ID | Name | Entity Type | HP | Damage |
 |----|------|-------------|-----|--------|
@@ -140,31 +130,26 @@ Tất cả disasters đều **enabled by default**:
 
 | ID | Name | Dimension | Effect |
 |----|------|-----------|--------|
-| `bloodmoon` | 🌕 Blood Moon | Overworld | Quái spawn x10, Strength + Speed |
+| `blood-moon` | 🌕 Blood Moon | Overworld | Quái spawn x10, Strength + Speed |
 | `meteor` | ☄️ Meteor Shower | Overworld | Sao băng rơi, explosion damage |
-| `storm` | 🌊 Mega Storm | Overworld | Sét đánh, mưa axit, mù |
-| `solarflare` | 🔥 Solar Flare | Overworld | Burn + blindness ngoài trời |
+| `mega-storm` | 🌊 Mega Storm | Overworld | Sét đánh, mưa axit, mù |
+| `solar-flare` | 🔥 Solar Flare | Overworld | Burn + blindness ngoài trời |
 | `plague` | 🦠 Plague | Overworld | Poison + Weakness + Hunger |
 | `tornado` | 🌪️ Tornado | Overworld | Bị ném lên cao, phá block |
 | `eclipse` | 📉 Solar Eclipse | Overworld | Ban ngày → đêm, quái spawn |
 | `earthquake` | 🌍 Earthquake | Overworld | Block rơi, rung chuyển |
-| `inferno` | 🔥 Inferno Storm | Nether | Lửa địa ngục, spawn Ghast/Magma |
-| `souleruption` | 💀 Soul Eruption | Nether | Soul sand nổ, Wither effect |
-| `lavageyser` | 🌋 Lava Geyser | Nether | Cột lava phun trào |
-| `endsurge` | 👁️ End Surge | The End | Spawn Shulker/Endermite |
-| `voidstorm` | 🌌 Void Storm | The End | Blindness + Darkness + damage |
-| `chorusexplosion` | 🌀 Chorus Explosion | The End | Damage + random teleport |
+| `inferno-storm` | 🔥 Inferno Storm | Nether | Lửa địa ngục, spawn Ghast/Magma |
+| `soul-eruption` | 💀 Soul Eruption | Nether | Soul sand nổ, Wither effect |
+| `lava-geyser` | 🌋 Lava Geyser | Nether | Cột lava phun trào |
+| `end-surge` | 👁️ End Surge | The End | Spawn Shulker/Endermite |
+| `void-storm` | 🌌 Void Storm | The End | Blindness + Darkness + damage |
+| `chorus-explosion` | 🌀 Chorus Explosion | The End | Damage + random teleport |
 
 **Manual trigger**: `/vnevent <id> <warning> <duration>`
 
 **Disable specific disasters:**
 ```yaml
-disasters:
-  enabled-disasters:
-    blood-moon: true
-    meteor: true
-    # ... etc
-    chorus-explosion: false  # ← Disable this
+enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 ```
 
 ---
@@ -195,7 +180,6 @@ disasters:
 |---------|-------------|------------|
 | `/vnstats` | View your stats (deaths, survival time, mob kills) | `vnmine.hardcore.stats` |
 | `/vnhardcore` | View plugin status | `vnmine.hardcore.admin` |
-| `/vnhardcore unban <player>` | Unban a player | `vnmine.hardcore.admin` |
 | `/vnevent` | List available disaster IDs | `vnmine.hardcore.admin` |
 | `/vnevent <id> <warning> <duration>` | Manually trigger a disaster | `vnmine.hardcore.admin` |
 | `/vnboss` | List available boss IDs | `vnmine.hardcore.admin` |
@@ -208,27 +192,27 @@ disasters:
 
 ```
 /vnevent                                    - List all disaster IDs
-/vnevent bloodmoon 30 60                   - Blood Moon: 30s warning, 60s duration
+/vnevent blood-moon 30 60                  - Blood Moon: 30s warning, 60s duration
 /vnevent meteor 10 30                      - Meteor Shower: 10s warning, 30s duration
 /vnevent earthquake 5 20                   - Earthquake: 5s warning, 20s duration
-/vnevent inferno 15 40                     - Inferno Storm: 15s warning, 40s duration
+/vnevent inferno-storm 15 40               - Inferno Storm: 15s warning, 40s duration
 ```
 
 **All Disaster IDs:**
-- `bloodmoon` - 🌕 Blood Moon
+- `blood-moon` - 🌕 Blood Moon
 - `meteor` - ☄️ Meteor Shower
-- `storm` - 🌊 Mega Storm
-- `solarflare` - 🔥 Solar Flare
+- `mega-storm` - 🌊 Mega Storm
+- `solar-flare` - 🔥 Solar Flare
 - `plague` - 🦠 Plague
 - `tornado` - 🌪️ Tornado
 - `eclipse` - 📉 Solar Eclipse
 - `earthquake` - 🌍 Earthquake
-- `inferno` - 🔥 Inferno Storm
-- `souleruption` - 💀 Soul Eruption
-- `lavageyser` - 🌋 Lava Geyser
-- `endsurge` - 👁️ End Surge
-- `voidstorm` - 🌌 Void Storm
-- `chorusexplosion` - 🌀 Chorus Explosion
+- `inferno-storm` - 🔥 Inferno Storm
+- `soul-eruption` - 💀 Soul Eruption
+- `lava-geyser` - 🌋 Lava Geyser
+- `end-surge` - 👁️ End Surge
+- `void-storm` - 🌌 Void Storm
+- `chorus-explosion` - 🌀 Chorus Explosion
 
 ### `/vnboss` Usage
 
@@ -260,7 +244,7 @@ disasters:
 | Permission | Description | Default |
 |------------|-------------|---------|
 | `vnmine.hardcore.stats` | View statistics (/vnstats, /vnhelp) | `true` |
-| `vnmine.hardcore.admin` | Admin commands (status, unban, reload, trigger disaster/boss) | `op` |
+| `vnmine.hardcore.admin` | Admin commands (status, reload, trigger disaster/boss) | `op` |
 | `vnmine.hardcore.bypass` | Bypass flight block | — |
 
 ---
@@ -270,12 +254,11 @@ disasters:
 File: `plugins/VnMineHardcore/config.yml`
 
 All parameters have sensible defaults and are documented with **bilingual comments** (Tiếng Việt + English).
+Existing configs migrate bundled death-penalty defaults once; values different from the previous defaults are preserved.
 
 ### Death Section
 ```yaml
 death:
-  ban-on-death: true        # Ban player on death
-  ban-ip: true              # Also ban IP address
   broadcast-death: true     # Broadcast death to all players
   play-sound: true          # Play wither death sound
 ```
@@ -287,13 +270,13 @@ death-penalty:
   recovery-seconds: 300             # Survival time to recover stats
   max-penalty-stack: 5              # Max penalty stack
   stats:
-    max-hp-per-death: 1.0           # Max HP reduction per death (%)
-    max-thirst-per-death: 1.0       # Max thirst reduction per death (%)
-    damage-per-death: 0.5           # Damage dealt reduction per death (%)
-    incoming-damage-per-death: 0.5  # Incoming damage increase per death (%)
-    regen-per-death: 0.5            # Regen reduction per death (%)
-    food-drain-per-death: 0.5       # Food drain increase per death (%)
-    thirst-drain-per-death: 0.5     # Thirst drain increase per death (%)
+    max-hp-per-death: 0.1           # Max HP reduction per death (10%)
+    max-thirst-per-death: 0.1       # Max thirst reduction per death (10%)
+    damage-per-death: 0.1           # Damage dealt reduction per death (10%)
+    incoming-damage-per-death: 0.1  # Incoming damage increase per death (10%)
+    regen-per-death: 0.1            # Regen reduction per death (10%)
+    food-drain-per-death: 0.1       # Food drain increase per death (10%)
+    thirst-drain-per-death: 0.1     # Thirst drain increase per death (10%)
 ```
 
 ### Combat Section
@@ -306,10 +289,10 @@ combat:
   explosion-damage-multiplier: 1.5     # Explosion x1.5
   pvp-damage-multiplier: 1.25          # PvP x1.25
   mob-extra-hp-multiplier: 1.5         # Mobs +50% HP
-  disable-natural-regen: true          # Disable natural regen
-  regen-multiplier: 1.0               # Regen % (if regen enabled)
+  disable-natural-regen: false         # Disable natural regen
+  regen-multiplier: 0.5                # Regen multiplier (if regen enabled)
   combat-tag-duration-seconds: 30     # Combat tag duration
-  ender-pearl-damage: 10.0            # Ender pearl damage (5♥)
+  ender-pearl-damage: 1.0              # Ender pearl damage (HP)
 ```
 
 ### Rename Section
@@ -407,7 +390,6 @@ disasters:
 logging:
   console-debug: false          # Enable debug console logs
   log-deaths: true              # Log deaths
-  log-bans: true                # Log bans
   log-disasters: true           # Log disasters
 ```
 
@@ -694,7 +676,6 @@ Located in `plugins/VnMineHardcore/`:
 | File | Description |
 |------|-------------|
 | `deaths.log` | Detailed death records |
-| `bans.log` | Ban records with IP and UUID |
 | `disasters.log` | Disaster event logs |
 | `stats.yml` | Player statistics |
 | `death-penalty.yml` | Death penalty data (stacks, recovery) |
@@ -742,7 +723,7 @@ Located in `plugins/VnMineHardcore/`:
 
 ### v1.0.0
 - Initial release
-- Death system with permanent ban
+- Death tracking and persistent death statistics
 - Combat system with damage multipliers
 - Combat tag with configurable duration
 - Hunger system with raw food poisoning & choking

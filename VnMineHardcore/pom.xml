@@ -6,7 +6,7 @@
 
     <groupId>com.vnmine</groupId>
     <artifactId>VnMineHardcore</artifactId>
-    <version>1.0.0</version>
+    <version>1.2.1</version>
     <packaging>jar</packaging>
 
     <name>VnMineHardcore</name>
@@ -38,7 +38,7 @@
     </dependencies>
 
     <build>
-        <finalName>VnMineHardcore</finalName>
+        <finalName>VnMineHardcore-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

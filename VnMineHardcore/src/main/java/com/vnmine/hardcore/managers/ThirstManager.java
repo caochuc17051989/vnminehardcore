@@ -17,10 +17,12 @@ public class ThirstManager {
 
     private final VnMineHardcore plugin;
     private final ConfigManager config;
+    private final DeathPenaltyManager deathPenaltyManager;
     private final Logger logger;
     private final Map<UUID, Integer> thirstLevel = new HashMap<>();
     private final Map<UUID, Long> lastDrink = new HashMap<>();
     private final Set<UUID> damagedByThirst = new HashSet<>();
+    private final Map<UUID, Double> thirstDrainRemainders = new HashMap<>();
     private final File dataFile;
     private final YamlConfiguration data;
 
@@ -30,6 +32,7 @@ public class ThirstManager {
     public ThirstManager(VnMineHardcore plugin, ConfigManager config) {
         this.plugin = plugin;
         this.config = config;
+        this.deathPenaltyManager = plugin.getDeathPenaltyManager();
         this.logger = plugin.getLogger();
 
         // Load saved data
@@ -88,15 +91,19 @@ public class ThirstManager {
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     UUID uuid = player.getUniqueId();
 
-                    thirstLevel.putIfAbsent(uuid, config.maxThirst);
+                    thirstLevel.putIfAbsent(uuid, getEffectiveMaxThirst(player));
                     lastDrink.putIfAbsent(uuid, System.currentTimeMillis());
 
                     long now = System.currentTimeMillis();
                     long last = lastDrink.get(uuid);
 
                     if (now - last > config.thirstDrainIntervalSeconds * 1000L) {
-                        int current = thirstLevel.get(uuid);
-                        current = Math.max(0, current - 1);
+                        int current = getThirstLevel(player);
+                        double drain = deathPenaltyManager.getThirstDrainMultiplier(player) +
+                            thirstDrainRemainders.getOrDefault(uuid, 0.0);
+                        int drainAmount = (int) Math.floor(drain);
+                        thirstDrainRemainders.put(uuid, drain - drainAmount);
+                        current = Math.max(0, current - drainAmount);
                         thirstLevel.put(uuid, current);
                         playersAffected++;
 
@@ -139,8 +146,8 @@ public class ThirstManager {
 
     public void drinkWater(Player player, int restoreAmount) {
         UUID uuid = player.getUniqueId();
-        int current = thirstLevel.getOrDefault(uuid, config.maxThirst);
-        int newThirst = Math.min(config.maxThirst, current + restoreAmount);
+        int current = getThirstLevel(player);
+        int newThirst = Math.min(getEffectiveMaxThirst(player), current + restoreAmount);
         thirstLevel.put(uuid, newThirst);
         lastDrink.put(uuid, System.currentTimeMillis());
         damagedByThirst.remove(uuid);
@@ -155,7 +162,15 @@ public class ThirstManager {
     }
 
     public int getThirstLevel(Player player) {
-        return thirstLevel.getOrDefault(player.getUniqueId(), config.maxThirst);
+        UUID uuid = player.getUniqueId();
+        int effectiveMax = getEffectiveMaxThirst(player);
+        int thirst = Math.min(thirstLevel.getOrDefault(uuid, effectiveMax), effectiveMax);
+        thirstLevel.put(uuid, thirst);
+        return thirst;
+    }
+
+    private int getEffectiveMaxThirst(Player player) {
+        return Math.max(1, config.maxThirst - deathPenaltyManager.getMaxThirstOffset(player));
     }
 
     public String getThirstBar(Player player) {

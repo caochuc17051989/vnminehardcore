@@ -54,8 +54,6 @@ public class ConfigManager {
     private FileConfiguration config;
 
     // Death
-    public boolean banOnDeath;
-    public boolean banIp;
     public boolean broadcastDeath;
     public boolean playSound;
 
@@ -129,6 +127,8 @@ public class ConfigManager {
     public double armorDamageReducePercent;
     public int heatExposureDelaySeconds;
     public int coldExposureDelaySeconds;
+    public double waterDamage;
+    public double acidRainDamage;
     public long waterDamageIntervalMs;
     public long acidRainIntervalMs;
     public boolean fogEnabled;
@@ -201,7 +201,6 @@ public class ConfigManager {
     // Logging
     public boolean consoleDebug;
     public boolean logDeaths;
-    public boolean logBans;
     public boolean logDisasters;
 
     // DisasterConfig class - holds all config for a single disaster
@@ -259,13 +258,12 @@ public class ConfigManager {
         plugin.saveDefaultConfig();
         plugin.reloadConfig();
         this.config = plugin.getConfig();
+        migrateDeathPenaltyDefaults();
 
         // ===== Save default external configs (bosses/, disasters/) =====
         saveDefaultExternalConfigs();
 
         // Death
-        banOnDeath = config.getBoolean("death.ban-on-death", true);
-        banIp = config.getBoolean("death.ban-ip", true);
         broadcastDeath = config.getBoolean("death.broadcast-death", true);
         playSound = config.getBoolean("death.play-sound", true);
 
@@ -339,8 +337,12 @@ public class ConfigManager {
         armorDamageReducePercent = config.getDouble("environment.temperature.armor-damage-reduce-percent", 0.20);
         heatExposureDelaySeconds = config.getInt("environment.temperature.heat-exposure-delay-seconds", 10);
         coldExposureDelaySeconds = config.getInt("environment.temperature.cold-exposure-delay-seconds", 10);
-        waterDamageIntervalMs = config.getLong("environment.temperature.water-damage-interval-ms", 10000);
-        acidRainIntervalMs = config.getLong("environment.temperature.acid-rain-interval-ms", 5000);
+        waterDamage = config.getDouble("environment.temperature.water-damage", 1.0);
+        acidRainDamage = config.getDouble("environment.temperature.acid-rain-damage", 1.0);
+        waterDamageIntervalMs = config.getLong("environment.temperature.water-damage-interval-ms",
+            config.getLong("environment.temperature.water-damage-interval-seconds", 10) * 1000L);
+        acidRainIntervalMs = config.getLong("environment.temperature.acid-rain-interval-ms",
+            config.getLong("environment.temperature.acid-rain-interval-seconds", 5) * 1000L);
         fogEnabled = config.getBoolean("environment.fog.enabled", true);
         fogIntervalSeconds = config.getInt("environment.fog.interval-seconds", 60);
         fogEffectDurationSeconds = config.getInt("environment.fog.effect-duration-seconds", 30);
@@ -405,12 +407,33 @@ public class ConfigManager {
         // Logging
         consoleDebug = config.getBoolean("logging.console-debug", false);
         logDeaths = config.getBoolean("logging.log-deaths", true);
-        logBans = config.getBoolean("logging.log-bans", true);
         logDisasters = config.getBoolean("logging.log-disasters", true);
 
         plugin.getLogger().info("[Config] Loaded configuration with " + config.getKeys(true).size() + " keys");
         plugin.getLogger().info("[Config] Loaded " + bossConfigs.size() + " bosses from bosses/");
         plugin.getLogger().info("[Config] Loaded " + disasterConfigs.size() + " disasters from disasters/");
+    }
+
+    private void migrateDeathPenaltyDefaults() {
+        int version = config.getInt("config-version", 0);
+        if (version >= 2) return;
+
+        migrateDouble("death-penalty.stats.max-hp-per-death", 1.0, 0.1);
+        migrateDouble("death-penalty.stats.max-thirst-per-death", 1.0, 0.1);
+        migrateDouble("death-penalty.stats.damage-per-death", 0.5, 0.1);
+        migrateDouble("death-penalty.stats.incoming-damage-per-death", 0.5, 0.1);
+        migrateDouble("death-penalty.stats.regen-per-death", 0.5, 0.1);
+        migrateDouble("death-penalty.stats.food-drain-per-death", 0.5, 0.1);
+        migrateDouble("death-penalty.stats.thirst-drain-per-death", 0.5, 0.1);
+        config.set("config-version", 2);
+        plugin.saveConfig();
+        plugin.getLogger().info("[Config] Migrated bundled death-penalty defaults to 10% per death; custom values were preserved.");
+    }
+
+    private void migrateDouble(String path, double oldDefault, double newDefault) {
+        if (config.contains(path) && Double.compare(config.getDouble(path), oldDefault) == 0) {
+            config.set(path, newDefault);
+        }
     }
 
     /**

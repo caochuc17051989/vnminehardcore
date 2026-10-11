@@ -3,12 +3,16 @@ package com.vnmine.hardcore.listeners;
 import com.vnmine.hardcore.VnMineHardcore;
 import com.vnmine.hardcore.managers.ConfigManager;
 import com.vnmine.hardcore.managers.ThirstManager;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -24,6 +28,7 @@ public class HungerListener implements Listener {
     private final ConfigManager config;
     private final Logger logger;
     private final Map<UUID, List<Long>> eatTimestamps = new HashMap<>();
+    private final Map<UUID, Double> foodDrainRemainders = new HashMap<>();
     private BukkitRunnable hungerTask;
     private int drainIntervalTicks;
 
@@ -62,7 +67,13 @@ public class HungerListener implements Listener {
                     int foodLevel = player.getFoodLevel();
 
                     if (foodLevel > 0) {
-                        player.setFoodLevel(Math.max(0, foodLevel - 1));
+                        double drain = plugin.getDeathPenaltyManager().getFoodDrainMultiplier(player) +
+                            foodDrainRemainders.getOrDefault(player.getUniqueId(), 0.0);
+                        int drainAmount = (int) Math.floor(drain);
+                        foodDrainRemainders.put(player.getUniqueId(), drain - drainAmount);
+                        if (drainAmount > 0) {
+                            player.setFoodLevel(Math.max(0, foodLevel - drainAmount));
+                        }
                         player.setSaturation(0);
                     }
 
@@ -86,14 +97,39 @@ public class HungerListener implements Listener {
     // Cancel vanilla food changes completely - plugin controls food
     @EventHandler(priority = EventPriority.LOWEST)
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
+        if (!config.hungerEnabled) return;
         if (!(event.getEntity() instanceof Player)) return;
         event.setCancelled(true);
     }
 
     @EventHandler
     public void onPlayerConsume(PlayerItemConsumeEvent event) {
+        if (!config.hungerEnabled) return;
         Player player = event.getPlayer();
         Material itemType = event.getItem().getType();
+        if (config.notchAppleExplode && itemType == Material.ENCHANTED_GOLDEN_APPLE) {
+            event.setCancelled(true);
+            if (player.getGameMode() != GameMode.CREATIVE) {
+                ItemStack heldItem = event.getHand() == EquipmentSlot.HAND
+                    ? player.getInventory().getItemInMainHand()
+                    : player.getInventory().getItemInOffHand();
+                if (heldItem.getAmount() <= 1) {
+                    if (event.getHand() == EquipmentSlot.HAND) {
+                        player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+                    } else {
+                        player.getInventory().setItemInOffHand(new ItemStack(Material.AIR));
+                    }
+                } else {
+                    heldItem.setAmount(heldItem.getAmount() - 1);
+                }
+            }
+            player.getWorld().createExplosion(player.getLocation(), 4.0f, false, true);
+            player.damage(config.notchAppleDamage);
+            player.sendMessage("§4§l💥 Táo vàng phát nổ!");
+            logger.info("[Hunger] " + player.getName() + " tried enchanted golden apple - exploded");
+            return;
+        }
+
         UUID uuid = player.getUniqueId();
 
         long now = System.currentTimeMillis();
@@ -163,13 +199,13 @@ public class HungerListener implements Listener {
             player.sendMessage("§5§l❓ Súp bí ẩn! §dHiệu ứng: " + randomEffect.getName());
         }
 
-        if (config.notchAppleExplode && itemType == Material.ENCHANTED_GOLDEN_APPLE) {
-            event.setCancelled(true);
-            player.getWorld().createExplosion(player.getLocation(), 4.0f, false, true);
-            player.damage(config.notchAppleDamage);
-            player.sendMessage("§4§l💥 Táo vàng phát nổ!");
-            logger.info("[Hunger] " + player.getName() + " tried enchanted golden apple - exploded");
-        }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        UUID uuid = event.getPlayer().getUniqueId();
+        eatTimestamps.remove(uuid);
+        foodDrainRemainders.remove(uuid);
     }
 
     private int getFoodRestore(Material material) {

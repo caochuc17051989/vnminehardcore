@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LogManager {
 
     private final VnMineHardcore plugin;
+    private final ConfigManager config;
     private final File dataFolder;
     private final Map<UUID, PlayerStats> playerStats = new ConcurrentHashMap<>();
     private final File statsFile;
@@ -28,8 +29,9 @@ public class LogManager {
         int mobKills = 0;
     }
 
-    public LogManager(VnMineHardcore plugin) {
+    public LogManager(VnMineHardcore plugin, ConfigManager config) {
         this.plugin = plugin;
+        this.config = config;
         this.dataFolder = new File(plugin.getDataFolder(), "logs");
         this.dataFolder.mkdirs();
         this.statsFile = new File(dataFolder, "stats.yml");
@@ -47,20 +49,15 @@ public class LogManager {
             player.getLocation().getBlockZ(),
             player.getWorld().getName(), cause);
 
-        appendToFile("deaths.log", entry);
+        if (config.logDeaths) {
+            appendToFile("deaths.log", entry);
+        }
 
         // Update stats
         PlayerStats stats = playerStats.computeIfAbsent(player.getUniqueId(), k -> new PlayerStats());
         stats.deathCount++;
         stats.lastDeath = System.currentTimeMillis();
         markDirty();
-    }
-
-    public void logBan(String playerName, String uuid, String ip, String reason) {
-        String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-        String entry = String.format("[%s] BANNED: %s (UUID: %s) IP: %s | Reason: %s%n",
-            time, playerName, uuid, ip != null ? ip : "unknown", reason);
-        appendToFile("bans.log", entry);
     }
 
     public void logMobKill(Player player) {
@@ -70,13 +67,19 @@ public class LogManager {
     }
 
     public void logDisaster(String disasterName) {
+        if (!config.logDisasters) return;
         String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
         String entry = String.format("[%s] DISASTER: %s occurred!%n", time, disasterName);
         appendToFile("disasters.log", entry);
     }
 
     public int getDeathCount(Player player) {
-        return playerStats.getOrDefault(player.getUniqueId(), new PlayerStats()).deathCount;
+        return getDeathCount(player.getUniqueId());
+    }
+
+    public int getDeathCount(UUID uuid) {
+        PlayerStats stats = playerStats.get(uuid);
+        return stats != null ? stats.deathCount : 0;
     }
 
     /**

@@ -12,6 +12,7 @@ import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -37,6 +38,7 @@ public class BossEventManager implements Listener {
     // Tracking thời gian boss đã tồn tại
     private int bossElapsedSeconds = 0;
     private int bossDurationSeconds = 0;
+    private BukkitTask schedulerTask;
 
     // AI tracking
     private Location lastBossLocation = null;
@@ -67,7 +69,8 @@ public class BossEventManager implements Listener {
     }
 
     public void start() {
-        new BukkitRunnable() {
+        if (!config.bossEventsEnabled || (schedulerTask != null && !schedulerTask.isCancelled())) return;
+        schedulerTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (Bukkit.getWorlds().isEmpty()) return;
@@ -825,15 +828,33 @@ public class BossEventManager implements Listener {
         ConfigManager.BossConfig bc = config.bossConfigs.get(bossId.toLowerCase());
         if (bc == null) return false;
 
-        // Override warning time and duration
-        bc.warningSeconds = warningTimeSeconds;
-        bc.durationSeconds = durationSeconds;
-        
-        startWarning(bc);
+        ConfigManager.BossConfig manualBoss = new ConfigManager.BossConfig();
+        manualBoss.enabled = bc.enabled;
+        manualBoss.entityType = bc.entityType;
+        manualBoss.displayName = bc.displayName;
+        manualBoss.hp = bc.hp;
+        manualBoss.damageMultiplier = bc.damageMultiplier;
+        manualBoss.chance = bc.chance;
+        manualBoss.warningSeconds = warningTimeSeconds;
+        manualBoss.durationSeconds = durationSeconds;
+        manualBoss.immunities.putAll(bc.immunities);
+        manualBoss.immunityPotionEffects = new ArrayList<>(bc.immunityPotionEffects);
+        manualBoss.drops.putAll(bc.drops);
+
+        startWarning(manualBoss);
         return true;
     }
 
     public void stop() {
+        if (schedulerTask != null) {
+            schedulerTask.cancel();
+            schedulerTask = null;
+        }
         cleanup();
+    }
+
+    public void reload() {
+        if (config.bossEventsEnabled) start();
+        else stop();
     }
 }

@@ -1,9 +1,9 @@
 name: VnMineHardcore
-version: 1.0.0
+version: 1.2.1
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
-description: Ultimate hardcore plugin - Hell difficulty with ban on death, thirst system, disasters, combat tag, natural water effects, configurable
+description: Hardcore survival plugin with thirst, disasters, combat tag, and configurable gameplay
 
 commands:
   vnstats:
@@ -11,8 +11,8 @@ commands:
     usage: /vnstats
     permission: vnmine.hardcore.stats
   vnhardcore:
-    description: Xem trạng thái plugin hoặc bỏ ban người chơi
-    usage: /vnhardcore [unban <player>]
+    description: Xem trạng thái plugin
+    usage: /vnhardcore
     permission: vnmine.hardcore.admin
   vnreload:
     description: Tải lại file cấu hình config.yml
@@ -40,5 +40,5 @@ permissions:
     description: Cho phép xem thống kê
     default: true
   vnmine.hardcore.admin:
-    description: Cho phép dùng lệnh admin (status, unban, reload, trigger disaster)
+    description: Cho phép dùng lệnh admin (status, reload, trigger disaster)
     default: op

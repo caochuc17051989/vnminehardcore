@@ -40,13 +40,13 @@ public class GraveListener implements Listener {
         Player player = event.getPlayer();
         Location deathLocation = player.getLocation();
 
-        // Tạo mộ tại vị trí chết
-        graveManager.createGrave(player, deathLocation);
-
-        logger.fine("[GraveListener] Grave created for " + player.getName() +
-            " at " + deathLocation.getBlockX() + "," +
-            deathLocation.getBlockY() + "," +
-            deathLocation.getBlockZ());
+        if (graveManager.createGrave(player, deathLocation)) {
+            event.getDrops().clear();
+            logger.fine("[GraveListener] Grave created for " + player.getName() +
+                " at " + deathLocation.getBlockX() + "," +
+                deathLocation.getBlockY() + "," +
+                deathLocation.getBlockZ() + " in " + deathLocation.getWorld().getName());
+        }
     }
 
     /**

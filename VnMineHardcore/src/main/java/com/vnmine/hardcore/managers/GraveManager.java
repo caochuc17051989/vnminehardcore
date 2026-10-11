@@ -11,6 +11,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -30,7 +32,7 @@ import java.util.logging.Logger;
  * các block cũ được khôi phục.
  * Tên người chết và thời gian hiển thị trên ArmorStand phía trên bia mộ.
  */
-public class GraveManager {
+public class GraveManager implements Listener {
 
     private final VnMineHardcore plugin;
     private final ConfigManager config;
@@ -77,6 +79,8 @@ public class GraveManager {
         boolean isEmpty;
         int deathCountAtCreation;
         LinkedHashMap<Integer, ItemStack> items;
+        Set<String> structureKeys = new LinkedHashSet<>();
+        String headBlockKey;
         // Lưu block cũ: key = "dx_dy_dz", value = "MATERIAL;BLOCKDATA"
         Map<String, String> originalBlocks = new HashMap<>();
         // ArmorStand UUID để hiển thị tên trên mộ
@@ -109,6 +113,7 @@ public class GraveManager {
         loadStructure();
         loadData();
         startDisplayTask();
+        Bukkit.getPluginManager().registerEvents(this, plugin);
 
         logger.info("[Grave] Initialized: enabled=" + enabled +
             ", protection=" + protectionMinutes + "m" +
@@ -178,6 +183,7 @@ public class GraveManager {
     }
 
     public void reload() {
+        saveData();
         loadConfig();
         loadStructure();
         loadData();
@@ -185,8 +191,12 @@ public class GraveManager {
 
     // ===== CREATE GRAVE =====
 
-    public void createGrave(Player player, Location deathLocation) {
-        if (!enabled) return;
+    public boolean createGrave(Player player, Location deathLocation) {
+        if (!enabled || deathLocation == null || deathLocation.getWorld() == null) return false;
+        if (wouldOverlapGrave(deathLocation)) {
+            logger.warning("[Grave] Cannot build overlapping grave at " + deathLocation + "; allowing vanilla item drops.");
+            return false;
+        }
 
         GraveData grave = new GraveData();
         grave.owner = player.getUniqueId();
@@ -219,11 +229,29 @@ public class GraveManager {
         buildGraveStructure(deathLocation, player.getName(), grave);
 
         graves.put(grave.graveId, grave);
-        playerGraves.computeIfAbsent(grave.owner, k -> new ArrayList<>()).add(grave.graveId);
-        saveData();
+        List<String> ownerGraves = playerGraves.computeIfAbsent(grave.owner, k -> new ArrayList<>());
+        ownerGraves.add(grave.graveId);
+        if (!saveData()) {
+            graves.remove(grave.graveId);
+            ownerGraves.remove(grave.graveId);
+            data.set("graves." + grave.graveId, null);
+            String ownerPath = "_playerGraves." + grave.owner;
+            if (ownerGraves.isEmpty()) {
+                playerGraves.remove(grave.owner);
+                data.set(ownerPath, null);
+            } else {
+                data.set(ownerPath, ownerGraves);
+            }
+            removeGraveNameDisplay(grave);
+            destroyGraveStructure(deathLocation, grave);
+            saveData();
+            logger.warning("[Grave] Could not persist grave for " + player.getName() + "; allowing vanilla item drops.");
+            return false;
+        }
 
         logger.info("[Grave] Created grave " + grave.graveId + " for " + player.getName() +
             " at " + grave.x + "," + grave.y + "," + grave.z + " (" + grave.items.size() + " items)");
+        return true;
     }
 
     /**
@@ -239,10 +267,12 @@ public class GraveManager {
             Location loc = baseLocation.clone().add(block.dx, block.dy, block.dz);
             Block currentBlock = loc.getBlock();
             String key = block.dx + "_" + block.dy + "_" + block.dz;
-            if (currentBlock.getType() != Material.AIR) {
-                grave.originalBlocks.put(key,
-                    currentBlock.getType().name() + ";" + currentBlock.getBlockData().getAsString());
+            grave.structureKeys.add(key);
+            if (block.material == Material.PLAYER_HEAD || "player-head".equals(block.data)) {
+                grave.headBlockKey = key;
             }
+            grave.originalBlocks.put(key, currentBlock.getType() == Material.AIR ? "" :
+                currentBlock.getType().name() + ";" + currentBlock.getBlockData().getAsString());
         }
 
         // 2. Xây mộ
@@ -265,6 +295,30 @@ public class GraveManager {
         spawnGraveNameDisplay(baseLocation, grave);
     }
 
+    private boolean wouldOverlapGrave(Location baseLocation) {
+        Set<String> occupied = new HashSet<>();
+        String worldName = baseLocation.getWorld().getName();
+        for (GraveData grave : graves.values()) {
+            if (grave.isEmpty || !grave.worldName.equals(worldName)) continue;
+            for (String key : getStructureKeys(grave)) {
+                int[] offset = parseOffset(key);
+                if (offset != null) {
+                    occupied.add((grave.x + offset[0]) + ":" + (grave.y + offset[1]) + ":" + (grave.z + offset[2]));
+                }
+            }
+        }
+
+        for (GraveBlock block : graveStructure) {
+            int x = baseLocation.getBlockX() + block.dx;
+            int y = baseLocation.getBlockY() + block.dy;
+            int z = baseLocation.getBlockZ() + block.dz;
+            if (occupied.contains(x + ":" + y + ":" + z)) return true;
+            Block existingBlock = baseLocation.getWorld().getBlockAt(x, y, z);
+            if (existingBlock.getState() instanceof org.bukkit.block.TileState) return true;
+        }
+        return false;
+    }
+
     /**
      * Spawn ArmorStand vô hình hiển thị tên trên đỉnh bia mộ
      */
@@ -272,20 +326,12 @@ public class GraveManager {
         World world = baseLocation.getWorld();
         if (world == null) return;
 
-        int highestY = Integer.MIN_VALUE;
-        Integer centerDx = null, centerDz = null;
-        for (GraveBlock block : graveStructure) {
-            if (block.dy > highestY) {
-                highestY = block.dy;
-                centerDx = block.dx;
-                centerDz = block.dz;
-            }
-        }
-        if (centerDx == null) return;
+        int[] displayOffset = getDisplayOffset(grave);
+        if (displayOffset == null) return;
 
-        double standX = baseLocation.getBlockX() + centerDx + 0.5;
-        double standY = baseLocation.getBlockY() + highestY + 1.5;
-        double standZ = baseLocation.getBlockZ() + centerDz + 0.5;
+        double standX = baseLocation.getBlockX() + displayOffset[0] + 0.5;
+        double standY = baseLocation.getBlockY() + displayOffset[1] + 1.5;
+        double standZ = baseLocation.getBlockZ() + displayOffset[2] + 0.5;
 
         Location standLoc = new Location(world, standX, standY, standZ);
         ArmorStand stand = (ArmorStand) world.spawnEntity(standLoc, EntityType.ARMOR_STAND);
@@ -308,31 +354,67 @@ public class GraveManager {
     private void removeGraveNameDisplay(GraveData grave) {
         if (grave.armorStandUuid == null) return;
         World world = Bukkit.getWorld(grave.worldName);
-        if (world == null) return;
-
-        for (org.bukkit.entity.Entity entity : world.getEntities()) {
-            if (entity.getUniqueId().equals(grave.armorStandUuid)) {
-                entity.remove();
-                break;
+        int[] displayOffset = getDisplayOffset(grave);
+        if (world != null && displayOffset != null) {
+            int chunkX = (grave.x + displayOffset[0]) >> 4;
+            int chunkZ = (grave.z + displayOffset[2]) >> 4;
+            for (org.bukkit.entity.Entity entity : world.getChunkAt(chunkX, chunkZ).getEntities()) {
+                if (entity.getUniqueId().equals(grave.armorStandUuid)) {
+                    entity.remove();
+                    break;
+                }
             }
+        }
+        grave.armorStandUuid = null;
+        data.set("graves." + grave.graveId + ".armorStandUuid", null);
+    }
+
+    private int[] getDisplayOffset(GraveData grave) {
+        String highestKey = null;
+        int highestY = Integer.MIN_VALUE;
+        for (String key : getStructureKeys(grave)) {
+            int[] offset = parseOffset(key);
+            if (offset != null && offset[1] > highestY) {
+                highestY = offset[1];
+                highestKey = key;
+            }
+        }
+        return highestKey == null ? null : parseOffset(highestKey);
+    }
+
+    private Set<String> getStructureKeys(GraveData grave) {
+        if (!grave.structureKeys.isEmpty()) return grave.structureKeys;
+        Set<String> keys = new LinkedHashSet<>(grave.originalBlocks.keySet());
+        for (GraveBlock block : graveStructure) {
+            keys.add(block.dx + "_" + block.dy + "_" + block.dz);
+        }
+        return keys;
+    }
+
+    private int[] parseOffset(String key) {
+        try {
+            String[] parts = key.split("_", 3);
+            if (parts.length != 3) return null;
+            return new int[] {Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2])};
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 
     /**
      * Khôi phục block cũ khi phá hủy mộ
      */
-    public void destroyGraveStructure(Location baseLocation, Map<String, String> originalBlocks) {
+    private void destroyGraveStructure(Location baseLocation, GraveData grave) {
         World world = baseLocation.getWorld();
         if (world == null) return;
 
-        for (GraveBlock block : graveStructure) {
-            Location loc = baseLocation.clone().add(block.dx, block.dy, block.dz);
-            Block currentBlock = loc.getBlock();
+        for (String key : getStructureKeys(grave)) {
+            int[] offset = parseOffset(key);
+            if (offset == null) continue;
+            Block currentBlock = baseLocation.clone().add(offset[0], offset[1], offset[2]).getBlock();
+            String oldBlockData = grave.originalBlocks.get(key);
 
-            String key = block.dx + "_" + block.dy + "_" + block.dz;
-            String oldBlockData = originalBlocks != null ? originalBlocks.get(key) : null;
-
-            if (oldBlockData != null) {
+            if (oldBlockData != null && !oldBlockData.isEmpty()) {
                 String[] parts = oldBlockData.split(";", 2);
                 Material oldMaterial = Material.getMaterial(parts[0]);
                 if (oldMaterial != null && oldMaterial != Material.AIR) {
@@ -350,6 +432,23 @@ public class GraveManager {
                 currentBlock.setType(Material.AIR);
             }
         }
+    }
+
+    private void expireGrave(GraveData grave, World world) {
+        grave.isEmpty = true;
+        grave.items.clear();
+        removeGraveNameDisplay(grave);
+        if (world != null) {
+            destroyGraveStructure(new Location(world, grave.x, grave.y, grave.z), grave);
+        }
+        graves.remove(grave.graveId);
+        List<String> ownerGraves = playerGraves.get(grave.owner);
+        if (ownerGraves != null) {
+            ownerGraves.remove(grave.graveId);
+            if (ownerGraves.isEmpty()) playerGraves.remove(grave.owner);
+        }
+        data.set("graves." + grave.graveId, null);
+        saveData();
     }
 
     // ===== INTERACT WITH GRAVE =====
@@ -373,26 +472,13 @@ public class GraveManager {
         long totalDurationMs = (protectionMinutes + publicMinutes) * 60 * 1000L;
 
         if (age >= totalDurationMs) {
-            grave.isEmpty = true;
-            removeGraveNameDisplay(grave);
-            saveData();
-            Location graveLocation = new Location(Bukkit.getWorld(grave.worldName), grave.x, grave.y, grave.z);
-            destroyGraveStructure(graveLocation, grave.originalBlocks);
+            expireGrave(grave, headLocation.getWorld());
             player.sendMessage(emptyMessage);
             return true;
         }
 
-        int currentDeaths = grave.deathCountAtCreation;
-        Player ownerPlayer = Bukkit.getPlayer(grave.owner);
-        if (ownerPlayer != null && ownerPlayer.isOnline()) {
-            currentDeaths = plugin.getLogManager().getDeathCount(ownerPlayer);
-        }
-        if (currentDeaths - grave.deathCountAtCreation >= expireDeaths) {
-            grave.isEmpty = true;
-            removeGraveNameDisplay(grave);
-            saveData();
-            Location graveLocation = new Location(Bukkit.getWorld(grave.worldName), grave.x, grave.y, grave.z);
-            destroyGraveStructure(graveLocation, grave.originalBlocks);
+        if (hasReachedDeathLimit(grave)) {
+            expireGrave(grave, headLocation.getWorld());
             player.sendMessage(emptyMessage);
             return true;
         }
@@ -409,11 +495,7 @@ public class GraveManager {
         }
 
         if (!inProtection && !inPublic) {
-            grave.isEmpty = true;
-            removeGraveNameDisplay(grave);
-            saveData();
-            Location graveLocation = new Location(Bukkit.getWorld(grave.worldName), grave.x, grave.y, grave.z);
-            destroyGraveStructure(graveLocation, grave.originalBlocks);
+            expireGrave(grave, headLocation.getWorld());
             player.sendMessage(emptyMessage);
             return true;
         }
@@ -441,7 +523,9 @@ public class GraveManager {
                 } else {
                     HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(item);
                     if (!leftover.isEmpty()) {
-                        player.getWorld().dropItemNaturally(player.getLocation(), item);
+                        for (ItemStack leftoverItem : leftover.values()) {
+                            player.getWorld().dropItemNaturally(player.getLocation(), leftoverItem);
+                        }
                         dropped++;
                     } else {
                         restored++;
@@ -457,7 +541,9 @@ public class GraveManager {
                 } else {
                     HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(item);
                     if (!leftover.isEmpty()) {
-                        player.getWorld().dropItemNaturally(player.getLocation(), item);
+                        for (ItemStack leftoverItem : leftover.values()) {
+                            player.getWorld().dropItemNaturally(player.getLocation(), leftoverItem);
+                        }
                         dropped++;
                     } else {
                         restored++;
@@ -471,7 +557,9 @@ public class GraveManager {
                 } else {
                     HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(item);
                     if (!leftover.isEmpty()) {
-                        player.getWorld().dropItemNaturally(player.getLocation(), item);
+                        for (ItemStack leftoverItem : leftover.values()) {
+                            player.getWorld().dropItemNaturally(player.getLocation(), leftoverItem);
+                        }
                         dropped++;
                     } else {
                         restored++;
@@ -480,7 +568,9 @@ public class GraveManager {
             } else {
                 HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(item);
                 if (!leftover.isEmpty()) {
-                    player.getWorld().dropItemNaturally(player.getLocation(), item);
+                    for (ItemStack leftoverItem : leftover.values()) {
+                        player.getWorld().dropItemNaturally(player.getLocation(), leftoverItem);
+                    }
                     dropped++;
                 } else {
                     restored++;
@@ -488,12 +578,8 @@ public class GraveManager {
             }
         }
 
-        grave.isEmpty = true;
-        removeGraveNameDisplay(grave);
-
-        Location graveLocation = new Location(Bukkit.getWorld(grave.worldName), grave.x, grave.y, grave.z);
-        destroyGraveStructure(graveLocation, grave.originalBlocks);
-        saveData();
+        World graveWorld = Bukkit.getWorld(grave.worldName);
+        expireGrave(grave, graveWorld);
 
         String baseMsg = "§a§l✅ Đã lấy lại items từ mộ của §c" + grave.ownerName + "§a!";
         String detailMsg = "§7Khôi phục: §a" + restored + " §7item" + (dropped > 0 ? " §c(Rơi: " + dropped + ")" : "");
@@ -510,25 +596,12 @@ public class GraveManager {
      * Tìm grave dựa trên vị trí block PLAYER_HEAD
      */
     public GraveData findGraveByHeadLocation(Location headLocation) {
-        Integer headDx = null, headDy = null, headDz = null;
-        for (GraveBlock block : graveStructure) {
-            if (block.material == Material.PLAYER_HEAD || "player-head".equals(block.data)) {
-                headDx = block.dx;
-                headDy = block.dy;
-                headDz = block.dz;
-                break;
-            }
-        }
-        if (headDx == null) return null;
-
-        Location baseLoc = headLocation.clone().subtract(headDx, headDy, headDz);
-
         for (GraveData grave : graves.values()) {
-            if (grave.isEmpty) continue;
-            if (grave.x == baseLoc.getBlockX() &&
-                grave.y == baseLoc.getBlockY() &&
-                grave.z == baseLoc.getBlockZ() &&
-                grave.worldName.equals(baseLoc.getWorld().getName())) {
+            int[] headOffset = parseOffset(grave.headBlockKey);
+            if (headOffset == null || headLocation.getWorld() == null) continue;
+            Location baseLoc = headLocation.clone().subtract(headOffset[0], headOffset[1], headOffset[2]);
+            if (grave.x == baseLoc.getBlockX() && grave.y == baseLoc.getBlockY() &&
+                grave.z == baseLoc.getBlockZ() && grave.worldName.equals(baseLoc.getWorld().getName())) {
                 return grave;
             }
         }
@@ -556,25 +629,30 @@ public class GraveManager {
         displayTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!enabled) return;
-
                 long now = System.currentTimeMillis();
 
-                for (GraveData grave : graves.values()) {
-                    if (grave.isEmpty) continue;
+                for (GraveData grave : new ArrayList<>(graves.values())) {
+                    World graveWorld = Bukkit.getWorld(grave.worldName);
+                    if (graveWorld == null) continue;
+
+                    if (grave.isEmpty) {
+                        expireGrave(grave, graveWorld);
+                        continue;
+                    }
+
+                    if (hasReachedDeathLimit(grave)) {
+                        expireGrave(grave, graveWorld);
+                        continue;
+                    }
 
                     long age = now - grave.createdAt;
                     long totalDurationMs = (protectionMinutes + publicMinutes) * 60 * 1000L;
 
                     if (age >= totalDurationMs) {
-                        grave.isEmpty = true;
-                        removeGraveNameDisplay(grave);
-                        Location graveLocation = new Location(
-                            Bukkit.getWorld(grave.worldName), grave.x, grave.y, grave.z);
-                        destroyGraveStructure(graveLocation, grave.originalBlocks);
-                        saveData();
+                        expireGrave(grave, graveWorld);
                         continue;
                     }
+                    if (!enabled) continue;
 
                     long remainingMs = totalDurationMs - age;
                     long remainingSeconds = remainingMs / 1000;
@@ -587,16 +665,19 @@ public class GraveManager {
                         .replace("{name}", "§4" + grave.ownerName + "§r")
                         .replace("{time}", timeColor + timeStr);
 
-                    // Cập nhật tên ArmorStand
-                    if (grave.armorStandUuid != null) {
-                        World world = Bukkit.getWorld(grave.worldName);
-                        if (world == null) continue;
-                        for (org.bukkit.entity.Entity entity : world.getEntities()) {
-                            if (entity.getUniqueId().equals(grave.armorStandUuid)) {
-                                entity.customName(net.kyori.adventure.text.Component.text(displayName));
-                                break;
-                            }
-                        }
+                    int[] displayOffset = getDisplayOffset(grave);
+                    if (displayOffset == null) continue;
+                    int displayChunkX = (grave.x + displayOffset[0]) >> 4;
+                    int displayChunkZ = (grave.z + displayOffset[2]) >> 4;
+                    if (!graveWorld.isChunkLoaded(displayChunkX, displayChunkZ)) continue;
+
+                    org.bukkit.entity.Entity display = grave.armorStandUuid == null
+                        ? null : Bukkit.getEntity(grave.armorStandUuid);
+                    if (display instanceof ArmorStand && display.getWorld().equals(graveWorld)) {
+                        display.customName(net.kyori.adventure.text.Component.text(displayName));
+                    } else {
+                        grave.armorStandUuid = null;
+                        spawnGraveNameDisplay(new Location(graveWorld, grave.x, grave.y, grave.z), grave);
                     }
                 }
             }
@@ -610,9 +691,33 @@ public class GraveManager {
         return String.format("%02d:%02d", minutes, secs);
     }
 
+    private boolean hasReachedDeathLimit(GraveData grave) {
+        return expireDeaths > 0 &&
+            plugin.getLogManager().getDeathCount(grave.owner) - grave.deathCountAtCreation >= expireDeaths;
+    }
+
+    private boolean isExpired(GraveData grave, long now) {
+        long totalDurationMs = (protectionMinutes + publicMinutes) * 60 * 1000L;
+        return grave.isEmpty || hasReachedDeathLimit(grave) || now - grave.createdAt >= totalDurationMs;
+    }
+
+    private void cleanupExpiredGraves(World world) {
+        long now = System.currentTimeMillis();
+        for (GraveData grave : new ArrayList<>(graves.values())) {
+            if (grave.worldName.equals(world.getName()) && isExpired(grave, now)) {
+                expireGrave(grave, world);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onWorldLoad(org.bukkit.event.world.WorldLoadEvent event) {
+        cleanupExpiredGraves(event.getWorld());
+    }
+
     // ===== DATA SAVE/LOAD =====
 
-    private synchronized void saveData() {
+    private synchronized boolean saveData() {
         try {
             if (dataFile.exists()) {
                 java.nio.file.Files.copy(dataFile.toPath(), dataBackupFile.toPath(),
@@ -633,6 +738,8 @@ public class GraveManager {
                 data.set(path + ".createdAt", grave.createdAt);
                 data.set(path + ".isEmpty", grave.isEmpty);
                 data.set(path + ".deathCountAtCreation", grave.deathCountAtCreation);
+                data.set(path + ".structureKeys", new ArrayList<>(grave.structureKeys));
+                data.set(path + ".headBlockKey", grave.headBlockKey);
 
                 int itemIndex = 0;
                 for (Map.Entry<Integer, ItemStack> entry : grave.items.entrySet()) {
@@ -660,8 +767,10 @@ public class GraveManager {
             }
 
             data.save(dataFile);
+            return true;
         } catch (Exception e) {
             logger.warning("[Grave] Failed to save data: " + e.getMessage());
+            return false;
         }
     }
 
@@ -717,6 +826,23 @@ public class GraveManager {
                             }
                         }
 
+                        grave.structureKeys.addAll(data.getStringList("graves." + graveId + ".structureKeys"));
+                        if (grave.structureKeys.isEmpty()) {
+                            grave.structureKeys.addAll(grave.originalBlocks.keySet());
+                            for (GraveBlock block : graveStructure) {
+                                grave.structureKeys.add(block.dx + "_" + block.dy + "_" + block.dz);
+                            }
+                        }
+                        grave.headBlockKey = data.getString("graves." + graveId + ".headBlockKey");
+                        if (grave.headBlockKey == null) {
+                            for (GraveBlock block : graveStructure) {
+                                if (block.material == Material.PLAYER_HEAD || "player-head".equals(block.data)) {
+                                    grave.headBlockKey = block.dx + "_" + block.dy + "_" + block.dz;
+                                    break;
+                                }
+                            }
+                        }
+
                         String armorUuid = data.getString("graves." + graveId + ".armorStandUuid");
                         if (armorUuid != null && !armorUuid.isEmpty()) {
                             grave.armorStandUuid = UUID.fromString(armorUuid);
@@ -739,10 +865,6 @@ public class GraveManager {
         if (displayTask != null) {
             displayTask.cancel();
             displayTask = null;
-        }
-        // Xóa tất cả ArmorStand khi tắt plugin
-        for (GraveData grave : graves.values()) {
-            removeGraveNameDisplay(grave);
         }
         saveData();
     }

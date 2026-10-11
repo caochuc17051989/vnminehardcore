@@ -1,5 +1,5 @@
 # ============================================================
-# ================== VnMineHardcore v1.0.0 ==================
+# ================== VnMineHardcore v1.2.1 ==================
 # ==================   CẤU HÌNH / CONFIG   ==================
 # ============================================================
 # [VI] File cấu hình chính của plugin VnMineHardcore.
@@ -7,19 +7,12 @@
 # [EN] Main configuration file for VnMineHardcore plugin.
 #      All parameters can be changed and have default values.
 # ============================================================
+config-version: 2
 
 # ============================================================
 # [DEATH] ☠ TỬ THẦN / DEATH
 # ============================================================
 death:
-  # [VI] Cấm (ban) người chơi vĩnh viễn khi chết
-  # [EN] Permanently ban the player upon death
-  ban-on-death: false
-
-  # [VI] Cũng cấm luôn địa chỉ IP (chỉ hoạt động nếu ban-on-death: true)
-  # [EN] Also ban the player's IP address (only works if ban-on-death: true)
-  ban-ip: false
-
   # [VI] Thông báo cái chết cho toàn bộ server
   # [EN] Broadcast death message to all players
   broadcast-death: true
@@ -55,31 +48,31 @@ death-penalty:
   stats:
     # [VI] % giảm HP tối đa mỗi lần chết
     # [EN] % max HP reduction per death
-    max-hp-per-death: 1.0
+    max-hp-per-death: 0.1
 
     # [VI] % giảm max thirst offset mỗi lần chết
     # [EN] % max thirst offset reduction per death
-    max-thirst-per-death: 1.0
+    max-thirst-per-death: 0.1
 
     # [VI] % giảm sát thương gây ra mỗi lần chết
     # [EN] % damage dealt reduction per death
-    damage-per-death: 0.5
+    damage-per-death: 0.1
 
     # [VI] % tăng sát thương nhận vào mỗi lần chết
     # [EN] % incoming damage increase per death
-    incoming-damage-per-death: 0.5
+    incoming-damage-per-death: 0.1
 
     # [VI] % giảm hồi phục mỗi lần chết
     # [EN] % regen reduction per death
-    regen-per-death: 0.5
+    regen-per-death: 0.1
 
     # [VI] % tăng tốc mất thức ăn mỗi lần chết
     # [EN] % food drain increase per death
-    food-drain-per-death: 0.5
+    food-drain-per-death: 0.1
 
     # [VI] % tăng tốc mất khát mỗi lần chết
     # [EN] % thirst drain increase per death
-    thirst-drain-per-death: 0.5
+    thirst-drain-per-death: 0.1
 
 # ============================================================
 # [COMBAT] ⚔ CHIẾN ĐẤU / COMBAT
@@ -128,11 +121,9 @@ combat:
 
   # ===== CHIẾN ĐẤU (COMBAT TAG) =====
   # [VI] Thời gian duy trì trạng thái combat (giây).
-  #     Nếu thoát game khi đang combat sẽ bị ban (combat-log).
-  #     Combat kết thúc khi: hết thời gian, hoặc mob từ bỏ truy đuổi.
+  #     Combat tag chỉ dùng để cảnh báo trạng thái giao chiến; thoát game không bị ban.
   # [EN] Combat tag duration (seconds).
-  #     Quitting while combat-tagged results in a ban (combat-log).
-  #     Combat ends when: timer expires, or mob stops tracking the player.
+  #     Combat tag is informational only; quitting while tagged does not cause a ban.
   combat-tag-duration-seconds: 30
 
   # ===== VẬT PHẨM / ITEMS =====
@@ -275,6 +266,16 @@ environment:
     # [VI] Thời gian giữa các lần kiểm tra nhiệt độ (giây)
     # [EN] How often to check temperature (seconds)
     check-interval-seconds: 30
+
+      # [VI] Sát thương khi ở trong nước lạnh và khoảng cách giữa các lần nhận damage
+      # [EN] Damage from cold water and the interval between damage ticks
+      water-damage: 1.0
+      water-damage-interval-seconds: 10
+
+      # [VI] Sát thương mưa axit khi ở ngoài trời và khoảng cách giữa các lần damage
+      # [EN] Acid rain damage while exposed and the interval between damage ticks
+      acid-rain-damage: 1.0
+      acid-rain-interval-seconds: 5
 
     # [VI] Sát thương khi ở nơi quá nóng (tim)
     # [EN] Damage when in hot environment (hearts)
@@ -632,10 +633,6 @@ logging:
   # [VI] Ghi nhật ký các cái chết
   # [EN] Log deaths
   log-deaths: true
-
-  # [VI] Ghi nhật ký các vụ ban
-  # [EN] Log bans
-  log-bans: true
 
   # [VI] Ghi nhật ký các sự kiện thiên tai
   # [EN] Log disasters

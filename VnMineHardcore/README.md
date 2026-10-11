@@ -1,10 +1,10 @@
 # VnMineHardcore
 
-Plugin hardcore cực kỳ khó nhằn cho Minecraft Paper 1.21+.
+Plugin tăng độ khó sinh tồn cho Minecraft Paper 1.21.4. Người chơi không bị ban khi chết.
 
 ## Tính năng chính
 
-- ☠ **Chết = Ban vĩnh viễn** (Username + IP)
+- ☠ **Tử vong**: lưu thống kê, broadcast và phát âm thanh; không ban người chơi
 - ⚔ **Sát thương nhân hệ số** (quái, ngã, lửa, nổ, PvP...)
 - 🍔 **Hệ thống đói** (hao hụt nhanh, ngộ độc thức ăn sống, nghẹn khi ăn nhanh)
 - 💧 **Hệ thống khát nước** (uống từ nguồn, chai, xô; nước tự nhiên gây độc)
@@ -18,7 +18,6 @@ Plugin hardcore cực kỳ khó nhằn cho Minecraft Paper 1.21+.
 |------|-------|-------|
 | `/vnstats` | Xem thống kê cá nhân (số lần chết, thời gian sống, quái giết) | `vnmine.hardcore.stats` |
 | `/vnhardcore` | Xem trạng thái plugin | `vnmine.hardcore.admin` |
-| `/vnhardcore unban <player>` | Bỏ ban người chơi | `vnmine.hardcore.admin` |
 | `/vn death reset <player>` | Reset số lần chết của player về 0 | `vnmine.hardcore.admin` |
 | `/vnevent` | Gọi thiên tai thủ công (xem danh sách) | `vnmine.hardcore.admin` |
 | `/vnevent <id> <warning(s)> <duration(s)>` | Gọi thiên tai cụ thể | `vnmine.hardcore.admin` |
@@ -32,7 +31,7 @@ Plugin hardcore cực kỳ khó nhằn cho Minecraft Paper 1.21+.
 ```yaml
 rename:
   # Bật/tắt tự động đổi tên hiển thị sau khi chết
-  enabled: false
+  enabled: true
 
   # Định dạng tên hiển thị.
   # Các placeholder có sẵn:
@@ -54,7 +53,7 @@ rename:
   #   "000 | <name>"            → 001 | hoanbh
   #   "<name> (<count>)"        → hoanbh (1)
   #   "0000"                    → 0001 (chỉ hiện số)
-  name-structure: "<name> đã chết 000 lần"
+  name-structure: "<name> ☠ <count>"
 ```
 
 **Lưu ý:** Chức năng này chỉ thay đổi **tên hiển thị** trong chat và tab list (khi bấm phím Tab), **không** thay đổi tên thật của người chơi (`player.getName()`).

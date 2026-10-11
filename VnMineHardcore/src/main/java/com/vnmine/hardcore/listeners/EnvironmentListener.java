@@ -85,6 +85,11 @@ public class EnvironmentListener implements Listener {
         fogEffectDurationTicks = config.fogEffectDurationSeconds * 20;
         tempCheckIntervalMs = config.tempCheckIntervalSeconds * 1000L;
         stopTasks();
+        lastTemperatureCheck.clear();
+        lastWaterDamage.clear();
+        lastAcidRainDamage.clear();
+        heatExposureStart.clear();
+        coldExposureStart.clear();
         startTasks();
     }
 
@@ -114,10 +119,11 @@ public class EnvironmentListener implements Listener {
                 for (Player player : plugin.getServer().getOnlinePlayers()) {
                     UUID uuid = player.getUniqueId();
                     Long lastCheck = lastTemperatureCheck.get(uuid);
-
-                    if (lastCheck != null && now - lastCheck < tempCheckIntervalMs) continue;
-                    lastTemperatureCheck.put(uuid, now);
-                    playersChecked++;
+                    boolean checkTemperature = lastCheck == null || now - lastCheck >= tempCheckIntervalMs;
+                    if (checkTemperature) {
+                        lastTemperatureCheck.put(uuid, now);
+                        playersChecked++;
+                    }
 
                     Location loc = player.getLocation();
                     String biome = loc.getBlock().getBiome().getKey().toString().toLowerCase();
@@ -138,7 +144,7 @@ public class EnvironmentListener implements Listener {
                     // OVERWORLD: chỉ nóng khi ban ngày, không có mái che, không ở dưới nước
                     boolean shouldBeHot = inHotBiome && (inNether || (isDaytime && !hasBlockAbove && !inWater));
 
-                    if (shouldBeHot) {
+                    if (checkTemperature && shouldBeHot) {
                         // Track exposure time
                         if (!heatExposureStart.containsKey(uuid)) {
                             heatExposureStart.put(uuid, now);
@@ -150,8 +156,10 @@ public class EnvironmentListener implements Listener {
                             // Calculate damage with helmet reduction
                             double heatDamage = config.heatDamage;
                             boolean hasHelm = hasHelmet(player);
+                            double helmetDamageReduction = Math.max(0.0, Math.min(1.0, config.helmetDamageReducePercent));
+                            double helmetEffectReduction = Math.max(0.0, Math.min(1.0, config.helmetReducePercent));
                             if (hasHelm) {
-                                heatDamage *= (1.0 - config.helmetDamageReducePercent);
+                                heatDamage *= (1.0 - helmetDamageReduction);
                             }
                             if (heatDamage > 0) {
                                 player.damage(heatDamage);
@@ -161,10 +169,10 @@ public class EnvironmentListener implements Listener {
                             // Skip completely if helmet reduces 100% of effect
                             int heatAmp = config.heatAmplifier;
                             if (hasHelm) {
-                                heatAmp = (int) Math.round(heatAmp * (1.0 - config.helmetReducePercent));
+                                heatAmp = (int) Math.round(heatAmp * (1.0 - helmetEffectReduction));
                             }
                             // Only add effects if amplifier > 0 OR no helmet reduction
-                            if (heatAmp >= 0 && !(hasHelm && config.helmetReducePercent >= 1.0)) {
+                            if (heatAmp >= 0 && !(hasHelm && helmetEffectReduction >= 1.0)) {
                                 player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 100, Math.max(0, heatAmp)));
                                 player.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 100, Math.max(0, heatAmp)));
                             }
@@ -172,7 +180,7 @@ public class EnvironmentListener implements Listener {
                             player.sendActionBar("§c§l🔥 QUÁ NÓNG! §7Tìm bóng râm hoặc xuống nước ngay!");
                             logger.fine("[Environment] " + player.getName() + " heat damage in " + biome);
                         }
-                    } else {
+                    } else if (checkTemperature) {
                         // Reset heat exposure if conditions are no longer met
                         heatExposureStart.remove(uuid);
                     }
@@ -182,7 +190,7 @@ public class EnvironmentListener implements Listener {
                     // Cold biome luôn lạnh bất kể ngày/đêm, chỉ cần không có mái che hoặc ở dưới nước
                     boolean shouldBeCold = inColdBiome && (!hasBlockAbove || inWater);
 
-                    if (shouldBeCold) {
+                    if (checkTemperature && shouldBeCold) {
                         // Track exposure time
                         if (!coldExposureStart.containsKey(uuid)) {
                             coldExposureStart.put(uuid, now);
@@ -209,7 +217,7 @@ public class EnvironmentListener implements Listener {
                             player.sendActionBar("§b§l❄ QUÁ LẠNH! §7Tìm nơi ấm áp ngay!");
                             logger.fine("[Environment] " + player.getName() + " freeze damage in " + biome);
                         }
-                    } else {
+                    } else if (checkTemperature) {
                         // Reset cold exposure if conditions are no longer met
                         coldExposureStart.remove(uuid);
                     }
@@ -218,7 +226,7 @@ public class EnvironmentListener implements Listener {
                     if (inWater) {
                         Long lastWater = lastWaterDamage.get(uuid);
                         if (lastWater == null || now - lastWater > config.waterDamageIntervalMs) {
-                            player.damage(1.0);
+                            if (config.waterDamage > 0) player.damage(config.waterDamage);
                             player.sendActionBar("§b§l🌊 Nước lạnh! §7Hạ thân nhiệt!");
                             lastWaterDamage.put(uuid, now);
                         }
@@ -228,7 +236,7 @@ public class EnvironmentListener implements Listener {
                     if (player.getWorld().hasStorm() && !hasBlockAbove) {
                         Long lastAcid = lastAcidRainDamage.get(uuid);
                         if (lastAcid == null || now - lastAcid > config.acidRainIntervalMs) {
-                            player.damage(1.0);
+                            if (config.acidRainDamage > 0) player.damage(config.acidRainDamage);
                             player.sendActionBar("§c§l☔ Mưa axit! §7Vào nhà ngay!");
                             lastAcidRainDamage.put(uuid, now);
                         }
@@ -402,8 +410,8 @@ public class EnvironmentListener implements Listener {
         if (player.getInventory().getLeggings() != null && player.getInventory().getLeggings().getType() != Material.AIR) armorPieces++;
         if (player.getInventory().getBoots() != null && player.getInventory().getBoots().getType() != Material.AIR) armorPieces++;
 
-        double reduction = armorPieces * config.armorReducePercent;
-        if (reduction > 1.0) reduction = 1.0;
+        double reductionPerPiece = Math.max(0.0, Math.min(1.0, config.armorReducePercent));
+        double reduction = Math.min(1.0, armorPieces * reductionPerPiece);
         return (int) Math.round(amplifier * (1.0 - reduction));
     }
 
@@ -417,8 +425,8 @@ public class EnvironmentListener implements Listener {
         if (player.getInventory().getLeggings() != null && player.getInventory().getLeggings().getType() != Material.AIR) armorPieces++;
         if (player.getInventory().getBoots() != null && player.getInventory().getBoots().getType() != Material.AIR) armorPieces++;
 
-        double reduction = armorPieces * config.armorDamageReducePercent;
-        return Math.min(1.0, reduction);
+        double reductionPerPiece = Math.max(0.0, Math.min(1.0, config.armorDamageReducePercent));
+        return Math.min(1.0, armorPieces * reductionPerPiece);
     }
 
     public boolean isTemperatureEnabled() { return config.temperatureEnabled; }

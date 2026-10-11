@@ -2,6 +2,7 @@ package com.vnmine.hardcore;
 
 import com.vnmine.hardcore.listeners.*;
 import com.vnmine.hardcore.managers.*;
+import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -12,7 +13,6 @@ public final class VnMineHardcore extends JavaPlugin {
 
     private static VnMineHardcore instance;
     private ConfigManager configManager;
-    private BanManager banManager;
     private LogManager logManager;
     private ThirstManager thirstManager;
     private DisasterManager disasterManager;
@@ -35,21 +35,21 @@ public final class VnMineHardcore extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        clearLegacyPluginBans();
 
         getLogger().info("§a==========================================");
-        getLogger().info("§a  VnMineHardcore v1.0.0 - KHỞI ĐỘNG");
+        getLogger().info("§a  VnMineHardcore v1.2.1 - KHỞI ĐỘNG");
         getLogger().info("§a==========================================");
 
         // Load config first
         this.configManager = new ConfigManager(this);
 
         // Initialize managers (pass config)
-        this.banManager = new BanManager(this, configManager);
-        this.logManager = new LogManager(this);
+        this.logManager = new LogManager(this, configManager);
+        this.deathPenaltyManager = new DeathPenaltyManager(this, configManager);
         this.thirstManager = new ThirstManager(this, configManager);
         this.disasterManager = new DisasterManager(this, configManager);
         this.deathRenameManager = new DeathRenameManager(this, configManager);
-        this.deathPenaltyManager = new DeathPenaltyManager(this, configManager);
         this.bossEventManager = new BossEventManager(this, configManager);
         this.villagerDataManager = new VillagerDataManager(this, configManager);
         this.graveManager = new GraveManager(this, configManager);
@@ -88,7 +88,7 @@ public final class VnMineHardcore extends JavaPlugin {
         this.getCommand("vn").setExecutor(this);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
-        getLogger().info("§c  Death = Permanent Ban!");
+        getLogger().info("§a  Deaths are recorded; no death bans are applied.");
         getLogger().info("§a  Use /vnhelp for command list");
         getLogger().info("§a  Use /vnreload to reload config");
         getLogger().info("§a  Use /vnevent to manually trigger disasters");
@@ -98,6 +98,7 @@ public final class VnMineHardcore extends JavaPlugin {
     @Override
     public void onDisable() {
         if (thirstManager != null) thirstManager.stop();
+        if (deathPenaltyManager != null) deathPenaltyManager.stop();
         if (disasterManager != null) disasterManager.stop();
         if (bossEventManager != null) bossEventManager.stop();
         if (graveManager != null) graveManager.stop();
@@ -113,7 +114,6 @@ public final class VnMineHardcore extends JavaPlugin {
             sender.sendMessage("§6§m========================================");
             sender.sendMessage("§e/vnstats §7- Xem thống kê của bạn");
             sender.sendMessage("§e/vnhardcore §7- Xem trạng thái plugin");
-            sender.sendMessage("§e/vnhardcore unban <player> §7- Bỏ ban player");
             sender.sendMessage("§e/vn death reset <player> §7- Reset số lần chết về 0");
             sender.sendMessage("§e/vnevent §7- Gọi thiên tai thủ công (xem danh sách)");
             sender.sendMessage("§e/vnevent <id> <time> <duration> §7- Gọi thiên tai cụ thể");
@@ -133,7 +133,11 @@ public final class VnMineHardcore extends JavaPlugin {
             environmentListener.reload();
             thirstManager.reload();
             deathListener.reload();
-            sender.sendMessage("§a✅ Config + all tasks reloaded!");
+            deathPenaltyManager.reload();
+            graveManager.reload();
+            disasterManager.reload();
+            bossEventManager.reload();
+            sender.sendMessage("§a✅ Config và các hệ thống đã được tải lại!");
             getLogger().info("[Cmd] " + sender.getName() + " reloaded config");
             return true;
         }
@@ -156,7 +160,7 @@ public final class VnMineHardcore extends JavaPlugin {
                     sender.sendMessage("§c  " + id + "  §7- " + name);
                 }
                 sender.sendMessage("");
-                sender.sendMessage("§eVí dụ: §7/vnevent bloodmoon 30 60");
+                sender.sendMessage("§eVí dụ: §7/vnevent blood-moon 30 60");
                 sender.sendMessage("§6§m=======================================");
                 return true;
             }
@@ -252,24 +256,11 @@ public final class VnMineHardcore extends JavaPlugin {
         }
 
         if (command.getName().equalsIgnoreCase("vnhardcore")) {
-            if (args.length > 0 && args[0].equalsIgnoreCase("unban")) {
-                if (!sender.hasPermission("vnmine.hardcore.admin")) {
-                    sender.sendMessage("§cBạn không có quyền!");
-                    return true;
-                }
-                if (args.length < 2) {
-                    sender.sendMessage("§cSử dụng: /vnhardcore unban <player>");
-                    return true;
-                }
-                banManager.unbanPlayer(args[1]);
-                sender.sendMessage("§a✅ Đã bỏ ban cho §e" + args[1]);
-                return true;
-            }
             sender.sendMessage("§6§m========================================");
             sender.sendMessage("§6§l  VnMineHardcore - Admin Status");
             sender.sendMessage("§6§m========================================");
-            sender.sendMessage("§c☠ DEATH: Ban=" + (configManager.banOnDeath ? "§aON" : "§cOFF") +
-                " | Tag=§aON (" + (configManager.combatTagDurationMs / 1000) + "s)");
+            sender.sendMessage("§c☠ DEATH: §aTracked | Tag=§aON (" +
+                (configManager.combatTagDurationMs / 1000) + "s)");
             sender.sendMessage("§e🍔 HUNGER: " + (configManager.hungerEnabled ? "§aON" : "§cOFF"));
             sender.sendMessage("§b💧 THIRST: " + (configManager.thirstEnabled ? "§aON" : "§cOFF") +
                 " | Source=" + (configManager.drinkFromSource ? "§aON" : "§cOFF"));
@@ -284,7 +275,7 @@ public final class VnMineHardcore extends JavaPlugin {
             sender.sendMessage("§c👹 BOSS: " + (configManager.bossEventsEnabled ? "§aON" : "§cOFF") +
                 (bossEventManager.isBossActive() ? " §c⚠ ACTIVE: " + bossEventManager.getCurrentBossName() : ""));
             sender.sendMessage("§e🏷 RENAME: " + (configManager.renameEnabled ? "§aON" : "§cOFF"));
-            sender.sendMessage("§eCommands: §7/vnhelp | /vnreload | /vnevent | /vnhardcore unban <player> | /vn death reset <player>");
+            sender.sendMessage("§eCommands: §7/vnhelp | /vnreload | /vnevent | /vn death reset <player>");
             sender.sendMessage("§6§m========================================");
             return true;
         }
@@ -330,11 +321,31 @@ public final class VnMineHardcore extends JavaPlugin {
 
     public static VnMineHardcore getInstance() { return instance; }
     public ConfigManager getConfigManager() { return configManager; }
-    public BanManager getBanManager() { return banManager; }
     public LogManager getLogManager() { return logManager; }
     public ThirstManager getThirstManager() { return thirstManager; }
     public DisasterManager getDisasterManager() { return disasterManager; }
     public DeathPenaltyManager getDeathPenaltyManager() { return deathPenaltyManager; }
     public BossEventManager getBossEventManager() { return bossEventManager; }
     public GraveManager getGraveManager() { return graveManager; }
+
+    private void clearLegacyPluginBans() {
+        int cleared = 0;
+        for (BanList.Type type : new BanList.Type[] {BanList.Type.NAME, BanList.Type.IP}) {
+            BanList banList = Bukkit.getBanList(type);
+            java.util.Set<String> legacyTargets = new java.util.HashSet<>();
+            for (Object entryObject : banList.getBanEntries()) {
+                if (entryObject instanceof org.bukkit.BanEntry entry &&
+                    "VnMineHardcore".equals(entry.getSource())) {
+                    legacyTargets.add(entry.getTarget());
+                }
+            }
+            for (String target : legacyTargets) {
+                banList.pardon(target);
+                cleared++;
+            }
+        }
+        if (cleared > 0) {
+            getLogger().info("[Death] Removed " + cleared + " legacy plugin bans; deaths no longer ban players.");
+        }
+    }
 }

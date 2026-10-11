@@ -94,6 +94,7 @@ public class DeathPenaltyManager {
         // Bắt đầu đếm thời gian hồi phục
         recoveryStartTime.put(uuid, System.currentTimeMillis());
         recovered.remove(uuid);
+        saveData();
 
         // Áp dụng penalty ngay lập tức
         applyPenalty(player);
@@ -115,19 +116,13 @@ public class DeathPenaltyManager {
         if (stack <= 0) return;
 
         // Giảm max HP
-        double hpReduction = stack * config.deathPenaltyMaxHpPerDeath;
+        double hpReduction = Math.min(1.0, Math.max(0.0, stack * config.deathPenaltyMaxHpPerDeath));
         AttributeInstance maxHpAttr = player.getAttribute(Attribute.MAX_HEALTH);
         if (maxHpAttr != null) {
-            // Remove old modifier first
-            for (AttributeModifier mod : maxHpAttr.getModifiers()) {
-                if (mod.getName().equals(MODIFIER_NAME_MAX_HP)) {
-                    maxHpAttr.removeModifier(mod);
-                }
-            }
-            double baseMaxHp = 20.0; // Vanilla max health
+            removeHealthPenalty(player);
+            double baseMaxHp = maxHpAttr.getBaseValue();
             double newMaxHp = baseMaxHp * (1.0 - hpReduction);
             if (newMaxHp < 1.0) newMaxHp = 1.0;
-            // Use ADD_NUMBER to set absolute value
             AttributeModifier modifier = new AttributeModifier(
                 MODIFIER_UUID_MAX_HP,
                 MODIFIER_NAME_MAX_HP,
@@ -145,6 +140,21 @@ public class DeathPenaltyManager {
         player.sendMessage("§c§l☠ Penalty: §7HP giảm " + String.format("%.0f", hpReduction * 100) + "%");
     }
 
+    public void onPlayerJoin(Player player) {
+        UUID uuid = player.getUniqueId();
+        if (!config.deathPenaltyEnabled || penaltyStacks.getOrDefault(uuid, 0) <= 0) {
+            removeHealthPenalty(player);
+            return;
+        }
+
+        Long startTime = recoveryStartTime.get(uuid);
+        if (startTime != null && System.currentTimeMillis() - startTime >= config.deathPenaltyRecoverySeconds * 1000L) {
+            removePenalty(player);
+            return;
+        }
+        applyPenalty(player);
+    }
+
     /**
      * Gỡ bỏ penalty khỏi người chơi.
      */
@@ -153,16 +163,9 @@ public class DeathPenaltyManager {
         penaltyStacks.remove(uuid);
         recoveryStartTime.remove(uuid);
         recovered.add(uuid);
+        data.set("players." + uuid, null);
 
-        // Restore max HP
-        AttributeInstance maxHpAttr = player.getAttribute(Attribute.MAX_HEALTH);
-        if (maxHpAttr != null) {
-            for (AttributeModifier mod : maxHpAttr.getModifiers()) {
-                if (mod.getName().equals(MODIFIER_NAME_MAX_HP)) {
-                    maxHpAttr.removeModifier(mod);
-                }
-            }
-        }
+        removeHealthPenalty(player);
 
         player.sendMessage("§a§l✅ PHỤC HỒI! §7Chỉ số đã trở lại bình thường!");
         logger.info("[DeathPenalty] " + player.getName() + " recovered from death penalty");
@@ -196,7 +199,7 @@ public class DeathPenaltyManager {
         if (!config.deathPenaltyEnabled) return 1.0;
         int stack = penaltyStacks.getOrDefault(player.getUniqueId(), 0);
         if (stack <= 0) return 1.0;
-        return 1.0 + stack * config.deathPenaltyIncomingDamagePerDeath;
+        return Math.max(0.0, 1.0 + stack * config.deathPenaltyIncomingDamagePerDeath);
     }
 
     /**
@@ -206,7 +209,7 @@ public class DeathPenaltyManager {
         if (!config.deathPenaltyEnabled) return 1.0;
         int stack = penaltyStacks.getOrDefault(player.getUniqueId(), 0);
         if (stack <= 0) return 1.0;
-        return Math.max(0.1, 1.0 - stack * config.deathPenaltyRegenPerDeath);
+        return Math.max(0.0, 1.0 - stack * config.deathPenaltyRegenPerDeath);
     }
 
     /**
@@ -216,7 +219,7 @@ public class DeathPenaltyManager {
         if (!config.deathPenaltyEnabled) return 1.0;
         int stack = penaltyStacks.getOrDefault(player.getUniqueId(), 0);
         if (stack <= 0) return 1.0;
-        return 1.0 + stack * config.deathPenaltyFoodDrainPerDeath;
+        return Math.max(0.0, 1.0 + stack * config.deathPenaltyFoodDrainPerDeath);
     }
 
     /**
@@ -226,7 +229,7 @@ public class DeathPenaltyManager {
         if (!config.deathPenaltyEnabled) return 1.0;
         int stack = penaltyStacks.getOrDefault(player.getUniqueId(), 0);
         if (stack <= 0) return 1.0;
-        return 1.0 + stack * config.deathPenaltyThirstDrainPerDeath;
+        return Math.max(0.0, 1.0 + stack * config.deathPenaltyThirstDrainPerDeath);
     }
 
     /**
@@ -237,7 +240,8 @@ public class DeathPenaltyManager {
         int stack = penaltyStacks.getOrDefault(player.getUniqueId(), 0);
         if (stack <= 0) return 0;
         double reduction = stack * config.deathPenaltyMaxThirstPerDeath;
-        return (int) Math.round(config.maxThirst * reduction);
+        int maxOffset = Math.max(0, config.maxThirst - 1);
+        return Math.min(maxOffset, (int) Math.round(config.maxThirst * reduction));
     }
 
     /**
@@ -288,16 +292,16 @@ public class DeathPenaltyManager {
         if (config.deathPenaltyEnabled) {
             startRecoveryTask();
         }
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            onPlayerJoin(player);
+        }
     }
 
     private void saveData() {
         for (Map.Entry<UUID, Integer> entry : penaltyStacks.entrySet()) {
             String path = "players." + entry.getKey().toString();
             data.set(path + ".stack", entry.getValue());
-            Long startTime = recoveryStartTime.get(entry.getKey());
-            if (startTime != null) {
-                data.set(path + ".recoveryStart", startTime);
-            }
+            data.set(path + ".recoveryStart", recoveryStartTime.get(entry.getKey()));
         }
         try {
             data.save(dataFile);
@@ -323,6 +327,16 @@ public class DeathPenaltyManager {
                 }
             }
             logger.info("[DeathPenalty] Loaded " + penaltyStacks.size() + " player penalties");
+        }
+    }
+
+    private void removeHealthPenalty(Player player) {
+        AttributeInstance maxHpAttr = player.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHpAttr == null) return;
+        for (AttributeModifier modifier : new ArrayList<>(maxHpAttr.getModifiers())) {
+            if (modifier.getName().equals(MODIFIER_NAME_MAX_HP)) {
+                maxHpAttr.removeModifier(modifier);
+            }
         }
     }
 }

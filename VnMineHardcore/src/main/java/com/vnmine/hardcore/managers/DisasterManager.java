@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -30,6 +31,7 @@ public class DisasterManager {
     private BossBar warningBar;
     private int warningTimeLeft = 0;
     private int timeSinceLastDisaster = 0;
+    private BukkitTask schedulerTask;
 
     // Block materials considered as "transparent" - không được coi là mái che an toàn
     private static final Set<Material> TRANSPARENT_BLOCKS = new HashSet<>(Arrays.asList(
@@ -270,7 +272,8 @@ public class DisasterManager {
     // ===== SCHEDULER =====
 
     public void start() {
-        new BukkitRunnable() {
+        if (!config.disastersEnabled || (schedulerTask != null && !schedulerTask.isCancelled())) return;
+        schedulerTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (Bukkit.getWorlds().isEmpty()) return;
@@ -293,7 +296,16 @@ public class DisasterManager {
     }
 
     public void stop() {
+        if (schedulerTask != null) {
+            schedulerTask.cancel();
+            schedulerTask = null;
+        }
         for (Player p : Bukkit.getOnlinePlayers()) p.hideBossBar(warningBar);
+    }
+
+    public void reload() {
+        if (config.disastersEnabled) start();
+        else stop();
     }
 
     public boolean isDisasterActive() {

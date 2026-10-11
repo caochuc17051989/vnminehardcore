@@ -1,7 +1,6 @@
 package com.vnmine.hardcore.listeners;
 
 import com.vnmine.hardcore.VnMineHardcore;
-import com.vnmine.hardcore.managers.BanManager;
 import com.vnmine.hardcore.managers.ConfigManager;
 import com.vnmine.hardcore.managers.DeathPenaltyManager;
 import com.vnmine.hardcore.managers.DeathRenameManager;
@@ -30,7 +29,6 @@ import java.util.logging.Logger;
 public class DeathListener implements Listener {
 
     private final VnMineHardcore plugin;
-    private final BanManager banManager;
     private final LogManager logManager;
     private final DeathRenameManager renameManager;
     private final DeathPenaltyManager deathPenaltyManager;
@@ -43,7 +41,6 @@ public class DeathListener implements Listener {
 
     public DeathListener(VnMineHardcore plugin, ConfigManager config, DeathRenameManager renameManager, DeathPenaltyManager deathPenaltyManager) {
         this.plugin = plugin;
-        this.banManager = plugin.getBanManager();
         this.logManager = plugin.getLogManager();
         this.renameManager = renameManager;
         this.deathPenaltyManager = deathPenaltyManager;
@@ -55,8 +52,7 @@ public class DeathListener implements Listener {
         startCombatCheckTask();
         startGamemodeCheckTask();
 
-        logger.info("[Death] Initialized: ban-on-death=" + config.banOnDeath +
-            ", combat-tag-duration=" + (combatTagDurationMs / 1000) + "s");
+        logger.info("[Death] Initialized: combat-tag-duration=" + (combatTagDurationMs / 1000) + "s");
     }
 
     public void reload() {
@@ -162,17 +158,8 @@ public class DeathListener implements Listener {
         // Remove combat tag on death (player already died)
         combatTagged.remove(player.getUniqueId());
 
-        // Force SURVIVAL mode ngay lập tức, tránh hardcore death screen (spectator menu)
-        // Chạy cả khi ban-on-death để tránh trường hợp hiện menu cho phép vào spectator
+        // Force SURVIVAL mode immediately to prevent the hardcore spectator death screen.
         player.setGameMode(GameMode.SURVIVAL);
-
-        // Ban the player (if enabled)
-        if (config.banOnDeath) {
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                banManager.banPlayer(player, "Đã chết trong VnMineHardcore!");
-                logger.info("[Death] " + player.getName() + " has been banned permanently!");
-            });
-        }
 
         // Update display name after death (if rename enabled)
         renameManager.updateDisplayName(player, logManager.getDeathCount(player));
@@ -214,13 +201,13 @@ public class DeathListener implements Listener {
 
         player.sendTitle(
             "§4§lVnMineHardcore",
-            "§c§lChết = Ban vĩnh viễn!",
+            "§c§lHãy sống sót!",
             10, 40, 10
         );
 
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             player.sendMessage("§6=== VnMineHardcore ===");
-            player.sendMessage("§c☠ Chết = Ban vĩnh viễn (Username + IP)");
+            player.sendMessage("§c☠ Cái chết được ghi nhận, không tự động ban người chơi.");
             player.sendMessage("§e⚔ Sát thương x" + config.mobDamageMultiplier + "!");
             player.sendMessage("§b💧 Hệ thống khát nước!");
             player.sendMessage("§4🌋 Thiên tai: Blood Moon, Meteor, Storm, Solar Flare, Plague, Tornado, Eclipse");
@@ -230,6 +217,7 @@ public class DeathListener implements Listener {
         // Apply display name from death count on join (if rename enabled)
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             renameManager.updateDisplayName(player, logManager.getDeathCount(player));
+            deathPenaltyManager.onPlayerJoin(player);
         }, 40L);
 
         logger.info("[Death] " + player.getName() + " joined (deaths: " + logManager.getDeathCount(player) + ")");
@@ -240,11 +228,9 @@ public class DeathListener implements Listener {
         Player player = event.getPlayer();
 
         if (isCombatTagged(player)) {
-            logger.info("[Death] " + player.getName() + " combat-logged! Banning...");
-            banManager.combatLogDeath(player);
+            logger.info("[Death] " + player.getName() + " left while combat-tagged; no ban applied.");
         }
 
-        // Remove from combat map on quit (if not banned)
         combatTagged.remove(player.getUniqueId());
 
         event.quitMessage(Component.text("§8[§c-§8] §7" + player.getName()));
@@ -285,7 +271,6 @@ public class DeathListener implements Listener {
     }
 
     public boolean isCombatTagEnabled() { return true; }
-    public boolean isBanOnDeathEnabled() { return config.banOnDeath; }
     public int getTaggedPlayerCount() { return combatTagged.size(); }
     public long getCombatTagDurationMs() { return combatTagDurationMs; }
 }
