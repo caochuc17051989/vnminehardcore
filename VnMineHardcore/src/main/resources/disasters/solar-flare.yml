@@ -8,6 +8,9 @@ disaster-id: solar-flare
 enabled: true
 chance: 3
 name: "§c§l🔥 Bão Mặt Trời"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Người chơi ngoài trời bị sát thương, bốc cháy và mù. Vào trong nhà hoặc nơi có mái che."
 duration-seconds: 60
 effect-interval-seconds: 10
 warning-seconds: 120

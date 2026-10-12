@@ -18,6 +18,8 @@ import org.bukkit.util.Vector;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DisasterManager {
 
@@ -49,6 +51,8 @@ public class DisasterManager {
     private record LivingEntityState(int fireTicks, int freezeTicks) {}
 
     private static final Material CHAIN_MATERIAL = resolveChainMaterial();
+    private static final Pattern VELOCITY_RANGE_PATTERN =
+        Pattern.compile("^\\s*(-?\\d+(?:\\.\\d+)?)\\s*-\\s*(-?\\d+(?:\\.\\d+)?)\\s*$");
 
     private static Material resolveChainMaterial() {
         Material material = Material.matchMaterial("IRON_CHAIN");
@@ -268,7 +272,7 @@ public class DisasterManager {
         currentDisasterId = normalizedId;
         warningTimeLeft = warningTimeSeconds;
 
-        broadcastWarning(name, warningTimeSeconds);
+        broadcastWarning(name, warningTimeSeconds, dc);
 
         scheduleTaskTimer(new BukkitRunnable() {
             int cd = warningTimeSeconds;
@@ -329,6 +333,19 @@ public class DisasterManager {
         removeSpawnedEntities();
         restoreDisasterState();
         clearCurrentDisaster();
+    }
+
+    public String stopCurrentDisaster() {
+        if (currentDisaster == null) return null;
+
+        String stoppedName = currentDisaster;
+        cancelOwnedTasks();
+        removeSpawnedEntities();
+        restoreDisasterState();
+        timeSinceLastDisaster = 0;
+        clearCurrentDisaster();
+        broadcast("§e§l⏹ " + stoppedName + " đã bị dừng bởi quản trị viên.");
+        return stoppedName;
     }
 
     private void scheduleTaskTimer(BukkitRunnable task, long delayTicks, long periodTicks) {
@@ -543,6 +560,11 @@ public class DisasterManager {
      * Kiểm tra điều kiện disaster có thể xảy ra không
      */
     private boolean canDisasterHappen(String disasterId, ConfigManager.DisasterConfig dc) {
+        if (!dc.worlds.isEmpty() && Bukkit.getOnlinePlayers().stream()
+                .noneMatch(player -> matchesWorld(dc.worlds, player.getWorld()))) {
+            return false;
+        }
+
         // Kiểm tra world conditions từ file YAML
         boolean isNight = Bukkit.getWorlds().get(0).getTime() > 13000;
         
@@ -580,7 +602,7 @@ public class DisasterManager {
         currentDisasterId = disasterId.toLowerCase(Locale.ROOT);
         warningTimeLeft = config.disasterWarningSeconds;
 
-        broadcastWarning(name, config.disasterWarningSeconds);
+        broadcastWarning(name, config.disasterWarningSeconds, dc);
         logManager.logDisaster(name + " (WARNING)");
 
         scheduleTaskTimer(new BukkitRunnable() {
@@ -640,6 +662,7 @@ public class DisasterManager {
         broadcast(activeBroadcast.replace("{name}", name)
             .replace("{message}", startSubtitle)
             .replace("{duration}", String.valueOf(totalDurationTicks / 20)));
+        broadcastDisasterDetails(dc);
 
         int effectIntervalTicks = dc.effectIntervalSeconds * 20;
 
@@ -706,13 +729,13 @@ public class DisasterManager {
      */
     private void executeSingleAction(DisasterAction action, ConfigManager.DisasterConfig dc) {
         // Lấy danh sách targets dựa trên action targets
-        List<Object> targets = getAffectedTargets(action);
+        List<Object> targets = getAffectedTargets(action, dc.worlds);
 
         if (targets.isEmpty()) return;
 
         // Thực thi action chính trên mỗi target
         for (Object target : targets) {
-            executeActionOnTarget(action, target);
+            executeActionOnTarget(action, target, dc);
         }
 
         // Thực thi chain-actions nếu có
@@ -733,7 +756,7 @@ public class DisasterManager {
      * Thực thi action trên một target cụ thể
      */
     @SuppressWarnings("unchecked")
-    private void executeActionOnTarget(DisasterAction action, Object target) {
+    private void executeActionOnTarget(DisasterAction action, Object target, ConfigManager.DisasterConfig dc) {
         Location targetLoc = getTargetLocation(target);
         if (targetLoc == null) return;
 
@@ -845,7 +868,7 @@ public class DisasterManager {
                     setTrackedFireTicks(le, fireTicks);
                 } else if (target instanceof Block block) {
                     // Đốt block (nếu là block cháy được)
-                    if (block.getType() == Material.AIR) {
+                    if (block.getType() == Material.AIR && !isProtected(block)) {
                         block.setType(Material.FIRE);
                     }
                 }
@@ -865,7 +888,7 @@ public class DisasterManager {
                     Location loc = getRandomLocationAround(targetLoc, radius);
                     for (int dy = 0; dy < placeHeight; dy++) {
                         Location blockLoc = loc.clone().add(0, dy, 0);
-                        if (blockLoc.getBlock().getType() == Material.AIR) {
+                        if (blockLoc.getBlock().getType() == Material.AIR && !isProtected(blockLoc.getBlock())) {
                             blockLoc.getBlock().setType(material);
                         }
                     }
@@ -886,7 +909,8 @@ public class DisasterManager {
                     int by = minY + random.nextInt(60);
                     Block block = new Location(targetLoc.getWorld(), bx, by, bz).getBlock();
                     Material bt = block.getType();
-                    if (bt == Material.AIR || bt == Material.WATER || bt == Material.LAVA || bt == Material.BEDROCK) continue;
+                    if (isProtected(block) || bt == Material.AIR || bt == Material.WATER
+                            || bt == Material.LAVA || bt == Material.BEDROCK) continue;
 
                     double blastRes = bt.getBlastResistance();
                     double fallProb = blockFallChance / (1.0 + blastRes * resistanceFactor);
@@ -910,18 +934,12 @@ public class DisasterManager {
                     Vector v = le.getVelocity();
                     v.setY(v.getY() + velY);
                     if (xRange != null) {
-                        String[] parts = xRange.split("-");
-                        double min = Double.parseDouble(parts[0]);
-                        double max = Double.parseDouble(parts[1]);
-                        v.setX(v.getX() + min + random.nextDouble() * (max - min));
+                        v.setX(v.getX() + randomVelocityFromRange(xRange));
                     } else {
                         v.setX(v.getX() + (random.nextDouble() - 0.5) * 2);
                     }
                     if (zRange != null) {
-                        String[] parts = zRange.split("-");
-                        double min = Double.parseDouble(parts[0]);
-                        double max = Double.parseDouble(parts[1]);
-                        v.setZ(v.getZ() + min + random.nextDouble() * (max - min));
+                        v.setZ(v.getZ() + randomVelocityFromRange(zRange));
                     } else {
                         v.setZ(v.getZ() + (random.nextDouble() - 0.5) * 2);
                     }
@@ -934,7 +952,7 @@ public class DisasterManager {
             case SET_TIME:
             case WORLD_TIME: {
                 int time = getParamInt(action.params, "time", 1000);
-                for (World w : Bukkit.getWorlds()) {
+                for (World w : getAffectedWorlds(dc)) {
                     rememberWorldState(w);
                     worldsWithModifiedTime.add(w.getUID());
                     w.setTime(time);
@@ -947,7 +965,7 @@ public class DisasterManager {
                 boolean storm = getParamBool(action.params, "storm", false);
                 boolean thunder = getParamBool(action.params, "thunder", false);
                 int durationTicks = getParamInt(action.params, "duration-ticks", 200000);
-                for (World w : Bukkit.getWorlds()) {
+                for (World w : getAffectedWorlds(dc)) {
                     rememberWorldState(w);
                     worldsWithModifiedWeather.add(w.getUID());
                     w.setStorm(storm);
@@ -959,7 +977,7 @@ public class DisasterManager {
             }
 
             case CLEAR_WEATHER: {
-                for (World w : Bukkit.getWorlds()) {
+                for (World w : getAffectedWorlds(dc)) {
                     rememberWorldState(w);
                     worldsWithModifiedWeather.add(w.getUID());
                     w.setStorm(false);
@@ -978,10 +996,8 @@ public class DisasterManager {
 
             case ACTION_BAR: {
                 String message = (String) action.params.get("message");
-                if (message != null) {
-                    for (Player p : Bukkit.getOnlinePlayers()) {
-                        p.sendActionBar(message.replace("{name}", currentDisaster != null ? currentDisaster : ""));
-                    }
+                if (message != null && target instanceof Player player) {
+                    player.sendActionBar(message.replace("{name}", currentDisaster != null ? currentDisaster : ""));
                 }
                 break;
             }
@@ -1019,7 +1035,8 @@ public class DisasterManager {
 
                 if (target instanceof Block block) {
                     Material bt = block.getType();
-                    if (bt == Material.AIR || bt == Material.WATER || bt == Material.LAVA || bt == Material.BEDROCK) break;
+                    if (isProtected(block) || bt == Material.AIR || bt == Material.WATER
+                            || bt == Material.LAVA || bt == Material.BEDROCK) break;
                     
                     FallingBlock fb = targetLoc.getWorld().spawnFallingBlock(
                         block.getLocation().add(0.5, 0, 0.5), block.getBlockData());
@@ -1071,7 +1088,7 @@ public class DisasterManager {
                     for (int dy = -replaceRadius; dy <= replaceRadius; dy++) {
                         for (int dz = -replaceRadius; dz <= replaceRadius; dz++) {
                             Block b = targetLoc.getBlock().getRelative(dx, dy, dz);
-                            if (b.getType() == fromMat) {
+                            if (b.getType() == fromMat && !isProtected(b)) {
                                 b.setType(toMat);
                             }
                         }
@@ -1088,7 +1105,8 @@ public class DisasterManager {
                     for (int dy = -igniteRadius; dy <= igniteRadius; dy++) {
                         for (int dz = -igniteRadius; dz <= igniteRadius; dz++) {
                             Block b = targetLoc.getBlock().getRelative(dx, dy, dz);
-                            if (b.getType() == Material.AIR && b.getRelative(0, -1, 0).getType().isSolid()) {
+                            if (b.getType() == Material.AIR && b.getRelative(0, -1, 0).getType().isSolid()
+                                    && !isProtected(b)) {
                                 b.setType(Material.FIRE);
                             }
                         }
@@ -1113,7 +1131,7 @@ public class DisasterManager {
                     for (int dy = -liquidRadius; dy <= liquidRadius; dy++) {
                         for (int dz = -liquidRadius; dz <= liquidRadius; dz++) {
                             Block b = targetLoc.getBlock().getRelative(dx, dy, dz);
-                            if (b.getType() == Material.AIR) {
+                            if (b.getType() == Material.AIR && !isProtected(b)) {
                                 b.setType(liquidMat);
                             }
                         }
@@ -1129,7 +1147,7 @@ public class DisasterManager {
                 for (int dx = -fertilizeRadius; dx <= fertilizeRadius; dx++) {
                     for (int dz = -fertilizeRadius; dz <= fertilizeRadius; dz++) {
                         Block b = targetLoc.getBlock().getRelative(dx, 0, dz);
-                        if (random.nextDouble() < bonemealChance) {
+                        if (random.nextDouble() < bonemealChance && !isProtected(b)) {
                             b.applyBoneMeal(org.bukkit.block.BlockFace.UP);
                         }
                     }
@@ -1297,6 +1315,19 @@ public class DisasterManager {
         }
     }
 
+    private double randomVelocityFromRange(String range) {
+        Matcher matcher = VELOCITY_RANGE_PATTERN.matcher(range);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid velocity range: " + range);
+        }
+        double min = Double.parseDouble(matcher.group(1));
+        double max = Double.parseDouble(matcher.group(2));
+        if (!Double.isFinite(min) || !Double.isFinite(max) || min > max) {
+            throw new IllegalArgumentException("Invalid velocity range: " + range);
+        }
+        return min + random.nextDouble() * (max - min);
+    }
+
     /**
      * Thực thi chain action tại một vị trí cụ thể
      */
@@ -1331,7 +1362,8 @@ public class DisasterManager {
                     for (int dy = -fireRadius; dy <= fireRadius; dy++) {
                         for (int dz = -fireRadius; dz <= fireRadius; dz++) {
                             Block b = location.getBlock().getRelative(dx, dy, dz);
-                            if (b.getType() == Material.AIR && b.getRelative(0, -1, 0).getType().isSolid()) {
+                            if (b.getType() == Material.AIR && b.getRelative(0, -1, 0).getType().isSolid()
+                                    && !isProtected(b)) {
                                 b.setType(Material.FIRE);
                             }
                         }
@@ -1386,7 +1418,8 @@ public class DisasterManager {
                 
                 // Tạo falling block tại vị trí
                 Block block = location.getBlock();
-                if (block.getType() != Material.AIR && block.getType() != Material.WATER && block.getType() != Material.LAVA) {
+                if (!isProtected(block) && block.getType() != Material.AIR
+                        && block.getType() != Material.WATER && block.getType() != Material.LAVA) {
                     FallingBlock fb = location.getWorld().spawnFallingBlock(
                         location.add(0.5, 2, 0.5), block.getBlockData());
                     trackSpawnedEntity(fb);
@@ -1424,7 +1457,8 @@ public class DisasterManager {
                     for (int dz = -bvRadius; dz <= bvRadius; dz++) {
                         Block b = location.getBlock().getRelative(dx, 0, dz);
                         Material bt = b.getType();
-                        if (bt == Material.AIR || bt == Material.WATER || bt == Material.LAVA || bt == Material.BEDROCK) continue;
+                        if (isProtected(b) || bt == Material.AIR || bt == Material.WATER
+                                || bt == Material.LAVA || bt == Material.BEDROCK) continue;
                         if (random.nextInt(3) != 0) continue; // Không nhấc tất cả
                         
                         FallingBlock fb = location.getWorld().spawnFallingBlock(
@@ -1481,7 +1515,7 @@ public class DisasterManager {
      * Lấy danh sách các đối tượng target dựa trên action targets
      * Trả về List<Object> có thể chứa Player, LivingEntity, Block, Location
      */
-    private List<Object> getAffectedTargets(DisasterAction action) {
+    private List<Object> getAffectedTargets(DisasterAction action, List<String> eventWorlds) {
         List<Object> result = new ArrayList<>();
         boolean requireOutdoor = action.condition.requireOutdoor;
         boolean ignoreSafeZone = action.condition.ignoreSafeZone;
@@ -1489,6 +1523,7 @@ public class DisasterManager {
         // Nếu không có targets, mặc định là tất cả player
         if (action.targets.isEmpty()) {
             for (Player p : Bukkit.getOnlinePlayers()) {
+                if (!matchesOptionalWorlds(eventWorlds, p.getWorld())) continue;
                 if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
                 result.add(p);
             }
@@ -1506,13 +1541,12 @@ public class DisasterManager {
                 // Player targets
                 List<Player> players = new ArrayList<>();
                 for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (!matchesWorldScope(eventWorlds, target.worlds, p.getWorld())) continue;
                     // Check condition
                     if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
                     if (requireOutdoor && ignoreSafeZone) {
                         if (p.getLocation().getBlock().getLightFromSky() <= 5) continue;
                     }
-                    // Check world filter
-                    if (!target.worlds.contains("all") && !target.worlds.contains(p.getWorld().getEnvironment().name().toLowerCase())) continue;
                     players.add(p);
                 }
 
@@ -1527,6 +1561,7 @@ public class DisasterManager {
             } else if (entityType.equals("friendly_mobs") || entityType.equals("hostile_mobs") || entityType.equals("all_mobs")) {
                 // Mob targets
                 for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (!matchesWorldScope(eventWorlds, target.worlds, p.getWorld())) continue;
                     if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
                     
                     for (Entity e : p.getWorld().getNearbyEntities(p.getLocation(), radius, radius, radius)) {
@@ -1547,6 +1582,7 @@ public class DisasterManager {
             } else if (entityType.equals("ground")) {
                 // Ground blocks - block dưới chân mỗi player
                 for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (!matchesWorldScope(eventWorlds, target.worlds, p.getWorld())) continue;
                     if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
                     Block ground = p.getLocation().getBlock().getRelative(0, -1, 0);
                     if (ground.getType() != Material.AIR && ground.getType() != Material.WATER && ground.getType() != Material.LAVA) {
@@ -1558,6 +1594,7 @@ public class DisasterManager {
             } else if (entityType.equals("trees")) {
                 // Tree blocks
                 for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (!matchesWorldScope(eventWorlds, target.worlds, p.getWorld())) continue;
                     if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
                     for (int dx = -radius; dx <= radius; dx++) {
                         for (int dy = -radius; dy <= radius; dy++) {
@@ -1575,6 +1612,7 @@ public class DisasterManager {
             } else if (entityType.equals("blocks")) {
                 // All solid blocks
                 for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (!matchesWorldScope(eventWorlds, target.worlds, p.getWorld())) continue;
                     if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
                     for (int dx = -radius; dx <= radius; dx++) {
                         for (int dy = -radius; dy <= radius; dy++) {
@@ -1610,6 +1648,7 @@ public class DisasterManager {
                     Material.LANTERN, Material.SOUL_LANTERN, CHAIN_MATERIAL
                 ));
                 for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (!matchesWorldScope(eventWorlds, target.worlds, p.getWorld())) continue;
                     if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
                     for (int dx = -radius; dx <= radius; dx++) {
                         for (int dy = -radius; dy <= radius; dy++) {
@@ -1627,6 +1666,7 @@ public class DisasterManager {
             } else if (entityType.equals("surface_blocks")) {
                 // Surface blocks
                 for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (!matchesWorldScope(eventWorlds, target.worlds, p.getWorld())) continue;
                     if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
                     Location loc = p.getLocation();
                     int highestY = loc.getWorld().getHighestBlockYAt(loc.getBlockX(), loc.getBlockZ());
@@ -1649,6 +1689,7 @@ public class DisasterManager {
                 }
                 if (!targetMaterials.isEmpty()) {
                     for (Player p : Bukkit.getOnlinePlayers()) {
+                        if (!matchesWorldScope(eventWorlds, target.worlds, p.getWorld())) continue;
                         if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
                         for (int dx = -radius; dx <= radius; dx++) {
                             for (int dy = -radius; dy <= radius; dy++) {
@@ -1682,7 +1723,7 @@ public class DisasterManager {
                 DisasterAction tempAction = new DisasterAction(action.type);
                 tempAction.targets.add(tempTarget);
                 tempAction.condition = action.condition;
-                result.addAll(getAffectedTargets(tempAction));
+                result.addAll(getAffectedTargets(tempAction, eventWorlds));
             }
         }
 
@@ -1695,6 +1736,56 @@ public class DisasterManager {
         }
 
         return result;
+    }
+
+    private boolean matchesWorld(List<String> worldFilters, World world) {
+        if (worldFilters.stream().anyMatch(filter -> filter.equalsIgnoreCase("all"))) return true;
+        String worldName = world.getName();
+        String environmentName = world.getEnvironment().name();
+        String configuredEnvironment = switch (world.getEnvironment()) {
+            case NORMAL -> "overworld";
+            case NETHER -> "nether";
+            case THE_END -> "end";
+            default -> "";
+        };
+        return worldFilters.stream().anyMatch(filter ->
+            filter.equalsIgnoreCase(worldName)
+                || filter.equalsIgnoreCase(environmentName)
+                || filter.equalsIgnoreCase(configuredEnvironment)
+                || filter.equalsIgnoreCase("the_" + configuredEnvironment));
+    }
+
+    private boolean matchesOptionalWorlds(List<String> worldFilters, World world) {
+        return worldFilters == null || worldFilters.isEmpty() || matchesWorld(worldFilters, world);
+    }
+
+    private boolean matchesWorldScope(List<String> eventWorlds, List<String> targetWorlds, World world) {
+        return matchesOptionalWorlds(eventWorlds, world)
+            && matchesOptionalWorlds(targetWorlds, world);
+    }
+
+    private List<World> getAffectedWorlds(ConfigManager.DisasterConfig dc) {
+        return Bukkit.getWorlds().stream()
+            .filter(world -> matchesOptionalWorlds(dc.worlds, world))
+            .filter(world -> dc.actions.isEmpty() || dc.actions.stream().anyMatch(action ->
+                action.targets.isEmpty() || action.targets.stream()
+                    .anyMatch(target -> matchesOptionalWorlds(target.worlds, world))))
+            .toList();
+    }
+
+    private String getAffectedWorldNames(ConfigManager.DisasterConfig dc) {
+        List<String> loadedWorlds = getAffectedWorlds(dc).stream().map(World::getName).toList();
+        if (!loadedWorlds.isEmpty()) return String.join(", ", loadedWorlds);
+        if (!dc.worlds.isEmpty()) return String.join(", ", dc.worlds);
+        return "tất cả world đang tải";
+    }
+
+    private void broadcastDisasterDetails(ConfigManager.DisasterConfig dc) {
+        String description = dc.chatDescription == null || dc.chatDescription.isBlank()
+            ? "Xem cấu hình thiên tai để biết chi tiết tác động và cách phòng tránh."
+            : dc.chatDescription;
+        broadcast("§6§lTác động/cách phòng: §f" + description);
+        broadcast("§6§lWorld bị ảnh hưởng: §f" + getAffectedWorldNames(dc));
     }
 
     /**
@@ -1785,7 +1876,8 @@ public class DisasterManager {
             for (int dz = -radius; dz <= radius; dz++) {
                 if (random.nextDouble() > 0.3) continue; // 30% cơ hội đốt mỗi block
                 Block block = center.getBlock().getRelative(dx, 0, dz);
-                if (block.getType() == Material.AIR && block.getRelative(0, -1, 0).getType().isSolid()) {
+                if (block.getType() == Material.AIR && block.getRelative(0, -1, 0).getType().isSolid()
+                        && !isProtected(block)) {
                     block.setType(Material.FIRE);
                 }
             }
@@ -1857,11 +1949,16 @@ public class DisasterManager {
         }
     }
 
+    private boolean isProtected(Block block) {
+        SpawnProtectionManager manager = plugin.getSpawnProtectionManager();
+        return manager != null && manager.isProtected(block.getLocation());
+    }
+
     private void broadcast(String message) {
         Bukkit.broadcastMessage(message);
     }
 
-    private void broadcastWarning(String name, int seconds) {
+    private void broadcastWarning(String name, int seconds, ConfigManager.DisasterConfig dc) {
         String warningTitle = config.disasterMessages.getOrDefault("warning-title", "§4§l⚠ CẢNH BÁO THIÊN TAI ⚠");
         String warningSubtitle = config.disasterMessages.getOrDefault("warning-subtitle", "§c{name}\n§e§lSẽ xảy ra trong {time} giây!");
         String warningBroadcast = config.disasterMessages.getOrDefault("warning-broadcast", "§4§l⚠ {name} §r§cđang đến gần!");
@@ -1873,6 +1970,7 @@ public class DisasterManager {
             p.playSound(p.getLocation(), Sound.BLOCK_BELL_USE, 1.0f, 0.5f);
             p.sendMessage(warningBroadcast.replace("{name}", name));
         }
+        broadcastDisasterDetails(dc);
         logManager.logDisaster(name + " (WARNING - " + seconds + "s)");
     }
 

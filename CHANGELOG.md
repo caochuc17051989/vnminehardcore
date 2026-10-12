@@ -1,5 +1,70 @@
 # Changelog
 
+## [v1.10.0] - 2026-10-12
+
+### Added
+- Thêm quản lý nhóm/quyền trong `permission.yml` qua `/vngroup` và `/vnuser`, mặc định có nhóm `user` và `admin`.
+- Tách quyền lệnh theo chức năng để có thể cấp riêng quyền xem trạng thái, quản lý thiên tai/boss, spawn, thời gian, game mode và quản lý người dùng.
+- Thêm quyền `vnmine.spawnprotection.bypass` cho OP/nhân viên được ủy quyền.
+
+### Fixed
+- Spawn protection chặn cả phá/đặt block, cháy, dòng chất lỏng, thay đổi block do entity và phá block do vụ nổ.
+- Các thao tác đặt, đốt, thay thế, nhấc block và nổ trực tiếp từ thiên tai bỏ qua block nằm trong vùng bảo vệ.
+
+## [v1.9.1] - 2026-10-12
+
+### Fixed
+- Đóng gói lại JAR từ resource hiện tại để `plugin.yml` chứa đầy đủ lệnh `vnspawn` và `tp`, tránh lỗi `getCommand(...)` trả về `null` khi khởi động.
+
+## [v1.9.0] - 2026-10-12
+
+### Added
+- `/vnspawn set` đặt spawn của world hiện tại tại vị trí và hướng đang đứng.
+- `/vnspawn go <world>` dịch chuyển người gọi đến spawn của world đang tải; hỗ trợ gợi ý tên world bằng Tab.
+
+## [v1.8.0] - 2026-10-12
+
+### Added
+- `/tp <user> <world>` dịch chuyển người chơi đang trực tuyến đến spawn của world; Tab gợi ý người chơi và world.
+- `/vnspawn protect <X>`, `/vnspawn list`, `/vnspawn remove <ID>` quản lý vùng bảo vệ theo world, lưu trong `spawns-protection.yml`.
+- `/vnevent stop` hủy cảnh báo hoặc thiên tai đang hoạt động, dừng các tác vụ liên quan và khôi phục trạng thái world được theo dõi.
+- Earthquake hất người chơi ngoài trời theo phương ngang và dọc; vận tốc có thể chỉnh trong `disasters/earthquake.yml`.
+- Mỗi file thiên tai có `chat-description` tùy chỉnh; chat hiển thị tác động, gợi ý phòng tránh và tên world tại lúc cảnh báo/bắt đầu.
+
+### Fixed
+- Bộ lọc thiên tai nhận diện đúng tên world và tên dimension; điều kiện `conditions.worlds` hiện được áp dụng.
+- Chorus Explosion tắt mặc định để tránh khởi chạy tự động ngoài ý muốn.
+
+## [v1.7.0] - 2026-10-12
+
+### Added
+- `/vntime set <day|night> <phút> [world]` đặt thời lượng toàn cục hoặc riêng cho world đang tải
+- `/vnday set <ngày>` đặt world hiện tại về bình minh của ngày trong game tương ứng
+- Loot hiếm và cấu hình HP riêng cho boss level 1–10; lore truyền thuyết tối đa 4 dòng, số dòng enchant tăng dần theo cấp
+- Thời gian tồn tại mặc định của mọi boss là 20 phút; tạm dừng roll boss tiếp theo khi đang cảnh báo hoặc có boss hoạt động
+
+## [v1.6.0] - 2026-10-12
+
+### Added
+- `/scoreboard reset` xóa điểm, mùa và phần thưởng boss đang chờ nhận
+- `/vntime set day <phút>` và `/vntime set night <phút>` thay đổi, lưu thời lượng mặc định toàn cục; giữ nguyên override theo world
+- `/vnhelp` liệt kê mọi lệnh plugin; Tab gợi ý ID và giá trị cho các tham số lệnh
+
+## [v1.5.0] - 2026-10-12
+
+### Added
+- Creeper Boss có skill tự gọi sét, gây sát thương lên bản thân và sinh vật trong bán kính cấu hình, rồi chuyển sang trạng thái charged trong thời gian cấu hình
+- Creeper Boss phát nổ thường/charged mạnh hơn tương ứng nhưng không tự bị xóa; vụ nổ không phá block
+
+## [v1.4.0] - 2026-10-12
+
+### Added
+- Loot hiếm theo level trong file riêng của từng boss; hỗ trợ lore, enchant thường/over-enchant và sách lưu enchant để áp dụng lên vật phẩm
+- Broadcast danh sách loot và tỉ lệ khi boss xuất hiện
+- Bảng xếp hạng damage trực tiếp và điểm boss theo mùa; top 5 chia `10 × level` điểm theo damage gây ra
+- Reset theo ngày trong game, thưởng cấu hình cho top 10, lệnh `/reward`, nhắc nhận quà, kiểm tra inventory và title chúc mừng top 1
+- `scoreboard.yml` cho cấu hình mùa/sidebar/phần thưởng và `scoreboard-data.yml` cho lưu trạng thái
+
 ## [v3.0.0] - 2025-07-12
 
 ### Added

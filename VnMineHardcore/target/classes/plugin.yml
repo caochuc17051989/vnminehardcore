@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.3.5
+version: 1.7.0
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
@@ -65,9 +65,25 @@ commands:
     usage: /vnboss <id> <level> <warning(s)> <duration(s)>
     permission: vnmine.hardcore.admin
   vn:
-    description: Lệnh chính của VnMineHardcore. Gõ /vn help để xem hướng dẫn.
+    description: Lệnh tiện ích. Dùng /vn death reset <player> để reset số lần chết.
     usage: /vn <subcommand>
     permission: vnmine.hardcore.stats
+  reward:
+    description: Nhận phần thưởng xếp hạng boss đang chờ
+    usage: /reward
+  scoreboard:
+    description: Quản lý scoreboard xếp hạng boss
+    aliases: [vnscoreboard, sb]
+    usage: /scoreboard reset
+    permission: vnmine.hardcore.admin
+  vntime:
+    description: Đặt thời lượng chu kỳ ban ngày và ban đêm
+    usage: /vntime set <day|night> <phút> [world]
+    permission: vnmine.hardcore.admin
+  vnday:
+    description: Đặt world hiện tại về một ngày trong game
+    usage: /vnday set <ngày>
+    permission: vnmine.hardcore.admin
 
 permissions:
   vnmine.hardcore.stats:

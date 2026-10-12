@@ -20,6 +20,9 @@ disaster-id: mega-storm
 enabled: true
 chance: 5
 name: "§9§l🌊 Siêu Bão"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Sét và mưa axit gây sát thương, làm chậm và suy yếu người ngoài trời; thời tiết chuyển thành giông bão. Tìm nơi có mái che."
 duration-seconds: 300
 effect-interval-seconds: 10
 warning-seconds: 120

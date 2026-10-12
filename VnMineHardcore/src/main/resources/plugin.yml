@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.3.5
+version: 1.10.0
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
@@ -9,70 +9,177 @@ commands:
   vnstats:
     description: Xem thống kê cá nhân (số lần chết, thời gian sống, quái giết)
     usage: /vnstats
-    permission: vnmine.hardcore.stats
+    permission: vnmine.command.stats
   vnhardcore:
     description: Xem trạng thái plugin
     usage: /vnhardcore
-    permission: vnmine.hardcore.admin
+    permission: vnmine.command.status
   vnreload:
     description: Tải lại file cấu hình config.yml
     usage: /vnreload
-    permission: vnmine.hardcore.admin
+    permission: vnmine.command.reload
   vnrespawn:
     description: Hồi sinh sau khi chết
     usage: /vnrespawn
+    permission: vnmine.command.respawn
   vnleave:
     description: Thoát game sau khi chết
     usage: /vnleave
+    permission: vnmine.command.leave
   fly:
     description: Bật hoặc tắt bay trong chế độ Sinh tồn (admin)
     usage: /fly
-    permission: vnmine.hardcore.admin
+    permission: vnmine.command.fly
   nodame:
     description: Bật hoặc tắt miễn sát thương để thử boss (admin)
     usage: /nodame
-    permission: vnmine.hardcore.admin
+    permission: vnmine.command.nodame
   spawn:
     description: Dịch chuyển về điểm spawn của thế giới (admin)
     usage: /spawn
-    permission: vnmine.hardcore.admin
+    permission: vnmine.command.spawn
   gm0:
     description: Chuyển sang chế độ Sinh tồn (admin)
     usage: /gm0
-    permission: vnmine.hardcore.admin
+    permission: vnmine.command.gamemode
   gm1:
     description: Chuyển sang chế độ Sáng tạo (admin)
     usage: /gm1
-    permission: vnmine.hardcore.admin
+    permission: vnmine.command.gamemode
   gm2:
     description: Chuyển sang chế độ Phiêu lưu (admin)
     usage: /gm2
-    permission: vnmine.hardcore.admin
+    permission: vnmine.command.gamemode
   gm3:
     description: Chuyển sang chế độ Quan sát (admin)
     usage: /gm3
-    permission: vnmine.hardcore.admin
+    permission: vnmine.command.gamemode
   vnhelp:
     description: Hiển thị hướng dẫn tất cả lệnh
     usage: /vnhelp
-    permission: vnmine.hardcore.stats
+    permission: vnmine.command.help
   vnevent:
-    description: Gọi thiên tai thủ công. Gõ /vnevent để xem danh sách sự kiện.
-    usage: /vnevent [<id> <warning(s)> <duration(s)>]
-    permission: vnmine.hardcore.admin
+    description: Gọi hoặc dừng thiên tai. Gõ /vnevent để xem danh sách sự kiện.
+    usage: /vnevent [<id> <warning(s)> <duration(s)>|stop]
+    permission: vnmine.command.disasters
   vnboss:
     description: Gọi boss thủ công theo level. Nhập ID boss để xem gợi ý hoàn tất.
     usage: /vnboss <id> <level> <warning(s)> <duration(s)>
-    permission: vnmine.hardcore.admin
+    permission: vnmine.command.bosses
   vn:
-    description: Lệnh chính của VnMineHardcore. Gõ /vn help để xem hướng dẫn.
+    description: Lệnh tiện ích. Dùng /vn death reset <player> để reset số lần chết.
     usage: /vn <subcommand>
-    permission: vnmine.hardcore.stats
+    permission: vnmine.command.utility
+  reward:
+    description: Nhận phần thưởng xếp hạng boss đang chờ
+    usage: /reward
+    permission: vnmine.command.reward
+  scoreboard:
+    description: Quản lý scoreboard xếp hạng boss
+    aliases: [vnscoreboard, sb]
+    usage: /scoreboard reset
+    permission: vnmine.command.scoreboard.reset
+  vntime:
+    description: Đặt thời lượng chu kỳ ban ngày và ban đêm
+    usage: /vntime set <day|night> <phút> [world]
+    permission: vnmine.command.time.manage
+  vnday:
+    description: Đặt world hiện tại về một ngày trong game
+    usage: /vnday set <ngày>
+    permission: vnmine.command.day.manage
+  vnspawn:
+    description: Quản lý điểm spawn và các khu vực được bảo vệ
+    usage: /vnspawn <set|go <world>|protect <X>|list|remove <ID>>
+    permission: vnmine.command.spawn.manage
+  tp:
+    description: Dịch chuyển người chơi đến điểm spawn của world
+    usage: /tp <user> <world>
+    permission: vnmine.command.teleport.other
+  vngroup:
+    description: Quản lý các nhóm quyền của người chơi
+    usage: /vngroup <list|info|create|delete|permission>
+    permission: vnmine.command.groups.manage
+  vnuser:
+    description: Quản lý nhóm và quyền riêng của người chơi
+    usage: /vnuser <info|group|permission|reset>
+    permission: vnmine.command.users.manage
 
 permissions:
+  vnmine.command.stats:
+    description: Cho phép xem thống kê cá nhân bằng /vnstats
+    default: op
+  vnmine.command.status:
+    description: Cho phép xem trạng thái plugin bằng /vnhardcore
+    default: op
+  vnmine.command.reload:
+    description: Cho phép tải lại cấu hình và hệ thống bằng /vnreload
+    default: op
+  vnmine.command.disasters:
+    description: Cho phép gọi hoặc dừng thiên tai bằng /vnevent
+    default: op
+  vnmine.command.bosses:
+    description: Cho phép gọi boss bằng /vnboss
+    default: op
+  vnmine.command.utility:
+    description: Cho phép dùng các tiện ích /vn
+    default: op
+  vnmine.command.death.reset:
+    description: Cho phép đặt lại số lần chết của người chơi
+    default: op
+  vnmine.command.reward:
+    description: Cho phép nhận phần thưởng boss bằng /reward
+    default: op
+  vnmine.command.respawn:
+    description: Cho phép chọn hồi sinh bằng /vnrespawn
+    default: op
+  vnmine.command.leave:
+    description: Cho phép thoát sau khi chết bằng /vnleave
+    default: op
+  vnmine.command.fly:
+    description: Cho phép bật/tắt bay bằng /fly
+    default: op
+  vnmine.command.nodame:
+    description: Cho phép bật/tắt miễn sát thương bằng /nodame
+    default: op
+  vnmine.command.spawn:
+    description: Cho phép về spawn world hiện tại bằng /spawn
+    default: op
+  vnmine.command.gamemode:
+    description: Cho phép đổi game mode bằng /gm0 đến /gm3
+    default: op
+  vnmine.command.scoreboard.reset:
+    description: Cho phép xóa dữ liệu mùa scoreboard
+    default: op
+  vnmine.command.time.manage:
+    description: Cho phép quản lý chu kỳ ngày đêm bằng /vntime
+    default: op
+  vnmine.command.day.manage:
+    description: Cho phép thay đổi ngày trong world bằng /vnday
+    default: op
+  vnmine.command.spawn.manage:
+    description: Cho phép quản lý điểm spawn và vùng bảo vệ bằng /vnspawn
+    default: op
+  vnmine.command.teleport.other:
+    description: Cho phép dịch chuyển người chơi khác bằng /tp
+    default: op
+  vnmine.command.help:
+    description: Cho phép xem hướng dẫn bằng /vnhelp
+    default: op
+  vnmine.command.groups.manage:
+    description: Cho phép quản lý nhóm bằng /vngroup
+    default: op
+  vnmine.command.users.manage:
+    description: Cho phép quản lý quyền người chơi bằng /vnuser
+    default: op
+  vnmine.spawnprotection.bypass:
+    description: Cho phép người chơi phá hoặc đặt block trong vùng spawn protection
+    default: op
   vnmine.hardcore.stats:
-    description: Cho phép xem thống kê
-    default: true
+    description: Node thống kê cũ; lệnh mới dùng vnmine.command.stats
+    default: op
   vnmine.hardcore.admin:
-    description: Cho phép dùng lệnh admin (status, reload, trigger disaster)
+    description: Node cũ cho bypass môi trường; không cấp quyền cho lệnh granular mới
+    default: op
+  vnmine.hardcore.bypass:
+    description: Quyền tương thích cũ để bỏ qua một số giới hạn môi trường
     default: op

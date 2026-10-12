@@ -254,6 +254,8 @@ public class ConfigManager {
         public boolean enabled = true;
         public int chance = 5;
         public String name = "Unknown Disaster";
+        public List<String> worlds = new ArrayList<>();
+        public String chatDescription = "";
         public int effectIntervalSeconds = 5;
         public int effectDurationSeconds = 5;
         public int durationSeconds = 600;
@@ -281,12 +283,13 @@ public class ConfigManager {
         public double hp = 100.0;
         public double damageMultiplier = 1.0;
         public int chance = 10;
-        public int durationSeconds = 120;
+        public int durationSeconds = 1200;
         public int warningSeconds = 60;
         public int activityRadius = 100;
         public Map<String, Boolean> immunities = new HashMap<>();
         public java.util.List<String> immunityPotionEffects = new java.util.ArrayList<>();
         public Map<String, DropConfig> drops = new HashMap<>();
+        public Map<Integer, List<ConfiguredItem>> levelDrops = new HashMap<>();
         public Map<Integer, Double> hpByLevel = new HashMap<>();
         public Map<String, BossSkillConfig> skills = new HashMap<>();
     }
@@ -310,6 +313,10 @@ public class ConfigManager {
         public double radius;
         public double velocity;
         public double spread;
+        public int durationSeconds;
+        public double explosionPower;
+        public double chargedExplosionPower;
+        public int explosionCooldownSeconds;
     }
 
     // DropConfig class - holds drop configuration
@@ -317,6 +324,20 @@ public class ConfigManager {
         public int minAmount = 1;
         public int maxAmount = 1;
         public double chance = 0.5;
+        public String name;
+        public List<String> lore = new ArrayList<>();
+        public Map<String, Integer> bookEnchantments = new HashMap<>();
+    }
+
+    public static class ConfiguredItem {
+        public String material = "DIAMOND";
+        public String name;
+        public List<String> lore = new ArrayList<>();
+        public int minAmount = 1;
+        public int maxAmount = 1;
+        public double chance;
+        public Map<String, Integer> enchantments = new HashMap<>();
+        public Map<String, Integer> bookEnchantments = new HashMap<>();
     }
 
     public static class BlockMiningRule {
@@ -584,6 +605,68 @@ public class ConfigManager {
             : nightDurationMinutes;
     }
 
+    public boolean setGlobalDayDurationMinutes(int minutes) {
+        if (minutes < 1) return false;
+        return setGlobalTimeDuration("day-duration-minutes", minutes, true);
+    }
+
+    public boolean setGlobalNightDurationMinutes(int minutes) {
+        if (minutes < 1) return false;
+        return setGlobalTimeDuration("night-duration-minutes", minutes, false);
+    }
+
+    public boolean setWorldDayDurationMinutes(String worldName, int minutes) {
+        if (worldName == null || worldName.isBlank() || minutes < 1) return false;
+        return setWorldTimeDuration(worldName, "day-duration-minutes", minutes, true);
+    }
+
+    public boolean setWorldNightDurationMinutes(String worldName, int minutes) {
+        if (worldName == null || worldName.isBlank() || minutes < 1) return false;
+        return setWorldTimeDuration(worldName, "night-duration-minutes", minutes, false);
+    }
+
+    private boolean setGlobalTimeDuration(String setting, int minutes, boolean day) {
+        String path = config.isConfigurationSection("time-control.global")
+            ? "time-control.global." + setting
+            : "time-control." + setting;
+        Object previousValue = config.get(path);
+        config.set(path, minutes);
+        try {
+            config.save(new File(plugin.getDataFolder(), "config.yml"));
+        } catch (IOException exception) {
+            config.set(path, previousValue);
+            plugin.getLogger().log(Level.SEVERE, "[Config] Could not save " + path + ".", exception);
+            return false;
+        }
+        if (day) {
+            dayDurationMinutes = minutes;
+        } else {
+            nightDurationMinutes = minutes;
+        }
+        return true;
+    }
+
+    private boolean setWorldTimeDuration(String worldName, String setting, int minutes, boolean day) {
+        String path = "time-control.worlds." + worldName + "." + setting;
+        Object previousValue = config.get(path);
+        config.set(path, minutes);
+        try {
+            config.save(new File(plugin.getDataFolder(), "config.yml"));
+        } catch (IOException exception) {
+            config.set(path, previousValue);
+            plugin.getLogger().log(Level.SEVERE, "[Config] Could not save " + path + ".", exception);
+            return false;
+        }
+
+        WorldTimeConfig worldConfig = worldTimeConfigs.computeIfAbsent(worldName, ignored -> new WorldTimeConfig());
+        if (day) {
+            worldConfig.dayDurationMinutes = minutes;
+        } else {
+            worldConfig.nightDurationMinutes = minutes;
+        }
+        return true;
+    }
+
     private void loadBlockMiningRules() {
         blockDropSettingsEnabled = config.getBoolean("block-drop-settings.enabled", false);
         dropReplaceEnabled = config.getBoolean("block-drop-settings.replace-enabled", true);
@@ -751,6 +834,9 @@ public class ConfigManager {
         mergeDefaultResource("disasters/end-surge.yml");
         mergeDefaultResource("disasters/void-storm.yml");
         mergeDefaultResource("disasters/chorus-explosion.yml");
+
+        saveResourceIfNotExists("scoreboard.yml");
+        mergeDefaultResource("scoreboard.yml");
 
         // Merge new boss settings into existing files without overwriting admin values.
         mergeDefaultResource("bosses/_settings.yml");
@@ -922,6 +1008,8 @@ public class ConfigManager {
             dc.enabled = section.getBoolean("enabled", true);
             dc.chance = section.getInt("chance", 5);
             dc.name = section.getString("name", disasterId);
+            dc.worlds = section.getStringList("conditions.worlds");
+            dc.chatDescription = section.getString("chat-description", "");
             dc.effectIntervalSeconds = section.getInt("effect-interval-seconds", 5);
             dc.effectDurationSeconds = section.getInt("effect-duration-seconds", 5);
             dc.durationSeconds = section.getInt("duration-seconds", 600);
@@ -1085,7 +1173,7 @@ public class ConfigManager {
             bc.hp = section.getDouble("hp", 100.0);
             bc.damageMultiplier = section.getDouble("damage-multiplier", 1.0);
             bc.chance = section.getInt("chance", 10);
-            bc.durationSeconds = section.getInt("duration-seconds", 120);
+            bc.durationSeconds = section.getInt("duration-seconds", 1200);
             bc.warningSeconds = section.getInt("warning-seconds", 60);
             bc.activityRadius = section.getInt("activity-radius", 100);
             if (bc.activityRadius < 1 || bc.activityRadius > 10000) {
@@ -1126,6 +1214,14 @@ public class ConfigManager {
                     skill.radius = Math.max(0, skillSection.getDouble("radius", 4.0));
                     skill.velocity = Math.max(0.1, skillSection.getDouble("velocity", 1.0));
                     skill.spread = Math.max(0, skillSection.getDouble("spread", 1.0));
+                    skill.durationSeconds = Math.max(1, Math.min(600,
+                        skillSection.getInt("duration-seconds", 5)));
+                    skill.explosionPower = Math.max(1.0, Math.min(64.0,
+                        skillSection.getDouble("explosion-power", 3.0)));
+                    skill.chargedExplosionPower = Math.max(skill.explosionPower, Math.min(64.0,
+                        skillSection.getDouble("charged-explosion-power", 6.0)));
+                    skill.explosionCooldownSeconds = Math.max(1, Math.min(120,
+                        skillSection.getInt("explosion-cooldown-seconds", 4)));
                     bc.skills.put(skillId.toLowerCase(Locale.ROOT), skill);
                 }
             }
@@ -1152,11 +1248,89 @@ public class ConfigManager {
                     dc.minAmount = dropSection.getInt("min-amount", 1);
                     dc.maxAmount = dropSection.getInt("max-amount", 1);
                     dc.chance = dropSection.getDouble("chance", 0.5);
+                    dc.name = dropSection.getString("name");
+                    dc.lore = dropSection.getStringList("lore");
+                    ConfigurationSection bookEnchants = dropSection.getConfigurationSection("book-enchantments");
+                    if (bookEnchants != null) {
+                        for (String enchantment : bookEnchants.getKeys(false)) {
+                            int enchantLevel = bookEnchants.getInt(enchantment, 0);
+                            if (enchantLevel > 0 && enchantLevel <= 255) {
+                                dc.bookEnchantments.put(enchantment, enchantLevel);
+                            } else {
+                                plugin.getLogger().warning("[Boss] Ignoring invalid book enchantment '" +
+                                    enchantment + "' for " + dropKey + " in " + fileName + ".");
+                            }
+                        }
+                    }
                     bc.drops.put(dropKey, dc);
                 }
             }
 
+            ConfigurationSection levelDropsSection = section.getConfigurationSection("level-drops");
+            if (levelDropsSection != null) {
+                for (String levelKey : levelDropsSection.getKeys(false)) {
+                    int level;
+                    try {
+                        level = Integer.parseInt(levelKey);
+                    } catch (NumberFormatException exception) {
+                        plugin.getLogger().warning("[Boss] Ignoring invalid level-drops key '" +
+                            levelKey + "' in " + fileName + ".");
+                        continue;
+                    }
+                    if (level < 1 || level > 1000) {
+                        plugin.getLogger().warning("[Boss] Ignoring out-of-range level-drops key '" +
+                            levelKey + "' in " + fileName + ".");
+                        continue;
+                    }
+
+                    List<ConfiguredItem> items = new ArrayList<>();
+                    for (Map<?, ?> itemMap : section.getMapList("level-drops." + levelKey)) {
+                        ConfiguredItem item = new ConfiguredItem();
+                        Object materialValue = itemMap.get("material");
+                        if (materialValue instanceof String material) item.material = material;
+                        Object nameValue = itemMap.get("name");
+                        if (nameValue instanceof String name) item.name = name;
+                        Object loreValue = itemMap.get("lore");
+                        if (loreValue instanceof List<?> lore) {
+                            for (Object line : lore) {
+                                if (line instanceof String text) item.lore.add(text);
+                            }
+                        }
+                        Object minValue = itemMap.get("min-amount");
+                        if (minValue instanceof Number number) item.minAmount = number.intValue();
+                        Object maxValue = itemMap.get("max-amount");
+                        if (maxValue instanceof Number number) item.maxAmount = number.intValue();
+                        Object chanceValue = itemMap.get("chance");
+                        if (chanceValue instanceof Number number) item.chance = number.doubleValue();
+                        readEnchantments(itemMap.get("enchantments"), item.enchantments);
+                        readEnchantments(itemMap.get("book-enchantments"), item.bookEnchantments);
+
+                        if (item.minAmount < 1 || item.maxAmount < item.minAmount ||
+                                item.maxAmount > 64 || !Double.isFinite(item.chance) ||
+                                item.chance < 0.0 || item.chance > 1.0) {
+                            plugin.getLogger().warning("[Boss] Ignoring invalid level drop at " + fileName +
+                                " level " + level + ".");
+                            continue;
+                        }
+                        items.add(item);
+                    }
+                    bc.levelDrops.put(level, items);
+                }
+            }
+
             bossConfigs.put(bossId, bc);
+        }
+    }
+
+    private void readEnchantments(Object source, Map<String, Integer> destination) {
+        if (!(source instanceof Map<?, ?> enchantments)) return;
+        for (Map.Entry<?, ?> entry : enchantments.entrySet()) {
+            if (!(entry.getKey() instanceof String name) || !(entry.getValue() instanceof Number level)) continue;
+            if (name.isBlank() || level.intValue() < 1 || level.intValue() > 255) {
+                plugin.getLogger().warning("[Boss] Ignoring invalid enchantment '" + name + "'.");
+                continue;
+            }
+            destination.put(name, level.intValue());
         }
     }
 }

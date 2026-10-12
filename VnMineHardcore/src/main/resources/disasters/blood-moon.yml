@@ -8,6 +8,9 @@ disaster-id: blood-moon
 enabled: true
 chance: 20
 name: "§4§l🌕 Trăng Máu"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Quái cường hóa xuất hiện gần người chơi ngoài trời; Darkness ảnh hưởng người chơi trong Overworld. Trú trong nơi kiên cố để tránh quái."
 duration-seconds: 180
 effect-interval-seconds: 5
 warning-seconds: 120

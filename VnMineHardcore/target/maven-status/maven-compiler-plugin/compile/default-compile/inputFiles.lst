@@ -10,6 +10,7 @@
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/listeners/WaterListener.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/listeners/WorldInteractionListener.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/BossEventManager.java
+/workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/BossLeaderboardManager.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/ConfigManager.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/DeathPenaltyManager.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/DeathRenameManager.java

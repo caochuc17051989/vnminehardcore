@@ -8,18 +8,27 @@ display-name: "§5§lEnderman Boss"
 hp: 180
 damage-multiplier: 2.2
 chance: 10
-duration-seconds: 1800
+# [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1200 = 20 phút.
+# [EN] Default boss lifetime after spawning (seconds); 1200 = 20 minutes.
+duration-seconds: 1200
 warning-seconds: 45
 activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
 
 # HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# [VI] Giá trị được khai báo đến level 10; runtime giới hạn HP tối đa của boss ở 1024.
+# [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
 # damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
 hp-by-level:
   1: 180
   2: 270
   3: 405
   4: 608
-
+  5: 912
+  6: 1368
+  7: 2052
+  8: 3078
+  9: 4617
+  10: 6926
 skills:
   shadow-strike:
     enabled: true
@@ -67,3 +76,365 @@ drops:
     min-amount: 5
     max-amount: 12
     chance: 0.4
+
+# [VI] Loot quý theo level; level thiếu dùng mốc gần nhất thấp hơn. amount: 1-64, chance: 0.0-1.0.
+# [EN] Rare drops by level; missing tiers inherit the nearest lower tier. amount: 1-64, chance: 0.0-1.0.
+# [VI] enchantments áp dụng trực tiếp; book-enchantments lưu enchant để áp dụng lên vật phẩm.
+# [EN] enchantments apply to the item; book-enchantments are stored for applying to another item.
+# [VI] Mỗi cấp có một di vật riêng; số dòng enchant tăng đúng theo level (1-10).
+#      Số lượng hợp lệ 1-64; chance 0-1; cấp enchant 1-255.
+#      Lore gồm truyền thuyết theo boss và tối đa 4 dòng cho mỗi vật phẩm.
+#      Với cung, từ cấp 8 dùng sách phù phép để giữ đủ dòng enchant tương thích.
+# [EN] Each tier has a unique relic; enchantment lines increase with level (1-10).
+#      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
+#      Each item's lore tells the boss-specific legend in at most 4 lines.
+#      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+level-drops:
+  1:
+    - material: IRON_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 1"
+      lore:
+        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Khi tiếng chuông thứ 1 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.160
+      enchantments:
+        efficiency: 1
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 1"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.104
+      book-enchantments:
+        efficiency: 1
+
+  2:
+    - material: IRON_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 2"
+      lore:
+        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Khi tiếng chuông thứ 2 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.146
+      enchantments:
+        efficiency: 1
+        fortune: 1
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 2"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.095
+      book-enchantments:
+        efficiency: 1
+        fortune: 1
+
+  3:
+    - material: DIAMOND_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 3"
+      lore:
+        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Khi tiếng chuông thứ 3 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.132
+      enchantments:
+        efficiency: 2
+        fortune: 2
+        silk_touch: 2
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 3"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.086
+      book-enchantments:
+        efficiency: 2
+        fortune: 2
+        silk_touch: 2
+
+  4:
+    - material: DIAMOND_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 4"
+      lore:
+        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Khi tiếng chuông thứ 4 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.118
+      enchantments:
+        efficiency: 2
+        fortune: 2
+        silk_touch: 2
+        unbreaking: 2
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 4"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.077
+      book-enchantments:
+        efficiency: 2
+        fortune: 2
+        silk_touch: 2
+        unbreaking: 2
+  5:
+    - material: DIAMOND_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 5"
+      lore:
+        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Khi tiếng chuông thứ 5 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.104
+      enchantments:
+        efficiency: 2
+        fortune: 2
+        silk_touch: 2
+        unbreaking: 2
+        mending: 2
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 5"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.068
+      book-enchantments:
+        efficiency: 2
+        fortune: 2
+        silk_touch: 2
+        unbreaking: 2
+        mending: 2
+
+  6:
+    - material: NETHERITE_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 6"
+      lore:
+        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Khi tiếng chuông thứ 6 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.090
+      enchantments:
+        efficiency: 3
+        fortune: 3
+        silk_touch: 3
+        unbreaking: 3
+        mending: 3
+        sharpness: 3
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 6"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.058
+      book-enchantments:
+        efficiency: 3
+        fortune: 3
+        silk_touch: 3
+        unbreaking: 3
+        mending: 3
+        sharpness: 3
+
+  7:
+    - material: NETHERITE_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 7"
+      lore:
+        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Khi tiếng chuông thứ 7 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.076
+      enchantments:
+        efficiency: 3
+        fortune: 3
+        silk_touch: 3
+        unbreaking: 3
+        mending: 3
+        sharpness: 3
+        smite: 3
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 7"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.049
+      book-enchantments:
+        efficiency: 3
+        fortune: 3
+        silk_touch: 3
+        unbreaking: 3
+        mending: 3
+        sharpness: 3
+        smite: 3
+
+  8:
+    - material: NETHERITE_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 8"
+      lore:
+        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Khi tiếng chuông thứ 8 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.062
+      enchantments:
+        efficiency: 3
+        fortune: 3
+        silk_touch: 3
+        unbreaking: 3
+        mending: 3
+        sharpness: 3
+        smite: 3
+        bane_of_arthropods: 3
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 8"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.040
+      book-enchantments:
+        efficiency: 3
+        fortune: 3
+        silk_touch: 3
+        unbreaking: 3
+        mending: 3
+        sharpness: 3
+        smite: 3
+        bane_of_arthropods: 3
+
+  9:
+    - material: NETHERITE_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 9"
+      lore:
+        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Khi tiếng chuông thứ 9 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.048
+      enchantments:
+        efficiency: 4
+        fortune: 4
+        silk_touch: 4
+        unbreaking: 4
+        mending: 4
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+        fire_aspect: 4
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 9"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.031
+      book-enchantments:
+        efficiency: 4
+        fortune: 4
+        silk_touch: 4
+        unbreaking: 4
+        mending: 4
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+        fire_aspect: 4
+
+  10:
+    - material: NETHERITE_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 10"
+      lore:
+        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Khi tiếng chuông thứ 10 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.034
+      enchantments:
+        efficiency: 4
+        fortune: 4
+        silk_touch: 4
+        unbreaking: 4
+        mending: 4
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+        fire_aspect: 4
+        vanishing_curse: 4
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 10"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
+        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
+        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.022
+      book-enchantments:
+        efficiency: 4
+        fortune: 4
+        silk_touch: 4
+        unbreaking: 4
+        mending: 4
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+        fire_aspect: 4
+        vanishing_curse: 4

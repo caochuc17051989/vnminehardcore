@@ -8,18 +8,27 @@ display-name: "§c§lVindicator Boss"
 hp: 160
 damage-multiplier: 2.0
 chance: 10
-duration-seconds: 1800
+# [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1200 = 20 phút.
+# [EN] Default boss lifetime after spawning (seconds); 1200 = 20 minutes.
+duration-seconds: 1200
 warning-seconds: 45
 activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
 
 # HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# [VI] Giá trị được khai báo đến level 10; runtime giới hạn HP tối đa của boss ở 1024.
+# [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
 # damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
 hp-by-level:
   1: 160
   2: 240
   3: 360
   4: 540
-
+  5: 810
+  6: 1215
+  7: 1822
+  8: 2733
+  9: 4100
+  10: 6150
 skills:
   shockwave:
     enabled: true
@@ -61,3 +70,365 @@ drops:
     min-amount: 1
     max-amount: 1
     chance: 0.15
+
+# [VI] Loot quý theo level; level thiếu dùng mốc gần nhất thấp hơn. amount: 1-64, chance: 0.0-1.0.
+# [EN] Rare drops by level; missing tiers inherit the nearest lower tier. amount: 1-64, chance: 0.0-1.0.
+# [VI] enchantments áp dụng trực tiếp; book-enchantments lưu enchant để áp dụng lên vật phẩm.
+# [EN] enchantments apply to the item; book-enchantments are stored for applying to another item.
+# [VI] Mỗi cấp có một di vật riêng; số dòng enchant tăng đúng theo level (1-10).
+#      Số lượng hợp lệ 1-64; chance 0-1; cấp enchant 1-255.
+#      Lore gồm truyền thuyết theo boss và tối đa 4 dòng cho mỗi vật phẩm.
+#      Với cung, từ cấp 8 dùng sách phù phép để giữ đủ dòng enchant tương thích.
+# [EN] Each tier has a unique relic; enchantment lines increase with level (1-10).
+#      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
+#      Each item's lore tells the boss-specific legend in at most 4 lines.
+#      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+level-drops:
+  1:
+    - material: IRON_AXE
+      name: "§c§lRìu Phán Quyết Đỏ · Cấp 1"
+      lore:
+        - "§7Tương truyền, mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Khi tiếng chuông thứ 1 vang lên, chiếc rìu từng kết thúc cuộc nổi loạn không tên."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.160
+      enchantments:
+        sharpness: 1
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Rìu Phán Quyết Đỏ · Cấp 1"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.104
+      book-enchantments:
+        sharpness: 1
+
+  2:
+    - material: IRON_AXE
+      name: "§c§lRìu Phán Quyết Đỏ · Cấp 2"
+      lore:
+        - "§7Tương truyền, mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Khi tiếng chuông thứ 2 vang lên, chiếc rìu từng kết thúc cuộc nổi loạn không tên."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.146
+      enchantments:
+        sharpness: 1
+        smite: 1
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Rìu Phán Quyết Đỏ · Cấp 2"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.095
+      book-enchantments:
+        sharpness: 1
+        smite: 1
+
+  3:
+    - material: DIAMOND_AXE
+      name: "§c§lRìu Phán Quyết Đỏ · Cấp 3"
+      lore:
+        - "§7Tương truyền, mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Khi tiếng chuông thứ 3 vang lên, chiếc rìu từng kết thúc cuộc nổi loạn không tên."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.132
+      enchantments:
+        sharpness: 2
+        smite: 2
+        bane_of_arthropods: 2
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Rìu Phán Quyết Đỏ · Cấp 3"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.086
+      book-enchantments:
+        sharpness: 2
+        smite: 2
+        bane_of_arthropods: 2
+
+  4:
+    - material: DIAMOND_AXE
+      name: "§c§lRìu Phán Quyết Đỏ · Cấp 4"
+      lore:
+        - "§7Tương truyền, mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Khi tiếng chuông thứ 4 vang lên, chiếc rìu từng kết thúc cuộc nổi loạn không tên."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.118
+      enchantments:
+        sharpness: 2
+        smite: 2
+        bane_of_arthropods: 2
+        efficiency: 2
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Rìu Phán Quyết Đỏ · Cấp 4"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.077
+      book-enchantments:
+        sharpness: 2
+        smite: 2
+        bane_of_arthropods: 2
+        efficiency: 2
+  5:
+    - material: DIAMOND_AXE
+      name: "§c§lRìu Phán Quyết Đỏ · Cấp 5"
+      lore:
+        - "§7Tương truyền, mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Khi tiếng chuông thứ 5 vang lên, chiếc rìu từng kết thúc cuộc nổi loạn không tên."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.104
+      enchantments:
+        sharpness: 2
+        smite: 2
+        bane_of_arthropods: 2
+        efficiency: 2
+        silk_touch: 2
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Rìu Phán Quyết Đỏ · Cấp 5"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.068
+      book-enchantments:
+        sharpness: 2
+        smite: 2
+        bane_of_arthropods: 2
+        efficiency: 2
+        silk_touch: 2
+
+  6:
+    - material: NETHERITE_AXE
+      name: "§c§lRìu Phán Quyết Đỏ · Cấp 6"
+      lore:
+        - "§7Tương truyền, mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Khi tiếng chuông thứ 6 vang lên, chiếc rìu từng kết thúc cuộc nổi loạn không tên."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.090
+      enchantments:
+        sharpness: 3
+        smite: 3
+        bane_of_arthropods: 3
+        efficiency: 3
+        silk_touch: 3
+        fortune: 3
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Rìu Phán Quyết Đỏ · Cấp 6"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.058
+      book-enchantments:
+        sharpness: 3
+        smite: 3
+        bane_of_arthropods: 3
+        efficiency: 3
+        silk_touch: 3
+        fortune: 3
+
+  7:
+    - material: NETHERITE_AXE
+      name: "§c§lRìu Phán Quyết Đỏ · Cấp 7"
+      lore:
+        - "§7Tương truyền, mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Khi tiếng chuông thứ 7 vang lên, chiếc rìu từng kết thúc cuộc nổi loạn không tên."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.076
+      enchantments:
+        sharpness: 3
+        smite: 3
+        bane_of_arthropods: 3
+        efficiency: 3
+        silk_touch: 3
+        fortune: 3
+        unbreaking: 3
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Rìu Phán Quyết Đỏ · Cấp 7"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.049
+      book-enchantments:
+        sharpness: 3
+        smite: 3
+        bane_of_arthropods: 3
+        efficiency: 3
+        silk_touch: 3
+        fortune: 3
+        unbreaking: 3
+
+  8:
+    - material: NETHERITE_AXE
+      name: "§c§lRìu Phán Quyết Đỏ · Cấp 8"
+      lore:
+        - "§7Tương truyền, mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Khi tiếng chuông thứ 8 vang lên, chiếc rìu từng kết thúc cuộc nổi loạn không tên."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.062
+      enchantments:
+        sharpness: 3
+        smite: 3
+        bane_of_arthropods: 3
+        efficiency: 3
+        silk_touch: 3
+        fortune: 3
+        unbreaking: 3
+        mending: 3
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Rìu Phán Quyết Đỏ · Cấp 8"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.040
+      book-enchantments:
+        sharpness: 3
+        smite: 3
+        bane_of_arthropods: 3
+        efficiency: 3
+        silk_touch: 3
+        fortune: 3
+        unbreaking: 3
+        mending: 3
+
+  9:
+    - material: NETHERITE_AXE
+      name: "§c§lRìu Phán Quyết Đỏ · Cấp 9"
+      lore:
+        - "§7Tương truyền, mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Khi tiếng chuông thứ 9 vang lên, chiếc rìu từng kết thúc cuộc nổi loạn không tên."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.048
+      enchantments:
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+        efficiency: 4
+        silk_touch: 4
+        fortune: 4
+        unbreaking: 4
+        mending: 4
+        fire_aspect: 4
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Rìu Phán Quyết Đỏ · Cấp 9"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.031
+      book-enchantments:
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+        efficiency: 4
+        silk_touch: 4
+        fortune: 4
+        unbreaking: 4
+        mending: 4
+        fire_aspect: 4
+
+  10:
+    - material: NETHERITE_AXE
+      name: "§c§lRìu Phán Quyết Đỏ · Cấp 10"
+      lore:
+        - "§7Tương truyền, mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Khi tiếng chuông thứ 10 vang lên, chiếc rìu từng kết thúc cuộc nổi loạn không tên."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.034
+      enchantments:
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+        efficiency: 4
+        silk_touch: 4
+        fortune: 4
+        unbreaking: 4
+        mending: 4
+        fire_aspect: 4
+        vanishing_curse: 4
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Rìu Phán Quyết Đỏ · Cấp 10"
+      lore:
+        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh huy hiệu của vị quan tòa biến mất trong một đêm."
+        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
+        - "§8Kẻ chạm vào di vật nghe thấy bản án khắc trên thép vẫn rỉ máu đỏ thẫm."
+        - "§dCổ tự khắc trên nó: “lời tuyên thệ cuối cùng của người thi hành công lý”."
+      min-amount: 1
+      max-amount: 1
+      chance: 0.022
+      book-enchantments:
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+        efficiency: 4
+        silk_touch: 4
+        fortune: 4
+        unbreaking: 4
+        mending: 4
+        fire_aspect: 4
+        vanishing_curse: 4

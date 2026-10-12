@@ -28,6 +28,7 @@ public class BossEventManager implements Listener {
     private final VnMineHardcore plugin;
     private final ConfigManager config;
     private final LogManager logManager;
+    private final BossLeaderboardManager leaderboardManager;
     private final Logger logger;
     private final Random random = ThreadLocalRandom.current();
 
@@ -56,6 +57,8 @@ public class BossEventManager implements Listener {
     private int stuckTicks = 0;
     private BukkitTask aiTask;
     private int currentBossLevel = 1;
+    private long nextCreeperExplosionAtMs;
+    private BukkitTask creeperChargeTask;
     private final Map<String, Long> bossSkillCooldowns = new HashMap<>();
     private final Set<Projectile> activeBossProjectiles = new HashSet<>();
     private final Map<UUID, BossProjectileConfig> bossProjectileConfigs = new HashMap<>();
@@ -68,6 +71,7 @@ public class BossEventManager implements Listener {
         this.plugin = plugin;
         this.config = config;
         this.logManager = plugin.getLogManager();
+        this.leaderboardManager = plugin.getBossLeaderboardManager();
         this.logger = plugin.getLogger();
 
         this.bossBar = BossBar.bossBar(
@@ -95,10 +99,11 @@ public class BossEventManager implements Listener {
             @Override
             public void run() {
                 if (Bukkit.getWorlds().isEmpty()) return;
-                timeSinceLastBoss++;
-
-                if (!bossActive && pendingBoss == null && timeSinceLastBoss >= bossEventIntervalSeconds) {
-                    trySpawnBoss();
+                if (!bossActive && pendingBoss == null) {
+                    timeSinceLastBoss++;
+                    if (timeSinceLastBoss >= bossEventIntervalSeconds) {
+                        trySpawnBoss();
+                    }
                 }
 
                 // Update warning bar
@@ -286,6 +291,11 @@ public class BossEventManager implements Listener {
         return null;
     }
 
+    private ConfigManager.BossSkillConfig getCreeperSkillConfig(ConfigManager.BossConfig bc) {
+        String skillKey = findSkillKey(bc, "charged-explosion", "creeper-blast", "blast");
+        return skillKey == null ? null : bc.skills.get(skillKey);
+    }
+
     private boolean useBossSkill(ConfigManager.BossConfig bc, LivingEntity target) {
         if (currentBoss == null || currentBoss.isDead() || bc == null || target == null || bc.skills == null || bc.skills.isEmpty()) {
             return false;
@@ -390,9 +400,34 @@ public class BossEventManager implements Listener {
                 return true;
             }
             case CREEPER -> {
+                if (!(currentBoss instanceof Creeper creeper)) return false;
+                double explosionPower = safeSkillValue(skill.explosionPower, 3.0, 1.0, 64.0);
+
+                if (creeperChargeTask != null) {
+                    creeperChargeTask.cancel();
+                    bossSkillTasks.remove(creeperChargeTask);
+                }
+                creeper.setPowered(true);
+                world.strikeLightningEffect(bossLoc);
                 damageEntitiesInRadius(world, bossLoc, skillRadius, skillDamage);
-                world.spawnParticle(Particle.EXPLOSION, bossLoc, 1);
-                world.playSound(bossLoc, Sound.ENTITY_GENERIC_EXPLODE, 1.0F, 0.8F);
+
+                creeper.damage(skillDamage);
+                if (creeper.isDead() || !creeper.isValid()) return true;
+
+                int durationSeconds = Math.max(1, Math.min(600, skill.durationSeconds));
+                BukkitRunnable chargeRunnable = new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        bossSkillTasks.remove(this);
+                        if (currentBoss == creeper && creeper.isValid() && !creeper.isDead()) {
+                            creeper.setPowered(false);
+                            creeper.setExplosionRadius((int) Math.round(explosionPower));
+                        }
+                        if (creeperChargeTask == this) creeperChargeTask = null;
+                    }
+                };
+                creeperChargeTask = chargeRunnable.runTaskLater(plugin, durationSeconds * 20L);
+                bossSkillTasks.add(creeperChargeTask);
                 return true;
             }
             case WITHER -> {
@@ -808,7 +843,14 @@ public class BossEventManager implements Listener {
         anchorReturnCooldownTicks = 0;
         stuckTicks = 0;
         if (currentBoss instanceof Creeper creeper) {
-            creeper.setExplosionRadius(0);
+            ConfigManager.BossSkillConfig skill = getCreeperSkillConfig(bc);
+            double explosionPower = skill == null ? 3.0
+                : safeSkillValue(skill.explosionPower, 3.0, 1.0, 64.0);
+            creeper.setExplosionRadius((int) Math.round(explosionPower));
+            creeper.setPowered(false);
+            creeper.setIgnited(false);
+            creeper.setFuseTicks(0);
+            nextCreeperExplosionAtMs = 0L;
         }
         double effectiveHp = resolveBossHp(bc, currentBossLevel);
         currentBossName = bc.displayName;
@@ -829,7 +871,7 @@ public class BossEventManager implements Listener {
 
         // Remove default AI để dùng AI custom
         if (currentBoss instanceof Mob mob) {
-            mob.setAI(true); // Vẫn giữ AI mặc định, nhưng chúng ta sẽ điều khiển thêm
+            mob.setAI(!(currentBoss instanceof Creeper)); // Boss creeper tự nổ bằng AI của plugin để không tự bị xóa.
         }
 
         // ===== ÁP DỤNG IMMUNITIES =====
@@ -885,6 +927,7 @@ public class BossEventManager implements Listener {
         }
 
         bossActive = true;
+        leaderboardManager.startBoss(currentBoss);
         timeSinceLastBoss = 0;
         bossEventIntervalSeconds = sampleBossEventInterval();
         lastBossLocation = spawnLoc.clone();
@@ -899,6 +942,7 @@ public class BossEventManager implements Listener {
         Bukkit.broadcastMessage(msg);
         Bukkit.broadcastMessage("§e§lHP: §c" + (int) effectiveHp + " §e| Sát thương: x" + bc.damageMultiplier + " §e| Lv." + currentBossLevel);
         Bukkit.broadcastMessage("§eThời gian tồn tại: " + bc.durationSeconds + " giây");
+        broadcastPossibleDrops(bc, currentBossLevel);
         Bukkit.broadcastMessage("§4§m========================================");
 
         for (Player p : Bukkit.getOnlinePlayers()) {
@@ -920,7 +964,7 @@ public class BossEventManager implements Listener {
             public void run() {
                 if (currentBoss == null || currentBoss.isDead() || !currentBoss.isValid()) {
                     // Boss đã chết
-                    if (currentBoss != null && currentBoss.getKiller() != null) {
+                    if (currentBoss != null && currentBoss.isDead()) {
                         onBossKilled(currentBoss.getKiller(), bc);
                     }
                     cleanup();
@@ -1131,6 +1175,28 @@ public class BossEventManager implements Listener {
                 knockback.setY(0.3);
                 target.setVelocity(knockback.multiply(2.0));
             }
+        } else if (currentBoss instanceof Creeper creeper) {
+            if (distance <= 3.0) {
+                ConfigManager.BossSkillConfig skill = getCreeperSkillConfig(bc);
+                int cooldownSeconds = skill == null ? 4
+                    : Math.max(1, Math.min(120, skill.explosionCooldownSeconds));
+                long now = System.currentTimeMillis();
+                if (now >= nextCreeperExplosionAtMs) {
+                    double explosionPower = creeper.isPowered() && skill != null
+                        ? safeSkillValue(skill.chargedExplosionPower, 6.0, 1.0, 64.0)
+                        : skill == null ? Math.max(1, creeper.getExplosionRadius())
+                            : safeSkillValue(skill.explosionPower, 3.0, 1.0, 64.0);
+                    world.createExplosion(bossLoc, (float) explosionPower, false, false, creeper);
+                    nextCreeperExplosionAtMs = now + cooldownSeconds * 1000L;
+                }
+            } else {
+                Vector direction = targetLoc.toVector().subtract(bossLoc.toVector());
+                direction.setY(0.0);
+                if (direction.lengthSquared() > 0.0001) {
+                    currentBoss.setVelocity(direction.normalize().multiply(0.35));
+                }
+            }
+            return;
         } else if (currentBoss instanceof Mob mob) {
             mob.setAware(true);
             mob.setTarget(target);
@@ -1286,19 +1352,39 @@ public class BossEventManager implements Listener {
     }
 
     private void onBossKilled(Player killer, ConfigManager.BossConfig bc) {
-        Bukkit.broadcastMessage("§a§l🎉 " + killer.getName() + " đã tiêu diệt " + bc.displayName + "!");
+        if (killer != null) {
+            Bukkit.broadcastMessage("§a§l🎉 " + killer.getName() + " đã tiêu diệt " + bc.displayName + "!");
+        } else {
+            Bukkit.broadcastMessage("§a§l🎉 " + bc.displayName + " đã bị tiêu diệt!");
+        }
 
         // Drop items
         for (Map.Entry<String, ConfigManager.DropConfig> dropEntry : bc.drops.entrySet()) {
             ConfigManager.DropConfig dc = dropEntry.getValue();
-            if (random.nextDouble() < dc.chance) {
+            if (Double.isFinite(dc.chance) && dc.chance >= 0.0 && dc.chance <= 1.0 &&
+                    random.nextDouble() < dc.chance) {
                 String materialName = dropEntry.getKey();
                 try {
                     Material material = Material.valueOf(materialName.toUpperCase());
+                    if (material.isAir() || dc.minAmount < 1 || dc.maxAmount < dc.minAmount ||
+                            dc.maxAmount > 64) continue;
                     int amount = random.nextInt(dc.maxAmount - dc.minAmount + 1) + dc.minAmount;
-                    ItemStack dropItem = new ItemStack(material, amount);
+                    ItemStack dropItem = new ItemStack(material);
+                    String itemName = dc.name;
+                    List<String> itemLore = dc.lore;
+                    if (material == Material.ENCHANTED_BOOK) {
+                        if (itemName == null || itemName.isBlank()) itemName = bc.displayName + " §dBí Kíp";
+                        if (itemLore.isEmpty()) itemLore = List.of("§7Sách enchant có thể áp dụng lên vật phẩm.");
+                    }
+                    BossLeaderboardManager.applyMetadata(dropItem, itemName, itemLore, null, null);
+                    if (material == Material.ENCHANTED_BOOK && dc.bookEnchantments.isEmpty()) {
+                        addConfiguredEnchantment(dropItem, "unbreaking", 1, true);
+                    }
+                    for (Map.Entry<String, Integer> enchantment : dc.bookEnchantments.entrySet()) {
+                        addConfiguredEnchantment(dropItem, enchantment.getKey(), enchantment.getValue(), true);
+                    }
                     if (currentBoss != null) {
-                        currentBoss.getWorld().dropItemNaturally(currentBoss.getLocation(), dropItem);
+                        dropItemsNaturally(currentBoss.getLocation(), dropItem, amount);
                     }
                 } catch (IllegalArgumentException e) {
                     logger.warning("[BossEvent] Invalid drop material: " + materialName);
@@ -1306,10 +1392,104 @@ public class BossEventManager implements Listener {
             }
         }
 
-        logManager.logDisaster("BOSS: " + bc.displayName + " killed by " + killer.getName());
+        if (currentBoss != null) {
+            for (ConfigManager.ConfiguredItem configuredItem : levelDropsFor(bc, currentBossLevel)) {
+                if (random.nextDouble() >= configuredItem.chance) continue;
+                Material material = Material.matchMaterial(configuredItem.material);
+                if (material == null || material.isAir()) {
+                    logger.warning("[BossEvent] Invalid configured drop material: " + configuredItem.material);
+                    continue;
+                }
+                int amount = random.nextInt(configuredItem.maxAmount - configuredItem.minAmount + 1) +
+                    configuredItem.minAmount;
+                ItemStack item = new ItemStack(material);
+                BossLeaderboardManager.applyMetadata(item, configuredItem.name, configuredItem.lore,
+                    null, null);
+                for (Map.Entry<String, Integer> enchantment : configuredItem.enchantments.entrySet()) {
+                    addConfiguredEnchantment(item, enchantment.getKey(), enchantment.getValue(), false);
+                }
+                for (Map.Entry<String, Integer> enchantment : configuredItem.bookEnchantments.entrySet()) {
+                    addConfiguredEnchantment(item, enchantment.getKey(), enchantment.getValue(), true);
+                }
+                dropItemsNaturally(currentBoss.getLocation(), item, amount);
+            }
+        }
+        leaderboardManager.finishBoss(currentBossLevel, true);
+        logManager.logDisaster("BOSS: " + bc.displayName + " killed by " +
+            (killer == null ? "unknown" : killer.getName()));
+    }
+
+    private List<ConfigManager.ConfiguredItem> levelDropsFor(ConfigManager.BossConfig bc, int level) {
+        if (bc.levelDrops.isEmpty()) return List.of();
+        int selectedLevel = bc.levelDrops.keySet().stream()
+            .filter(configuredLevel -> configuredLevel <= level)
+            .mapToInt(Integer::intValue)
+            .max()
+            .orElse(-1);
+        return selectedLevel < 0 ? List.of() : bc.levelDrops.getOrDefault(selectedLevel, List.of());
+    }
+
+    private void broadcastPossibleDrops(ConfigManager.BossConfig bc, int level) {
+        Bukkit.broadcastMessage("§d§lVật phẩm có thể rơi (tỉ lệ từng món):");
+        for (Map.Entry<String, ConfigManager.DropConfig> entry : bc.drops.entrySet()) {
+            ConfigManager.DropConfig drop = entry.getValue();
+            if (drop.chance < 0.0 || drop.chance > 1.0 || !Double.isFinite(drop.chance)) continue;
+            String itemName = drop.name;
+            if (itemName == null || itemName.isBlank()) {
+                itemName = entry.getKey().equalsIgnoreCase("ENCHANTED_BOOK")
+                    ? bc.displayName + " §dBí Kíp" : entry.getKey();
+            }
+            Bukkit.broadcastMessage("§d• " + itemName + " §7— §e" +
+                String.format(java.util.Locale.US, "%.1f%%", drop.chance * 100.0));
+        }
+        for (ConfigManager.ConfiguredItem item : levelDropsFor(bc, level)) {
+            String displayName = item.name == null || item.name.isBlank() ? item.material : item.name;
+            Bukkit.broadcastMessage("§d• " + displayName + " §7— §e" +
+                String.format(java.util.Locale.US, "%.1f%%", item.chance * 100.0));
+        }
+    }
+
+    private void addConfiguredEnchantment(ItemStack item, String name, int level, boolean stored) {
+        if (level < 1 || level > 255) return;
+        String id = name.toLowerCase(java.util.Locale.ROOT);
+        if (id.equals("damage_all")) id = "sharpness";
+        else if (id.equals("damage_undead")) id = "smite";
+        else if (id.equals("damage_arthropods")) id = "bane_of_arthropods";
+        else if (id.equals("durability")) id = "unbreaking";
+        else if (id.equals("loot_bonus_mobs")) id = "looting";
+        org.bukkit.enchantments.Enchantment enchantment;
+        try {
+            enchantment = org.bukkit.enchantments.Enchantment.getByKey(
+                org.bukkit.NamespacedKey.minecraft(id));
+        } catch (IllegalArgumentException exception) {
+            enchantment = null;
+        }
+        if (enchantment == null) {
+            logger.warning("[BossEvent] Unknown configured enchantment: " + name);
+            return;
+        }
+        if (stored && item.getItemMeta() instanceof org.bukkit.inventory.meta.EnchantmentStorageMeta meta) {
+            meta.addStoredEnchant(enchantment, level, true);
+            item.setItemMeta(meta);
+        } else if (!stored) {
+            item.addUnsafeEnchantment(enchantment, level);
+        }
+    }
+
+    private void dropItemsNaturally(Location location, ItemStack template, int amount) {
+        int remaining = amount;
+        int stackLimit = Math.max(1, template.getMaxStackSize());
+        while (remaining > 0) {
+            ItemStack stack = template.clone();
+            int stackAmount = Math.min(remaining, stackLimit);
+            stack.setAmount(stackAmount);
+            location.getWorld().dropItemNaturally(location, stack);
+            remaining -= stackAmount;
+        }
     }
 
     private void cleanup() {
+        leaderboardManager.finishBoss(currentBossLevel, false);
         if (aiTask != null) {
             aiTask.cancel();
             aiTask = null;
@@ -1328,6 +1508,8 @@ public class BossEventManager implements Listener {
             if (task != null) task.cancel();
         }
         bossSkillTasks.clear();
+        creeperChargeTask = null;
+        nextCreeperExplosionAtMs = 0L;
         bossProjectileConfigs.clear();
         bossSkillCooldowns.clear();
 
@@ -1417,6 +1599,8 @@ public class BossEventManager implements Listener {
         manualBoss.immunities.putAll(bc.immunities);
         manualBoss.immunityPotionEffects = new ArrayList<>(bc.immunityPotionEffects);
         manualBoss.drops.putAll(bc.drops);
+        bc.levelDrops.forEach((configuredLevel, items) ->
+            manualBoss.levelDrops.put(configuredLevel, new ArrayList<>(items)));
         if (bc.hpByLevel != null) manualBoss.hpByLevel.putAll(bc.hpByLevel);
         if (bc.skills != null) manualBoss.skills.putAll(bc.skills);
 
