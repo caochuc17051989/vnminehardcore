@@ -30,6 +30,7 @@ public final class VnMineHardcore extends JavaPlugin {
     private SpawnerControlListener spawnerControlListener;
     private VillagerTradeManager villagerTradeManager;
     private OreControlListener oreControlListener;
+    private TimeControlManager timeControlManager;
     private GraveListener graveListener;
 
     @Override
@@ -38,11 +39,13 @@ public final class VnMineHardcore extends JavaPlugin {
         clearLegacyPluginBans();
 
         getLogger().info("§a==========================================");
-        getLogger().info("§a  VnMineHardcore v1.2.1 - KHỞI ĐỘNG");
+        getLogger().info("§a  VnMineHardcore v1.2.4 - KHỞI ĐỘNG");
         getLogger().info("§a==========================================");
 
         // Load config first
         this.configManager = new ConfigManager(this);
+        this.timeControlManager = new TimeControlManager(this, configManager);
+        this.timeControlManager.reload();
 
         // Initialize managers (pass config)
         this.logManager = new LogManager(this, configManager);
@@ -86,6 +89,8 @@ public final class VnMineHardcore extends JavaPlugin {
         this.getCommand("vnevent").setExecutor(this);
         this.getCommand("vnboss").setExecutor(this);
         this.getCommand("vn").setExecutor(this);
+        this.getCommand("vnrespawn").setExecutor(this);
+        this.getCommand("vnleave").setExecutor(this);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
         getLogger().info("§a  Deaths are recorded; no death bans are applied.");
@@ -103,11 +108,36 @@ public final class VnMineHardcore extends JavaPlugin {
         if (bossEventManager != null) bossEventManager.stop();
         if (graveManager != null) graveManager.stop();
         if (logManager != null) logManager.stop();
+        if (timeControlManager != null) timeControlManager.stop();
         getLogger().info("VnMineHardcore disabled.");
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equalsIgnoreCase("vnrespawn")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Lệnh này chỉ dành cho người chơi.");
+                return true;
+            }
+            if (!deathListener.requestRespawn(player)) {
+                player.sendMessage("§cBạn hiện không chờ chọn hồi sinh.");
+            }
+            return true;
+        }
+
+        if (command.getName().equalsIgnoreCase("vnleave")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Lệnh này chỉ dành cho người chơi.");
+                return true;
+            }
+            if (!deathListener.isAwaitingRespawnChoice(player)) {
+                player.sendMessage("§cBạn chỉ có thể dùng lệnh này sau khi chết.");
+                return true;
+            }
+            player.kick(net.kyori.adventure.text.Component.text("Bạn đã chọn thoát game sau khi chết."));
+            return true;
+        }
+
         if (command.getName().equalsIgnoreCase("vnhelp")) {
             sender.sendMessage("§6§m========================================");
             sender.sendMessage("§6§l  VnMineHardcore - Command Help");
@@ -129,6 +159,7 @@ public final class VnMineHardcore extends JavaPlugin {
                 return true;
             }
             configManager.reload();
+            timeControlManager.reload();
             hungerListener.reload();
             environmentListener.reload();
             thirstManager.reload();

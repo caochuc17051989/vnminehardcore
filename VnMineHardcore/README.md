@@ -10,6 +10,8 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 1.21.4. Người chơi kh
 - 💧 **Hệ thống khát nước** (uống từ nguồn, chai, xô; nước tự nhiên gây độc)
 - 🌍 **Môi trường khắc nghiệt** (nhiệt độ, sương mù, chặn ngủ, chóng mặt, sợ hầm)
 - 🌋 **Thiên tai tự động** (Blood Moon, Meteor, Storm, Solar Flare, Plague, Tornado, Eclipse)
+- ☀️🌙 **Điều khiển ngày/đêm** (cấu hình riêng thời lượng ban ngày và ban đêm)
+- ⛏️💥 **Kiểm soát đào quặng** (thay vật phẩm rơi, gãy cúp và nổ theo block/cúp)
 - 🏷 **Đổi tên hiển thị sau khi chết** (tùy chỉnh format trong config)
 
 ## Lệnh
@@ -57,6 +59,24 @@ rename:
 ```
 
 **Lưu ý:** Chức năng này chỉ thay đổi **tên hiển thị** trong chat và tab list (khi bấm phím Tab), **không** thay đổi tên thật của người chơi (`player.getName()`).
+
+### Death & Respawn - Hồi sinh sau khi chết
+
+Sau khi chết, người chơi có thể chọn hồi sinh hoặc thoát game bằng hai nút chat
+hoặc lệnh `/vnrespawn` và `/vnleave`. Sau khi chọn hồi sinh,
+`death.respawn-protection` mặc định chờ 10 giây; trong thời gian này người chơi
+bị giới hạn trong bán kính 10 block quanh vị trí hồi sinh và không thể tương
+tác, mở/sửa inventory, nhặt hoặc thả đồ, hay tấn công. Tiêu đề màn hình đếm
+ngược cho biết khi nào các thao tác được mở lại. Chạy `/vnreload` sau khi thay
+đổi các thiết lập này.
+
+```yaml
+death:
+  respawn-protection:
+    enabled: true
+    delay-seconds: 10
+    movement-radius-blocks: 10
+```
 
 ### Disasters - Thiên tai
 
@@ -116,6 +136,47 @@ disasters:
       # [EN] Damage per second (hearts)
       damage-per-second: 1.0
 ```
+
+### Time Control - Thời lượng ngày và đêm
+
+Trong `config.yml`, `time-control.global.day-duration-minutes` và
+`time-control.global.night-duration-minutes` đặt thời lượng toàn cục theo phút
+thực tế cho mọi world trừ Nether. Có thể ghi đè riêng trong
+`time-control.worlds.<world-name>`; mỗi giá trị bị bỏ trống sẽ kế thừa giá trị
+global tương ứng. Ví dụ:
+
+```yaml
+time-control:
+  enabled: true
+  global:
+    day-duration-minutes: 10
+    night-duration-minutes: 10
+  worlds:
+    world_resource:
+      day-duration-minutes: 6
+    world_the_end:
+      night-duration-minutes: 20
+```
+
+Thiết lập mặc định 10 phút cho mỗi pha giữ tốc độ mặc định của Minecraft.
+Đặt `time-control.enabled: false` để giữ chu kỳ ngày/đêm vanilla.
+Nether luôn được loại khỏi chức năng quản lý thời gian: plugin không thay đổi
+thời gian hoặc gamerule của world Nether. Các world khác không có world clock
+sẽ được bỏ qua và ghi cảnh báo.
+
+### Tương thích Paper 26
+
+Đã biên dịch và khởi động plugin thành công trên Paper 26.1.2 build 74,
+26.2 build 133 và 26.3 build 175. Paper 26 yêu cầu Java 25 trở lên.
+
+### Block Drop, Tool Break & Explosion - Hiệu ứng khi đào
+
+Phần `block-drop-settings` cho phép đặt tỷ lệ 0-100 riêng cho từng block và
+cúp. Ba công tắc cấp cao (`replace-enabled`, `break-enabled`,
+`explode-enabled`) có thể tắt riêng từng loại hiệu ứng; từng rule cũng có
+công tắc `enabled`. `drop-replace.replace-block` là vật phẩm thay cho drop
+vanilla khi trúng tỷ lệ. `explode` hỗ trợ cấu hình sức mạnh, phá block, lửa,
+sát thương người chơi, thông báo và tỷ lệ. Chạy `/vnreload` sau khi sửa config.
 
 ## Yêu cầu
 

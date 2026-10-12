@@ -33,6 +33,15 @@ public class DisasterManager {
     private int timeSinceLastDisaster = 0;
     private BukkitTask schedulerTask;
 
+    private static final Material CHAIN_MATERIAL = resolveChainMaterial();
+
+    private static Material resolveChainMaterial() {
+        Material material = Material.matchMaterial("IRON_CHAIN");
+        if (material == null) material = Material.matchMaterial("CHAIN");
+        if (material == null) throw new IllegalStateException("No chain block material is available.");
+        return material;
+    }
+
     // Block materials considered as "transparent" - không được coi là mái che an toàn
     private static final Set<Material> TRANSPARENT_BLOCKS = new HashSet<>(Arrays.asList(
         Material.AIR, Material.WATER, Material.LAVA, Material.BUBBLE_COLUMN,
@@ -92,7 +101,7 @@ public class DisasterManager {
         Material.LILY_OF_THE_VALLEY, Material.WITHER_ROSE, Material.SUNFLOWER,
         Material.LILAC, Material.PEONY, Material.ROSE_BUSH, Material.PITCHER_PLANT,
         Material.TORCHFLOWER, Material.SPORE_BLOSSOM,
-        Material.BELL, Material.CHAIN, Material.LIGHTNING_ROD,
+        Material.BELL, CHAIN_MATERIAL, Material.LIGHTNING_ROD,
         Material.DAYLIGHT_DETECTOR, Material.COMPARATOR, Material.REPEATER,
         Material.REDSTONE_WIRE, Material.REDSTONE_TORCH, Material.LEVER,
         Material.TRIPWIRE, Material.TRIPWIRE_HOOK, Material.PAINTING,
@@ -1412,7 +1421,7 @@ public class DisasterManager {
                     Material.RAW_COPPER_BLOCK, Material.ANVIL, Material.CHIPPED_ANVIL,
                     Material.DAMAGED_ANVIL, Material.CAULDRON, Material.HOPPER,
                     Material.IRON_BARS, Material.IRON_DOOR, Material.IRON_TRAPDOOR,
-                    Material.LANTERN, Material.SOUL_LANTERN, Material.CHAIN
+                    Material.LANTERN, Material.SOUL_LANTERN, CHAIN_MATERIAL
                 ));
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;

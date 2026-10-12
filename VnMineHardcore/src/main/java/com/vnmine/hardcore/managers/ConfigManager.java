@@ -1,6 +1,7 @@
 package com.vnmine.hardcore.managers;
 
 import com.vnmine.hardcore.VnMineHardcore;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -56,6 +57,9 @@ public class ConfigManager {
     // Death
     public boolean broadcastDeath;
     public boolean playSound;
+    public boolean respawnProtectionEnabled;
+    public int respawnProtectionSeconds;
+    public int respawnMovementRadiusBlocks;
 
     // Death Penalty
     public boolean deathPenaltyEnabled;
@@ -194,6 +198,24 @@ public class ConfigManager {
     public boolean oreControlEnabled;
     public Map<String, Map<String, Double>> oreControlWorlds = new HashMap<>();
 
+    // Time Control
+    public boolean timeControlEnabled;
+    public int dayDurationMinutes;
+    public int nightDurationMinutes;
+    public Map<String, WorldTimeConfig> worldTimeConfigs = new HashMap<>();
+
+    public static class WorldTimeConfig {
+        public Integer dayDurationMinutes;
+        public Integer nightDurationMinutes;
+    }
+
+    // Block drop, tool break, and explosion rules
+    public boolean blockDropSettingsEnabled;
+    public boolean dropReplaceEnabled;
+    public boolean toolBreakEnabled;
+    public boolean oreExplodeEnabled;
+    public Map<Material, Map<Material, BlockMiningRule>> blockMiningRules = new HashMap<>();
+
     // Rename
     public boolean renameEnabled;
     public String nameStructure;
@@ -249,6 +271,22 @@ public class ConfigManager {
         public double chance = 0.5;
     }
 
+    public static class BlockMiningRule {
+        public boolean replaceEnabled;
+        public Material replaceMaterial;
+        public double replaceChance;
+        public boolean toolBreakEnabled;
+        public double toolBreakChance;
+        public String toolBreakMessage;
+        public boolean explodeEnabled;
+        public float explosionPower;
+        public boolean explosionBreakBlocks;
+        public boolean explosionSetFire;
+        public boolean explosionDamagePlayer;
+        public double explosionChance;
+        public String explosionMessage;
+    }
+
     public ConfigManager(VnMineHardcore plugin) {
         this.plugin = plugin;
         reload();
@@ -266,6 +304,17 @@ public class ConfigManager {
         // Death
         broadcastDeath = config.getBoolean("death.broadcast-death", true);
         playSound = config.getBoolean("death.play-sound", true);
+        respawnProtectionEnabled = config.getBoolean("death.respawn-protection.enabled", true);
+        respawnProtectionSeconds = config.getInt("death.respawn-protection.delay-seconds", 10);
+        respawnMovementRadiusBlocks = config.getInt("death.respawn-protection.movement-radius-blocks", 10);
+        if (respawnProtectionSeconds < 0) {
+            plugin.getLogger().warning("[Config] death.respawn-protection.delay-seconds cannot be negative; using 0.");
+            respawnProtectionSeconds = 0;
+        }
+        if (respawnMovementRadiusBlocks < 0) {
+            plugin.getLogger().warning("[Config] death.respawn-protection.movement-radius-blocks cannot be negative; using 0.");
+            respawnMovementRadiusBlocks = 0;
+        }
 
         // Death Penalty
         deathPenaltyEnabled = config.getBoolean("death-penalty.enabled", true);
@@ -400,6 +449,49 @@ public class ConfigManager {
             }
         }
 
+        // Time Control
+        timeControlEnabled = config.getBoolean("time-control.enabled", true);
+        String globalTimePath = config.isConfigurationSection("time-control.global")
+            ? "time-control.global."
+            : "time-control.";
+        dayDurationMinutes = getPositiveMinutes(globalTimePath + "day-duration-minutes",
+            config.getInt("time-control.day-duration-minutes", 10), 10);
+        nightDurationMinutes = getPositiveMinutes(globalTimePath + "night-duration-minutes",
+            config.getInt("time-control.night-duration-minutes", 10), 10);
+        worldTimeConfigs.clear();
+        ConfigurationSection worldTimeSection = config.getConfigurationSection("time-control.worlds");
+        if (worldTimeSection != null) {
+            for (String worldName : worldTimeSection.getKeys(false)) {
+                ConfigurationSection worldSection = worldTimeSection.getConfigurationSection(worldName);
+                if (worldSection == null) {
+                    plugin.getLogger().warning("[Config] time-control.worlds." + worldName +
+                        " must be a configuration section; using global time settings.");
+                    continue;
+                }
+
+                WorldTimeConfig worldTimeConfig = new WorldTimeConfig();
+                String worldPath = "time-control.worlds." + worldName + ".";
+                if (worldSection.contains("day-duration-minutes")) {
+                    worldTimeConfig.dayDurationMinutes = getPositiveMinutes(
+                        worldPath + "day-duration-minutes",
+                        worldSection.getInt("day-duration-minutes"),
+                        dayDurationMinutes
+                    );
+                }
+                if (worldSection.contains("night-duration-minutes")) {
+                    worldTimeConfig.nightDurationMinutes = getPositiveMinutes(
+                        worldPath + "night-duration-minutes",
+                        worldSection.getInt("night-duration-minutes"),
+                        nightDurationMinutes
+                    );
+                }
+                worldTimeConfigs.put(worldName, worldTimeConfig);
+            }
+        }
+
+        // Block drop, tool break, and explosion rules
+        loadBlockMiningRules();
+
         // Rename
         renameEnabled = config.getBoolean("rename.enabled", true);
         nameStructure = config.getString("rename.name-structure", "<name> ☠ 000");
@@ -412,6 +504,134 @@ public class ConfigManager {
         plugin.getLogger().info("[Config] Loaded configuration with " + config.getKeys(true).size() + " keys");
         plugin.getLogger().info("[Config] Loaded " + bossConfigs.size() + " bosses from bosses/");
         plugin.getLogger().info("[Config] Loaded " + disasterConfigs.size() + " disasters from disasters/");
+    }
+
+    private int getPositiveMinutes(String path, int minutes, int defaultValue) {
+        if (minutes > 0) return minutes;
+
+        plugin.getLogger().warning("[Config] " + path + " must be greater than 0; using " + defaultValue + ".");
+        return defaultValue;
+    }
+
+    public int getDayDurationMinutes(String worldName) {
+        WorldTimeConfig worldConfig = worldTimeConfigs.get(worldName);
+        return worldConfig != null && worldConfig.dayDurationMinutes != null
+            ? worldConfig.dayDurationMinutes
+            : dayDurationMinutes;
+    }
+
+    public int getNightDurationMinutes(String worldName) {
+        WorldTimeConfig worldConfig = worldTimeConfigs.get(worldName);
+        return worldConfig != null && worldConfig.nightDurationMinutes != null
+            ? worldConfig.nightDurationMinutes
+            : nightDurationMinutes;
+    }
+
+    private void loadBlockMiningRules() {
+        blockDropSettingsEnabled = config.getBoolean("block-drop-settings.enabled", false);
+        dropReplaceEnabled = config.getBoolean("block-drop-settings.replace-enabled", true);
+        toolBreakEnabled = config.getBoolean("block-drop-settings.break-enabled", true);
+        oreExplodeEnabled = config.getBoolean("block-drop-settings.explode-enabled", true);
+        blockMiningRules.clear();
+
+        List<Map<?, ?>> rules = config.getMapList("block-drop-settings.rules");
+        for (int index = 0; index < rules.size(); index++) {
+            Map<?, ?> ruleMap = rules.get(index);
+            Material blockMaterial = parseMaterial(ruleMap.get("block"),
+                "block-drop-settings.rules[" + index + "].block");
+            if (blockMaterial == null || !blockMaterial.isBlock()) continue;
+
+            for (Map.Entry<?, ?> entry : ruleMap.entrySet()) {
+                if (!(entry.getKey() instanceof String toolName) || "block".equalsIgnoreCase(toolName)) continue;
+                Material toolMaterial = parseMaterial(toolName,
+                    "block-drop-settings.rules[" + index + "]." + toolName);
+                if (toolMaterial == null || !(entry.getValue() instanceof Map<?, ?> toolMap)) continue;
+
+                BlockMiningRule miningRule = new BlockMiningRule();
+                Map<?, ?> replaceMap = nestedMap(toolMap.get("drop-replace"));
+                if (replaceMap != null) {
+                    miningRule.replaceEnabled = readBoolean(replaceMap, "enabled", false);
+                    miningRule.replaceMaterial = parseMaterial(replaceMap.get("replace-block"),
+                        "block-drop-settings.rules[" + index + "]." + toolName + ".drop-replace.replace-block");
+                    miningRule.replaceChance = readChance(replaceMap, "chance",
+                        "block-drop-settings.rules[" + index + "]." + toolName + ".drop-replace.chance");
+                    if (miningRule.replaceMaterial != null &&
+                        (!miningRule.replaceMaterial.isItem() || miningRule.replaceMaterial.isAir())) {
+                        plugin.getLogger().warning("[Config] Replacement material " +
+                            miningRule.replaceMaterial + " is not an item; drop replacement disabled.");
+                        miningRule.replaceEnabled = false;
+                    }
+                }
+
+                Map<?, ?> breakMap = nestedMap(toolMap.get("tool-break"));
+                if (breakMap != null) {
+                    miningRule.toolBreakEnabled = readBoolean(breakMap, "enabled", false);
+                    miningRule.toolBreakChance = readChance(breakMap, "chance",
+                        "block-drop-settings.rules[" + index + "]." + toolName + ".tool-break.chance");
+                    miningRule.toolBreakMessage = readString(breakMap, "message", "");
+                }
+
+                Map<?, ?> explodeMap = nestedMap(toolMap.get("explode"));
+                if (explodeMap != null) {
+                    miningRule.explodeEnabled = readBoolean(explodeMap, "enabled", false);
+                    miningRule.explosionPower = (float) readNonNegativeNumber(explodeMap, "power",
+                        "block-drop-settings.rules[" + index + "]." + toolName + ".explode.power", 0.0);
+                    miningRule.explosionBreakBlocks = readBoolean(explodeMap, "break-blocks", false);
+                    miningRule.explosionSetFire = readBoolean(explodeMap, "set-fire", false);
+                    miningRule.explosionDamagePlayer = readBoolean(explodeMap, "damage-player", true);
+                    miningRule.explosionChance = readChance(explodeMap, "chance",
+                        "block-drop-settings.rules[" + index + "]." + toolName + ".explode.chance");
+                    miningRule.explosionMessage = readString(explodeMap, "message", "");
+                    if (miningRule.explosionPower <= 0.0f) miningRule.explodeEnabled = false;
+                }
+
+                blockMiningRules.computeIfAbsent(blockMaterial, ignored -> new HashMap<>())
+                    .put(toolMaterial, miningRule);
+            }
+        }
+    }
+
+    private Material parseMaterial(Object value, String path) {
+        if (!(value instanceof String name) || name.isBlank()) {
+            plugin.getLogger().warning("[Config] Missing or invalid material at " + path + ".");
+            return null;
+        }
+        Material material = Material.matchMaterial(name.trim());
+        if (material == null) plugin.getLogger().warning("[Config] Unknown material '" + name + "' at " + path + ".");
+        return material;
+    }
+
+    private Map<?, ?> nestedMap(Object value) {
+        return value instanceof Map<?, ?> map ? map : null;
+    }
+
+    private boolean readBoolean(Map<?, ?> values, String key, boolean defaultValue) {
+        Object value = values.get(key);
+        return value instanceof Boolean bool ? bool : defaultValue;
+    }
+
+    private String readString(Map<?, ?> values, String key, String defaultValue) {
+        Object value = values.get(key);
+        return value instanceof String string ? string : defaultValue;
+    }
+
+    private double readChance(Map<?, ?> values, String key, String path) {
+        double chance = readNonNegativeNumber(values, key, path, 0.0);
+        if (chance <= 100.0) return chance;
+
+        plugin.getLogger().warning("[Config] " + path + " must be between 0 and 100; using 0.");
+        return 0.0;
+    }
+
+    private double readNonNegativeNumber(Map<?, ?> values, String key, String path, double defaultValue) {
+        Object value = values.get(key);
+        if (!(value instanceof Number number)) return defaultValue;
+        double result = number.doubleValue();
+        if (Double.isFinite(result) && result >= 0.0) return result;
+
+        plugin.getLogger().warning("[Config] " + path + " must be a finite non-negative number; using " +
+            defaultValue + ".");
+        return defaultValue;
     }
 
     private void migrateDeathPenaltyDefaults() {

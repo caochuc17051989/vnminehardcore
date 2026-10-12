@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.2.1
+version: 1.2.4
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
@@ -18,6 +18,12 @@ commands:
     description: Tải lại file cấu hình config.yml
     usage: /vnreload
     permission: vnmine.hardcore.admin
+  vnrespawn:
+    description: Hồi sinh sau khi chết
+    usage: /vnrespawn
+  vnleave:
+    description: Thoát game sau khi chết
+    usage: /vnleave
   vnhelp:
     description: Hiển thị hướng dẫn tất cả lệnh
     usage: /vnhelp

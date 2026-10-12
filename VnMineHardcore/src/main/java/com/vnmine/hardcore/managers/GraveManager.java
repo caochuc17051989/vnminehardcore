@@ -133,43 +133,56 @@ public class GraveManager implements Listener {
 
     private void loadStructure() {
         graveStructure.clear();
-        plugin.saveResource("graves-structure.yml", false);
-
         File structureFile = new File(plugin.getDataFolder(), "graves-structure.yml");
+        if (!structureFile.exists()) {
+            plugin.saveResource("graves-structure.yml", false);
+        }
         YamlConfiguration structureConfig = YamlConfiguration.loadConfiguration(structureFile);
 
-        if (!structureConfig.contains("blocks")) {
-            logger.warning("[Grave] No blocks found in graves-structure.yml, using fallback structure");
+        boolean miniGraves = structureConfig.getBoolean("mini-graves", false);
+        String selectedVariant = miniGraves ? "mini" : "full";
+        org.bukkit.configuration.ConfigurationSection selectedStructure =
+            structureConfig.getConfigurationSection(selectedVariant);
+        List<Map<?, ?>> blocks;
+
+        if (selectedStructure != null) {
+            blocks = selectedStructure.getMapList("blocks");
+        } else if (structureConfig.isList("blocks")) {
+            logger.warning("[Grave] Missing '" + selectedVariant +
+                "' structure in graves-structure.yml; loading legacy 'blocks' structure");
+            blocks = structureConfig.getMapList("blocks");
+        } else {
+            logger.warning("[Grave] No '" + selectedVariant +
+                "' structure found in graves-structure.yml, using fallback structure");
             addFallbackStructure();
             return;
         }
 
-        for (Object blockObj : structureConfig.getList("blocks")) {
-            if (blockObj instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> blockMap = (Map<String, Object>) blockObj;
-                int dx = getIntFromMap(blockMap, "dx", 0);
-                int dy = getIntFromMap(blockMap, "dy", 0);
-                int dz = getIntFromMap(blockMap, "dz", 0);
-                String materialName = (String) blockMap.getOrDefault("material", "AIR");
-                String blockData = (String) blockMap.getOrDefault("data", "");
+        for (Map<?, ?> blockMap : blocks) {
+            int dx = getIntFromMap(blockMap, "dx", 0);
+            int dy = getIntFromMap(blockMap, "dy", 0);
+            int dz = getIntFromMap(blockMap, "dz", 0);
+            Object materialValue = blockMap.get("material");
+            String materialName = materialValue instanceof String ? (String) materialValue : "AIR";
+            Object blockDataValue = blockMap.get("data");
+            String blockData = blockDataValue instanceof String ? (String) blockDataValue : "";
 
-                Material material = Material.getMaterial(materialName.toUpperCase());
-                if (material == null || material == Material.AIR) {
-                    logger.warning("[Grave] Invalid material '" + materialName + "' at dx=" + dx + ",dy=" + dy + ",dz=" + dz);
-                    continue;
-                }
-                graveStructure.add(new GraveBlock(dx, dy, dz, material, blockData != null ? blockData : ""));
+            Material material = Material.getMaterial(materialName.toUpperCase(Locale.ROOT));
+            if (material == null || material == Material.AIR) {
+                logger.warning("[Grave] Invalid material '" + materialName + "' at dx=" + dx + ",dy=" + dy + ",dz=" + dz);
+                continue;
             }
+            graveStructure.add(new GraveBlock(dx, dy, dz, material, blockData));
         }
 
         if (graveStructure.isEmpty()) {
-            logger.warning("[Grave] No valid blocks, using fallback structure");
+            logger.warning("[Grave] No valid blocks in '" + selectedVariant +
+                "' structure, using fallback structure");
             addFallbackStructure();
         }
     }
 
-    private int getIntFromMap(Map<String, Object> map, String key, int defaultValue) {
+    private int getIntFromMap(Map<?, ?> map, String key, int defaultValue) {
         Object val = map.get(key);
         if (val instanceof Number) return ((Number) val).intValue();
         return defaultValue;

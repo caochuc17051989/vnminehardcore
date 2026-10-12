@@ -6,24 +6,49 @@ import com.vnmine.hardcore.managers.DeathPenaltyManager;
 import com.vnmine.hardcore.managers.DeathRenameManager;
 import com.vnmine.hardcore.managers.LogManager;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityResurrectEvent;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
+import org.bukkit.event.player.PlayerBucketFillEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerShearEntityEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 public class DeathListener implements Listener {
@@ -35,9 +60,21 @@ public class DeathListener implements Listener {
     private final ConfigManager config;
     private final Logger logger;
     private final Map<UUID, Long> combatTagged = new HashMap<>();
+    private final Map<UUID, RespawnLock> respawnLocks = new HashMap<>();
+    private final Set<UUID> awaitingRespawnChoice = new HashSet<>();
     private long combatTagDurationMs;
     private BukkitRunnable combatCheckTask;
-    private BukkitRunnable gamemodeCheckTask;
+
+    private static final class RespawnLock {
+        private final Location anchor;
+        private final long endsAtMillis;
+        private BukkitTask countdownTask;
+
+        private RespawnLock(Location anchor, long endsAtMillis) {
+            this.anchor = anchor;
+            this.endsAtMillis = endsAtMillis;
+        }
+    }
 
     public DeathListener(VnMineHardcore plugin, ConfigManager config, DeathRenameManager renameManager, DeathPenaltyManager deathPenaltyManager) {
         this.plugin = plugin;
@@ -50,40 +87,17 @@ public class DeathListener implements Listener {
         // Load combat tag duration from config (default 30s)
         reloadCombatTagDuration();
         startCombatCheckTask();
-        startGamemodeCheckTask();
 
         logger.info("[Death] Initialized: combat-tag-duration=" + (combatTagDurationMs / 1000) + "s");
     }
 
     public void reload() {
         reloadCombatTagDuration();
-    }
-    
-    /**
-     * Task kiểm tra game mode mỗi 2 giây.
-     * Nếu player không phải OP và không ở SURVIVAL, ép về SURVIVAL.
-     * Tránh hardcore tự động đưa vào SPECTATOR.
-     */
-    private void startGamemodeCheckTask() {
-        if (gamemodeCheckTask != null) {
-            gamemodeCheckTask.cancel();
-        }
-        
-        gamemodeCheckTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    // Bỏ qua OP players - họ được quyền dùng spectator/creative
-                    if (player.isOp()) continue;
-                    // Nếu không ở SURVIVAL, ép về SURVIVAL
-                    if (player.getGameMode() != GameMode.SURVIVAL) {
-                        player.setGameMode(GameMode.SURVIVAL);
-                        player.sendMessage("§c§l⚠ Bạn đã bị ép về chế độ Survival!");
-                    }
-                }
+        if (!config.respawnProtectionEnabled || config.respawnProtectionSeconds == 0) {
+            for (UUID playerId : respawnLocks.keySet().toArray(new UUID[0])) {
+                clearRespawnLock(playerId);
             }
-        };
-        gamemodeCheckTask.runTaskTimer(plugin, 40L, 40L); // 2 giây
+        }
     }
 
     private void reloadCombatTagDuration() {
@@ -123,6 +137,8 @@ public class DeathListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getPlayer();
+        clearRespawnLock(player.getUniqueId());
+        awaitingRespawnChoice.add(player.getUniqueId());
 
         // Extract plain text death message from Component
         Component deathMsgComponent = event.deathMessage();
@@ -166,35 +182,237 @@ public class DeathListener implements Listener {
 
         // Apply death penalty
         deathPenaltyManager.onPlayerDeath(player);
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (player.isOnline() && awaitingRespawnChoice.contains(player.getUniqueId())) {
+                sendRespawnChoice(player);
+            }
+        }, 1L);
+    }
+
+    private void sendRespawnChoice(Player player) {
+        player.sendMessage(Component.text("Bạn đã chết. Chọn hồi sinh hoặc thoát game:", NamedTextColor.GOLD));
+        player.sendMessage(
+            Component.text("[HỒI SINH]", NamedTextColor.GREEN)
+                .decorate(TextDecoration.BOLD)
+                .clickEvent(ClickEvent.runCommand("/vnrespawn"))
+                .append(Component.text("   "))
+                .append(
+                    Component.text("[THOÁT GAME]", NamedTextColor.RED)
+                        .decorate(TextDecoration.BOLD)
+                        .clickEvent(ClickEvent.runCommand("/vnleave"))
+                )
+        );
+    }
+
+    public boolean requestRespawn(Player player) {
+        if (!awaitingRespawnChoice.remove(player.getUniqueId())) return false;
+        player.spigot().respawn();
+        return true;
+    }
+
+    public boolean isAwaitingRespawnChoice(Player player) {
+        return awaitingRespawnChoice.contains(player.getUniqueId());
     }
 
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
+        awaitingRespawnChoice.remove(player.getUniqueId());
 
         // Nếu player không có bed spawn, respawn tại world spawn point
         if (!event.isBedSpawn() || event.getRespawnLocation() == null) {
             event.setRespawnLocation(player.getWorld().getSpawnLocation());
         }
 
+        if (config.respawnProtectionEnabled && config.respawnProtectionSeconds > 0) {
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (player.isOnline()) {
+                    startRespawnProtection(player);
+                }
+            }, 1L);
+        }
+
         // Apply death penalty on respawn (start recovery timer)
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            deathPenaltyManager.onPlayerRespawn(player);
+            if (player.isOnline()) {
+                deathPenaltyManager.onPlayerRespawn(player);
+            }
         }, 10L);
     }
 
-    @EventHandler
-    public void onPlayerResurrect(EntityResurrectEvent event) {
-        // Khi player chết ở hardcore mode, Paper gọi EntityResurrectEvent
-        // Chặn để tránh hardcore death screen hiện ra
-        if (event.getEntity() instanceof Player player) {
-            player.setGameMode(GameMode.SURVIVAL);
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerGameModeChange(PlayerGameModeChangeEvent event) {
+        if (event.getNewGameMode() == GameMode.SPECTATOR && !event.getPlayer().isOp()) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage("§cChế độ Quan sát đã bị tắt trên máy chủ này.");
         }
+    }
+
+    private void startRespawnProtection(Player player) {
+        UUID playerId = player.getUniqueId();
+        clearRespawnLock(playerId);
+
+        RespawnLock lock = new RespawnLock(
+            player.getLocation().clone(),
+            System.currentTimeMillis() + config.respawnProtectionSeconds * 1000L
+        );
+        respawnLocks.put(playerId, lock);
+        player.sendMessage("§e⏳ Bạn đang hồi sinh. Không thể tương tác trong §6" +
+            config.respawnProtectionSeconds + "§e giây.");
+        showRespawnCountdown(player, lock);
+
+        lock.countdownTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (!player.isOnline() || respawnLocks.get(playerId) != lock) {
+                clearRespawnLock(playerId);
+                return;
+            }
+            showRespawnCountdown(player, lock);
+        }, 20L, 20L);
+    }
+
+    private void showRespawnCountdown(Player player, RespawnLock lock) {
+        long remainingMillis = lock.endsAtMillis - System.currentTimeMillis();
+        if (remainingMillis <= 0) {
+            clearRespawnLock(player.getUniqueId());
+            player.sendTitle("§a§lĐÃ HỒI SINH", "§fBạn có thể tự do tương tác", 0, 40, 10);
+            return;
+        }
+
+        long remainingSeconds = (remainingMillis + 999L) / 1000L;
+        player.sendTitle("§e§lĐANG HỒI SINH", "§fCó thể tương tác sau §6" +
+            remainingSeconds + "§f giây", 0, 25, 0);
+    }
+
+    private boolean isRespawnLocked(Player player) {
+        return config.respawnProtectionEnabled &&
+            config.respawnProtectionSeconds > 0 &&
+            respawnLocks.containsKey(player.getUniqueId());
+    }
+
+    private void clearRespawnLock(UUID playerId) {
+        RespawnLock lock = respawnLocks.remove(playerId);
+        if (lock != null && lock.countdownTask != null) {
+            lock.countdownTask.cancel();
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceMove(PlayerMoveEvent event) {
+        RespawnLock lock = respawnLocks.get(event.getPlayer().getUniqueId());
+        Location destination = event.getTo();
+        if (lock == null || destination == null) return;
+
+        double radius = config.respawnMovementRadiusBlocks;
+        if (destination.getWorld() == null ||
+            !destination.getWorld().equals(lock.anchor.getWorld()) ||
+            destination.distanceSquared(lock.anchor) > radius * radius) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceInteract(PlayerInteractEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceEntityInteract(PlayerInteractEntityEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceBlockBreak(BlockBreakEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceBlockPlace(BlockPlaceEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceEntityDamage(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Player player && isRespawnLocked(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceInventoryOpen(InventoryOpenEvent event) {
+        if (event.getPlayer() instanceof Player player && isRespawnLocked(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceInventoryClick(InventoryClickEvent event) {
+        if (event.getWhoClicked() instanceof Player player && isRespawnLocked(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceInventoryDrag(InventoryDragEvent event) {
+        if (event.getWhoClicked() instanceof Player player && isRespawnLocked(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceDrop(PlayerDropItemEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGracePickup(EntityPickupItemEvent event) {
+        if (event.getEntity() instanceof Player player && isRespawnLocked(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceConsume(PlayerItemConsumeEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceSwapHands(PlayerSwapHandItemsEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceBucketEmpty(PlayerBucketEmptyEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceBucketFill(PlayerBucketFillEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceFishing(PlayerFishEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceShear(PlayerShearEntityEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnGraceBedEnter(PlayerBedEnterEvent event) {
+        if (isRespawnLocked(event.getPlayer())) event.setCancelled(true);
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        if (!player.isOp() && player.getGameMode() == GameMode.SPECTATOR) {
+            player.setGameMode(GameMode.SURVIVAL);
+            player.sendMessage("§cChế độ Quan sát đã bị tắt trên máy chủ này. Bạn đã được chuyển về Sinh tồn.");
+        }
         logManager.trackFirstJoin(player);
 
         event.joinMessage(Component.text("§8[§a+§8] §7" + player.getName()));
@@ -231,6 +449,8 @@ public class DeathListener implements Listener {
             logger.info("[Death] " + player.getName() + " left while combat-tagged; no ban applied.");
         }
 
+        clearRespawnLock(player.getUniqueId());
+        awaitingRespawnChoice.remove(player.getUniqueId());
         combatTagged.remove(player.getUniqueId());
 
         event.quitMessage(Component.text("§8[§c-§8] §7" + player.getName()));
