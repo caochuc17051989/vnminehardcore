@@ -1,5 +1,35 @@
 # Changelog
 
+## [v1.7.0] - 2026-10-12
+
+### Added
+- `/vntime set <day|night> <phút> [world]` đặt thời lượng toàn cục hoặc riêng cho world đang tải
+- `/vnday set <ngày>` đặt world hiện tại về bình minh của ngày trong game tương ứng
+- Loot hiếm và cấu hình HP riêng cho boss level 1–10; lore truyền thuyết tối đa 4 dòng, số dòng enchant tăng dần theo cấp
+- Thời gian tồn tại mặc định của mọi boss là 20 phút; tạm dừng roll boss tiếp theo khi đang cảnh báo hoặc có boss hoạt động
+
+## [v1.6.0] - 2026-10-12
+
+### Added
+- `/scoreboard reset` xóa điểm, mùa và phần thưởng boss đang chờ nhận
+- `/vntime set day <phút>` và `/vntime set night <phút>` thay đổi, lưu thời lượng mặc định toàn cục; giữ nguyên override theo world
+- `/vnhelp` liệt kê mọi lệnh plugin; Tab gợi ý ID và giá trị cho các tham số lệnh
+
+## [v1.5.0] - 2026-10-12
+
+### Added
+- Creeper Boss có skill tự gọi sét, gây sát thương lên bản thân và sinh vật trong bán kính cấu hình, rồi chuyển sang trạng thái charged trong thời gian cấu hình
+- Creeper Boss phát nổ thường/charged mạnh hơn tương ứng nhưng không tự bị xóa; vụ nổ không phá block
+
+## [v1.4.0] - 2026-10-12
+
+### Added
+- Loot hiếm theo level trong file riêng của từng boss; hỗ trợ lore, enchant thường/over-enchant và sách lưu enchant để áp dụng lên vật phẩm
+- Broadcast danh sách loot và tỉ lệ khi boss xuất hiện
+- Bảng xếp hạng damage trực tiếp và điểm boss theo mùa; top 5 chia `10 × level` điểm theo damage gây ra
+- Reset theo ngày trong game, thưởng cấu hình cho top 10, lệnh `/reward`, nhắc nhận quà, kiểm tra inventory và title chúc mừng top 1
+- `scoreboard.yml` cho cấu hình mùa/sidebar/phần thưởng và `scoreboard-data.yml` cho lưu trạng thái
+
 ## [v3.0.0] - 2025-07-12
 
 ### Added

@@ -119,11 +119,14 @@ Plugin Paper 1.21.4 bổ sung các hệ thống sinh tồn khó hơn. Người c
 
 **Boss AI Features:**
 - **Priority targeting**: Player → Friendly mob → Hostile mob → Wander
-- **Block destruction**: Boss có thể phá hủy địa hình
+- Boss attacks and explosions do not destroy blocks
 - **Smart movement**: Tránh kẹt, teleport khi cần
 - **Unique behaviors**: Mỗi boss có AI đặc trưng
 - **Immunities**: Configurable (sunlight-burn, fire, fall-damage, wither, poison)
 - **Drops**: Configurable với chance, min/max amount
+- **Level loot**: Mỗi boss có rare drops riêng theo level, lore/enchant/over-enchant và sách enchant; broadcast danh sách cùng tỉ lệ khi spawn
+- **Boss leaderboard**: Sidebar sát thương trực tiếp; top 5 đóng góp chia `10 × level` điểm theo tỉ lệ damage
+- **Mùa thưởng**: Reset theo ngày trong game; top 10 nhận quà một lần qua `/reward`, nhắc người chơi còn quà
 
 ### 🌋 Disasters (14 types)
 Tất cả disasters đều **enabled by default**:
@@ -158,7 +161,7 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 
 | Requirement | Version |
 |-------------|---------|
-| **Server** | Paper 1.21.4 (26.2+) |
+| **Server** | Paper 1.21.4 |
 | **Java** | 21+ |
 | **API** | Paper API 1.21.4 |
 
@@ -178,15 +181,26 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/vnstats` | View your stats (deaths, survival time, mob kills) | `vnmine.hardcore.stats` |
+| `/vnstats` | View your stats (player only: deaths, survival time, mob kills) | `vnmine.hardcore.stats` |
 | `/vnhardcore` | View plugin status | `vnmine.hardcore.admin` |
+| `/vn death reset <player>` | Reset a player's death count (online or previously joined player) | `vnmine.hardcore.admin` |
 | `/vnevent` | List available disaster IDs | `vnmine.hardcore.admin` |
-| `/vnevent <id> <warning> <duration>` | Manually trigger a disaster | `vnmine.hardcore.admin` |
+| `/vnevent <id> <warning-seconds> <duration-seconds>` | Manually trigger a disaster | `vnmine.hardcore.admin` |
 | `/vnboss` | List available boss IDs | `vnmine.hardcore.admin` |
-| `/vnboss <id> <warning> <duration>` | Manually trigger a boss | `vnmine.hardcore.admin` |
-| `/vnreload` | Reload config.yml | `vnmine.hardcore.admin` |
-| `/vnhelp` | Show command help | `vnmine.hardcore.stats` |
-| `/vn` | Main command. Use `/vn help` for details | `vnmine.hardcore.stats` |
+| `/vnboss <id> <level> <warning-seconds> <duration-seconds>` | Manually trigger a boss at a chosen level | `vnmine.hardcore.admin` |
+| `/reward` | Claim all pending boss rewards; inventory must have enough space | None |
+| `/scoreboard reset` | Clear season scores and pending rewards; aliases: `/vnscoreboard reset`, `/sb reset` | `vnmine.hardcore.admin` |
+| `/vntime set <day\|night> <minutes> [world]` | Set and save global day/night length, or an override for a loaded world | `vnmine.hardcore.admin` |
+| `/vnday set <day>` | Set the current world to dawn of the specified in-game day (player only) | `vnmine.hardcore.admin` |
+| `/vnrespawn` | Choose to respawn while awaiting the post-death choice | None |
+| `/vnleave` | Leave the server while awaiting the post-death choice | None |
+| `/fly` | Toggle flight in Survival mode (player only) | `vnmine.hardcore.admin` |
+| `/nodame` | Toggle damage immunity for boss testing (player only) | `vnmine.hardcore.admin` |
+| `/spawn` | Teleport to the current world's spawn (player only) | `vnmine.hardcore.admin` |
+| `/gm0`, `/gm1`, `/gm2`, `/gm3` | Switch to Survival, Creative, Adventure, or Spectator (player only) | `vnmine.hardcore.admin` |
+| `/vnreload` | Reload config and plugin systems | `vnmine.hardcore.admin` |
+| `/vnhelp` | Show all plugin commands | `vnmine.hardcore.stats` |
+| `/vn help` | Show `/vn` subcommands | `vnmine.hardcore.stats` |
 
 ### `/vnevent` Usage
 
@@ -196,7 +210,17 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 /vnevent meteor 10 30                      - Meteor Shower: 10s warning, 30s duration
 /vnevent earthquake 5 20                   - Earthquake: 5s warning, 20s duration
 /vnevent inferno-storm 15 40               - Inferno Storm: 15s warning, 40s duration
+/vntime set day 20                         - Set default day length to 20 minutes
+/vntime set night 15 world_resource        - Set night length for world_resource
+/vnday set 100                             - Set the current world to dawn of day 100
 ```
+
+`/vnevent` takes `<id> <warning-seconds> <duration-seconds>`. `/vnboss` takes
+`<id> <level> <warning-seconds> <duration-seconds>`. Tab completion suggests
+valid IDs, world names, and common values for each parameter. Omitting
+`[world]` changes the global default; specifying a loaded world stores an
+override for that world. `/vnday` is player-only and changes the current
+world's full time to the start of the requested day (day 0 is world creation).
 
 **All Disaster IDs:**
 - `blood-moon` - 🌕 Blood Moon
@@ -218,9 +242,9 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 
 ```
 /vnboss                                    - List all boss IDs
-/vnboss wither 30 120                      - Wither Boss: 30s warning, 120s duration
-/vnboss ender_dragon 60 180                - Ender Dragon: 60s warning, 180s duration
-/vnboss zombie_boss 20 90                  - Zombie Boss: 20s warning, 90s duration
+/vnboss wither 1 30 120                    - Wither Boss Lv.1: 30s warning, 120s duration
+/vnboss ender_dragon 1 60 180              - Ender Dragon Lv.1: 60s warning, 180s duration
+/vnboss zombie_boss 2 20 90                - Zombie Boss Lv.2: 20s warning, 90s duration
 ```
 
 **All Boss IDs:**
@@ -244,8 +268,7 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 | Permission | Description | Default |
 |------------|-------------|---------|
 | `vnmine.hardcore.stats` | View statistics (/vnstats, /vnhelp) | `true` |
-| `vnmine.hardcore.admin` | Admin commands (status, reload, trigger disaster/boss) | `op` |
-| `vnmine.hardcore.bypass` | Bypass flight block | — |
+| `vnmine.hardcore.admin` | Admin commands (status, reset, time settings, reload, and event/boss controls) | `op` |
 
 ---
 
@@ -340,51 +363,6 @@ thirst:
     nausea-amplifier: 0              # Nausea effect level
 ```
 
-### Environment - Fog
-```yaml
-environment:
-  fog:
-    enabled: true                     # Enable fog (Darkness effect)
-    interval-ticks: 80               # Interval between fog (4s)
-    effect-duration-ticks: 100       # Effect duration (5s)
-    effect-amplifier: 0              # Darkness amplifier (0 = mild)
-```
-
-### Boss Events - Enable/Disable
-```yaml
-boss-events:
-  bosses:
-    wither:
-      enabled: true                   # Enable/disable this boss
-    ender_dragon:
-      enabled: true
-    ghast:
-      enabled: true
-    # ... all 12 bosses
-```
-
-### Disasters - Enable/Disable
-```yaml
-disasters:
-  enabled-disasters:
-    blood-moon: true
-    meteor: true
-    # ... all 14 disasters
-    chorus-explosion: true
-```
-
-### Disasters - Custom Messages
-```yaml
-disasters:
-  messages:
-    warning-title: "§4§l⚠ CẢNH BÁO THIÊN TAI ⚠"
-    warning-subtitle: "§c{name}\n§e§lSẽ xảy ra trong {time} giây!"
-    warning-broadcast: "§4§l⚠ {name} §r§cđang đến gần!"
-    countdown-broadcast: "§4§l⚠ {name} §csẽ xảy ra trong §4§l{time}§c giây!"
-    active-broadcast: "§4§l{name} - {message} (§e{duration}s§4)"
-    end-broadcast: "§a§l✅ {name} đã kết thúc!"
-```
-
 ### Logging Section
 ```yaml
 logging:
@@ -393,7 +371,22 @@ logging:
   log-disasters: true           # Log disasters
 ```
 
-For the **full configuration** with bilingual comments, see `plugins/VnMineHardcore/config.yml`.
+Boss settings are stored in `plugins/VnMineHardcore/bosses/<id>.yml` and
+`bosses/_settings.yml`. Disaster settings are stored in
+`plugins/VnMineHardcore/disasters/<id>.yml` and `disasters/_settings.yml`;
+they are not configured in the main `config.yml`.
+
+### Time Control
+
+`time-control.global` configures default day and night lengths in real-world
+minutes. Use `/vntime set day <minutes>` or `/vntime set night <minutes>` to
+change and save these defaults. Add a loaded world name at the end to set only
+that world's override, for example `/vntime set day 6 world_resource`.
+`/vnday set <day>` sets the current world to dawn of that in-game day.
+Nether worlds do not use the custom day/night clock.
+
+For all current keys and bilingual comments, refer to the generated
+`plugins/VnMineHardcore/config.yml`.
 
 ---
 
@@ -625,7 +618,7 @@ display-name: "§a§lCreeper Boss"
 hp: 200.0
 damage-multiplier: 3.0
 chance: 10
-duration-seconds: 120
+duration-seconds: 1200
 warning-seconds: 60
 
 # Immunities (miễn nhiễm)
@@ -665,7 +658,7 @@ drops:
 | `hp` | Máu tối đa | `100.0` |
 | `damage-multiplier` | Hệ số nhân sát thương | `1.0` |
 | `chance` | Tỷ lệ xuất hiện (weight) | `10` |
-| `duration-seconds` | Thời gian tồn tại | `120` |
+| `duration-seconds` | Thời gian boss tồn tại mặc định (20 phút) | `1200` |
 | `warning-seconds` | Thời gian cảnh báo | `60` |
 
 ### Immunities
@@ -687,6 +680,37 @@ drops:
 | `max-amount` | Số lượng tối đa |
 | `chance` | Tỷ lệ rơi (0.0 - 1.0) |
 
+### Creeper Boss: charged-explosion
+
+Skill `charged-explosion` trong `bosses/creeper_boss.yml` gọi sét hiệu ứng,
+gây sát thương `damage` lên boss và mọi sinh vật trong `radius` block, rồi
+giữ trạng thái charged trong `duration-seconds`. Boss creeper vẫn phát nổ
+nhưng không tự biến mất hoặc phá block; `explosion-power` và
+`charged-explosion-power` cấu hình sức mạnh vụ nổ thường và charged. Các giá
+trị đều có thể tùy chỉnh trong file boss.
+
+### Rare drops theo level và bảng xếp hạng boss
+
+Mỗi file `bosses/<id>.yml` có `level-drops` riêng cho level 1–10. Mỗi level
+có hai di vật hiếm với truyền thuyết riêng; mỗi món có tối đa 4 dòng lore và
+số dòng enchant tăng theo level. Loot vẫn có thể tùy chỉnh bằng các trường:
+`material`, `name`, `lore`, `min-amount`, `max-amount`,
+`chance`, `enchantments` (kể cả over-enchant) và `book-enchantments` (lưu
+enchant để người chơi dùng sách lên item). Boss tự nhiên tăng cấp theo ngày
+trong game, đạt khoảng level 10 từ ngày 400; boss được gọi thủ công có thể
+chọn level bằng `/vnboss`. Khi boss spawn, loot ở level đó và loot thường được
+broadcast kèm xác suất riêng từng món.
+Thời gian tồn tại mặc định của mọi boss là 20 phút. Đồng hồ chờ roll boss tự
+động tạm dừng trong lúc cảnh báo hoặc khi đang có boss hoạt động; bộ đếm chỉ
+tiếp tục sau khi sự kiện hiện tại kết thúc.
+
+`scoreboard.yml` cấu hình sidebar, chu kỳ reset theo ngày trong game, title
+người thắng, chu kỳ nhắc và vật phẩm cho từng hạng từ top 1 đến top 10. Top 5
+người gây sát thương được chia `10 × level` điểm theo phần damage của họ.
+Điểm, phần thưởng chờ nhận và mùa hiện tại được lưu trong
+`scoreboard-data.yml`. Người chơi dùng `/reward` để nhận; nếu túi thiếu chỗ,
+phần thưởng vẫn được giữ để thử lại. `/vnreload` áp dụng cấu hình mới.
+
 ---
 
 ## 📊 Log Files
@@ -703,6 +727,26 @@ Located in `plugins/VnMineHardcore/`:
 ---
 
 ## 📝 Changelog
+
+### v1.7.0
+- Added world-specific `/vntime set <day|night> <minutes> [world]` and `/vnday set <day>`
+- Added boss-specific rare relics for levels 1–10, with escalating enchantment lines and short legends
+- Extended per-boss HP and natural boss-level progression through level 10
+- Set the default boss lifetime to 20 minutes and pause new boss rolls during an active/warning event
+
+### v1.6.0
+- Added `/scoreboard reset` to clear season scores and pending rewards
+- Added `/vntime set day <minutes>` and `/vntime set night <minutes>`; changes are saved and preserve per-world overrides
+- `/vnhelp` now lists every plugin command; tab completion suggests valid IDs and common values for command parameters
+
+### v1.5.0
+- Creeper Boss gọi sét tự gây sát thương cho bản thân và sinh vật xung quanh, trở nên charged tạm thời
+- Creeper Boss nổ mạnh hơn khi charged, không tự bị xóa và không phá block
+
+### v1.4.0
+- Boss có loot quý cấu hình riêng theo level và từng file boss; hỗ trợ item lore, enchant thường/over-enchant, sách enchant có thể áp dụng lên item; broadcast loot và tỉ lệ khi boss spawn
+- Bảng xếp hạng damage trực tiếp và điểm mùa: top 5 chia 10 × level điểm theo damage
+- Reset theo ngày trong game, thưởng cấu hình cho top 10, nhận qua `/reward`, xử lý inventory đầy, nhắc nhận thưởng và title top 1
 
 ### v1.3.0
 - **Multi-Target System**: Disasters can now target players, mobs (friendly/hostile/all), blocks (ground, trees, blocks, surface, random_blocks), and random combinations
@@ -724,7 +768,7 @@ Located in `plugins/VnMineHardcore/`:
 ### v1.2.0
 - **New Bosses**: Added 9 new boss types (Zombie, Skeleton, Spider, Creeper, Enderman, Witch, Ravager, Vindicator, Phantom)
 - **Total Bosses**: 12 types with unique AI behaviors
-- **Boss AI**: Smart targeting (Player → Friendly mob → Hostile mob → Wander), block destruction, stuck detection
+- **Boss AI**: Smart targeting (Player → Friendly mob → Hostile mob → Wander), stuck detection
 - **Boss Bar**: Single boss bar showing name + HP (no more spam)
 - **Disaster Config**: Added enable/disable flags for each disaster type
 - **Disaster Messages**: Fully customizable messages with placeholders
@@ -760,14 +804,7 @@ Located in `plugins/VnMineHardcore/`:
 
 ## 🛠 Support
 
-- **GitHub Issues**: [Report bugs](#)
-- **Discord**: [Join our server](#)
-
----
-
-## 📜 License
-
-This project is licensed under the MIT License.
+- **GitHub Issues**: [Report bugs](https://github.com/noobsclan101/vnminehardcore/issues)
 
 ---
 

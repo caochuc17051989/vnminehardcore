@@ -18,19 +18,31 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 1.21.4. Người chơi kh
 
 | Lệnh | Mô tả | Quyền |
 |------|-------|-------|
-| `/vnstats` | Xem thống kê cá nhân (số lần chết, thời gian sống, quái giết) | `vnmine.hardcore.stats` |
+| `/vnstats` | Xem thống kê cá nhân (chỉ người chơi) | `vnmine.hardcore.stats` |
 | `/vnhardcore` | Xem trạng thái plugin | `vnmine.hardcore.admin` |
 | `/vn death reset <player>` | Reset số lần chết của player về 0 | `vnmine.hardcore.admin` |
-| `/vnevent` | Gọi thiên tai thủ công (xem danh sách) | `vnmine.hardcore.admin` |
-| `/vnevent <id> <warning(s)> <duration(s)>` | Gọi thiên tai cụ thể | `vnmine.hardcore.admin` |
-| `/vnboss <id> <level> <warning(s)> <duration(s)>` | Gọi boss theo level; nhấn Tab khi nhập ID để xem/gợi ý boss | `vnmine.hardcore.admin` |
-| `/fly` | Bật/tắt bay khi vẫn ở chế độ Sinh tồn | `vnmine.hardcore.admin` |
-| `/nodame` | Miễn sát thương nhưng vẫn có thể bị quái chọn làm mục tiêu (kiểm tra boss) | `vnmine.hardcore.admin` |
-| `/vnreload` | Tải lại file cấu hình config.yml | `vnmine.hardcore.admin` |
+| `/vnevent` | Xem danh sách thiên tai | `vnmine.hardcore.admin` |
+| `/vnevent <id> <warning-giây> <duration-giây>` | Gọi thiên tai; có gợi ý ID và tham số | `vnmine.hardcore.admin` |
+| `/vnboss` | Xem danh sách boss | `vnmine.hardcore.admin` |
+| `/vnboss <id> <level> <warning-giây> <duration-giây>` | Gọi boss theo level; có gợi ý ID và tham số | `vnmine.hardcore.admin` |
+| `/reward` | Nhận phần thưởng xếp hạng boss đang chờ (cần chỗ trống trong inventory) | Không cần |
+| `/scoreboard reset` | Xóa điểm mùa và phần thưởng chờ (bí danh: `/vnscoreboard`, `/sb`) | `vnmine.hardcore.admin` |
+| `/vntime set <day\|night> <phút> [world]` | Đặt thời lượng ngày/đêm toàn cục hoặc riêng cho world đang tải | `vnmine.hardcore.admin` |
+| `/vnday set <ngày>` | Đặt world hiện tại về bình minh của ngày trong game tương ứng (chỉ người chơi) | `vnmine.hardcore.admin` |
+| `/vnrespawn` | Chọn hồi sinh khi đang chờ sau khi chết | Không cần |
+| `/vnleave` | Thoát máy chủ khi đang chờ sau khi chết | Không cần |
+| `/fly` | Bật/tắt bay trong Survival (chỉ người chơi) | `vnmine.hardcore.admin` |
+| `/nodame` | Bật/tắt miễn sát thương để thử boss (chỉ người chơi) | `vnmine.hardcore.admin` |
+| `/spawn` | Về điểm spawn world hiện tại (chỉ người chơi) | `vnmine.hardcore.admin` |
+| `/gm0`, `/gm1`, `/gm2`, `/gm3` | Chuyển game mode (chỉ người chơi) | `vnmine.hardcore.admin` |
+| `/vnreload` | Tải lại config và các hệ thống | `vnmine.hardcore.admin` |
 | `/vnhelp` | Hiển thị hướng dẫn tất cả lệnh | `vnmine.hardcore.stats` |
+| `/vn help` | Hiển thị hướng dẫn các lệnh `/vn` | `vnmine.hardcore.stats` |
 
 Ví dụ gọi boss Wither level 3, cảnh báo 30 giây, tồn tại 120 giây:
 `/vnboss wither 3 30 120`.
+Các lệnh có tham số hỗ trợ nhấn Tab để gợi ý ID, tên người chơi và các giá trị
+phổ biến cho từng vị trí tham số.
 
 ## Cấu hình (config.yml)
 
@@ -115,6 +127,12 @@ Skill sections under `skills` can be enabled individually and tune their
 base damage, projectile count multiplier, cooldown, area, velocity, and spread.
 Configured skill damage scales by boss level; projectile skills use
 `boss-level * multiply` projectiles, capped at 40 per cast.
+The creeper's `charged-explosion` skill calls a visual lightning strike,
+damages the boss and nearby living entities using `damage` and `radius`, then
+keeps the creeper charged for `duration-seconds`. Its explosion power is
+configured separately for normal and charged states; boss creeper explosions
+do not break blocks and the boss survives each explosion. Values are in
+`bosses/creeper_boss.yml`.
 Available skill IDs are `arrow-barrage` (skeleton), `fireball-volley`
 (dragon/ghast), `stomp` (giant), `ground-slam` (zombie), `charged-explosion`
 (creeper), `shadow-strike` (enderman), `dive-bomb` (phantom), `charge`
@@ -135,6 +153,14 @@ hp-by-level:
   1: 120
   2: 180
 skills:
+  charged-explosion:
+    enabled: true
+    damage: 12.0
+    radius: 6.0
+    duration-seconds: 5
+    explosion-power: 3.0
+    charged-explosion-power: 6.0
+    explosion-cooldown-seconds: 4
   arrow-barrage:
     enabled: true
     damage: 6.0
@@ -145,64 +171,30 @@ skills:
     spread: 1.4
 ```
 
+### Loot boss theo level và bảng xếp hạng
+
+Mỗi file `bosses/<id>.yml` có mục `level-drops` riêng cho boss đó, đầy đủ từ
+level 1 đến level 10. Mỗi cấp có hai di vật hiếm, truyền thuyết tối đa 4 dòng
+và số dòng enchant tăng theo level; có thể tùy chỉnh `material`, `name`, `lore`,
+`min-amount`, `max-amount`, `chance`, `enchantments` (hỗ trợ over-enchant)
+hoặc `book-enchantments` (sách có enchant để áp dụng vào item). Boss tự nhiên
+có thể lên level 10 từ ngày 400 theo `bosses/_settings.yml`; `/vnboss` vẫn cho
+phép gọi boss ở level được chọn. Khi boss xuất hiện, server broadcast loot có
+thể rơi ở level đó và tỉ lệ từng món. Mọi boss tồn tại mặc định 20 phút;
+bộ đếm roll boss kế tiếp tạm dừng trong khi cảnh báo hoặc boss đang hoạt động.
+
+`scoreboard.yml` cấu hình chu kỳ reset (`reset.every-game-days`), sidebar,
+thời gian title top 1, chu kỳ nhắc và quà của từng hạng top 1–10. Top 5 người
+đánh boss nhận tổng cộng `10 × level` điểm, chia theo tỉ lệ damage. Điểm và quà
+đang chờ được lưu trong `scoreboard-data.yml`. Người chơi nhận quà bằng
+`/reward`; nếu inventory không đủ chỗ, quà vẫn chờ và có thể nhận lại sau khi
+dọn túi. Chạy `/vnreload` để nạp cấu hình.
+
 ### Disasters - Thiên tai
 
-```yaml
-disasters:
-  # [VI] Bật hệ thống thiên tai tự động
-  # [EN] Enable automatic disaster system
-  enabled: true
-
-  # [VI] Thời gian tối thiểu giữa các lần kiểm tra thiên tai (giây)
-  # [EN] Minimum seconds between disaster checks
-  min-interval-seconds: 1200
-
-  # [VI] Thời gian cảnh báo trước khi thiên tai xảy ra (giây)
-  # [EN] Warning time in seconds before a disaster strikes
-  warning-seconds: 60
-
-  # [VI] Các thiên tai được cấu hình theo object
-  # [EN] Disasters configured as objects
-  types:
-    # [VI] Blood Moon - Trăng máu, tăng độ khó sinh sản quái vật
-    # [EN] Blood Moon - Blood red moon, increases mob spawn difficulty
-    blood-moon:
-      # [VI] Bật/tắt thiên tai này
-      # [EN] Enable/disable this disaster
-      enabled: true
-      # [VI] Tên hiển thị
-      # [EN] Display name
-      name: "Trăng Máu"
-      # [VI] Thời gian kéo dài (giây)
-      # [EN] Duration in seconds
-      duration-seconds: 300
-      # [VI] Tỷ lệ spawn quái vật tăng gấp (1.0 = tắt, 2.0 = gấp đôi)
-      # [EN] Mob spawn rate multiplier (1.0 = off, 2.0 = double)
-      spawn-multiplier: 2.0
-
-    # [VI] Mega Storm - Bão lớn, gió mạnh và sét
-    # [EN] Mega Storm - Large storm with strong winds and lightning
-    mega-storm:
-      enabled: true
-      name: "Bão Rực Rỡ"
-      duration-seconds: 180
-      # [VI] Tần suất sét (giây)
-      # [EN] Lightning frequency (seconds)
-      lightning-frequency-seconds: 5
-      # [VI] Sát thương từ sét (tim)
-      # [EN] Lightning damage (hearts)
-      lightning-damage: 4.0
-
-    # [VI] Solar Flare - Tia nắng, gây thiêu đốt
-    # [EN] Solar Flare - Solar rays causing burning
-    solar-flare:
-      enabled: true
-      name: "Tia Nắng"
-      duration-seconds: 120
-      # [VI] Sát thương mỗi giây (tim)
-      # [EN] Damage per second (hearts)
-      damage-per-second: 1.0
-```
+Thiên tai không nằm trong `config.yml`. Cấu hình chung ở
+`plugins/VnMineHardcore/disasters/_settings.yml`; mỗi loại thiên tai có file
+riêng `plugins/VnMineHardcore/disasters/<id>.yml`.
 
 ### Time Control - Thời lượng ngày và đêm
 
@@ -226,15 +218,22 @@ time-control:
 ```
 
 Thiết lập mặc định 10 phút cho mỗi pha giữ tốc độ mặc định của Minecraft.
-Đặt `time-control.enabled: false` để giữ chu kỳ ngày/đêm vanilla.
+Đặt `time-control.enabled: false` để giữ chu kỳ ngày/đêm vanilla. Có thể đổi
+hai giá trị global bằng `/vntime set day <phút>` và
+`/vntime set night <phút>`; thay đổi được lưu ngay vào `config.yml`. Các world
+đã có override riêng vẫn giữ thời lượng đã cấu hình. Bỏ tham số world trong
+lệnh để chỉnh global; thêm tên world đang tải để chỉ chỉnh world đó:
+`/vntime set day 6 world_resource`.
+Lệnh `/vnday set <ngày>` chỉ dành cho người chơi và đặt đồng hồ thời gian đầy
+đủ của world hiện tại về bình minh ngày được chọn (ngày 0 là lúc tạo world).
 Nether luôn được loại khỏi chức năng quản lý thời gian: plugin không thay đổi
 thời gian hoặc gamerule của world Nether. Các world khác không có world clock
 sẽ được bỏ qua và ghi cảnh báo.
 
-### Tương thích Paper 26
+### Phiên bản tương thích
 
-Đã biên dịch và khởi động plugin thành công trên Paper 26.1.2 build 74,
-26.2 build 133 và 26.3 build 175. Paper 26 yêu cầu Java 25 trở lên.
+Dự án nhắm tới Paper 1.21.4 và Java 21. Các phiên bản Paper khác chưa được xác
+minh trong tài liệu này.
 
 ### Block Drop, Tool Break & Explosion - Hiệu ứng khi đào
 
@@ -247,7 +246,7 @@ sát thương người chơi, thông báo và tỷ lệ. Chạy `/vnreload` sau 
 
 ## Yêu cầu
 
-- Minecraft Paper 1.21+
+- Paper 1.21.4
 - Java 21+
 
 ## Cài đặt
@@ -257,6 +256,25 @@ sát thương người chơi, thông báo và tỷ lệ. Chạy `/vnreload` sau 
 3. Khởi động lại server
 4. Chỉnh sửa `plugins/VnMineHardcore/config.yml` theo nhu cầu
 5. Gõ `/vnreload` để áp dụng thay đổi
+
+## Changelog
+
+### v1.7.0
+- `/vntime set <day|night> <phút> [world]`: bỏ `[world]` để đổi mặc định toàn cục,
+  hoặc ghi tên world đang tải để đặt override riêng.
+- `/vnday set <ngày>` đặt world hiện tại về bình minh của ngày đó; ngày 0 là lúc
+  thế giới được tạo.
+- Mỗi boss có loot quý riêng cho level 1–10, lore truyền thuyết tối đa 4 dòng
+  và số dòng enchant tăng dần theo level; HP cũng được cấu hình đến level 10.
+  Boss tự nhiên có thể đạt level 10 từ ngày 400.
+- Thời gian tồn tại mặc định của mọi boss là 20 phút; không roll boss mới trong
+  thời gian đang cảnh báo hoặc boss khác còn hoạt động.
+
+### v1.6.0
+- Thêm `/scoreboard reset` để xóa điểm mùa và phần thưởng boss đang chờ nhận.
+- Thêm `/vntime set day <phút>` và `/vntime set night <phút>`; tự lưu cấu hình
+  global và giữ nguyên override riêng từng world.
+- `/vnhelp` liệt kê toàn bộ lệnh plugin; nhấn Tab để gợi ý tham số.
 
 ## Build từ mã nguồn
 

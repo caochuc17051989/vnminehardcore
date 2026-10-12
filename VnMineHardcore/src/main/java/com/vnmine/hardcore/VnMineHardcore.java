@@ -23,6 +23,7 @@ public final class VnMineHardcore extends JavaPlugin {
     private DeathRenameManager deathRenameManager;
     private DeathPenaltyManager deathPenaltyManager;
     private BossEventManager bossEventManager;
+    private BossLeaderboardManager bossLeaderboardManager;
     private GraveManager graveManager;
     private VillagerDataManager villagerDataManager;
     private DeathListener deathListener;
@@ -43,7 +44,7 @@ public final class VnMineHardcore extends JavaPlugin {
         clearLegacyPluginBans();
 
         getLogger().info("§a==========================================");
-        getLogger().info("§a  VnMineHardcore v1.3.5 - KHỞI ĐỘNG");
+        getLogger().info("§a  VnMineHardcore v1.7.0 - KHỞI ĐỘNG");
         getLogger().info("§a==========================================");
 
         // Load config first
@@ -53,6 +54,7 @@ public final class VnMineHardcore extends JavaPlugin {
 
         // Initialize managers (pass config)
         this.logManager = new LogManager(this, configManager);
+        this.bossLeaderboardManager = new BossLeaderboardManager(this);
         this.deathPenaltyManager = new DeathPenaltyManager(this, configManager);
         this.thirstManager = new ThirstManager(this, configManager);
         this.disasterManager = new DisasterManager(this, configManager);
@@ -93,6 +95,7 @@ public final class VnMineHardcore extends JavaPlugin {
         this.getCommand("vnevent").setExecutor(this);
         this.getCommand("vnboss").setExecutor(this);
         this.getCommand("vn").setExecutor(this);
+        this.getCommand("reward").setExecutor(this);
         this.getCommand("vnrespawn").setExecutor(this);
         this.getCommand("vnleave").setExecutor(this);
         this.getCommand("fly").setExecutor(this);
@@ -102,6 +105,9 @@ public final class VnMineHardcore extends JavaPlugin {
         this.getCommand("gm1").setExecutor(this);
         this.getCommand("gm2").setExecutor(this);
         this.getCommand("gm3").setExecutor(this);
+        this.getCommand("scoreboard").setExecutor(this);
+        this.getCommand("vntime").setExecutor(this);
+        this.getCommand("vnday").setExecutor(this);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
         getLogger().info("§a  Deaths are recorded; no death bans are applied.");
@@ -117,6 +123,7 @@ public final class VnMineHardcore extends JavaPlugin {
         if (deathPenaltyManager != null) deathPenaltyManager.stop();
         if (disasterManager != null) disasterManager.stop();
         if (bossEventManager != null) bossEventManager.stop();
+        if (bossLeaderboardManager != null) bossLeaderboardManager.stop();
         if (graveManager != null) graveManager.stop();
         if (logManager != null) logManager.stop();
         if (timeControlManager != null) timeControlManager.stop();
@@ -125,6 +132,109 @@ public final class VnMineHardcore extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equalsIgnoreCase("scoreboard")) {
+            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+                sender.sendMessage("§cBạn không có quyền!");
+                return true;
+            }
+            if (args.length == 1 && args[0].equalsIgnoreCase("reset")) {
+                if (bossLeaderboardManager.resetAllData()) {
+                    sender.sendMessage("§aĐã xóa dữ liệu scoreboard và phần thưởng đang chờ nhận.");
+                } else {
+                    sender.sendMessage("§cKhông thể lưu dữ liệu scoreboard; dữ liệu cũ đã được giữ lại.");
+                }
+                return true;
+            }
+            sender.sendMessage("§eSử dụng: /scoreboard reset");
+            return true;
+        }
+
+        if (command.getName().equalsIgnoreCase("vntime")) {
+            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+                sender.sendMessage("§cBạn không có quyền!");
+                return true;
+            }
+            if ((args.length != 3 && args.length != 4) || !args[0].equalsIgnoreCase("set")
+                    || !(args[1].equalsIgnoreCase("day") || args[1].equalsIgnoreCase("night"))) {
+                sender.sendMessage("§eSử dụng: /vntime set <day|night> <phút> [world]");
+                return true;
+            }
+
+            int minutes;
+            try {
+                minutes = Integer.parseInt(args[2]);
+            } catch (NumberFormatException exception) {
+                sender.sendMessage("§cThời lượng phải là số nguyên phút lớn hơn 0.");
+                return true;
+            }
+            if (minutes < 1) {
+                sender.sendMessage("§cThời lượng phải ít nhất 1 phút.");
+                return true;
+            }
+
+            boolean isDay = args[1].equalsIgnoreCase("day");
+            String worldName = args.length == 4 ? args[3] : null;
+            if (worldName != null && Bukkit.getWorld(worldName) == null) {
+                sender.sendMessage("§cKhông tìm thấy world đang tải: §e" + worldName);
+                return true;
+            }
+            boolean saved = worldName == null
+                ? (isDay
+                    ? configManager.setGlobalDayDurationMinutes(minutes)
+                    : configManager.setGlobalNightDurationMinutes(minutes))
+                : (isDay
+                    ? configManager.setWorldDayDurationMinutes(worldName, minutes)
+                    : configManager.setWorldNightDurationMinutes(worldName, minutes));
+            if (!saved) {
+                sender.sendMessage("§cKhông thể lưu thời lượng vào config.yml; cấu hình hiện tại không đổi.");
+                return true;
+            }
+            String period = isDay ? "ban ngày" : "ban đêm";
+            String target = worldName == null ? "mặc định toàn cục" : "của world §e" + worldName;
+            sender.sendMessage("§aĐã đặt thời lượng " + period + " " + target + " thành §e" + minutes +
+                " phút§a và lưu vào config.yml.");
+            return true;
+        }
+
+        if (command.getName().equalsIgnoreCase("vnday")) {
+            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+                sender.sendMessage("§cBạn không có quyền!");
+                return true;
+            }
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§cLệnh này chỉ dành cho người chơi vì cần xác định world hiện tại.");
+                return true;
+            }
+            if (args.length != 2 || !args[0].equalsIgnoreCase("set")) {
+                sender.sendMessage("§eSử dụng: /vnday set <ngày>");
+                return true;
+            }
+            long day;
+            try {
+                day = Long.parseLong(args[1]);
+            } catch (NumberFormatException exception) {
+                sender.sendMessage("§cNgày phải là số nguyên không âm.");
+                return true;
+            }
+            if (day < 0 || day > Long.MAX_VALUE / 24_000L) {
+                sender.sendMessage("§cNgày phải nằm trong khoảng 0 đến " + Long.MAX_VALUE / 24_000L + ".");
+                return true;
+            }
+            long worldTime = day * 24_000L;
+            try {
+                player.getWorld().setFullTime(worldTime);
+            } catch (IllegalArgumentException exception) {
+                getLogger().log(java.util.logging.Level.WARNING,
+                    "[TimeControl] Could not set the full time for world '" + player.getWorld().getName() + "'.",
+                    exception);
+                sender.sendMessage("§cKhông thể đặt ngày trong world hiện tại.");
+                return true;
+            }
+            sender.sendMessage("§aĐã đặt world §e" + player.getWorld().getName() +
+                " §avề bình minh ngày thứ §e" + day + "§a.");
+            return true;
+        }
+
         if (command.getName().equalsIgnoreCase("spawn")) {
             if (!sender.hasPermission("vnmine.hardcore.admin")) {
                 sender.sendMessage("§cBạn không có quyền!");
@@ -224,22 +334,39 @@ public final class VnMineHardcore extends JavaPlugin {
             return true;
         }
 
+        if (command.getName().equalsIgnoreCase("reward")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Lệnh này chỉ dành cho người chơi.");
+                return true;
+            }
+            return bossLeaderboardManager.claimRewards(player);
+        }
+
         if (command.getName().equalsIgnoreCase("vnhelp")) {
             sender.sendMessage("§6§m========================================");
-            sender.sendMessage("§6§l  VnMineHardcore - Command Help");
+            sender.sendMessage("§6§l  VnMineHardcore - Danh sách lệnh");
             sender.sendMessage("§6§m========================================");
-            sender.sendMessage("§e/vnstats §7- Xem thống kê của bạn");
-            sender.sendMessage("§e/vnhardcore §7- Xem trạng thái plugin");
-            sender.sendMessage("§e/vn death reset <player> §7- Reset số lần chết về 0");
-            sender.sendMessage("§e/vnevent §7- Gọi thiên tai thủ công (xem danh sách)");
-            sender.sendMessage("§e/vnevent <id> <time> <duration> §7- Gọi thiên tai cụ thể");
-            sender.sendMessage("§e/vnboss <id> <level> <warning> <duration> §7- Gọi boss theo level");
-            sender.sendMessage("§e/fly §7- Bật/tắt bay Survival (admin)");
-            sender.sendMessage("§e/nodame §7- Bật/tắt miễn sát thương để thử boss (admin)");
-            sender.sendMessage("§e/spawn §7- Về điểm spawn của thế giới (admin)");
-            sender.sendMessage("§e/gm0 /gm1 /gm2 /gm3 §7- Chuyển game mode (admin)");
-            sender.sendMessage("§e/vnreload §7- Tải lại config.yml");
-            sender.sendMessage("§e/vnhelp §7- Hiển thị help này");
+            sender.sendMessage("§e/vnstats §7- Xem thống kê cá nhân (chỉ người chơi).");
+            sender.sendMessage("§e/vnhardcore §7- Xem trạng thái hệ thống (admin).");
+            sender.sendMessage("§e/vn death reset <player> §7- Đặt số lần chết của người chơi về 0 (admin).");
+            sender.sendMessage("§e/vnevent §7- Xem danh sách thiên tai.");
+            sender.sendMessage("§e/vnevent <id> <warning-giây> <duration-giây> §7- Gọi thiên tai (admin).");
+            sender.sendMessage("§e/vnboss §7- Xem danh sách boss.");
+            sender.sendMessage("§e/vnboss <id> <level> <warning-giây> <duration-giây> §7- Gọi boss (admin).");
+            sender.sendMessage("§e/reward §7- Nhận phần thưởng boss đang chờ; cần đủ chỗ trong túi.");
+            sender.sendMessage("§e/scoreboard reset §7- Xóa điểm mùa và phần thưởng đang chờ (admin).");
+            sender.sendMessage("§e/vnscoreboard reset, /sb reset §7- Bí danh của /scoreboard.");
+            sender.sendMessage("§e/vntime set <day|night> <phút> [world] §7- Đặt thời lượng ngày/đêm toàn cục hoặc theo world (admin).");
+            sender.sendMessage("§e/vnday set <ngày> §7- Đặt world hiện tại về bình minh ngày thứ đó (admin, chỉ người chơi).");
+            sender.sendMessage("§e/vnrespawn §7- Chọn hồi sinh khi đang chờ sau khi chết.");
+            sender.sendMessage("§e/vnleave §7- Thoát máy chủ khi đang chờ sau khi chết.");
+            sender.sendMessage("§e/fly §7- Bật/tắt bay trong Survival (admin, chỉ người chơi).");
+            sender.sendMessage("§e/nodame §7- Bật/tắt miễn sát thương để thử boss (admin, chỉ người chơi).");
+            sender.sendMessage("§e/spawn §7- Dịch chuyển về spawn của world hiện tại (admin, chỉ người chơi).");
+            sender.sendMessage("§e/gm0 /gm1 /gm2 /gm3 §7- Đổi game mode (admin, chỉ người chơi).");
+            sender.sendMessage("§e/vnreload §7- Tải lại config và các hệ thống (admin).");
+            sender.sendMessage("§e/vn help §7- Hướng dẫn lệnh /vn.");
+            sender.sendMessage("§e/vnhelp §7- Hiển thị danh sách lệnh này.");
             sender.sendMessage("§6§m========================================");
             return true;
         }
@@ -258,6 +385,7 @@ public final class VnMineHardcore extends JavaPlugin {
             deathPenaltyManager.reload();
             graveManager.reload();
             disasterManager.reload();
+            bossLeaderboardManager.reload();
             bossEventManager.reload();
             sender.sendMessage("§a✅ Config và các hệ thống đã được tải lại!");
             getLogger().info("[Cmd] " + sender.getName() + " reloaded config");
@@ -438,6 +566,11 @@ public final class VnMineHardcore extends JavaPlugin {
                 }
                 return true;
             }
+            if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
+                sender.sendMessage("§eDùng /vnhelp để xem toàn bộ lệnh.");
+                sender.sendMessage("§e/vn death reset <player> §7- Đặt số lần chết của người chơi về 0 (admin).");
+                return true;
+            }
             sender.sendMessage("§cLệnh phụ không hợp lệ. Gõ /vnhelp để xem hướng dẫn.");
             return true;
         }
@@ -455,7 +588,90 @@ public final class VnMineHardcore extends JavaPlugin {
             }
             return matches;
         }
+        if (command.getName().equalsIgnoreCase("vnevent") && args.length == 1
+                && sender.hasPermission("vnmine.hardcore.admin")) {
+            String partial = args[0].toLowerCase(Locale.ROOT);
+            return disasterManager.getDisasterIds().stream()
+                .filter(id -> id.toLowerCase(Locale.ROOT).startsWith(partial))
+                .toList();
+        }
+        if (command.getName().equalsIgnoreCase("vnevent") && args.length == 2
+                && sender.hasPermission("vnmine.hardcore.admin")) {
+            return matchingSuggestions(args[1], "10", "30", "60");
+        }
+        if (command.getName().equalsIgnoreCase("vnevent") && args.length == 3
+                && sender.hasPermission("vnmine.hardcore.admin")) {
+            return matchingSuggestions(args[2], "30", "60", "120");
+        }
+        if (command.getName().equalsIgnoreCase("vnboss") && args.length == 2
+                && sender.hasPermission("vnmine.hardcore.admin")) {
+            return matchingSuggestions(args[1], "1", "2", "3", "4", "5");
+        }
+        if (command.getName().equalsIgnoreCase("vnboss") && args.length == 3
+                && sender.hasPermission("vnmine.hardcore.admin")) {
+            return matchingSuggestions(args[2], "10", "30", "60");
+        }
+        if (command.getName().equalsIgnoreCase("vnboss") && args.length == 4
+                && sender.hasPermission("vnmine.hardcore.admin")) {
+            return matchingSuggestions(args[3], "60", "120", "300");
+        }
+        if (command.getName().equalsIgnoreCase("scoreboard") && args.length == 1
+                && sender.hasPermission("vnmine.hardcore.admin")
+                && "reset".startsWith(args[0].toLowerCase(Locale.ROOT))) {
+            return List.of("reset");
+        }
+        if (command.getName().equalsIgnoreCase("vntime") && sender.hasPermission("vnmine.hardcore.admin")) {
+            if (args.length == 1) {
+                return matchingSuggestions(args[0], "set");
+            }
+            if (args.length == 2 && args[0].equalsIgnoreCase("set")) {
+                return matchingSuggestions(args[1], "day", "night");
+            }
+            if (args.length == 3 && args[0].equalsIgnoreCase("set")
+                    && (args[1].equalsIgnoreCase("day") || args[1].equalsIgnoreCase("night"))) {
+                return matchingSuggestions(args[2], "5", "10", "15", "20", "30", "60");
+            }
+            if (args.length == 4 && args[0].equalsIgnoreCase("set")
+                    && (args[1].equalsIgnoreCase("day") || args[1].equalsIgnoreCase("night"))) {
+                String partial = args[3].toLowerCase(Locale.ROOT);
+                return Bukkit.getWorlds().stream()
+                    .map(world -> world.getName())
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(partial))
+                    .toList();
+            }
+        }
+        if (command.getName().equalsIgnoreCase("vnday") && sender.hasPermission("vnmine.hardcore.admin")) {
+            if (args.length == 1) return matchingSuggestions(args[0], "set");
+            if (args.length == 2 && args[0].equalsIgnoreCase("set")) {
+                return matchingSuggestions(args[1], "0", "1", "10", "50", "100");
+            }
+        }
+        if (command.getName().equalsIgnoreCase("vn") && sender.hasPermission("vnmine.hardcore.stats")) {
+            if (args.length == 1) {
+                return matchingSuggestions(args[0], "death", "help");
+            }
+            if (args.length == 2 && args[0].equalsIgnoreCase("death")
+                    && sender.hasPermission("vnmine.hardcore.admin")) {
+                return matchingSuggestions(args[1], "reset");
+            }
+            if (args.length == 3 && args[0].equalsIgnoreCase("death")
+                    && args[1].equalsIgnoreCase("reset")
+                    && sender.hasPermission("vnmine.hardcore.admin")) {
+                String partial = args[2].toLowerCase(Locale.ROOT);
+                return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(partial))
+                    .toList();
+            }
+        }
         return List.of();
+    }
+
+    private List<String> matchingSuggestions(String partial, String... options) {
+        String normalized = partial.toLowerCase(Locale.ROOT);
+        return java.util.Arrays.stream(options)
+            .filter(option -> option.toLowerCase(Locale.ROOT).startsWith(normalized))
+            .toList();
     }
 
     public static VnMineHardcore getInstance() { return instance; }
@@ -465,6 +681,7 @@ public final class VnMineHardcore extends JavaPlugin {
     public DisasterManager getDisasterManager() { return disasterManager; }
     public DeathPenaltyManager getDeathPenaltyManager() { return deathPenaltyManager; }
     public BossEventManager getBossEventManager() { return bossEventManager; }
+    public BossLeaderboardManager getBossLeaderboardManager() { return bossLeaderboardManager; }
     public GraveManager getGraveManager() { return graveManager; }
 
     private void clearLegacyPluginBans() {

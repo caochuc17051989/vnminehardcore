@@ -1,0 +1,211 @@
+# [VI] Cấu hình mùa xếp hạng boss và quà thưởng.
+# [EN] Configure boss leaderboard seasons and rewards.
+
+# [VI] Bật hệ thống bảng xếp hạng và phát thưởng; mặc định true.
+# [EN] Enable leaderboard and reward seasons; default true.
+enabled: true
+
+scoreboard:
+  # [VI] Bật sidebar hiển thị sát thương boss/điểm mùa; mặc định true.
+  # [EN] Show boss damage/season points in the sidebar; default true.
+  enabled: true
+  # [VI] Tiêu đề sidebar; mặc định "§6§lBOSS RANKING".
+  # [EN] Sidebar title; default "§6§lBOSS RANKING".
+  title: "§6§lBOSS RANKING"
+
+reset:
+  # [VI] Số ngày trong game giữa các lần reset; mặc định 30, hợp lệ 1-100000.
+  # [EN] In-game days between resets; default 30, valid range 1-100000.
+  every-game-days: 30
+  # [VI] Số giây hiển thị title chúc mừng người đứng đầu; mặc định 10, hợp lệ 1-60.
+  # [EN] Seconds to show the winner title; default 10, valid range 1-60.
+  winner-title-seconds: 10
+
+rewards:
+  # [VI] Nhắc người chơi đang online nhận quà theo chu kỳ phút; mặc định 60, hợp lệ 1-10080.
+  # [EN] Reminder interval in minutes for online players with pending rewards; default 60, valid range 1-10080.
+  reminder-interval-minutes: 60
+
+  # [VI] Mỗi vật phẩm có enabled, material, amount, name/lore tùy chọn và enchantments tùy chọn.
+  #      Enchantments dùng ID như sharpness, unbreaking; level 1-255, vượt giới hạn vanilla sẽ over-enchant.
+  # [EN] Each item supports enabled, material, amount, optional name/lore and optional enchantments.
+  #      Use IDs such as sharpness, unbreaking; levels 1-255, levels above vanilla limits are over-enchants.
+  top-1:
+    netherite-sword:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định NETHERITE_SWORD.
+      # [EN] Reward material; default NETHERITE_SWORD.
+      material: NETHERITE_SWORD
+      # [VI] Số lượng vật phẩm; mặc định 1, hợp lệ 1 đến giới hạn stack của vật phẩm.
+      # [EN] Item amount; default 1, valid from 1 to the material stack limit.
+      amount: 1
+      # [VI] Tên riêng; mặc định "§6§lKẻ Săn Boss".
+      # [EN] Custom item name; default "§6§lKẻ Săn Boss".
+      name: "§6§lKẻ Săn Boss"
+      # [VI] Lore riêng của vật phẩm.
+      # [EN] Custom item lore.
+      lore:
+        - "§ePhần thưởng Top 1"
+        - "§7Mùa giải Boss"
+      # [VI] Enchant có thể vượt cấp tối đa vanilla.
+      # [EN] Enchantments may exceed vanilla maximum levels.
+      enchantments:
+        sharpness: 7
+        unbreaking: 5
+    diamonds:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND.
+      # [EN] Reward material; default DIAMOND.
+      material: DIAMOND
+      # [VI] Số lượng; mặc định 32, hợp lệ 1-64.
+      # [EN] Amount; default 32, valid range 1-64.
+      amount: 32
+
+  top-2:
+    diamond-sword:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND_SWORD.
+      # [EN] Reward material; default DIAMOND_SWORD.
+      material: DIAMOND_SWORD
+      # [VI] Số lượng; mặc định 1.
+      # [EN] Amount; default 1.
+      amount: 1
+      # [VI] Tên riêng của vũ khí.
+      # [EN] Custom weapon name.
+      name: "§b§lÁ Quân"
+      # [VI] Mô tả vũ khí.
+      # [EN] Weapon lore.
+      lore:
+        - "§ePhần thưởng Top 2"
+      # [VI] Enchant vượt giới hạn vanilla được phép.
+      # [EN] Enchants above vanilla limits are allowed.
+      enchantments:
+        sharpness: 5
+        unbreaking: 3
+    diamonds:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND.
+      # [EN] Reward material; default DIAMOND.
+      material: DIAMOND
+      # [VI] Số lượng; mặc định 24, hợp lệ 1-64.
+      # [EN] Amount; default 24, valid range 1-64.
+      amount: 24
+
+  top-3:
+    enchanted-book:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định ENCHANTED_BOOK.
+      # [EN] Reward material; default ENCHANTED_BOOK.
+      material: ENCHANTED_BOOK
+      # [VI] Số lượng; mặc định 1.
+      # [EN] Amount; default 1.
+      amount: 1
+      # [VI] Enchant được lưu trong sách để áp dụng lên vật phẩm, không enchant cuốn sách.
+      # [EN] Enchantments stored for applying to an item; the book itself is not enchanted.
+      book-enchantments:
+        mending: 1
+        unbreaking: 3
+    diamonds:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND.
+      # [EN] Reward material; default DIAMOND.
+      material: DIAMOND
+      # [VI] Số lượng; mặc định 16, hợp lệ 1-64.
+      # [EN] Amount; default 16, valid range 1-64.
+      amount: 16
+
+  top-4:
+    diamonds:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND.
+      # [EN] Reward material; default DIAMOND.
+      material: DIAMOND
+      # [VI] Số lượng; mặc định 12, hợp lệ 1-64.
+      # [EN] Amount; default 12, valid range 1-64.
+      amount: 12
+
+  top-5:
+    diamonds:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND.
+      # [EN] Reward material; default DIAMOND.
+      material: DIAMOND
+      # [VI] Số lượng; mặc định 10, hợp lệ 1-64.
+      # [EN] Amount; default 10, valid range 1-64.
+      amount: 10
+
+  top-6:
+    diamonds:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND.
+      # [EN] Reward material; default DIAMOND.
+      material: DIAMOND
+      # [VI] Số lượng; mặc định 8, hợp lệ 1-64.
+      # [EN] Amount; default 8, valid range 1-64.
+      amount: 8
+
+  top-7:
+    diamonds:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND.
+      # [EN] Reward material; default DIAMOND.
+      material: DIAMOND
+      # [VI] Số lượng; mặc định 7, hợp lệ 1-64.
+      # [EN] Amount; default 7, valid range 1-64.
+      amount: 7
+
+  top-8:
+    diamonds:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND.
+      # [EN] Reward material; default DIAMOND.
+      material: DIAMOND
+      # [VI] Số lượng; mặc định 6, hợp lệ 1-64.
+      # [EN] Amount; default 6, valid range 1-64.
+      amount: 6
+
+  top-9:
+    diamonds:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND.
+      # [EN] Reward material; default DIAMOND.
+      material: DIAMOND
+      # [VI] Số lượng; mặc định 5, hợp lệ 1-64.
+      # [EN] Amount; default 5, valid range 1-64.
+      amount: 5
+
+  top-10:
+    diamonds:
+      # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
+      # [EN] Enable/disable this sample item; default true.
+      enabled: true
+      # [VI] Vật phẩm phần thưởng; mặc định DIAMOND.
+      # [EN] Reward material; default DIAMOND.
+      material: DIAMOND
+      # [VI] Số lượng; mặc định 4, hợp lệ 1-64.
+      # [EN] Amount; default 4, valid range 1-64.
+      amount: 4
