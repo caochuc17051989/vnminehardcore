@@ -1,5 +1,5 @@
 # ============================================================
-# ================== VnMineHardcore v1.3.4 ==================
+# ================== VnMineHardcore v1.3.5 ==================
 # ==================   CẤU HÌNH / CONFIG   ==================
 # ============================================================
 # [VI] File cấu hình chính của plugin VnMineHardcore.
@@ -185,6 +185,23 @@ hunger:
   # [VI] Bật ngộ độc khi ăn thức ăn sống (thịt sống, thịt thối, cá nóc...)
   # [EN] Enable raw food poisoning (raw meat, rotten flesh, pufferfish...)
   raw-food-poison: true
+
+  # ===== ĂN QUÁ NHANH / CHOKING FROM EATING TOO FAST =====
+  # [VI] Nếu bật, người chơi bị nghẹn khi ăn nhiều hơn số món cho phép trong khoảng thời gian.
+  # [EN] If enabled, players choke when eating more than the allowed count within the time window.
+  choke-enabled: true
+
+  # [VI] Số món tối đa có thể ăn trong cửa sổ thời gian trước khi bị nghẹn.
+  # [EN] Maximum number of foods that can be eaten in the time window before choking.
+  choke-max-eats: 3
+
+  # [VI] Cửa sổ kiểm tra tốc độ ăn (giây).
+  # [EN] Eating-speed check window (seconds).
+  choke-window-seconds: 10
+
+  # [VI] Sát thương mỗi lần bị nghẹn (đơn vị HP; 2 HP = 1 tim).
+  # [EN] Damage per choking trigger (HP; 2 HP = 1 heart).
+  choke-damage: 1.0
 
   # [VI] Bật hiệu ứng phát nổ khi ăn táo vàng enchanted (Notch Apple)
   # [EN] Enable explosion when eating enchanted golden apple (Notch Apple)

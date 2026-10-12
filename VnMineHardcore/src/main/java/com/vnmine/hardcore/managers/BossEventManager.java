@@ -126,10 +126,7 @@ public class BossEventManager implements Listener {
         if (!config.bossLevelProgressionEnabled || bc == null) return 1;
         if (config.bossLevelThresholds == null || config.bossLevelThresholds.isEmpty()) return 1;
 
-        long worldDay = 0L;
-        if (!Bukkit.getWorlds().isEmpty()) {
-            worldDay = Math.max(0L, Bukkit.getWorlds().get(0).getFullTime() / 24000L);
-        }
+        long worldDay = getCurrentWorldDay();
 
         ConfigManager.BossLevelThreshold selected = null;
         for (ConfigManager.BossLevelThreshold threshold : config.bossLevelThresholds) {
@@ -143,6 +140,31 @@ public class BossEventManager implements Listener {
         int min = Math.max(1, Math.min(1000, selected.minLevel));
         int max = Math.max(min, Math.min(1000, selected.maxLevel));
         return random.nextInt(min, max + 1);
+    }
+
+    private long getCurrentWorldDay() {
+        if (Bukkit.getWorlds().isEmpty()) return 0L;
+        return Math.max(0L, Bukkit.getWorlds().get(0).getFullTime() / 24000L);
+    }
+
+    private double getBossSpawnSuccessChance() {
+        if (!config.bossSpawnSuccessProgressionEnabled ||
+                config.bossSpawnSuccessThresholds == null ||
+                config.bossSpawnSuccessThresholds.isEmpty()) {
+            return config.bossSpawnSuccessProgressionEnabled
+                ? config.bossSpawnSuccessDefaultPercent
+                : 100.0;
+        }
+
+        long worldDay = getCurrentWorldDay();
+        ConfigManager.BossSpawnSuccessThreshold selected = null;
+        for (ConfigManager.BossSpawnSuccessThreshold threshold : config.bossSpawnSuccessThresholds) {
+            if (threshold != null && threshold.minDay <= worldDay &&
+                    (selected == null || threshold.minDay > selected.minDay)) {
+                selected = threshold;
+            }
+        }
+        return selected == null ? config.bossSpawnSuccessDefaultPercent : selected.chancePercent;
     }
 
     private double resolveBossHp(ConfigManager.BossConfig bc, int level) {
@@ -625,29 +647,39 @@ public class BossEventManager implements Listener {
         // Tính tổng chance
         int totalChance = 0;
         for (Map.Entry<String, ConfigManager.BossConfig> entry : enabledBosses) {
-            totalChance += entry.getValue().chance;
+            totalChance += Math.max(0, entry.getValue().chance);
         }
 
+        ConfigManager.BossConfig selectedBoss;
         if (totalChance <= 0) {
-            // Nếu tổng chance = 0, chọn boss đầu tiên
-            startWarning(enabledBosses.get(0).getValue());
-            return;
-        }
-
-        // Weighted random: roll trong [0, totalChance)
-        int roll = random.nextInt(totalChance);
-        int cumulative = 0;
-        for (Map.Entry<String, ConfigManager.BossConfig> entry : enabledBosses) {
-            ConfigManager.BossConfig bc = entry.getValue();
-            cumulative += bc.chance;
-            if (roll < cumulative) {
-                startWarning(bc);
-                return;
+            // Preserve legacy behavior when all per-boss weights are zero.
+            selectedBoss = enabledBosses.get(0).getValue();
+        } else {
+            // First select boss by its individual weight, then independently roll
+            // the day-based chance that this selected boss event proceeds.
+            int roll = random.nextInt(totalChance);
+            int cumulative = 0;
+            selectedBoss = enabledBosses.get(enabledBosses.size() - 1).getValue();
+            for (Map.Entry<String, ConfigManager.BossConfig> entry : enabledBosses) {
+                cumulative += Math.max(0, entry.getValue().chance);
+                if (roll < cumulative) {
+                    selectedBoss = entry.getValue();
+                    break;
+                }
             }
         }
 
-        // Fallback: không bao giờ chạy tới đây nếu totalChance > 0
-        startWarning(enabledBosses.get(enabledBosses.size() - 1).getValue());
+        double successChance = getBossSpawnSuccessChance();
+        if (random.nextDouble() * 100.0 >= successChance) {
+            long worldDay = getCurrentWorldDay();
+            logger.info("[BossEvent] " + selectedBoss.displayName +
+                " rolled but did not pass the day " + worldDay +
+                " spawn-success check (" + successChance + "%).");
+            timeSinceLastBoss = 0;
+            bossEventIntervalSeconds = sampleBossEventInterval();
+            return;
+        }
+        startWarning(selectedBoss);
     }
 
     private void startWarning(ConfigManager.BossConfig bc) {
