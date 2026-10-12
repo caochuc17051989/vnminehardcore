@@ -6,6 +6,8 @@ import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -26,6 +28,7 @@ public final class VnMineHardcore extends JavaPlugin {
     private BossLeaderboardManager bossLeaderboardManager;
     private GraveManager graveManager;
     private SpawnProtectionManager spawnProtectionManager;
+    private PermissionManager permissionManager;
     private VillagerDataManager villagerDataManager;
     private DeathListener deathListener;
     private CombatListener combatListener;
@@ -45,7 +48,7 @@ public final class VnMineHardcore extends JavaPlugin {
         clearLegacyPluginBans();
 
         getLogger().info("§a==========================================");
-        getLogger().info("§a  VnMineHardcore v1.8.0 - KHỞI ĐỘNG");
+        getLogger().info("§a  VnMineHardcore v" + getDescription().getVersion() + " - KHỞI ĐỘNG");
         getLogger().info("§a==========================================");
 
         // Load config first
@@ -64,6 +67,7 @@ public final class VnMineHardcore extends JavaPlugin {
         this.villagerDataManager = new VillagerDataManager(this, configManager);
         this.graveManager = new GraveManager(this, configManager);
         this.spawnProtectionManager = new SpawnProtectionManager(this);
+        this.permissionManager = new PermissionManager(this);
 
         // Create listeners (pass config)
         this.deathListener = new DeathListener(this, configManager, deathRenameManager, deathPenaltyManager);
@@ -89,30 +93,17 @@ public final class VnMineHardcore extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(oreControlListener, this);
         Bukkit.getPluginManager().registerEvents(graveListener, this);
         Bukkit.getPluginManager().registerEvents(spawnProtectionManager, this);
+        Bukkit.getPluginManager().registerEvents(permissionManager, this);
 
         // Register commands
-        this.getCommand("vnstats").setExecutor(this);
-        this.getCommand("vnhardcore").setExecutor(this);
-        this.getCommand("vnreload").setExecutor(this);
-        this.getCommand("vnhelp").setExecutor(this);
-        this.getCommand("vnevent").setExecutor(this);
-        this.getCommand("vnboss").setExecutor(this);
-        this.getCommand("vn").setExecutor(this);
-        this.getCommand("reward").setExecutor(this);
-        this.getCommand("vnrespawn").setExecutor(this);
-        this.getCommand("vnleave").setExecutor(this);
-        this.getCommand("fly").setExecutor(this);
-        this.getCommand("nodame").setExecutor(this);
-        this.getCommand("spawn").setExecutor(this);
-        this.getCommand("gm0").setExecutor(this);
-        this.getCommand("gm1").setExecutor(this);
-        this.getCommand("gm2").setExecutor(this);
-        this.getCommand("gm3").setExecutor(this);
-        this.getCommand("scoreboard").setExecutor(this);
-        this.getCommand("vntime").setExecutor(this);
-        this.getCommand("vnday").setExecutor(this);
-        this.getCommand("vnspawn").setExecutor(this);
-        this.getCommand("tp").setExecutor(this);
+        for (String commandName : List.of("vnstats", "vnhardcore", "vnreload", "vnhelp",
+                "vnevent", "vnboss", "vn", "reward", "vnrespawn", "vnleave", "fly",
+                "nodame", "spawn", "gm0", "gm1", "gm2", "gm3", "scoreboard",
+                "vntime", "vnday", "vnspawn", "tp")) {
+            registerCommand(commandName, this, this);
+        }
+        registerCommand("vngroup", permissionManager, permissionManager);
+        registerCommand("vnuser", permissionManager, permissionManager);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
         getLogger().info("§a  Deaths are recorded; no death bans are applied.");
@@ -120,6 +111,16 @@ public final class VnMineHardcore extends JavaPlugin {
         getLogger().info("§a  Use /vnreload to reload config");
         getLogger().info("§a  Use /vnevent to manually trigger disasters");
         getLogger().info("§a==========================================");
+    }
+
+    private void registerCommand(String name, org.bukkit.command.CommandExecutor executor,
+                                 TabCompleter tabCompleter) {
+        PluginCommand pluginCommand = getCommand(name);
+        if (pluginCommand == null) {
+            throw new IllegalStateException("Command '/" + name + "' is missing from plugin.yml.");
+        }
+        pluginCommand.setExecutor(executor);
+        pluginCommand.setTabCompleter(tabCompleter);
     }
 
     @Override
@@ -146,7 +147,7 @@ public final class VnMineHardcore extends JavaPlugin {
         }
 
         if (command.getName().equalsIgnoreCase("scoreboard")) {
-            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+            if (!permissionManager.hasPermission(sender, "vnmine.command.scoreboard.reset")) {
                 sender.sendMessage("§cBạn không có quyền!");
                 return true;
             }
@@ -163,7 +164,7 @@ public final class VnMineHardcore extends JavaPlugin {
         }
 
         if (command.getName().equalsIgnoreCase("vntime")) {
-            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+            if (!permissionManager.hasPermission(sender, "vnmine.command.time.manage")) {
                 sender.sendMessage("§cBạn không có quyền!");
                 return true;
             }
@@ -210,7 +211,7 @@ public final class VnMineHardcore extends JavaPlugin {
         }
 
         if (command.getName().equalsIgnoreCase("vnday")) {
-            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+            if (!permissionManager.hasPermission(sender, "vnmine.command.day.manage")) {
                 sender.sendMessage("§cBạn không có quyền!");
                 return true;
             }
@@ -249,7 +250,7 @@ public final class VnMineHardcore extends JavaPlugin {
         }
 
         if (command.getName().equalsIgnoreCase("spawn")) {
-            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+            if (!permissionManager.hasPermission(sender, "vnmine.command.spawn")) {
                 sender.sendMessage("§cBạn không có quyền!");
                 return true;
             }
@@ -263,7 +264,7 @@ public final class VnMineHardcore extends JavaPlugin {
         }
 
         if (command.getName().matches("(?i)gm[0-3]")) {
-            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+            if (!permissionManager.hasPermission(sender, "vnmine.command.gamemode")) {
                 sender.sendMessage("§cBạn không có quyền!");
                 return true;
             }
@@ -284,7 +285,7 @@ public final class VnMineHardcore extends JavaPlugin {
         }
 
         if (command.getName().equalsIgnoreCase("fly")) {
-            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+            if (!permissionManager.hasPermission(sender, "vnmine.command.fly")) {
                 sender.sendMessage("§cBạn không có quyền!");
                 return true;
             }
@@ -308,7 +309,7 @@ public final class VnMineHardcore extends JavaPlugin {
         }
 
         if (command.getName().equalsIgnoreCase("nodame")) {
-            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+            if (!permissionManager.hasPermission(sender, "vnmine.command.nodame")) {
                 sender.sendMessage("§cBạn không có quyền!");
                 return true;
             }
@@ -385,6 +386,8 @@ public final class VnMineHardcore extends JavaPlugin {
             sender.sendMessage("§e/spawn §7- Dịch chuyển về spawn của world hiện tại (admin, chỉ người chơi).");
             sender.sendMessage("§e/gm0 /gm1 /gm2 /gm3 §7- Đổi game mode (admin, chỉ người chơi).");
             sender.sendMessage("§e/vnreload §7- Tải lại config và các hệ thống (admin).");
+            sender.sendMessage("§e/vngroup §7- Liệt kê/tạo/xóa nhóm và chỉnh quyền nhóm (admin).");
+            sender.sendMessage("§e/vnuser §7- Xem, gán nhóm hoặc chỉnh quyền riêng người chơi (admin).");
             sender.sendMessage("§e/vn help §7- Hướng dẫn lệnh /vn.");
             sender.sendMessage("§e/vnhelp §7- Hiển thị danh sách lệnh này.");
             sender.sendMessage("§6§m========================================");
@@ -392,7 +395,7 @@ public final class VnMineHardcore extends JavaPlugin {
         }
 
         if (command.getName().equalsIgnoreCase("vnreload")) {
-            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+            if (!permissionManager.hasPermission(sender, "vnmine.command.reload")) {
                 sender.sendMessage("§cBạn không có quyền!");
                 return true;
             }
@@ -407,13 +410,17 @@ public final class VnMineHardcore extends JavaPlugin {
             disasterManager.reload();
             bossLeaderboardManager.reload();
             bossEventManager.reload();
+            if (!permissionManager.reload()) {
+                sender.sendMessage("§cCác cấu hình khác đã được tải lại nhưng permission.yml không hợp lệ/không đọc được; quyền cũ vẫn được giữ.");
+                return true;
+            }
             sender.sendMessage("§a✅ Config và các hệ thống đã được tải lại!");
             getLogger().info("[Cmd] " + sender.getName() + " reloaded config");
             return true;
         }
 
         if (command.getName().equalsIgnoreCase("vnevent")) {
-            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+            if (!permissionManager.hasPermission(sender, "vnmine.command.disasters")) {
                 sender.sendMessage("§cBạn không có quyền!");
                 return true;
             }
@@ -475,7 +482,7 @@ public final class VnMineHardcore extends JavaPlugin {
         }
 
         if (command.getName().equalsIgnoreCase("vnboss")) {
-            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+            if (!permissionManager.hasPermission(sender, "vnmine.command.bosses")) {
                 sender.sendMessage("§cBạn không có quyền!");
                 return true;
             }
@@ -570,7 +577,7 @@ public final class VnMineHardcore extends JavaPlugin {
                 return true;
             }
             if (args.length >= 2 && args[0].equalsIgnoreCase("death") && args[1].equalsIgnoreCase("reset")) {
-                if (!sender.hasPermission("vnmine.hardcore.admin")) {
+                if (!permissionManager.hasPermission(sender, "vnmine.command.death.reset")) {
                     sender.sendMessage("§cBạn không có quyền!");
                     return true;
                 }
@@ -608,7 +615,7 @@ public final class VnMineHardcore extends JavaPlugin {
     }
 
     private boolean handleTeleportToWorldSpawn(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("vnmine.hardcore.admin")) {
+        if (!permissionManager.hasPermission(sender, "vnmine.command.teleport.other")) {
             sender.sendMessage("§cBạn không có quyền!");
             return true;
         }
@@ -638,7 +645,7 @@ public final class VnMineHardcore extends JavaPlugin {
     }
 
     private boolean handleVnSpawn(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("vnmine.hardcore.admin")) {
+        if (!permissionManager.hasPermission(sender, "vnmine.command.spawn.manage")) {
             sender.sendMessage("§cBạn không có quyền!");
             return true;
         }
@@ -744,7 +751,7 @@ public final class VnMineHardcore extends JavaPlugin {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (command.getName().equalsIgnoreCase("tp")
-                && sender.hasPermission("vnmine.hardcore.admin")) {
+                && permissionManager.hasPermission(sender, "vnmine.command.teleport.other")) {
             if (args.length == 1) {
                 String partial = args[0].toLowerCase(Locale.ROOT);
                 return Bukkit.getOnlinePlayers().stream()
@@ -761,7 +768,7 @@ public final class VnMineHardcore extends JavaPlugin {
             }
         }
         if (command.getName().equalsIgnoreCase("vnspawn")
-                && sender.hasPermission("vnmine.hardcore.admin")) {
+                && permissionManager.hasPermission(sender, "vnmine.command.spawn.manage")) {
             if (args.length == 1) return matchingSuggestions(args[0], "set", "go", "protect", "list", "remove");
             if (args.length == 2 && args[0].equalsIgnoreCase("go")) {
                 String partial = args[1].toLowerCase(Locale.ROOT);
@@ -782,7 +789,7 @@ public final class VnMineHardcore extends JavaPlugin {
             }
         }
         if (command.getName().equalsIgnoreCase("vnboss") && args.length == 1
-                && sender.hasPermission("vnmine.hardcore.admin")) {
+                && permissionManager.hasPermission(sender, "vnmine.command.bosses")) {
             String partial = args[0].toLowerCase(Locale.ROOT);
             List<String> matches = new ArrayList<>();
             for (String id : bossEventManager.getEnabledBossIds()) {
@@ -791,7 +798,7 @@ public final class VnMineHardcore extends JavaPlugin {
             return matches;
         }
         if (command.getName().equalsIgnoreCase("vnevent") && args.length == 1
-                && sender.hasPermission("vnmine.hardcore.admin")) {
+                && permissionManager.hasPermission(sender, "vnmine.command.disasters")) {
             String partial = args[0].toLowerCase(Locale.ROOT);
             List<String> suggestions = new ArrayList<>();
             if ("stop".startsWith(partial)) suggestions.add("stop");
@@ -801,31 +808,32 @@ public final class VnMineHardcore extends JavaPlugin {
             return suggestions;
         }
         if (command.getName().equalsIgnoreCase("vnevent") && args.length == 2
-                && sender.hasPermission("vnmine.hardcore.admin")) {
+                && permissionManager.hasPermission(sender, "vnmine.command.disasters")) {
             return matchingSuggestions(args[1], "10", "30", "60");
         }
         if (command.getName().equalsIgnoreCase("vnevent") && args.length == 3
-                && sender.hasPermission("vnmine.hardcore.admin")) {
+                && permissionManager.hasPermission(sender, "vnmine.command.disasters")) {
             return matchingSuggestions(args[2], "30", "60", "120");
         }
         if (command.getName().equalsIgnoreCase("vnboss") && args.length == 2
-                && sender.hasPermission("vnmine.hardcore.admin")) {
+                && permissionManager.hasPermission(sender, "vnmine.command.bosses")) {
             return matchingSuggestions(args[1], "1", "2", "3", "4", "5");
         }
         if (command.getName().equalsIgnoreCase("vnboss") && args.length == 3
-                && sender.hasPermission("vnmine.hardcore.admin")) {
+                && permissionManager.hasPermission(sender, "vnmine.command.bosses")) {
             return matchingSuggestions(args[2], "10", "30", "60");
         }
         if (command.getName().equalsIgnoreCase("vnboss") && args.length == 4
-                && sender.hasPermission("vnmine.hardcore.admin")) {
+                && permissionManager.hasPermission(sender, "vnmine.command.bosses")) {
             return matchingSuggestions(args[3], "60", "120", "300");
         }
         if (command.getName().equalsIgnoreCase("scoreboard") && args.length == 1
-                && sender.hasPermission("vnmine.hardcore.admin")
+                && permissionManager.hasPermission(sender, "vnmine.command.scoreboard.reset")
                 && "reset".startsWith(args[0].toLowerCase(Locale.ROOT))) {
             return List.of("reset");
         }
-        if (command.getName().equalsIgnoreCase("vntime") && sender.hasPermission("vnmine.hardcore.admin")) {
+        if (command.getName().equalsIgnoreCase("vntime")
+                && permissionManager.hasPermission(sender, "vnmine.command.time.manage")) {
             if (args.length == 1) {
                 return matchingSuggestions(args[0], "set");
             }
@@ -845,23 +853,25 @@ public final class VnMineHardcore extends JavaPlugin {
                     .toList();
             }
         }
-        if (command.getName().equalsIgnoreCase("vnday") && sender.hasPermission("vnmine.hardcore.admin")) {
+        if (command.getName().equalsIgnoreCase("vnday")
+                && permissionManager.hasPermission(sender, "vnmine.command.day.manage")) {
             if (args.length == 1) return matchingSuggestions(args[0], "set");
             if (args.length == 2 && args[0].equalsIgnoreCase("set")) {
                 return matchingSuggestions(args[1], "0", "1", "10", "50", "100");
             }
         }
-        if (command.getName().equalsIgnoreCase("vn") && sender.hasPermission("vnmine.hardcore.stats")) {
+        if (command.getName().equalsIgnoreCase("vn")
+                && permissionManager.hasPermission(sender, "vnmine.command.utility")) {
             if (args.length == 1) {
                 return matchingSuggestions(args[0], "death", "help");
             }
             if (args.length == 2 && args[0].equalsIgnoreCase("death")
-                    && sender.hasPermission("vnmine.hardcore.admin")) {
+                    && permissionManager.hasPermission(sender, "vnmine.command.death.reset")) {
                 return matchingSuggestions(args[1], "reset");
             }
             if (args.length == 3 && args[0].equalsIgnoreCase("death")
                     && args[1].equalsIgnoreCase("reset")
-                    && sender.hasPermission("vnmine.hardcore.admin")) {
+                    && permissionManager.hasPermission(sender, "vnmine.command.death.reset")) {
                 String partial = args[2].toLowerCase(Locale.ROOT);
                 return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
@@ -888,6 +898,8 @@ public final class VnMineHardcore extends JavaPlugin {
     public BossEventManager getBossEventManager() { return bossEventManager; }
     public BossLeaderboardManager getBossLeaderboardManager() { return bossLeaderboardManager; }
     public GraveManager getGraveManager() { return graveManager; }
+    public SpawnProtectionManager getSpawnProtectionManager() { return spawnProtectionManager; }
+    public PermissionManager getPermissionManager() { return permissionManager; }
 
     private void clearLegacyPluginBans() {
         int cleared = 0;

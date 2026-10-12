@@ -868,7 +868,7 @@ public class DisasterManager {
                     setTrackedFireTicks(le, fireTicks);
                 } else if (target instanceof Block block) {
                     // Đốt block (nếu là block cháy được)
-                    if (block.getType() == Material.AIR) {
+                    if (block.getType() == Material.AIR && !isProtected(block)) {
                         block.setType(Material.FIRE);
                     }
                 }
@@ -888,7 +888,7 @@ public class DisasterManager {
                     Location loc = getRandomLocationAround(targetLoc, radius);
                     for (int dy = 0; dy < placeHeight; dy++) {
                         Location blockLoc = loc.clone().add(0, dy, 0);
-                        if (blockLoc.getBlock().getType() == Material.AIR) {
+                        if (blockLoc.getBlock().getType() == Material.AIR && !isProtected(blockLoc.getBlock())) {
                             blockLoc.getBlock().setType(material);
                         }
                     }
@@ -909,7 +909,8 @@ public class DisasterManager {
                     int by = minY + random.nextInt(60);
                     Block block = new Location(targetLoc.getWorld(), bx, by, bz).getBlock();
                     Material bt = block.getType();
-                    if (bt == Material.AIR || bt == Material.WATER || bt == Material.LAVA || bt == Material.BEDROCK) continue;
+                    if (isProtected(block) || bt == Material.AIR || bt == Material.WATER
+                            || bt == Material.LAVA || bt == Material.BEDROCK) continue;
 
                     double blastRes = bt.getBlastResistance();
                     double fallProb = blockFallChance / (1.0 + blastRes * resistanceFactor);
@@ -1034,7 +1035,8 @@ public class DisasterManager {
 
                 if (target instanceof Block block) {
                     Material bt = block.getType();
-                    if (bt == Material.AIR || bt == Material.WATER || bt == Material.LAVA || bt == Material.BEDROCK) break;
+                    if (isProtected(block) || bt == Material.AIR || bt == Material.WATER
+                            || bt == Material.LAVA || bt == Material.BEDROCK) break;
                     
                     FallingBlock fb = targetLoc.getWorld().spawnFallingBlock(
                         block.getLocation().add(0.5, 0, 0.5), block.getBlockData());
@@ -1086,7 +1088,7 @@ public class DisasterManager {
                     for (int dy = -replaceRadius; dy <= replaceRadius; dy++) {
                         for (int dz = -replaceRadius; dz <= replaceRadius; dz++) {
                             Block b = targetLoc.getBlock().getRelative(dx, dy, dz);
-                            if (b.getType() == fromMat) {
+                            if (b.getType() == fromMat && !isProtected(b)) {
                                 b.setType(toMat);
                             }
                         }
@@ -1103,7 +1105,8 @@ public class DisasterManager {
                     for (int dy = -igniteRadius; dy <= igniteRadius; dy++) {
                         for (int dz = -igniteRadius; dz <= igniteRadius; dz++) {
                             Block b = targetLoc.getBlock().getRelative(dx, dy, dz);
-                            if (b.getType() == Material.AIR && b.getRelative(0, -1, 0).getType().isSolid()) {
+                            if (b.getType() == Material.AIR && b.getRelative(0, -1, 0).getType().isSolid()
+                                    && !isProtected(b)) {
                                 b.setType(Material.FIRE);
                             }
                         }
@@ -1128,7 +1131,7 @@ public class DisasterManager {
                     for (int dy = -liquidRadius; dy <= liquidRadius; dy++) {
                         for (int dz = -liquidRadius; dz <= liquidRadius; dz++) {
                             Block b = targetLoc.getBlock().getRelative(dx, dy, dz);
-                            if (b.getType() == Material.AIR) {
+                            if (b.getType() == Material.AIR && !isProtected(b)) {
                                 b.setType(liquidMat);
                             }
                         }
@@ -1144,7 +1147,7 @@ public class DisasterManager {
                 for (int dx = -fertilizeRadius; dx <= fertilizeRadius; dx++) {
                     for (int dz = -fertilizeRadius; dz <= fertilizeRadius; dz++) {
                         Block b = targetLoc.getBlock().getRelative(dx, 0, dz);
-                        if (random.nextDouble() < bonemealChance) {
+                        if (random.nextDouble() < bonemealChance && !isProtected(b)) {
                             b.applyBoneMeal(org.bukkit.block.BlockFace.UP);
                         }
                     }
@@ -1359,7 +1362,8 @@ public class DisasterManager {
                     for (int dy = -fireRadius; dy <= fireRadius; dy++) {
                         for (int dz = -fireRadius; dz <= fireRadius; dz++) {
                             Block b = location.getBlock().getRelative(dx, dy, dz);
-                            if (b.getType() == Material.AIR && b.getRelative(0, -1, 0).getType().isSolid()) {
+                            if (b.getType() == Material.AIR && b.getRelative(0, -1, 0).getType().isSolid()
+                                    && !isProtected(b)) {
                                 b.setType(Material.FIRE);
                             }
                         }
@@ -1414,7 +1418,8 @@ public class DisasterManager {
                 
                 // Tạo falling block tại vị trí
                 Block block = location.getBlock();
-                if (block.getType() != Material.AIR && block.getType() != Material.WATER && block.getType() != Material.LAVA) {
+                if (!isProtected(block) && block.getType() != Material.AIR
+                        && block.getType() != Material.WATER && block.getType() != Material.LAVA) {
                     FallingBlock fb = location.getWorld().spawnFallingBlock(
                         location.add(0.5, 2, 0.5), block.getBlockData());
                     trackSpawnedEntity(fb);
@@ -1452,7 +1457,8 @@ public class DisasterManager {
                     for (int dz = -bvRadius; dz <= bvRadius; dz++) {
                         Block b = location.getBlock().getRelative(dx, 0, dz);
                         Material bt = b.getType();
-                        if (bt == Material.AIR || bt == Material.WATER || bt == Material.LAVA || bt == Material.BEDROCK) continue;
+                        if (isProtected(b) || bt == Material.AIR || bt == Material.WATER
+                                || bt == Material.LAVA || bt == Material.BEDROCK) continue;
                         if (random.nextInt(3) != 0) continue; // Không nhấc tất cả
                         
                         FallingBlock fb = location.getWorld().spawnFallingBlock(
@@ -1870,7 +1876,8 @@ public class DisasterManager {
             for (int dz = -radius; dz <= radius; dz++) {
                 if (random.nextDouble() > 0.3) continue; // 30% cơ hội đốt mỗi block
                 Block block = center.getBlock().getRelative(dx, 0, dz);
-                if (block.getType() == Material.AIR && block.getRelative(0, -1, 0).getType().isSolid()) {
+                if (block.getType() == Material.AIR && block.getRelative(0, -1, 0).getType().isSolid()
+                        && !isProtected(block)) {
                     block.setType(Material.FIRE);
                 }
             }
@@ -1940,6 +1947,11 @@ public class DisasterManager {
                 }
             }, 30L);
         }
+    }
+
+    private boolean isProtected(Block block) {
+        SpawnProtectionManager manager = plugin.getSpawnProtectionManager();
+        return manager != null && manager.isProtected(block.getLocation());
     }
 
     private void broadcast(String message) {

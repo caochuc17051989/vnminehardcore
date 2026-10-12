@@ -1,5 +1,21 @@
 # Changelog
 
+## [v1.10.0] - 2026-10-12
+
+### Added
+- Thêm quản lý nhóm/quyền trong `permission.yml` qua `/vngroup` và `/vnuser`, mặc định có nhóm `user` và `admin`.
+- Tách quyền lệnh theo chức năng để có thể cấp riêng quyền xem trạng thái, quản lý thiên tai/boss, spawn, thời gian, game mode và quản lý người dùng.
+- Thêm quyền `vnmine.spawnprotection.bypass` cho OP/nhân viên được ủy quyền.
+
+### Fixed
+- Spawn protection chặn cả phá/đặt block, cháy, dòng chất lỏng, thay đổi block do entity và phá block do vụ nổ.
+- Các thao tác đặt, đốt, thay thế, nhấc block và nổ trực tiếp từ thiên tai bỏ qua block nằm trong vùng bảo vệ.
+
+## [v1.9.1] - 2026-10-12
+
+### Fixed
+- Đóng gói lại JAR từ resource hiện tại để `plugin.yml` chứa đầy đủ lệnh `vnspawn` và `tp`, tránh lỗi `getCommand(...)` trả về `null` khi khởi động.
+
 ## [v1.9.0] - 2026-10-12
 
 ### Added

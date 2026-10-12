@@ -9,6 +9,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockIgniteEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.entity.Player;
 
 import java.io.File;
@@ -78,20 +85,63 @@ public final class SpawnProtectionManager implements Listener {
         return getProtections().stream().map(Protection::id).toList();
     }
 
+    public boolean isProtected(Location location) {
+        if (location.getWorld() == null) return false;
+        for (Protection protection : protections.values()) {
+            if (!protection.world().equalsIgnoreCase(location.getWorld().getName())) continue;
+            double dx = location.getBlockX() - (double) protection.centerX();
+            double dz = location.getBlockZ() - (double) protection.centerZ();
+            if (dx * dx + dz * dz <= (double) protection.radius() * protection.radius()) return true;
+        }
+        return false;
+    }
+
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
-        Block block = event.getBlock();
-        for (Protection protection : protections.values()) {
-            if (!protection.world().equalsIgnoreCase(block.getWorld().getName())) continue;
+        if (!isProtected(event.getBlock().getLocation()) || canBypass(event.getPlayer())) return;
+        event.setCancelled(true);
+        event.getPlayer().sendMessage("§cBạn không thể phá block trong khu vực spawn được bảo vệ.");
+    }
 
-            double dx = (double) block.getX() - protection.centerX();
-            double dz = (double) block.getZ() - protection.centerZ();
-            if (dx * dx + dz * dz > (double) protection.radius() * protection.radius()) continue;
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        if (!isProtected(event.getBlockPlaced().getLocation()) || canBypass(event.getPlayer())) return;
+        event.setCancelled(true);
+        event.getPlayer().sendMessage("§cBạn không thể đặt block trong khu vực spawn được bảo vệ.");
+    }
 
-            event.setCancelled(true);
-            event.getPlayer().sendMessage("§cBạn không thể phá block trong khu vực spawn được bảo vệ.");
-            return;
-        }
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEntityExplode(EntityExplodeEvent event) {
+        event.blockList().removeIf(block -> isProtected(block.getLocation()));
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockExplode(BlockExplodeEvent event) {
+        event.blockList().removeIf(block -> isProtected(block.getLocation()));
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockBurn(BlockBurnEvent event) {
+        if (isProtected(event.getBlock().getLocation())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockIgnite(BlockIgniteEvent event) {
+        if (isProtected(event.getBlock().getLocation())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityChangeBlock(EntityChangeBlockEvent event) {
+        if (isProtected(event.getBlock().getLocation())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockFlow(BlockFromToEvent event) {
+        if (isProtected(event.getToBlock().getLocation())) event.setCancelled(true);
+    }
+
+    private boolean canBypass(Player player) {
+        return plugin.getPermissionManager().isProtectionBypass(player);
     }
 
     private void load() {

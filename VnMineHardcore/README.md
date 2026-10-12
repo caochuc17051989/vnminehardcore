@@ -18,33 +18,25 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.x. Người chơi khô
 
 | Lệnh | Mô tả | Quyền |
 |------|-------|-------|
-| `/vnstats` | Xem thống kê cá nhân (chỉ người chơi) | `vnmine.hardcore.stats` |
-| `/vnhardcore` | Xem trạng thái plugin | `vnmine.hardcore.admin` |
-| `/vn death reset <player>` | Reset số lần chết của player về 0 | `vnmine.hardcore.admin` |
-| `/vnevent` | Xem danh sách thiên tai | `vnmine.hardcore.admin` |
-| `/vnevent <id> <warning-giây> <duration-giây>` | Gọi thiên tai; có gợi ý ID và tham số | `vnmine.hardcore.admin` |
-| `/vnboss` | Xem danh sách boss | `vnmine.hardcore.admin` |
-| `/vnboss <id> <level> <warning-giây> <duration-giây>` | Gọi boss theo level; có gợi ý ID và tham số | `vnmine.hardcore.admin` |
-| `/reward` | Nhận phần thưởng xếp hạng boss đang chờ (cần chỗ trống trong inventory) | Không cần |
-| `/scoreboard reset` | Xóa điểm mùa và phần thưởng chờ (bí danh: `/vnscoreboard`, `/sb`) | `vnmine.hardcore.admin` |
-| `/vntime set <day\|night> <phút> [world]` | Đặt thời lượng ngày/đêm toàn cục hoặc riêng cho world đang tải | `vnmine.hardcore.admin` |
-| `/vnday set <ngày>` | Đặt world hiện tại về bình minh của ngày trong game tương ứng (chỉ người chơi) | `vnmine.hardcore.admin` |
-| `/tp <user> <world>` | Đưa người chơi đang trực tuyến đến điểm spawn của world | `vnmine.hardcore.admin` |
-| `/vnspawn set` | Đặt spawn của world hiện tại tại vị trí và hướng đang đứng | `vnmine.hardcore.admin` |
-| `/vnspawn go <world>` | Dịch chuyển bản thân đến spawn của world đang tải | `vnmine.hardcore.admin` |
-| `/vnspawn protect <X>` | Bảo vệ bán kính tròn X/Z quanh vị trí hiện tại, xuyên suốt độ cao world | `vnmine.hardcore.admin` |
-| `/vnspawn list` | Liệt kê ID, world, tọa độ tâm và bán kính các khu bảo vệ | `vnmine.hardcore.admin` |
-| `/vnspawn remove <ID>` | Xóa khu vực bảo vệ theo ID | `vnmine.hardcore.admin` |
-| `/vnevent stop` | Dừng ngay thiên tai đang cảnh báo hoặc đang diễn ra | `vnmine.hardcore.admin` |
-| `/vnrespawn` | Chọn hồi sinh khi đang chờ sau khi chết | Không cần |
-| `/vnleave` | Thoát máy chủ khi đang chờ sau khi chết | Không cần |
-| `/fly` | Bật/tắt bay trong Survival (chỉ người chơi) | `vnmine.hardcore.admin` |
-| `/nodame` | Bật/tắt miễn sát thương để thử boss (chỉ người chơi) | `vnmine.hardcore.admin` |
-| `/spawn` | Về điểm spawn world hiện tại (chỉ người chơi) | `vnmine.hardcore.admin` |
-| `/gm0`, `/gm1`, `/gm2`, `/gm3` | Chuyển game mode (chỉ người chơi) | `vnmine.hardcore.admin` |
-| `/vnreload` | Tải lại config và các hệ thống | `vnmine.hardcore.admin` |
-| `/vnhelp` | Hiển thị hướng dẫn tất cả lệnh | `vnmine.hardcore.stats` |
-| `/vn help` | Hiển thị hướng dẫn các lệnh `/vn` | `vnmine.hardcore.stats` |
+| `/vnstats` | Xem thống kê cá nhân (chỉ người chơi) | `vnmine.command.stats` |
+| `/vnhardcore` | Xem trạng thái plugin | `vnmine.command.status` |
+| `/vn death reset <player>` | Reset số lần chết của player về 0 | `vnmine.command.death.reset` |
+| `/vnevent [<id> <warning-giây> <duration-giây>\|stop]` | Xem, gọi hoặc dừng thiên tai | `vnmine.command.disasters` |
+| `/vnboss <id> <level> <warning-giây> <duration-giây>` | Gọi boss theo level | `vnmine.command.bosses` |
+| `/reward` | Nhận phần thưởng xếp hạng boss đang chờ (cần chỗ trống trong inventory) | `vnmine.command.reward` |
+| `/scoreboard reset` | Xóa điểm mùa và phần thưởng chờ (bí danh: `/vnscoreboard`, `/sb`) | `vnmine.command.scoreboard.reset` |
+| `/vntime set <day\|night> <phút> [world]` | Đặt thời lượng ngày/đêm toàn cục hoặc riêng cho world đang tải | `vnmine.command.time.manage` |
+| `/vnday set <ngày>` | Đặt world hiện tại về bình minh của ngày trong game tương ứng (chỉ người chơi) | `vnmine.command.day.manage` |
+| `/tp <user> <world>` | Đưa người chơi đang trực tuyến đến điểm spawn của world | `vnmine.command.teleport.other` |
+| `/vnspawn set\|go\|protect\|list\|remove` | Quản lý spawn và vùng bảo vệ | `vnmine.command.spawn.manage` |
+| `/vnrespawn` | Chọn hồi sinh khi đang chờ sau khi chết | `vnmine.command.respawn` |
+| `/vnleave` | Thoát máy chủ khi đang chờ sau khi chết | `vnmine.command.leave` |
+| `/fly`, `/nodame`, `/spawn` | Tiện ích quản trị dành cho người chơi | `vnmine.command.fly`, `.nodame`, `.spawn` |
+| `/gm0`, `/gm1`, `/gm2`, `/gm3` | Chuyển game mode (chỉ người chơi) | `vnmine.command.gamemode` |
+| `/vnreload` | Tải lại config và các hệ thống | `vnmine.command.reload` |
+| `/vnhelp`, `/vn help` | Hiển thị hướng dẫn lệnh | `vnmine.command.help`, `.utility` |
+| `/vngroup ...` | Tạo/xóa nhóm, xem nhóm, cấp/thu hồi quyền nhóm | `vnmine.command.groups.manage` |
+| `/vnuser ...` | Xem/gán nhóm, cấp/thu hồi quyền cá nhân, reset người chơi | `vnmine.command.users.manage` |
 
 Ví dụ gọi boss Wither level 3, cảnh báo 30 giây, tồn tại 120 giây:
 `/vnboss wither 3 30 120`.
@@ -52,6 +44,32 @@ Các lệnh có tham số hỗ trợ nhấn Tab để gợi ý ID, tên người
 bảo vệ và các giá trị phổ biến cho từng vị trí tham số. `/vnspawn protect X`
 dùng bán kính ngang X/Z tính từ block hiện tại và bảo vệ ở mọi độ cao; dữ liệu
 được lưu trong `plugins/VnMineHardcore/spawns-protection.yml`.
+
+### Nhóm và quyền (`permission.yml`)
+
+Mặc định, nhóm `user` chỉ có các lệnh cơ bản; nhóm `admin` có toàn bộ quyền
+plugin. Dùng `/vngroup list`, `/vngroup info <group>`,
+`/vngroup create <group>`, `/vngroup delete <group>` và
+`/vngroup permission <add|remove> <group> <permission>` để quản lý nhóm.
+Dùng `/vnuser info <player>`, `/vnuser group <player> <group>`,
+`/vnuser permission <add|remove> <player> <permission>` hoặc
+`/vnuser reset <player>` để quản lý người chơi. Người chơi phải online hoặc đã
+có bản ghi trong file để được chọn; tên UUID ổn định, còn tên chỉ dùng để tra cứu.
+
+Các permission node được tách theo chức năng và liệt kê trong `plugin.yml`.
+Ví dụ: `vnmine.command.disasters`, `vnmine.command.spawn.manage`,
+`vnmine.command.users.manage`; node bypass vùng bảo vệ là
+`vnmine.spawnprotection.bypass`. OP và console luôn có toàn quyền.
+Sau khi chỉnh `permission.yml` thủ công, chạy `/vnreload`.
+Nhóm/quyền không hỗ trợ wildcard, phủ định hoặc kế thừa; quyền nhóm và quyền
+cá nhân được cộng lại, vì vậy xóa quyền cá nhân không thể phủ định quyền được
+cấp bởi nhóm. Nhóm mặc định áp dụng cho người mới và `/vnuser reset`; đổi
+`default-group` không tự chuyển người đã có nhóm được lưu.
+
+Để tránh xung đột, chỉ dùng một hệ thống làm nguồn cấp quyền cho node
+`vnmine.*`; permission từ plugin khác có thể cộng thêm quyền. Chỉ cấp
+`vnmine.command.groups.manage`/`vnmine.command.users.manage` cho nhân viên đáng
+tin cậy. OP luôn có toàn quyền và không thể bị giới hạn bởi group.
 
 ## Cấu hình (config.yml)
 
@@ -129,9 +147,11 @@ Trạng thái `/nodame` sẽ tự tắt khi người chơi thoát máy chủ.
 
 `/vnspawn protect <X>` tạo khu vực hình tròn bán kính X block theo mặt phẳng
 X/Z quanh block hiện tại; khu vực áp dụng ở mọi độ cao nhưng chỉ trong world
-được tạo. Người chơi không thể phá block bên trong. Dữ liệu và bộ đếm ID được
-lưu tại `plugins/VnMineHardcore/spawns-protection.yml`, nên vẫn còn sau khi
-khởi động lại.
+được tạo. Người chơi mặc định không thể phá hoặc đặt block bên trong. OP và
+người có `vnmine.spawnprotection.bypass` vẫn được phá/đặt; vụ nổ, lửa, dòng
+chất lỏng và block do thiên tai không thể làm thay đổi vùng này. Dữ liệu và bộ
+đếm ID được lưu tại `plugins/VnMineHardcore/spawns-protection.yml`, nên vẫn còn
+sau khi khởi động lại.
 
 ```text
 /vnspawn set
@@ -149,7 +169,8 @@ Lệnh `/tp <user> <world>` đưa người chơi đang trực tuyến đến spa
 được gợi ý bằng Tab.
 `/vnevent stop` hủy cảnh báo hoặc thiên tai đang chạy, dọn các task/thực thể
 do thiên tai tạo và khôi phục thời tiết, thời gian cùng hiệu ứng đang được theo
-dõi. Các lệnh quản trị này cần `vnmine.hardcore.admin`.
+dõi. Các lệnh quản trị cần node riêng theo chức năng, được cấp từ
+`permission.yml` (nhóm `admin` mặc định có toàn bộ quyền plugin).
 
 ### Thiên tai Chorus Explosion
 
@@ -316,6 +337,14 @@ sát thương người chơi, thông báo và tỷ lệ. Chạy `/vnreload` sau 
 5. Gõ `/vnreload` để áp dụng thay đổi
 
 ## Changelog
+
+### v1.9.1
+- Đóng gói lại JAR từ resource hiện tại để khai báo đầy đủ các lệnh trong `plugin.yml`, tránh lỗi không tìm thấy command khi khởi động.
+
+### v1.10.0
+- Thêm `/vngroup` và `/vnuser` để quản lý group, phân quyền từng lệnh và quyền riêng theo người chơi trong `permission.yml`.
+- Nhóm `user` mặc định chỉ dùng lệnh cơ bản; nhóm `admin` có đầy đủ quyền plugin.
+- Bảo vệ cả block đặt, lửa, dòng chất lỏng, vụ nổ và thay đổi block do thiên tai; OP hoặc người có `vnmine.spawnprotection.bypass` được phá/đặt trong vùng.
 
 ### v1.9.0
 - Thêm `/vnspawn set` để đặt spawn world hiện tại và `/vnspawn go <world>` để tới spawn của world đang tải; hỗ trợ gợi ý Tab tên world.

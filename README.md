@@ -192,33 +192,24 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/vnstats` | View your stats (player only: deaths, survival time, mob kills) | `vnmine.hardcore.stats` |
-| `/vnhardcore` | View plugin status | `vnmine.hardcore.admin` |
-| `/vn death reset <player>` | Reset a player's death count (online or previously joined player) | `vnmine.hardcore.admin` |
-| `/vnevent` | List available disaster IDs | `vnmine.hardcore.admin` |
-| `/vnevent <id> <warning-seconds> <duration-seconds>` | Manually trigger a disaster | `vnmine.hardcore.admin` |
-| `/vnboss` | List available boss IDs | `vnmine.hardcore.admin` |
-| `/vnboss <id> <level> <warning-seconds> <duration-seconds>` | Manually trigger a boss at a chosen level | `vnmine.hardcore.admin` |
-| `/reward` | Claim all pending boss rewards; inventory must have enough space | None |
-| `/scoreboard reset` | Clear season scores and pending rewards; aliases: `/vnscoreboard reset`, `/sb reset` | `vnmine.hardcore.admin` |
-| `/vntime set <day\|night> <minutes> [world]` | Set and save global day/night length, or an override for a loaded world | `vnmine.hardcore.admin` |
-| `/vnday set <day>` | Set the current world to dawn of the specified in-game day (player only) | `vnmine.hardcore.admin` |
-| `/tp <user> <world>` | Teleport an online player to the selected world's spawn | `vnmine.hardcore.admin` |
-| `/vnspawn set` | Set the current world's spawn at your current position and facing | `vnmine.hardcore.admin` |
-| `/vnspawn go <world>` | Teleport yourself to the spawn of a loaded world | `vnmine.hardcore.admin` |
-| `/vnspawn protect <X>` | Protect a circular X/Z radius around your current position, through all world heights | `vnmine.hardcore.admin` |
-| `/vnspawn list` | List protection IDs, worlds, centers, and radii | `vnmine.hardcore.admin` |
-| `/vnspawn remove <ID>` | Remove a protection area | `vnmine.hardcore.admin` |
-| `/vnevent stop` | Immediately stop a pending or active disaster | `vnmine.hardcore.admin` |
-| `/vnrespawn` | Choose to respawn while awaiting the post-death choice | None |
-| `/vnleave` | Leave the server while awaiting the post-death choice | None |
-| `/fly` | Toggle flight in Survival mode (player only) | `vnmine.hardcore.admin` |
-| `/nodame` | Toggle damage immunity for boss testing (player only) | `vnmine.hardcore.admin` |
-| `/spawn` | Teleport to the current world's spawn (player only) | `vnmine.hardcore.admin` |
-| `/gm0`, `/gm1`, `/gm2`, `/gm3` | Switch to Survival, Creative, Adventure, or Spectator (player only) | `vnmine.hardcore.admin` |
-| `/vnreload` | Reload config and plugin systems | `vnmine.hardcore.admin` |
-| `/vnhelp` | Show all plugin commands | `vnmine.hardcore.stats` |
-| `/vn help` | Show `/vn` subcommands | `vnmine.hardcore.stats` |
+| `/vnstats` | View your stats (player only: deaths, survival time, mob kills) | `vnmine.command.stats` |
+| `/vnhardcore` | View plugin status | `vnmine.command.status` |
+| `/vn death reset <player>` | Reset a player's death count (online or previously joined player) | `vnmine.command.death.reset` |
+| `/vnevent [<id> <warning-seconds> <duration-seconds>\|stop]` | List, trigger, or stop disasters | `vnmine.command.disasters` |
+| `/vnboss <id> <level> <warning-seconds> <duration-seconds>` | Manually trigger a boss | `vnmine.command.bosses` |
+| `/reward` | Claim pending boss rewards; inventory must have enough space | `vnmine.command.reward` |
+| `/scoreboard reset` | Clear season scores and pending rewards; aliases: `/vnscoreboard reset`, `/sb reset` | `vnmine.command.scoreboard.reset` |
+| `/vntime set <day\|night> <minutes> [world]` | Set global day/night length or a loaded world's override | `vnmine.command.time.manage` |
+| `/vnday set <day>` | Set the current world to dawn of the specified in-game day | `vnmine.command.day.manage` |
+| `/tp <user> <world>` | Teleport an online player to the selected world's spawn | `vnmine.command.teleport.other` |
+| `/vnspawn set\|go\|protect\|list\|remove` | Manage world spawn and protected regions | `vnmine.command.spawn.manage` |
+| `/vnrespawn`, `/vnleave` | Choose respawn or leave after death | `vnmine.command.respawn`, `vnmine.command.leave` |
+| `/fly`, `/nodame`, `/spawn` | Player-only admin utilities | `vnmine.command.fly`, `.nodame`, `.spawn` |
+| `/gm0`, `/gm1`, `/gm2`, `/gm3` | Switch game mode | `vnmine.command.gamemode` |
+| `/vnreload` | Reload config and plugin systems | `vnmine.command.reload` |
+| `/vnhelp`, `/vn help` | Show command help | `vnmine.command.help`, `.utility` |
+| `/vngroup ...` | Create/delete groups and grant/revoke group permissions | `vnmine.command.groups.manage` |
+| `/vnuser ...` | Inspect users, assign groups, manage personal permission grants | `vnmine.command.users.manage` |
 
 ### `/vnevent` Usage
 
@@ -241,8 +232,31 @@ override for that world. `/vnday` is player-only and changes the current
 world's full time to the start of the requested day (day 0 is world creation).
 For spawn protections, `X` is a positive integer radius measured horizontally
 from the player's current block; the protection spans every Y level in that
-world. Protection data is stored in `plugins/VnMineHardcore/spawns-protection.yml`.
+world. Players cannot place or break blocks in the protected area by default.
+Explosions, fire, liquids and disaster block changes are also prevented from
+damaging protected blocks. OPs and players with
+`vnmine.spawnprotection.bypass` may place/break blocks there; this bypass does
+not allow disasters or explosions to damage the area. Protection data is stored
+in `plugins/VnMineHardcore/spawns-protection.yml`.
 The `/tp` and `/vnspawn` command parameters also provide Tab completion.
+
+### Groups and permissions
+
+`plugins/VnMineHardcore/permission.yml` stores groups and user assignments.
+The default `user` group has basic play commands; `admin` has every plugin
+permission. Use `/vngroup list|info|create|delete|permission` to manage groups,
+and `/vnuser info|group|permission|reset` for players. Permission grants use
+exact Bukkit permission nodes; wildcards, explicit denies and group inheritance
+are not supported. Group grants and per-user grants are additive. OPs and the
+console always have all plugin permissions. The default group is assigned to
+new players; changing it does not move players with a saved assignment.
+Run `/vnreload` after manual edits.
+
+For predictable access, use only one permission manager as the source of truth
+for `vnmine.*` nodes; grants from another plugin can combine with these grants.
+Limit `vnmine.command.groups.manage` and `vnmine.command.users.manage` to trusted
+staff, and remember OP cannot be restricted by these groups. There are no deny
+rules or inheritance, so remove a grant from every group/user source that adds it.
 
 **All Disaster IDs:**
 - `blood-moon` - 🌕 Blood Moon
@@ -288,10 +302,28 @@ The `/tp` and `/vnspawn` command parameters also provide Tab completion.
 
 ## 🔐 Permissions
 
-| Permission | Description | Default |
-|------------|-------------|---------|
-| `vnmine.hardcore.stats` | View statistics (/vnstats, /vnhelp) | `true` |
-| `vnmine.hardcore.admin` | Admin commands (status, reset, time settings, reload, and event/boss controls) | `op` |
+Access is split by command/function, with exact nodes in the command table
+above and declarations in `plugin.yml`. The built-in `user` group receives
+basic play commands; `admin` receives all VnMineHardcore permission nodes.
+Operators and the console have all plugin permissions by default.
+
+| Permission | Use |
+|------------|-----|
+| `vnmine.command.stats`, `.help`, `.utility` | Stats and basic help/utility commands |
+| `vnmine.command.reward`, `.respawn`, `.leave` | Player reward and post-death actions |
+| `vnmine.command.status`, `.reload` | Plugin status and configuration reload |
+| `vnmine.command.disasters`, `.bosses` | Manually manage disasters and bosses |
+| `vnmine.command.spawn`, `.spawn.manage`, `.teleport.other` | Spawn travel, protection, and teleporting another player |
+| `vnmine.command.fly`, `.nodame`, `.gamemode` | Admin player-testing commands |
+| `vnmine.command.time.manage`, `.day.manage`, `.scoreboard.reset` | World time and scoreboard administration |
+| `vnmine.command.death.reset` | Reset player death statistics |
+| `vnmine.command.groups.manage`, `.users.manage` | Manage permission groups and player assignments |
+| `vnmine.spawnprotection.bypass` | Let a non-operator place/break blocks inside protected regions |
+
+The old `vnmine.hardcore.admin` and `vnmine.hardcore.stats` nodes remain
+registered for legacy integrations, but command checks use the granular nodes
+above. Migrate old permission assignments to the corresponding command nodes;
+`vnmine.hardcore.admin` still participates in the existing environment bypass.
 
 ---
 
@@ -746,10 +778,19 @@ Located in `plugins/VnMineHardcore/`:
 | `disasters.log` | Disaster event logs |
 | `stats.yml` | Player statistics |
 | `death-penalty.yml` | Death penalty data (stacks, recovery) |
+| `permission.yml` | Permission groups and user assignments |
 
 ---
 
 ## 📝 Changelog
+
+### v1.10.0
+- Added `/vngroup` and `/vnuser` with persistent `permission.yml` groups and granular per-command permissions.
+- Split plugin command access into function-specific permission nodes; added `vnmine.spawnprotection.bypass`.
+- Spawn protection now blocks placement, fire, liquids, explosions and disaster block changes, with OP/permission bypass for player block placement and breaking.
+
+### v1.9.1
+- Fixed the packaged `plugin.yml` resource so all registered command executors, including `/vnspawn` and `/tp`, are declared in the built JAR.
 
 ### v1.9.0
 - Added `/vnspawn set` and `/vnspawn go <world>` for setting the current world's spawn and travelling to a loaded world's spawn; world-name Tab completion is available.
