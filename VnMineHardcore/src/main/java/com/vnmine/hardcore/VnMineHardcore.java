@@ -39,7 +39,7 @@ public final class VnMineHardcore extends JavaPlugin {
         clearLegacyPluginBans();
 
         getLogger().info("§a==========================================");
-        getLogger().info("§a  VnMineHardcore v1.2.4 - KHỞI ĐỘNG");
+        getLogger().info("§a  VnMineHardcore v1.3.1 - KHỞI ĐỘNG");
         getLogger().info("§a==========================================");
 
         // Load config first

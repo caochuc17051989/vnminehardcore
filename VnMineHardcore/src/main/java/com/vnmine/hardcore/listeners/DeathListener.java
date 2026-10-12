@@ -18,7 +18,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -67,12 +69,14 @@ public class DeathListener implements Listener {
 
     private static final class RespawnLock {
         private final Location anchor;
-        private final long endsAtMillis;
+        private final long interactionEndsAtMillis;
+        private final long damageImmunityEndsAtMillis;
         private BukkitTask countdownTask;
 
-        private RespawnLock(Location anchor, long endsAtMillis) {
+        private RespawnLock(Location anchor, long interactionEndsAtMillis, long damageImmunityEndsAtMillis) {
             this.anchor = anchor;
-            this.endsAtMillis = endsAtMillis;
+            this.interactionEndsAtMillis = interactionEndsAtMillis;
+            this.damageImmunityEndsAtMillis = damageImmunityEndsAtMillis;
         }
     }
 
@@ -93,10 +97,8 @@ public class DeathListener implements Listener {
 
     public void reload() {
         reloadCombatTagDuration();
-        if (!config.respawnProtectionEnabled || config.respawnProtectionSeconds == 0) {
-            for (UUID playerId : respawnLocks.keySet().toArray(new UUID[0])) {
-                clearRespawnLock(playerId);
-            }
+        if (!config.respawnProtectionEnabled) {
+            for (UUID playerId : respawnLocks.keySet().toArray(new UUID[0])) clearRespawnLock(playerId);
         }
     }
 
@@ -218,19 +220,23 @@ public class DeathListener implements Listener {
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
-        awaitingRespawnChoice.remove(player.getUniqueId());
 
         // Nếu player không có bed spawn, respawn tại world spawn point
         if (!event.isBedSpawn() || event.getRespawnLocation() == null) {
             event.setRespawnLocation(player.getWorld().getSpawnLocation());
         }
 
-        if (config.respawnProtectionEnabled && config.respawnProtectionSeconds > 0) {
+        if (config.respawnProtectionEnabled &&
+            (config.respawnProtectionSeconds > 0 || config.respawnDamageImmunitySeconds > 0)) {
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 if (player.isOnline()) {
                     startRespawnProtection(player);
+                } else {
+                    awaitingRespawnChoice.remove(player.getUniqueId());
                 }
             }, 1L);
+        } else {
+            awaitingRespawnChoice.remove(player.getUniqueId());
         }
 
         // Apply death penalty on respawn (start recovery timer)
@@ -251,15 +257,25 @@ public class DeathListener implements Listener {
 
     private void startRespawnProtection(Player player) {
         UUID playerId = player.getUniqueId();
+        awaitingRespawnChoice.remove(playerId);
         clearRespawnLock(playerId);
 
+        long now = System.currentTimeMillis();
         RespawnLock lock = new RespawnLock(
             player.getLocation().clone(),
-            System.currentTimeMillis() + config.respawnProtectionSeconds * 1000L
+            now + config.respawnProtectionSeconds * 1000L,
+            now + ((long) config.respawnProtectionSeconds + config.respawnDamageImmunitySeconds) * 1000L
         );
+        if (config.respawnProtectionSeconds == 0 && config.respawnDamageImmunitySeconds == 0) return;
         respawnLocks.put(playerId, lock);
-        player.sendMessage("§e⏳ Bạn đang hồi sinh. Không thể tương tác trong §6" +
-            config.respawnProtectionSeconds + "§e giây.");
+        if (config.respawnProtectionSeconds > 0) {
+            player.sendMessage("§e⏳ Bạn đang hồi sinh. Không thể tương tác trong §6" +
+                config.respawnProtectionSeconds + "§e giây.");
+        }
+        if (config.respawnDamageImmunitySeconds > 0) {
+            player.sendMessage("§aBạn được miễn nhiễm sát thương trong §6" +
+                config.respawnDamageImmunitySeconds + "§a giây.");
+        }
         showRespawnCountdown(player, lock);
 
         lock.countdownTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
@@ -272,22 +288,41 @@ public class DeathListener implements Listener {
     }
 
     private void showRespawnCountdown(Player player, RespawnLock lock) {
-        long remainingMillis = lock.endsAtMillis - System.currentTimeMillis();
-        if (remainingMillis <= 0) {
+        long now = System.currentTimeMillis();
+        long remainingInteractionMillis = lock.interactionEndsAtMillis - now;
+        long remainingImmunityMillis = lock.damageImmunityEndsAtMillis - now;
+        if (remainingInteractionMillis <= 0 && remainingImmunityMillis <= 0) {
             clearRespawnLock(player.getUniqueId());
             player.sendTitle("§a§lĐÃ HỒI SINH", "§fBạn có thể tự do tương tác", 0, 40, 10);
             return;
         }
 
-        long remainingSeconds = (remainingMillis + 999L) / 1000L;
-        player.sendTitle("§e§lĐANG HỒI SINH", "§fCó thể tương tác sau §6" +
-            remainingSeconds + "§f giây", 0, 25, 0);
+        if (remainingInteractionMillis > 0) {
+            long remainingSeconds = (remainingInteractionMillis + 999L) / 1000L;
+            String immunityStatus = remainingImmunityMillis > 0
+                ? " | Miễn sát thương: " + ((remainingImmunityMillis + 999L) / 1000L) + "s"
+                : "";
+            player.sendTitle("§e§lĐANG HỒI SINH", "§fTự do sau §6" +
+                remainingSeconds + "§f giây" + immunityStatus, 0, 25, 0);
+        } else {
+            long remainingSeconds = (remainingImmunityMillis + 999L) / 1000L;
+            player.sendTitle("§a§lMIỄN NHIỄM SÁT THƯƠNG", "§fCòn §6" +
+                remainingSeconds + "§f giây", 0, 25, 0);
+        }
     }
 
     private boolean isRespawnLocked(Player player) {
         return config.respawnProtectionEnabled &&
             config.respawnProtectionSeconds > 0 &&
-            respawnLocks.containsKey(player.getUniqueId());
+            respawnLocks.containsKey(player.getUniqueId()) &&
+            respawnLocks.get(player.getUniqueId()).interactionEndsAtMillis > System.currentTimeMillis();
+    }
+
+    private boolean isDamageImmune(Player player) {
+        if (!config.respawnProtectionEnabled) return false;
+        if (awaitingRespawnChoice.contains(player.getUniqueId())) return true;
+        RespawnLock lock = respawnLocks.get(player.getUniqueId());
+        return lock != null && lock.damageImmunityEndsAtMillis > System.currentTimeMillis();
     }
 
     private void clearRespawnLock(UUID playerId) {
@@ -334,6 +369,20 @@ public class DeathListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onRespawnGraceEntityDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player && isRespawnLocked(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnDamageImmunity(EntityDamageEvent event) {
+        if (event.getEntity() instanceof Player player && isDamageImmune(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onRespawnMobTarget(EntityTargetEvent event) {
+        if (event.getTarget() instanceof Player player && isDamageImmune(player)) {
             event.setCancelled(true);
         }
     }

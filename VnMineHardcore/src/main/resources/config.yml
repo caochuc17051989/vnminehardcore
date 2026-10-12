@@ -1,5 +1,5 @@
 # ============================================================
-# ================== VnMineHardcore v1.2.4 ==================
+# ================== VnMineHardcore v1.3.1 ==================
 # ==================   CẤU HÌNH / CONFIG   ==================
 # ============================================================
 # [VI] File cấu hình chính của plugin VnMineHardcore.
@@ -41,6 +41,12 @@ death:
     # [EN] Maximum movement radius from the respawn location during the delay.
     #     Measured in blocks; set to 0 to keep the player at the respawn point.
     movement-radius-blocks: 10
+
+    # [VI] Thời gian miễn nhiễm mọi sát thương sau khi hồi sinh (giây).
+    #     Đặt 0 để tắt miễn nhiễm sau khi hồi sinh.
+    # [EN] Duration of immunity to all damage after respawning (seconds).
+    #     Set to 0 to disable post-respawn immunity.
+    damage-immunity-seconds: 10
 
 # ============================================================
 # [DEATH PENALTY] 💀 HÌNH PHẠT KHI CHẾT / DEATH PENALTY

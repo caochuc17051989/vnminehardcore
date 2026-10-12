@@ -11,6 +11,22 @@ chance: 10
 duration-seconds: 1800
 warning-seconds: 45
 
+hp-by-level:
+  1: 200
+  2: 300
+  3: 450
+  4: 675
+
+skills:
+  charged-explosion:
+    enabled: true
+    damage: 12.0
+    multiply: 1
+    cooldown-seconds: 20
+    radius: 6.0
+    velocity: 1.0
+    spread: 0.0
+
 immunities: {}
 
 drops:

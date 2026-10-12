@@ -11,6 +11,22 @@ chance: 15
 duration-seconds: 1800
 warning-seconds: 45
 
+hp-by-level:
+  1: 150
+  2: 225
+  3: 338
+  4: 507
+
+skills:
+  ground-slam:
+    enabled: true
+    damage: 7.0
+    multiply: 1
+    cooldown-seconds: 10
+    radius: 5.0
+    velocity: 1.1
+    spread: 0.0
+
 immunities:
   sunlight-burn: true
   potion-effects:

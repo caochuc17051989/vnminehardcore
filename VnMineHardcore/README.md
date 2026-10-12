@@ -67,8 +67,11 @@ hoặc lệnh `/vnrespawn` và `/vnleave`. Sau khi chọn hồi sinh,
 `death.respawn-protection` mặc định chờ 10 giây; trong thời gian này người chơi
 bị giới hạn trong bán kính 10 block quanh vị trí hồi sinh và không thể tương
 tác, mở/sửa inventory, nhặt hoặc thả đồ, hay tấn công. Tiêu đề màn hình đếm
-ngược cho biết khi nào các thao tác được mở lại. Chạy `/vnreload` sau khi thay
-đổi các thiết lập này.
+ngược cho biết khi nào các thao tác được mở lại. Người chơi được miễn nhiễm
+sát thương trong lúc chờ và thêm số giây đặt ở
+`death.respawn-protection.damage-immunity-seconds` sau khi được tự do tương
+tác; quái vật không thể chọn họ làm mục tiêu trong toàn bộ thời gian miễn
+nhiễm. Chạy `/vnreload` sau khi thay đổi các thiết lập này.
 
 ```yaml
 death:
@@ -76,6 +79,48 @@ death:
     enabled: true
     delay-seconds: 10
     movement-radius-blocks: 10
+    damage-immunity-seconds: 10
+```
+
+### Boss level & skills
+
+`bosses/_settings.yml` configures level ranges by in-game day. The applicable
+threshold is the last `min-day` not greater than the current day, and the boss
+randomly chooses a level inside that threshold's range. In each boss file,
+`hp-by-level` maps levels to explicit maximum HP; missing levels use the nearest
+lower configured level, then scale the base `hp` by 1.5 per additional level.
+Skill sections under `skills` can be enabled individually and tune their
+base damage, projectile count multiplier, cooldown, area, velocity, and spread.
+Configured skill damage scales by boss level; projectile skills use
+`boss-level * multiply` projectiles, capped at 40 per cast.
+Available skill IDs are `arrow-barrage` (skeleton), `fireball-volley`
+(dragon/ghast), `stomp` (giant), `ground-slam` (zombie), `charged-explosion`
+(creeper), `shadow-strike` (enderman), `dive-bomb` (phantom), `charge`
+(ravager), `venom-web` (spider), `shockwave` (vindicator), `potion-volley`
+(witch), and `skull-volley` (wither).
+
+```yaml
+# bosses/_settings.yml
+level-progression:
+  enabled: true
+  thresholds:
+    - {min-day: 0, min-level: 1, max-level: 1}
+    - {min-day: 50, min-level: 2, max-level: 3}
+    - {min-day: 100, min-level: 3, max-level: 4}
+
+# Example in an individual bosses/<boss>.yml
+hp-by-level:
+  1: 120
+  2: 180
+skills:
+  arrow-barrage:
+    enabled: true
+    damage: 6.0
+    multiply: 5
+    cooldown-seconds: 12
+    radius: 7.0
+    velocity: 1.5
+    spread: 1.4
 ```
 
 ### Disasters - Thiên tai

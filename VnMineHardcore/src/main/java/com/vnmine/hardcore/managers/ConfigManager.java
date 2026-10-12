@@ -9,8 +9,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -60,6 +62,7 @@ public class ConfigManager {
     public boolean respawnProtectionEnabled;
     public int respawnProtectionSeconds;
     public int respawnMovementRadiusBlocks;
+    public int respawnDamageImmunitySeconds;
 
     // Death Penalty
     public boolean deathPenaltyEnabled;
@@ -172,6 +175,18 @@ public class ConfigManager {
     public boolean disastersEnabled;
     public String disasterMinIntervalRaw;
     public int disasterWarningSeconds;
+    public int disasterDefaultSuccessProbability;
+    public List<DisasterSuccessThreshold> disasterSuccessThresholds = new ArrayList<>();
+
+    public static class DisasterSuccessThreshold {
+        public final int minDay;
+        public final int probabilityPercent;
+
+        public DisasterSuccessThreshold(int minDay, int probabilityPercent) {
+            this.minDay = minDay;
+            this.probabilityPercent = probabilityPercent;
+        }
+    }
 
     // Safe Zone settings (loaded from disasters/_settings.yml)
     public boolean safeZoneEnabled;
@@ -190,6 +205,8 @@ public class ConfigManager {
     public boolean bossEventsEnabled;
     public String bossEventMinIntervalRaw;
     public int bossEventSpawnRadius;
+    public boolean bossLevelProgressionEnabled;
+    public List<BossLevelThreshold> bossLevelThresholds = new ArrayList<>();
 
     // Boss config map - each boss is a complete object (loaded from bosses/*.yml)
     public Map<String, BossConfig> bossConfigs = new HashMap<>();
@@ -262,6 +279,24 @@ public class ConfigManager {
         public Map<String, Boolean> immunities = new HashMap<>();
         public java.util.List<String> immunityPotionEffects = new java.util.ArrayList<>();
         public Map<String, DropConfig> drops = new HashMap<>();
+        public Map<Integer, Double> hpByLevel = new HashMap<>();
+        public Map<String, BossSkillConfig> skills = new HashMap<>();
+    }
+
+    public static class BossLevelThreshold {
+        public long minDay;
+        public int minLevel;
+        public int maxLevel;
+    }
+
+    public static class BossSkillConfig {
+        public boolean enabled;
+        public double damage;
+        public int multiply;
+        public int cooldownSeconds;
+        public double radius;
+        public double velocity;
+        public double spread;
     }
 
     // DropConfig class - holds drop configuration
@@ -307,6 +342,7 @@ public class ConfigManager {
         respawnProtectionEnabled = config.getBoolean("death.respawn-protection.enabled", true);
         respawnProtectionSeconds = config.getInt("death.respawn-protection.delay-seconds", 10);
         respawnMovementRadiusBlocks = config.getInt("death.respawn-protection.movement-radius-blocks", 10);
+        respawnDamageImmunitySeconds = config.getInt("death.respawn-protection.damage-immunity-seconds", 10);
         if (respawnProtectionSeconds < 0) {
             plugin.getLogger().warning("[Config] death.respawn-protection.delay-seconds cannot be negative; using 0.");
             respawnProtectionSeconds = 0;
@@ -314,6 +350,10 @@ public class ConfigManager {
         if (respawnMovementRadiusBlocks < 0) {
             plugin.getLogger().warning("[Config] death.respawn-protection.movement-radius-blocks cannot be negative; using 0.");
             respawnMovementRadiusBlocks = 0;
+        }
+        if (respawnDamageImmunitySeconds < 0) {
+            plugin.getLogger().warning("[Config] death.respawn-protection.damage-immunity-seconds cannot be negative; using 0.");
+            respawnDamageImmunitySeconds = 0;
         }
 
         // Death Penalty
@@ -718,6 +758,8 @@ public class ConfigManager {
             disastersEnabled = false;
             disasterMinIntervalRaw = "2400";
             disasterWarningSeconds = 120;
+            disasterDefaultSuccessProbability = 100;
+            disasterSuccessThresholds.clear();
             safeZoneEnabled = false;
             return;
         }
@@ -727,6 +769,22 @@ public class ConfigManager {
         disastersEnabled = ds.getBoolean("enabled", true);
         disasterMinIntervalRaw = getStringFromConfig(ds.getConfigurationSection(""), "min-interval-seconds", "2400-4800");
         disasterWarningSeconds = ds.getInt("warning-seconds", 120);
+        disasterDefaultSuccessProbability = clampPercent(
+            ds.getInt("success-probability.default-percent", 100));
+        disasterSuccessThresholds.clear();
+        for (Map<?, ?> row : ds.getMapList("success-probability.day-thresholds")) {
+            Object minDayValue = row.get("min-day");
+            Object probabilityValue = row.get("percent");
+            if (!(minDayValue instanceof Number minDayNumber)
+                || !(probabilityValue instanceof Number probabilityNumber)) {
+                continue;
+            }
+            int minDay = minDayNumber.intValue();
+            if (minDay < 0) continue;
+            disasterSuccessThresholds.add(new DisasterSuccessThreshold(
+                minDay, clampPercent(probabilityNumber.intValue())));
+        }
+        disasterSuccessThresholds.sort((first, second) -> Integer.compare(first.minDay, second.minDay));
 
         // Safe Zone
         ConfigurationSection sz = ds.getConfigurationSection("safe-zone");
@@ -739,6 +797,10 @@ public class ConfigManager {
         } else {
             safeZoneEnabled = false;
         }
+    }
+
+    private int clampPercent(int percent) {
+        return Math.max(0, Math.min(100, percent));
     }
 
     /**
@@ -831,6 +893,8 @@ public class ConfigManager {
             bossEventsEnabled = false;
             bossEventMinIntervalRaw = "1200";
             bossEventSpawnRadius = 50;
+            bossLevelProgressionEnabled = false;
+            bossLevelThresholds.clear();
             return;
         }
 
@@ -839,6 +903,26 @@ public class ConfigManager {
         bossEventsEnabled = bs.getBoolean("enabled", true);
         bossEventMinIntervalRaw = getStringFromConfig(bs.getConfigurationSection(""), "min-interval-seconds", "1200-2400");
         bossEventSpawnRadius = bs.getInt("spawn-radius", 50);
+        bossLevelProgressionEnabled = bs.getBoolean("level-progression.enabled", true);
+        bossLevelThresholds.clear();
+        for (Map<?, ?> thresholdMap : bs.getMapList("level-progression.thresholds")) {
+            Object dayValue = thresholdMap.get("min-day");
+            Object minLevelValue = thresholdMap.get("min-level");
+            Object maxLevelValue = thresholdMap.get("max-level");
+            if (!(dayValue instanceof Number dayNumber) ||
+                !(minLevelValue instanceof Number minNumber) ||
+                !(maxLevelValue instanceof Number maxNumber)) {
+                plugin.getLogger().warning("[Boss] Skipping malformed level-progression threshold in bosses/_settings.yml.");
+                continue;
+            }
+
+            BossLevelThreshold threshold = new BossLevelThreshold();
+            threshold.minDay = Math.max(0, dayNumber.longValue());
+            threshold.minLevel = Math.max(1, minNumber.intValue());
+            threshold.maxLevel = Math.max(threshold.minLevel, maxNumber.intValue());
+            bossLevelThresholds.add(threshold);
+        }
+        bossLevelThresholds.sort(Comparator.comparingLong(threshold -> threshold.minDay));
     }
 
     /**
@@ -870,6 +954,42 @@ public class ConfigManager {
             bc.chance = section.getInt("chance", 10);
             bc.durationSeconds = section.getInt("duration-seconds", 120);
             bc.warningSeconds = section.getInt("warning-seconds", 60);
+
+            ConfigurationSection hpByLevelSection = section.getConfigurationSection("hp-by-level");
+            if (hpByLevelSection != null) {
+                for (String levelKey : hpByLevelSection.getKeys(false)) {
+                    try {
+                        int level = Integer.parseInt(levelKey);
+                        double hp = hpByLevelSection.getDouble(levelKey);
+                        if (level > 0 && Double.isFinite(hp) && hp > 0) {
+                            bc.hpByLevel.put(level, hp);
+                        } else {
+                            plugin.getLogger().warning("[Boss] Ignoring invalid hp-by-level." + levelKey +
+                                " in " + fileName);
+                        }
+                    } catch (NumberFormatException exception) {
+                        plugin.getLogger().warning("[Boss] Ignoring non-numeric hp-by-level key '" +
+                            levelKey + "' in " + fileName);
+                    }
+                }
+            }
+
+            ConfigurationSection skillsSection = section.getConfigurationSection("skills");
+            if (skillsSection != null) {
+                for (String skillId : skillsSection.getKeys(false)) {
+                    ConfigurationSection skillSection = skillsSection.getConfigurationSection(skillId);
+                    if (skillSection == null) continue;
+                    BossSkillConfig skill = new BossSkillConfig();
+                    skill.enabled = skillSection.getBoolean("enabled", false);
+                    skill.damage = Math.max(0, skillSection.getDouble("damage", 4.0));
+                    skill.multiply = Math.max(1, skillSection.getInt("multiply", 1));
+                    skill.cooldownSeconds = Math.max(1, skillSection.getInt("cooldown-seconds", 8));
+                    skill.radius = Math.max(0, skillSection.getDouble("radius", 4.0));
+                    skill.velocity = Math.max(0.1, skillSection.getDouble("velocity", 1.0));
+                    skill.spread = Math.max(0, skillSection.getDouble("spread", 1.0));
+                    bc.skills.put(skillId.toLowerCase(Locale.ROOT), skill);
+                }
+            }
 
             // Load immunities
             ConfigurationSection immunitiesSection = section.getConfigurationSection("immunities");

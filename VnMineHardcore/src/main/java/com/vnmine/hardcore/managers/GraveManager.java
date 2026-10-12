@@ -83,6 +83,8 @@ public class GraveManager implements Listener {
         String headBlockKey;
         // Lưu block cũ: key = "dx_dy_dz", value = "MATERIAL;BLOCKDATA"
         Map<String, String> originalBlocks = new HashMap<>();
+        // Block grave đã đặt tại mỗi offset, dùng để tránh khôi phục đè lên thay đổi sau đó.
+        Map<String, String> placedBlocks = new HashMap<>();
         // ArmorStand UUID để hiển thị tên trên mộ
         UUID armorStandUuid;
 
@@ -206,18 +208,19 @@ public class GraveManager implements Listener {
 
     public boolean createGrave(Player player, Location deathLocation) {
         if (!enabled || deathLocation == null || deathLocation.getWorld() == null) return false;
-        if (wouldOverlapGrave(deathLocation)) {
-            logger.warning("[Grave] Cannot build overlapping grave at " + deathLocation + "; allowing vanilla item drops.");
+        Location graveLocation = findGravePlacement(deathLocation);
+        if (graveLocation == null) {
+            logger.warning("[Grave] Cannot find a clear grave placement near " + deathLocation + "; allowing vanilla item drops.");
             return false;
         }
 
         GraveData grave = new GraveData();
         grave.owner = player.getUniqueId();
         grave.ownerName = player.getName();
-        grave.worldName = deathLocation.getWorld().getName();
-        grave.x = deathLocation.getBlockX();
-        grave.y = deathLocation.getBlockY();
-        grave.z = deathLocation.getBlockZ();
+        grave.worldName = graveLocation.getWorld().getName();
+        grave.x = graveLocation.getBlockX();
+        grave.y = graveLocation.getBlockY();
+        grave.z = graveLocation.getBlockZ();
         grave.createdAt = System.currentTimeMillis();
         grave.deathCountAtCreation = plugin.getLogManager().getDeathCount(player);
         grave.isEmpty = false;
@@ -239,7 +242,7 @@ public class GraveManager implements Listener {
             grave.items.put(40, offhand.clone());
         }
 
-        buildGraveStructure(deathLocation, player.getName(), grave);
+        buildGraveStructure(graveLocation, player.getName(), grave);
 
         graves.put(grave.graveId, grave);
         List<String> ownerGraves = playerGraves.computeIfAbsent(grave.owner, k -> new ArrayList<>());
@@ -256,7 +259,7 @@ public class GraveManager implements Listener {
                 data.set(ownerPath, ownerGraves);
             }
             removeGraveNameDisplay(grave);
-            destroyGraveStructure(deathLocation, grave);
+            destroyGraveStructure(graveLocation, grave);
             saveData();
             logger.warning("[Grave] Could not persist grave for " + player.getName() + "; allowing vanilla item drops.");
             return false;
@@ -292,6 +295,7 @@ public class GraveManager implements Listener {
         for (GraveBlock block : graveStructure) {
             Location loc = baseLocation.clone().add(block.dx, block.dy, block.dz);
             Block currentBlock = loc.getBlock();
+            String key = block.dx + "_" + block.dy + "_" + block.dz;
 
             if (block.material == Material.PLAYER_HEAD || "player-head".equals(block.data)) {
                 currentBlock.setType(Material.PLAYER_HEAD);
@@ -302,10 +306,47 @@ public class GraveManager implements Listener {
             } else {
                 currentBlock.setType(block.material);
             }
+            grave.placedBlocks.put(key, serializeBlock(currentBlock));
         }
 
         // 3. Spawn ArmorStand hiển thị tên trên đỉnh bia
         spawnGraveNameDisplay(baseLocation, grave);
+    }
+
+    private Location findGravePlacement(Location deathLocation) {
+        World world = deathLocation.getWorld();
+        if (world == null) return null;
+
+        int baseX = deathLocation.getBlockX();
+        int baseY = deathLocation.getBlockY();
+        int baseZ = deathLocation.getBlockZ();
+        if (!wouldOverlapGrave(new Location(world, baseX, baseY, baseZ))) {
+            return new Location(world, baseX, baseY, baseZ);
+        }
+
+        // Try progressively wider rings, favoring positions beside the original footprint.
+        for (int radius = 1; radius <= 4; radius++) {
+            List<int[]> offsets = new ArrayList<>();
+            offsets.add(new int[] {radius, 0});
+            offsets.add(new int[] {-radius, 0});
+            offsets.add(new int[] {0, radius});
+            offsets.add(new int[] {0, -radius});
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
+                    if ((Math.abs(dx) == radius && dz == 0) ||
+                        (Math.abs(dz) == radius && dx == 0)) {
+                        continue;
+                    }
+                    offsets.add(new int[] {dx, dz});
+                }
+            }
+            for (int[] offset : offsets) {
+                Location candidate = new Location(world, baseX + offset[0], baseY, baseZ + offset[1]);
+                if (!wouldOverlapGrave(candidate)) return candidate;
+            }
+        }
+        return null;
     }
 
     private boolean wouldOverlapGrave(Location baseLocation) {
@@ -328,6 +369,8 @@ public class GraveManager implements Listener {
             if (occupied.contains(x + ":" + y + ":" + z)) return true;
             Block existingBlock = baseLocation.getWorld().getBlockAt(x, y, z);
             if (existingBlock.getState() instanceof org.bukkit.block.TileState) return true;
+            if ((block.dy > 0 || !block.material.isSolid()) &&
+                !existingBlock.getType().isAir() && !existingBlock.isReplaceable()) return true;
         }
         return false;
     }
@@ -424,7 +467,12 @@ public class GraveManager implements Listener {
         for (String key : getStructureKeys(grave)) {
             int[] offset = parseOffset(key);
             if (offset == null) continue;
-            Block currentBlock = baseLocation.clone().add(offset[0], offset[1], offset[2]).getBlock();
+            int x = baseLocation.getBlockX() + offset[0];
+            int y = baseLocation.getBlockY() + offset[1];
+            int z = baseLocation.getBlockZ() + offset[2];
+            if (isOccupiedByAnotherGrave(grave, x, y, z)) continue;
+            Block currentBlock = world.getBlockAt(x, y, z);
+            if (!isStillGraveBlock(grave, key, currentBlock)) continue;
             String oldBlockData = grave.originalBlocks.get(key);
 
             if (oldBlockData != null && !oldBlockData.isEmpty()) {
@@ -445,6 +493,49 @@ public class GraveManager implements Listener {
                 currentBlock.setType(Material.AIR);
             }
         }
+    }
+
+    private boolean isOccupiedByAnotherGrave(GraveData restoringGrave, int x, int y, int z) {
+        for (GraveData other : graves.values()) {
+            if (other.graveId.equals(restoringGrave.graveId) || other.isEmpty ||
+                !other.worldName.equals(restoringGrave.worldName)) continue;
+            for (String key : getStructureKeys(other)) {
+                int[] offset = parseOffset(key);
+                if (offset != null && other.x + offset[0] == x &&
+                    other.y + offset[1] == y && other.z + offset[2] == z) return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isStillGraveBlock(GraveData grave, String key, Block block) {
+        String expected = grave.placedBlocks.get(key);
+        if (expected != null) {
+            String[] parts = expected.split(";", 2);
+            if (!block.getType().name().equals(parts[0])) return false;
+            return parts.length < 2 || block.getBlockData().getAsString().equals(parts[1]);
+        }
+
+        // Older grave saves do not have placedBlocks; use the configured shape when possible.
+        int[] offset = parseOffset(key);
+        if (offset != null) {
+            for (GraveBlock structureBlock : graveStructure) {
+                if (structureBlock.dx == offset[0] && structureBlock.dy == offset[1] &&
+                    structureBlock.dz == offset[2]) {
+                    if (block.getType() == structureBlock.material) return true;
+                }
+            }
+        }
+        if (key.equals(grave.headBlockKey)) return block.getType() == Material.PLAYER_HEAD;
+        // Keep legacy mini graves restorable after their configured footprint changes.
+        return switch (block.getType()) {
+            case DIRT, OXEYE_DAISY, TORCH, STONE_BRICK_WALL, STONE_BRICK_SLAB, COBBLESTONE -> true;
+            default -> false;
+        };
+    }
+
+    private String serializeBlock(Block block) {
+        return block.getType().name() + ";" + block.getBlockData().getAsString();
     }
 
     private void expireGrave(GraveData grave, World world) {
@@ -768,6 +859,11 @@ public class GraveManager implements Listener {
                         data.set(path + ".originalBlocks." + blockEntry.getKey(), blockEntry.getValue());
                     }
                 }
+                if (!grave.placedBlocks.isEmpty()) {
+                    for (Map.Entry<String, String> blockEntry : grave.placedBlocks.entrySet()) {
+                        data.set(path + ".placedBlocks." + blockEntry.getKey(), blockEntry.getValue());
+                    }
+                }
 
                 if (grave.armorStandUuid != null) {
                     data.set(path + ".armorStandUuid", grave.armorStandUuid.toString());
@@ -835,6 +931,16 @@ public class GraveManager implements Listener {
                                 String value = data.getString(blockPath + "." + key);
                                 if (value != null) {
                                     grave.originalBlocks.put(key, value);
+                                }
+                            }
+                        }
+
+                        String placedBlockPath = "graves." + graveId + ".placedBlocks";
+                        if (data.contains(placedBlockPath)) {
+                            for (String key : data.getConfigurationSection(placedBlockPath).getKeys(false)) {
+                                String value = data.getString(placedBlockPath + "." + key);
+                                if (value != null) {
+                                    grave.placedBlocks.put(key, value);
                                 }
                             }
                         }

@@ -2,11 +2,11 @@
 # [GRAVE STRUCTURE] CẤU TRÚC MỘ / GRAVE STRUCTURE
 # ============================================================
 # [VI] Chọn kiểu mộ bằng mini-graves:
-#      true  = dùng mộ mini (1x3 block mặt đất)
+#      true  = dùng mộ mini (đầu mộ dưới đất, đuốc trên mặt đất)
 #      false = dùng mộ full (3x4 block mặt đất)
 #      Cả hai cấu trúc đều đặt phần thân dọc theo trục Z, bia ở phía sau.
 # [EN] Select the grave style with mini-graves:
-#      true  = use the mini grave (1x3 ground footprint)
+#      true  = use the mini grave (head below ground, torch at ground level)
 #      false = use the full grave (3x4 ground footprint)
 #      Both structures place the grave body along the Z axis, with the marker at the back.
 mini-graves: false
@@ -57,17 +57,10 @@ full:
 mini:
   dimensions:
     width: 1
-    height: 3
-    depth: 3
+    height: 2
+    depth: 1
 
   blocks:
-    # Thân mộ gọn một ô rộng, với hoa và đuốc trang trí.
-    - {dx: 0, dy: 0, dz: 0, material: DIRT}
-    - {dx: 0, dy: 0, dz: 1, material: DIRT}
-    - {dx: 0, dy: 1, dz: 0, material: OXEYE_DAISY, data: flower}
-    - {dx: 0, dy: 1, dz: 1, material: TORCH}
-
-    # Bia mộ nhỏ ở cuối thân.
-    - {dx: 0, dy: 0, dz: 2, material: STONE_BRICK_WALL}
-    - {dx: 0, dy: 1, dz: 2, material: PLAYER_HEAD, data: player-head}
-    - {dx: 0, dy: 2, dz: 2, material: STONE_BRICK_SLAB}
+    # Đầu mộ nằm một block dưới mặt đất, với đuốc ngay phía trên.
+    - {dx: 0, dy: -1, dz: 0, material: PLAYER_HEAD, data: player-head}
+    - {dx: 0, dy: 0, dz: 0, material: TORCH}

@@ -10,6 +10,7 @@ import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
@@ -32,6 +33,20 @@ public class DisasterManager {
     private int warningTimeLeft = 0;
     private int timeSinceLastDisaster = 0;
     private BukkitTask schedulerTask;
+    private final Set<BukkitTask> ownedTasks = new HashSet<>();
+    private final Map<UUID, WorldState> originalWorldStates = new HashMap<>();
+    private final Set<UUID> worldsWithModifiedTime = new HashSet<>();
+    private final Set<UUID> worldsWithModifiedWeather = new HashSet<>();
+    private final Map<UUID, Map<PotionEffectType, PotionEffect>> originalPotionEffects = new HashMap<>();
+    private final Map<UUID, Set<PotionEffectType>> trackedPotionEffects = new HashMap<>();
+    private final Map<UUID, LivingEntityState> originalLivingEntityStates = new HashMap<>();
+    private final Set<UUID> entitiesWithModifiedFire = new HashSet<>();
+    private final Set<UUID> entitiesWithModifiedFreeze = new HashSet<>();
+    private final Set<UUID> spawnedEntities = new HashSet<>();
+
+    private record WorldState(World world, long time, boolean storm, boolean thundering,
+                              int weatherDuration, int thunderDuration) {}
+    private record LivingEntityState(int fireTicks, int freezeTicks) {}
 
     private static final Material CHAIN_MATERIAL = resolveChainMaterial();
 
@@ -200,9 +215,9 @@ public class DisasterManager {
         
         int checkRadius = config.safeZoneCheckRadius;
         
-        // Kiểm tra block ngay trên vị trí (từ vị trí đến trần)
+        // Scan the full column so high cave roofs still count as shelter.
         boolean hasSolidRoof = false;
-        for (int y = blockY + 1; y <= blockY + config.safeZoneRoofHeight; y++) {
+        for (int y = blockY + 1; y < world.getMaxHeight(); y++) {
             Block blockAbove = world.getBlockAt(blockX, y, blockZ);
             if (!TRANSPARENT_BLOCKS.contains(blockAbove.getType())) {
                 hasSolidRoof = true;
@@ -242,27 +257,27 @@ public class DisasterManager {
     // ===== TRIGGER (MANUAL) =====
 
     public boolean triggerDisaster(String disasterId, int warningTimeSeconds, int durationSeconds) {
-        if (disasterActive) return false;
-        if (currentDisaster != null) return false;
+        if (disasterActive || currentDisaster != null) return false;
 
-        ConfigManager.DisasterConfig dc = config.disasterConfigs.get(disasterId.toLowerCase());
+        String normalizedId = disasterId.toLowerCase(Locale.ROOT);
+        ConfigManager.DisasterConfig dc = config.disasterConfigs.get(normalizedId);
         if (dc == null) return false;
 
         String name = dc.name != null && !dc.name.isEmpty() ? dc.name : disasterId;
         currentDisaster = name;
-        currentDisasterId = disasterId;
+        currentDisasterId = normalizedId;
         warningTimeLeft = warningTimeSeconds;
 
         broadcastWarning(name, warningTimeSeconds);
 
-        new BukkitRunnable() {
+        scheduleTaskTimer(new BukkitRunnable() {
             int cd = warningTimeSeconds;
             @Override
             public void run() {
                 cd--;
                 if (cd <= 0) {
                     this.cancel();
-                    startDisasterById(disasterId, durationSeconds);
+                    startDisasterById(normalizedId, durationSeconds);
                     return;
                 }
                 if (cd <= 5 || cd == 10 || cd == 30) {
@@ -274,7 +289,7 @@ public class DisasterManager {
                     }
                 }
             }
-        }.runTaskTimer(plugin, 0L, 20L);
+        }, 0L, 20L);
         return true;
     }
 
@@ -285,6 +300,7 @@ public class DisasterManager {
         schedulerTask = new BukkitRunnable() {
             @Override
             public void run() {
+                pruneFinishedTasks();
                 if (Bukkit.getWorlds().isEmpty()) return;
                 timeSinceLastDisaster++;
                 int currentInterval = ConfigManager.parseRangeOrInt(config.disasterMinIntervalRaw, 1200);
@@ -309,12 +325,151 @@ public class DisasterManager {
             schedulerTask.cancel();
             schedulerTask = null;
         }
-        for (Player p : Bukkit.getOnlinePlayers()) p.hideBossBar(warningBar);
+        cancelOwnedTasks();
+        removeSpawnedEntities();
+        restoreDisasterState();
+        clearCurrentDisaster();
+    }
+
+    private void scheduleTaskTimer(BukkitRunnable task, long delayTicks, long periodTicks) {
+        trackTask(task.runTaskTimer(plugin, delayTicks, periodTicks));
+    }
+
+    private void scheduleTaskLater(BukkitRunnable task, long delayTicks) {
+        trackTask(task.runTaskLater(plugin, delayTicks));
+    }
+
+    private void trackTask(BukkitTask task) {
+        pruneFinishedTasks();
+        ownedTasks.add(task);
+    }
+
+    private void pruneFinishedTasks() {
+        BukkitScheduler scheduler = Bukkit.getScheduler();
+        ownedTasks.removeIf(owned -> owned.isCancelled()
+            || (!scheduler.isQueued(owned.getTaskId())
+                && !scheduler.isCurrentlyRunning(owned.getTaskId())));
+    }
+
+    private void cancelOwnedTasks() {
+        for (BukkitTask task : ownedTasks) task.cancel();
+        ownedTasks.clear();
+    }
+
+    private void finishDisaster() {
+        restoreDisasterState();
+        spawnedEntities.clear();
+        clearCurrentDisaster();
+    }
+
+    private void trackSpawnedEntity(Entity entity) {
+        spawnedEntities.add(entity.getUniqueId());
+    }
+
+    private void removeSpawnedEntities() {
+        for (UUID entityId : spawnedEntities) {
+            Entity entity = Bukkit.getEntity(entityId);
+            if (entity != null) entity.remove();
+        }
+        spawnedEntities.clear();
+    }
+
+    private void clearCurrentDisaster() {
+        disasterActive = false;
+        currentDisaster = null;
+        currentDisasterId = null;
+        warningTimeLeft = 0;
+        warningBar.name(Component.text(""));
+        warningBar.progress(0);
+        for (Player player : Bukkit.getOnlinePlayers()) player.hideBossBar(warningBar);
+    }
+
+    private WorldState rememberWorldState(World world) {
+        return originalWorldStates.computeIfAbsent(world.getUID(), id -> new WorldState(
+            world, world.getTime(), world.hasStorm(), world.isThundering(),
+            world.getWeatherDuration(), world.getThunderDuration()));
+    }
+
+    private void restoreDisasterState() {
+        for (Map.Entry<UUID, WorldState> entry : originalWorldStates.entrySet()) {
+            WorldState state = entry.getValue();
+            if (worldsWithModifiedTime.contains(entry.getKey())) {
+                state.world().setTime(state.time());
+            }
+            if (worldsWithModifiedWeather.contains(entry.getKey())) {
+                state.world().setStorm(state.storm());
+                state.world().setThundering(state.thundering());
+                state.world().setWeatherDuration(state.weatherDuration());
+                state.world().setThunderDuration(state.thunderDuration());
+            }
+        }
+        originalWorldStates.clear();
+        worldsWithModifiedTime.clear();
+        worldsWithModifiedWeather.clear();
+
+        for (Map.Entry<UUID, Set<PotionEffectType>> entityEntry : trackedPotionEffects.entrySet()) {
+            Entity entity = Bukkit.getEntity(entityEntry.getKey());
+            if (!(entity instanceof LivingEntity livingEntity)) continue;
+            Map<PotionEffectType, PotionEffect> previousEffects =
+                originalPotionEffects.getOrDefault(entityEntry.getKey(), Collections.emptyMap());
+            for (PotionEffectType effectType : entityEntry.getValue()) {
+                livingEntity.removePotionEffect(effectType);
+                PotionEffect previousEffect = previousEffects.get(effectType);
+                if (previousEffect != null) livingEntity.addPotionEffect(previousEffect);
+            }
+        }
+        trackedPotionEffects.clear();
+        originalPotionEffects.clear();
+
+        for (Map.Entry<UUID, LivingEntityState> entry : originalLivingEntityStates.entrySet()) {
+            Entity entity = Bukkit.getEntity(entry.getKey());
+            if (!(entity instanceof LivingEntity livingEntity)) continue;
+            if (entitiesWithModifiedFire.contains(entry.getKey())) {
+                livingEntity.setFireTicks(entry.getValue().fireTicks());
+            }
+            if (entitiesWithModifiedFreeze.contains(entry.getKey())) {
+                livingEntity.setFreezeTicks(entry.getValue().freezeTicks());
+            }
+        }
+        originalLivingEntityStates.clear();
+        entitiesWithModifiedFire.clear();
+        entitiesWithModifiedFreeze.clear();
+    }
+
+    private void addTrackedPotionEffect(LivingEntity entity, PotionEffect effect) {
+        UUID entityId = entity.getUniqueId();
+        PotionEffectType effectType = effect.getType();
+        Set<PotionEffectType> trackedTypes =
+            trackedPotionEffects.computeIfAbsent(entityId, id -> new HashSet<>());
+        if (trackedTypes.add(effectType)) {
+            PotionEffect previousEffect = entity.getPotionEffect(effectType);
+            if (previousEffect != null) {
+                originalPotionEffects.computeIfAbsent(entityId, id -> new HashMap<>())
+                    .put(effectType, previousEffect);
+            }
+        }
+        entity.addPotionEffect(effect);
+    }
+
+    private void setTrackedFireTicks(LivingEntity entity, int ticks) {
+        UUID entityId = entity.getUniqueId();
+        originalLivingEntityStates.computeIfAbsent(entityId,
+            id -> new LivingEntityState(entity.getFireTicks(), entity.getFreezeTicks()));
+        entitiesWithModifiedFire.add(entityId);
+        entity.setFireTicks(ticks);
+    }
+
+    private void setTrackedFreezeTicks(LivingEntity entity, int ticks) {
+        UUID entityId = entity.getUniqueId();
+        originalLivingEntityStates.computeIfAbsent(entityId,
+            id -> new LivingEntityState(entity.getFireTicks(), entity.getFreezeTicks()));
+        entitiesWithModifiedFreeze.add(entityId);
+        entity.setFreezeTicks(ticks);
     }
 
     public void reload() {
+        stop();
         if (config.disastersEnabled) start();
-        else stop();
     }
 
     public boolean isDisasterActive() {
@@ -358,12 +513,30 @@ public class DisasterManager {
             if (roll < cumulative) {
                 // Kiểm tra conditions (world, time)
                 if (!canDisasterHappen(disasterId, dc)) continue;
-                
+
+                if (!rollDisasterSuccessProbability()) {
+                    timeSinceLastDisaster = 0;
+                    return;
+                }
+
                 timeSinceLastDisaster = 0;
                 scheduleDisaster(disasterId, dc);
                 return;
             }
         }
+    }
+
+    private boolean rollDisasterSuccessProbability() {
+        int probability = config.disasterDefaultSuccessProbability;
+        World primaryWorld = Bukkit.getWorlds().get(0);
+        long currentDay = Math.max(1L, primaryWorld.getFullTime() / 24000L + 1L);
+        for (ConfigManager.DisasterSuccessThreshold threshold : config.disasterSuccessThresholds) {
+            if (threshold.minDay > currentDay) break;
+            probability = threshold.probabilityPercent;
+        }
+
+        if (probability <= 0) return false;
+        return probability >= 100 || random.nextInt(100) < probability;
     }
 
     /**
@@ -404,13 +577,13 @@ public class DisasterManager {
     private void scheduleDisaster(String disasterId, ConfigManager.DisasterConfig dc) {
         String name = dc.name != null && !dc.name.isEmpty() ? dc.name : disasterId;
         currentDisaster = name;
-        currentDisasterId = disasterId;
+        currentDisasterId = disasterId.toLowerCase(Locale.ROOT);
         warningTimeLeft = config.disasterWarningSeconds;
 
         broadcastWarning(name, config.disasterWarningSeconds);
         logManager.logDisaster(name + " (WARNING)");
 
-        new BukkitRunnable() {
+        scheduleTaskTimer(new BukkitRunnable() {
             int cd = config.disasterWarningSeconds;
             @Override
             public void run() {
@@ -429,14 +602,19 @@ public class DisasterManager {
                     }
                 }
             }
-        }.runTaskTimer(plugin, 0L, 20L);
+        }, 0L, 20L);
     }
 
     // ===== START DISASTER (ACTION ENGINE) =====
 
     private void startDisasterById(String disasterId, int durationSecondsOverride) {
-        ConfigManager.DisasterConfig dc = config.disasterConfigs.get(disasterId);
-        if (dc == null) return;
+        String normalizedId = disasterId.toLowerCase(Locale.ROOT);
+        if (disasterActive || !normalizedId.equals(currentDisasterId)) return;
+        ConfigManager.DisasterConfig dc = config.disasterConfigs.get(normalizedId);
+        if (dc == null) {
+            clearCurrentDisaster();
+            return;
+        }
 
         disasterActive = true;
         String name = dc.name != null && !dc.name.isEmpty() ? dc.name : disasterId;
@@ -466,7 +644,7 @@ public class DisasterManager {
         int effectIntervalTicks = dc.effectIntervalSeconds * 20;
 
         // Execute on-end actions when disaster finishes
-        new BukkitRunnable() {
+        scheduleTaskTimer(new BukkitRunnable() {
             int elapsed = 0;
             int tickCounter = 0;
             boolean started = false;
@@ -481,15 +659,9 @@ public class DisasterManager {
                 elapsed += 20;
                 if (elapsed >= totalDurationTicks) {
                     this.cancel();
-                    disasterActive = false;
-                    currentDisaster = null;
-                    currentDisasterId = null;
-                    warningBar.name(Component.text(""));
-                    warningBar.progress(0);
-                    for (Player p : Bukkit.getOnlinePlayers()) p.hideBossBar(warningBar);
-                    
                     // Execute on-end actions
                     executeActions(dc.onEnd, dc);
+                    finishDisaster();
                     
                     String endBroadcast = config.disasterMessages.getOrDefault("end-broadcast",
                         "§a§l✅ {name} đã kết thúc!");
@@ -508,7 +680,7 @@ public class DisasterManager {
                     }
                 }
             }
-        }.runTaskTimer(plugin, 0L, 20L);
+        }, 0L, 20L);
     }
 
     // ===== ACTION ENGINE =====
@@ -588,7 +760,7 @@ public class DisasterManager {
                         try {
                             PotionEffectType pet = PotionEffectType.getByName(effectType.toUpperCase());
                             if (pet != null) {
-                                le.addPotionEffect(new PotionEffect(pet, duration, amplifier, false, false));
+                                addTrackedPotionEffect(le, new PotionEffect(pet, duration, amplifier, false, false));
                             }
                         } catch (Exception ignored) {}
                     }
@@ -640,12 +812,12 @@ public class DisasterManager {
                     Location strikeLoc = getRandomLocationAround(targetLoc, radius);
                     if (delayTicks > 0) {
                         Location finalTarget = strikeLoc;
-                        new BukkitRunnable() {
+                        scheduleTaskLater(new BukkitRunnable() {
                             @Override
                             public void run() {
                                 strikeLightningAt(finalTarget, explosionPower, fire, breakBlocks, damageMultiplier);
                             }
-                        }.runTaskLater(plugin, delayTicks);
+                        }, delayTicks);
                     } else {
                         strikeLightningAt(strikeLoc, explosionPower, fire, breakBlocks, damageMultiplier);
                     }
@@ -670,7 +842,7 @@ public class DisasterManager {
             case SET_FIRE: {
                 int fireTicks = getParamInt(action.params, "fire-ticks", 100);
                 if (target instanceof LivingEntity le) {
-                    le.setFireTicks(fireTicks);
+                    setTrackedFireTicks(le, fireTicks);
                 } else if (target instanceof Block block) {
                     // Đốt block (nếu là block cháy được)
                     if (block.getType() == Material.AIR) {
@@ -720,6 +892,7 @@ public class DisasterManager {
                     double fallProb = blockFallChance / (1.0 + blastRes * resistanceFactor);
                     if (random.nextDouble() * 100 < fallProb) {
                         FallingBlock fb = targetLoc.getWorld().spawnFallingBlock(block.getLocation().add(0.5, 0, 0.5), block.getBlockData());
+                        trackSpawnedEntity(fb);
                         fb.setDropItem(true);
                         fb.setHurtEntities(true);
                         block.setType(Material.AIR);
@@ -762,6 +935,8 @@ public class DisasterManager {
             case WORLD_TIME: {
                 int time = getParamInt(action.params, "time", 1000);
                 for (World w : Bukkit.getWorlds()) {
+                    rememberWorldState(w);
+                    worldsWithModifiedTime.add(w.getUID());
                     w.setTime(time);
                 }
                 break;
@@ -773,15 +948,20 @@ public class DisasterManager {
                 boolean thunder = getParamBool(action.params, "thunder", false);
                 int durationTicks = getParamInt(action.params, "duration-ticks", 200000);
                 for (World w : Bukkit.getWorlds()) {
+                    rememberWorldState(w);
+                    worldsWithModifiedWeather.add(w.getUID());
                     w.setStorm(storm);
                     w.setThundering(thunder);
                     w.setWeatherDuration(durationTicks);
+                    w.setThunderDuration(durationTicks);
                 }
                 break;
             }
 
             case CLEAR_WEATHER: {
                 for (World w : Bukkit.getWorlds()) {
+                    rememberWorldState(w);
+                    worldsWithModifiedWeather.add(w.getUID());
                     w.setStorm(false);
                     w.setThundering(false);
                 }
@@ -843,6 +1023,7 @@ public class DisasterManager {
                     
                     FallingBlock fb = targetLoc.getWorld().spawnFallingBlock(
                         block.getLocation().add(0.5, 0, 0.5), block.getBlockData());
+                    trackSpawnedEntity(fb);
                     fb.setDropItem(true);
                     fb.setHurtEntities(damageOnLand);
                     if (replaceWithAir) {
@@ -989,7 +1170,7 @@ public class DisasterManager {
 
                 for (Entity e : targetLoc.getWorld().getNearbyEntities(targetLoc, freezeRadius, freezeRadius, freezeRadius)) {
                     if (e instanceof LivingEntity le) {
-                        le.setFreezeTicks(freezeDuration);
+                        setTrackedFreezeTicks(le, freezeDuration);
                     }
                 }
                 break;
@@ -1016,6 +1197,7 @@ public class DisasterManager {
                     for (Entity e : targetLoc.getWorld().getNearbyEntities(targetLoc, mountRadius, mountRadius, mountRadius)) {
                         if (e instanceof LivingEntity le && !(e instanceof Player)) {
                             Entity mount = targetLoc.getWorld().spawnEntity(le.getLocation(), mountEntityType);
+                            trackSpawnedEntity(mount);
                             if (mount instanceof LivingEntity) {
                                 le.addPassenger(mount);
                             }
@@ -1079,13 +1261,14 @@ public class DisasterManager {
                     
                     // Spawn fireball với delay để tạo hiệu ứng
                     Location finalImpactLoc = impactLoc;
-                    new BukkitRunnable() {
+                    scheduleTaskLater(new BukkitRunnable() {
                         @Override
                         public void run() {
                             try {
                                 if (isLarge) {
                                     // Large fireball (Ghast fireball) - có thể nổ khi va chạm
                                     Fireball fireball = targetLoc.getWorld().spawn(spawnLoc, Fireball.class);
+                                    trackSpawnedEntity(fireball);
                                     fireball.setVelocity(velocity);
                                     fireball.setDirection(velocity);
                                     fireball.setYield(explosionPower);
@@ -1096,6 +1279,7 @@ public class DisasterManager {
                                 } else {
                                     // Small fireball (Blaze fireball)
                                     SmallFireball fireball = targetLoc.getWorld().spawn(spawnLoc, SmallFireball.class);
+                                    trackSpawnedEntity(fireball);
                                     fireball.setVelocity(velocity);
                                     fireball.setDirection(velocity);
                                     // SmallFireball tự động gây cháy khi va chạm
@@ -1106,7 +1290,7 @@ public class DisasterManager {
                                 targetLoc.getWorld().createExplosion(finalImpactLoc, explosionPower, explosionFire, breakBlocks);
                             }
                         }
-                    }.runTaskLater(plugin, (long) i * delayTicks);
+                    }, (long) i * delayTicks);
                 }
                 break;
             }
@@ -1156,7 +1340,7 @@ public class DisasterManager {
                 // Đốt entity trong bán kính
                 for (Entity e : location.getWorld().getNearbyEntities(location, fireRadius, fireRadius, fireRadius)) {
                     if (e instanceof LivingEntity le) {
-                        le.setFireTicks(fireTicks);
+                        setTrackedFireTicks(le, fireTicks);
                     }
                 }
                 break;
@@ -1177,7 +1361,7 @@ public class DisasterManager {
                             try {
                                 PotionEffectType pet = PotionEffectType.getByName(effectType.toUpperCase());
                                 if (pet != null) {
-                                    le.addPotionEffect(new PotionEffect(pet, duration, amplifier, false, false));
+                                    addTrackedPotionEffect(le, new PotionEffect(pet, duration, amplifier, false, false));
                                 }
                             } catch (Exception ignored) {}
                         }
@@ -1205,6 +1389,7 @@ public class DisasterManager {
                 if (block.getType() != Material.AIR && block.getType() != Material.WATER && block.getType() != Material.LAVA) {
                     FallingBlock fb = location.getWorld().spawnFallingBlock(
                         location.add(0.5, 2, 0.5), block.getBlockData());
+                    trackSpawnedEntity(fb);
                     fb.setDropItem(true);
                     fb.setHurtEntities(damageOnLand);
                     if (replaceWithAir) {
@@ -1244,6 +1429,7 @@ public class DisasterManager {
                         
                         FallingBlock fb = location.getWorld().spawnFallingBlock(
                             b.getLocation().add(0.5, 0, 0.5), b.getBlockData());
+                        trackSpawnedEntity(fb);
                         fb.setDropItem(true);
                         fb.setHurtEntities(damageOnLand);
                         if (replaceWithAir) {
@@ -1546,7 +1732,7 @@ public class DisasterManager {
      * Theo dõi fireball và kích nổ khi đến gần mặt đất
      */
     private void trackFireball(Projectile fireball, Location impactLoc, float explosionPower, boolean fire, boolean breakBlocks, double damage, int fireTicks) {
-        new BukkitRunnable() {
+        scheduleTaskTimer(new BukkitRunnable() {
             int ticks = 0;
             @Override
             public void run() {
@@ -1588,7 +1774,7 @@ public class DisasterManager {
                     fireball.remove();
                 }
             }
-        }.runTaskTimer(plugin, 0L, 1L);
+        }, 0L, 1L);
     }
 
     /**
@@ -1626,6 +1812,7 @@ public class DisasterManager {
             EntityType entityType = EntityType.valueOf(entityTypeStr.toUpperCase());
             Location spawnLoc = getRandomLocationAround(location, radius);
             Entity entity = location.getWorld().spawnEntity(spawnLoc, entityType);
+            trackSpawnedEntity(entity);
             
             // Apply potion effects from mob config
             @SuppressWarnings("unchecked")
@@ -1639,7 +1826,7 @@ public class DisasterManager {
                     try {
                         PotionEffectType pet = PotionEffectType.getByName(effectType.toUpperCase());
                         if (pet != null) {
-                            le.addPotionEffect(new PotionEffect(pet, duration, amplifier, true, false));
+                            addTrackedPotionEffect(le, new PotionEffect(pet, duration, amplifier, true, false));
                         }
                     } catch (Exception ignored) {}
                 }
@@ -1652,7 +1839,7 @@ public class DisasterManager {
     private void strikeLightningAt(Location loc, float explosionPower, boolean fire, boolean breakBlocks, double damageMultiplier) {
         loc.getWorld().strikeLightningEffect(new Location(loc.getWorld(), loc.getBlockX(), loc.getBlockY() + 30, loc.getBlockZ()));
         if (explosionPower > 0) {
-            new BukkitRunnable() {
+            scheduleTaskLater(new BukkitRunnable() {
                 @Override
                 public void run() {
                     loc.getWorld().createExplosion(loc, explosionPower, fire, breakBlocks);
@@ -1666,7 +1853,7 @@ public class DisasterManager {
                         }
                     }
                 }
-            }.runTaskLater(plugin, 30L);
+            }, 30L);
         }
     }
 
