@@ -279,6 +279,7 @@ public class ConfigManager {
         public int chance = 10;
         public int durationSeconds = 120;
         public int warningSeconds = 60;
+        public int activityRadius = 100;
         public Map<String, Boolean> immunities = new HashMap<>();
         public java.util.List<String> immunityPotionEffects = new java.util.ArrayList<>();
         public Map<String, DropConfig> drops = new HashMap<>();
@@ -1015,6 +1016,12 @@ public class ConfigManager {
             bc.chance = section.getInt("chance", 10);
             bc.durationSeconds = section.getInt("duration-seconds", 120);
             bc.warningSeconds = section.getInt("warning-seconds", 60);
+            bc.activityRadius = section.getInt("activity-radius", 100);
+            if (bc.activityRadius < 1 || bc.activityRadius > 10000) {
+                plugin.getLogger().warning("[Boss] Invalid activity-radius in " + fileName +
+                    "; using default 100 blocks.");
+                bc.activityRadius = 100;
+            }
 
             ConfigurationSection hpByLevelSection = section.getConfigurationSection("hp-by-level");
             if (hpByLevelSection != null) {

@@ -2,15 +2,15 @@
 # [GRAVE STRUCTURE] CẤU TRÚC MỘ / GRAVE STRUCTURE
 # ============================================================
 # [VI] Chọn kiểu mộ bằng mini-graves:
-#      true  = dùng mộ mini (đầu mộ dưới đất, đuốc trên mặt đất)
+#      true  = dùng mộ mini (đầu mộ dưới đất, đuốc trên mặt đất, mặc định)
 #      false = dùng mộ full (3x4 block mặt đất)
 #      Cả hai cấu trúc đều đặt phần thân dọc theo trục Z, bia ở phía sau.
 # [EN] Select the grave style with mini-graves:
-#      true  = use the mini grave (head below ground, torch at ground level)
+#      true  = use the mini grave (head below ground, torch at ground level; default)
 #      false = use the full grave (3x4 ground footprint)
 #      dx/dz describe the horizontal footprint; dy is always vertical.
 #      The full grave marker faces north toward the grave body.
-mini-graves: false
+mini-graves: true
 
 # [VI] Block PLAYER_HEAD tự động nhận skin người chết.
 # [EN] PLAYER_HEAD blocks automatically use the deceased player's skin.

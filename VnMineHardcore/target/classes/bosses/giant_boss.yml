@@ -1,0 +1,44 @@
+# ============================================================
+# [GIANT BOSS] 🗿 GIANT BOSS
+# ============================================================
+boss-id: giant_boss
+enabled: true
+entity-type: GIANT
+display-name: "§6§lKhổng Lồ"
+hp: 400
+damage-multiplier: 2.5
+chance: 3
+duration-seconds: 1800
+warning-seconds: 60
+activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
+
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
+hp-by-level:
+  1: 400
+  2: 600
+  3: 900
+  4: 1350
+
+skills:
+  stomp:
+    enabled: true
+    damage: 10.0
+    multiply: 1
+    cooldown-seconds: 12
+    radius: 6.0
+    velocity: 1.0
+    spread: 0.0
+
+immunities:
+  fall-damage: true
+
+drops:
+  ROTTEN_FLESH:
+    min-amount: 20
+    max-amount: 50
+    chance: 1.0
+  DIAMOND:
+    min-amount: 2
+    max-amount: 6
+    chance: 0.6

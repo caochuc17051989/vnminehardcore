@@ -18,4 +18,5 @@
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/GraveManager.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/LogManager.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/ThirstManager.java
+/workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/TimeControlManager.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/VillagerDataManager.java

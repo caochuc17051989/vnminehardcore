@@ -43,7 +43,7 @@ public final class VnMineHardcore extends JavaPlugin {
         clearLegacyPluginBans();
 
         getLogger().info("§a==========================================");
-        getLogger().info("§a  VnMineHardcore v1.3.2 - KHỞI ĐỘNG");
+        getLogger().info("§a  VnMineHardcore v1.3.4 - KHỞI ĐỘNG");
         getLogger().info("§a==========================================");
 
         // Load config first
@@ -97,6 +97,11 @@ public final class VnMineHardcore extends JavaPlugin {
         this.getCommand("vnleave").setExecutor(this);
         this.getCommand("fly").setExecutor(this);
         this.getCommand("nodame").setExecutor(this);
+        this.getCommand("spawn").setExecutor(this);
+        this.getCommand("gm0").setExecutor(this);
+        this.getCommand("gm1").setExecutor(this);
+        this.getCommand("gm2").setExecutor(this);
+        this.getCommand("gm3").setExecutor(this);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
         getLogger().info("§a  Deaths are recorded; no death bans are applied.");
@@ -120,6 +125,41 @@ public final class VnMineHardcore extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equalsIgnoreCase("spawn")) {
+            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+                sender.sendMessage("§cBạn không có quyền!");
+                return true;
+            }
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Lệnh này chỉ dành cho người chơi.");
+                return true;
+            }
+            player.teleport(player.getWorld().getSpawnLocation());
+            player.sendMessage("§aĐã dịch chuyển về điểm spawn của thế giới.");
+            return true;
+        }
+
+        if (command.getName().matches("(?i)gm[0-3]")) {
+            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+                sender.sendMessage("§cBạn không có quyền!");
+                return true;
+            }
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Lệnh này chỉ dành cho người chơi.");
+                return true;
+            }
+            org.bukkit.GameMode gameMode = switch (command.getName().toLowerCase(Locale.ROOT)) {
+                case "gm0" -> org.bukkit.GameMode.SURVIVAL;
+                case "gm1" -> org.bukkit.GameMode.CREATIVE;
+                case "gm2" -> org.bukkit.GameMode.ADVENTURE;
+                case "gm3" -> org.bukkit.GameMode.SPECTATOR;
+                default -> throw new IllegalStateException("Unexpected game mode command");
+            };
+            player.setGameMode(gameMode);
+            player.sendMessage("§aĐã chuyển sang chế độ §e" + gameMode.name().toLowerCase(Locale.ROOT) + "§a.");
+            return true;
+        }
+
         if (command.getName().equalsIgnoreCase("fly")) {
             if (!sender.hasPermission("vnmine.hardcore.admin")) {
                 sender.sendMessage("§cBạn không có quyền!");
@@ -196,6 +236,8 @@ public final class VnMineHardcore extends JavaPlugin {
             sender.sendMessage("§e/vnboss <id> <level> <warning> <duration> §7- Gọi boss theo level");
             sender.sendMessage("§e/fly §7- Bật/tắt bay Survival (admin)");
             sender.sendMessage("§e/nodame §7- Bật/tắt miễn sát thương để thử boss (admin)");
+            sender.sendMessage("§e/spawn §7- Về điểm spawn của thế giới (admin)");
+            sender.sendMessage("§e/gm0 /gm1 /gm2 /gm3 §7- Chuyển game mode (admin)");
             sender.sendMessage("§e/vnreload §7- Tải lại config.yml");
             sender.sendMessage("§e/vnhelp §7- Hiển thị help này");
             sender.sendMessage("§6§m========================================");

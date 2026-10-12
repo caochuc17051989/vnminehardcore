@@ -10,6 +10,25 @@ damage-multiplier: 2.5
 chance: 8
 duration-seconds: 1800
 warning-seconds: 45
+activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
+
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
+hp-by-level:
+  1: 250
+  2: 375
+  3: 563
+  4: 844
+
+skills:
+  charge:
+    enabled: true
+    damage: 9.0
+    multiply: 1
+    cooldown-seconds: 12
+    radius: 4.0
+    velocity: 1.8
+    spread: 0.0
 
 immunities: {}
 

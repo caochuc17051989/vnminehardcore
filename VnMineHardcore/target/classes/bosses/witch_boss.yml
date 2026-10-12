@@ -10,6 +10,25 @@ damage-multiplier: 2.0
 chance: 10
 duration-seconds: 90
 warning-seconds: 45
+activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
+
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# damage là sát thương cơ sở (tăng theo level); số potion = level * multiply, tối đa 40.
+hp-by-level:
+  1: 140
+  2: 210
+  3: 315
+  4: 473
+
+skills:
+  potion-volley:
+    enabled: true
+    damage: 5.0
+    multiply: 1
+    cooldown-seconds: 12
+    radius: 4.0
+    velocity: 1.0
+    spread: 0.8
 
 immunities:
   poison: true
