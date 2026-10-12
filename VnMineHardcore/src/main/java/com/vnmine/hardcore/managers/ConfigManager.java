@@ -8,6 +8,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -718,21 +721,79 @@ public class ConfigManager {
         saveResourceIfNotExists("disasters/void-storm.yml");
         saveResourceIfNotExists("disasters/chorus-explosion.yml");
 
-        // Save bosses/_settings.yml
-        saveResourceIfNotExists("bosses/_settings.yml");
-        // Save boss files
-        saveResourceIfNotExists("bosses/wither.yml");
-        saveResourceIfNotExists("bosses/ender_dragon.yml");
-        saveResourceIfNotExists("bosses/ghast.yml");
-        saveResourceIfNotExists("bosses/zombie_boss.yml");
-        saveResourceIfNotExists("bosses/skeleton_boss.yml");
-        saveResourceIfNotExists("bosses/spider_boss.yml");
-        saveResourceIfNotExists("bosses/creeper_boss.yml");
-        saveResourceIfNotExists("bosses/enderman_boss.yml");
-        saveResourceIfNotExists("bosses/witch_boss.yml");
-        saveResourceIfNotExists("bosses/ravager_boss.yml");
-        saveResourceIfNotExists("bosses/vindicator_boss.yml");
-        saveResourceIfNotExists("bosses/phantom_boss.yml");
+        // Merge new boss settings into existing files without overwriting admin values.
+        mergeDefaultResource("bosses/_settings.yml");
+        mergeDefaultResource("bosses/wither.yml");
+        mergeDefaultResource("bosses/ender_dragon.yml");
+        mergeDefaultResource("bosses/ghast.yml");
+        mergeDefaultResource("bosses/zombie_boss.yml");
+        mergeDefaultResource("bosses/skeleton_boss.yml");
+        mergeDefaultResource("bosses/spider_boss.yml");
+        mergeDefaultResource("bosses/creeper_boss.yml");
+        mergeDefaultResource("bosses/enderman_boss.yml");
+        mergeDefaultResource("bosses/witch_boss.yml");
+        mergeDefaultResource("bosses/ravager_boss.yml");
+        mergeDefaultResource("bosses/vindicator_boss.yml");
+        mergeDefaultResource("bosses/phantom_boss.yml");
+        mergeDefaultResource("bosses/giant_boss.yml");
+    }
+
+    private void mergeDefaultResource(String resourcePath) {
+        File targetFile = new File(plugin.getDataFolder(), resourcePath);
+        if (!targetFile.exists()) {
+            saveResourceIfNotExists(resourcePath);
+            return;
+        }
+
+        InputStream resource = plugin.getResource(resourcePath);
+        if (resource == null) {
+            plugin.getLogger().warning("[Config] Missing bundled default resource: " + resourcePath);
+            return;
+        }
+
+        YamlConfiguration target = YamlConfiguration.loadConfiguration(targetFile);
+        YamlConfiguration defaults;
+        try (InputStream input = resource;
+             InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
+            defaults = YamlConfiguration.loadConfiguration(reader);
+        } catch (IOException exception) {
+            plugin.getLogger().warning("[Config] Cannot read default " + resourcePath + ": " + exception.getMessage());
+            return;
+        }
+
+        if (mergeMissingKeys(target, defaults)) {
+            try {
+                target.save(targetFile);
+                plugin.getLogger().info("[Config] Added missing defaults to " + resourcePath +
+                    " (existing values were preserved)");
+            } catch (IOException exception) {
+                plugin.getLogger().severe("[Config] Cannot update " + resourcePath + ": " + exception.getMessage());
+            }
+        }
+    }
+
+    private boolean mergeMissingKeys(ConfigurationSection target, ConfigurationSection defaults) {
+        boolean changed = false;
+        for (String key : defaults.getKeys(false)) {
+            ConfigurationSection defaultChild = defaults.getConfigurationSection(key);
+            if (defaultChild != null) {
+                ConfigurationSection targetChild = target.getConfigurationSection(key);
+                if (targetChild == null) {
+                    if (target.contains(key)) {
+                        plugin.getLogger().warning("[Config] Preserving non-section custom value at " + key +
+                            " while merging defaults.");
+                        continue;
+                    }
+                    targetChild = target.createSection(key);
+                    changed = true;
+                }
+                changed |= mergeMissingKeys(targetChild, defaultChild);
+            } else if (!target.contains(key)) {
+                target.set(key, defaults.get(key));
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     /**

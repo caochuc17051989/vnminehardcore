@@ -8,7 +8,8 @@
 # [EN] Select the grave style with mini-graves:
 #      true  = use the mini grave (head below ground, torch at ground level)
 #      false = use the full grave (3x4 ground footprint)
-#      Both structures place the grave body along the Z axis, with the marker at the back.
+#      dx/dz describe the horizontal footprint; dy is always vertical.
+#      The full grave marker faces north toward the grave body.
 mini-graves: false
 
 # [VI] Block PLAYER_HEAD tự động nhận skin người chết.
@@ -27,29 +28,30 @@ full:
     # Thân mộ trên mặt đất: đất ở giữa, viền đá hai bên.
     - {dx: 1, dy: 0, dz: 0, material: DIRT}
     - {dx: 1, dy: 0, dz: 1, material: DIRT}
-    - {dx: 1, dy: 0, dz: 2, material: DIRT}
+    - {dx: 1, dy: 0, dz: 1, material: DIRT}
     - {dx: 0, dy: 0, dz: 0, material: STONE_BRICK_SLAB}
     - {dx: 0, dy: 0, dz: 1, material: STONE_BRICK_SLAB}
-    - {dx: 0, dy: 0, dz: 2, material: STONE_BRICK_SLAB}
+    - {dx: 0, dy: 0, dz: 1, material: STONE_BRICK_SLAB}
     - {dx: 2, dy: 0, dz: 0, material: STONE_BRICK_SLAB}
     - {dx: 2, dy: 0, dz: 1, material: STONE_BRICK_SLAB}
-    - {dx: 2, dy: 0, dz: 2, material: STONE_BRICK_SLAB}
+    - {dx: 2, dy: 0, dz: 1, material: STONE_BRICK_SLAB}
     - {dx: 1, dy: 1, dz: 1, material: OXEYE_DAISY, data: flower}
-    - {dx: 1, dy: 1, dz: 2, material: TORCH}
+    - {dx: 1, dy: 1, dz: 1, material: TORCH}
 
-    # Bia ở cuối thân mộ; đầu người chơi hướng về phía thân mộ.
-    - {dx: 0, dy: 0, dz: 3, material: STONE_BRICK_WALL}
-    - {dx: 1, dy: 0, dz: 3, material: STONE_BRICK_WALL}
-    - {dx: 2, dy: 0, dz: 3, material: STONE_BRICK_WALL}
-    - {dx: 0, dy: 1, dz: 3, material: STONE_BRICK_WALL}
-    - {dx: 1, dy: 1, dz: 3, material: PLAYER_HEAD, data: player-head}
-    - {dx: 2, dy: 1, dz: 3, material: STONE_BRICK_WALL}
-    - {dx: 0, dy: 2, dz: 3, material: STONE_BRICK_WALL}
-    - {dx: 1, dy: 2, dz: 3, material: STONE_BRICK_WALL}
-    - {dx: 2, dy: 2, dz: 3, material: STONE_BRICK_WALL}
-    - {dx: 0, dy: 3, dz: 3, material: STONE_BRICK_SLAB}
-    - {dx: 1, dy: 3, dz: 3, material: STONE_BRICK_SLAB}
-    - {dx: 2, dy: 3, dz: 3, material: STONE_BRICK_SLAB}
+    # Bia đứng ở cuối thân mộ; block đỡ nằm sau đầu và được đặt trước PLAYER_WALL_HEAD.
+    - {dx: 0, dy: 0, dz: 2, material: STONE_BRICK_WALL}
+    - {dx: 1, dy: 0, dz: 2, material: STONE_BRICK_WALL}
+    - {dx: 2, dy: 0, dz: 2, material: STONE_BRICK_WALL}
+    - {dx: 0, dy: 1, dz: 2, material: STONE_BRICK_WALL}
+    - {dx: 2, dy: 1, dz: 2, material: STONE_BRICK_WALL}
+    - {dx: 0, dy: 2, dz: 2, material: STONE_BRICK_WALL}
+    - {dx: 1, dy: 2, dz: 2, material: STONE_BRICK_WALL}
+    - {dx: 2, dy: 2, dz: 2, material: STONE_BRICK_WALL}
+    - {dx: 0, dy: 3, dz: 2, material: STONE_BRICK_SLAB}
+    - {dx: 1, dy: 3, dz: 2, material: STONE_BRICK_SLAB}
+    - {dx: 2, dy: 3, dz: 2, material: STONE_BRICK_SLAB}
+    - {dx: 1, dy: 1, dz: 3, material: STONE_BRICKS}
+    - {dx: 1, dy: 1, dz: 2, material: PLAYER_WALL_HEAD, data: player-head, facing: NORTH}
 
 # ------------------------------------------------------------
 # MỘ MINI / MINI GRAVE

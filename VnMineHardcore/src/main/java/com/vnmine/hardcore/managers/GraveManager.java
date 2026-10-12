@@ -6,7 +6,9 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -19,6 +21,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -56,13 +61,15 @@ public class GraveManager implements Listener {
         final int dx, dy, dz;
         final Material material;
         final String data;
+        final String facing;
 
-        GraveBlock(int dx, int dy, int dz, Material material, String data) {
+        GraveBlock(int dx, int dy, int dz, Material material, String data, String facing) {
             this.dx = dx;
             this.dy = dy;
             this.dz = dz;
             this.material = material;
             this.data = data;
+            this.facing = facing;
         }
     }
 
@@ -140,6 +147,7 @@ public class GraveManager implements Listener {
             plugin.saveResource("graves-structure.yml", false);
         }
         YamlConfiguration structureConfig = YamlConfiguration.loadConfiguration(structureFile);
+        mergeStructureDefaults(structureConfig, structureFile);
 
         boolean miniGraves = structureConfig.getBoolean("mini-graves", false);
         String selectedVariant = miniGraves ? "mini" : "full";
@@ -168,13 +176,15 @@ public class GraveManager implements Listener {
             String materialName = materialValue instanceof String ? (String) materialValue : "AIR";
             Object blockDataValue = blockMap.get("data");
             String blockData = blockDataValue instanceof String ? (String) blockDataValue : "";
+            Object facingValue = blockMap.get("facing");
+            String facing = facingValue instanceof String ? (String) facingValue : "";
 
             Material material = Material.getMaterial(materialName.toUpperCase(Locale.ROOT));
             if (material == null || material == Material.AIR) {
                 logger.warning("[Grave] Invalid material '" + materialName + "' at dx=" + dx + ",dy=" + dy + ",dz=" + dz);
                 continue;
             }
-            graveStructure.add(new GraveBlock(dx, dy, dz, material, blockData));
+            graveStructure.add(new GraveBlock(dx, dy, dz, material, blockData, facing));
         }
 
         if (graveStructure.isEmpty()) {
@@ -182,6 +192,128 @@ public class GraveManager implements Listener {
                 "' structure, using fallback structure");
             addFallbackStructure();
         }
+        logger.info("[Grave] Using '" + selectedVariant + "' structure from graves-structure.yml (" +
+            graveStructure.size() + " blocks)");
+    }
+
+    private void mergeStructureDefaults(YamlConfiguration target, File targetFile) {
+        InputStream resource = plugin.getResource("graves-structure.yml");
+        if (resource == null) {
+            logger.warning("[Grave] Bundled graves-structure.yml is missing; cannot migrate structure config.");
+            return;
+        }
+
+        YamlConfiguration defaults;
+        try (InputStream input = resource;
+             InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
+            defaults = YamlConfiguration.loadConfiguration(reader);
+        } catch (IOException exception) {
+            logger.warning("[Grave] Cannot read bundled grave structure defaults: " + exception.getMessage());
+            return;
+        }
+
+        boolean changed = false;
+        for (String key : List.of("mini-graves", "full", "mini")) {
+            org.bukkit.configuration.ConfigurationSection defaultChild = defaults.getConfigurationSection(key);
+            if (defaultChild != null) {
+                org.bukkit.configuration.ConfigurationSection targetChild = target.getConfigurationSection(key);
+                if (targetChild == null) {
+                    if (target.contains(key)) continue;
+                    targetChild = target.createSection(key);
+                    changed = true;
+                }
+                changed |= mergeStructureKeys(targetChild, defaultChild);
+            } else if (!target.contains(key)) {
+                target.set(key, defaults.get(key));
+                changed = true;
+            }
+        }
+        changed |= fixFullMarkerHead(target);
+        if (!changed) return;
+        try {
+            target.save(targetFile);
+            logger.info("[Grave] Added missing full/mini grave structure settings; existing values were preserved.");
+        } catch (IOException exception) {
+            logger.severe("[Grave] Cannot save migrated graves-structure.yml: " + exception.getMessage());
+        }
+    }
+
+    private boolean mergeStructureKeys(org.bukkit.configuration.ConfigurationSection target,
+            org.bukkit.configuration.ConfigurationSection defaults) {
+        boolean changed = false;
+        for (String key : defaults.getKeys(false)) {
+            org.bukkit.configuration.ConfigurationSection defaultChild = defaults.getConfigurationSection(key);
+            if (defaultChild != null) {
+                org.bukkit.configuration.ConfigurationSection targetChild = target.getConfigurationSection(key);
+                if (targetChild == null) {
+                    if (target.contains(key)) continue;
+                    targetChild = target.createSection(key);
+                    changed = true;
+                }
+                changed |= mergeStructureKeys(targetChild, defaultChild);
+            } else if (!target.contains(key)) {
+                target.set(key, defaults.get(key));
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private boolean fixFullMarkerHead(YamlConfiguration structureConfig) {
+        List<Map<?, ?>> configuredBlocks = structureConfig.getMapList("full.blocks");
+        if (configuredBlocks.isEmpty()) return false;
+
+        List<Map<String, Object>> fixedBlocks = new ArrayList<>(configuredBlocks.size());
+        boolean changed = false;
+        for (Map<?, ?> configuredBlock : configuredBlocks) {
+            Map<String, Object> block = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : configuredBlock.entrySet()) {
+                if (entry.getKey() instanceof String key) block.put(key, entry.getValue());
+            }
+
+            Object material = block.get("material");
+            Object marker = block.get("data");
+            Object yValue = block.get("dy");
+            Object zValue = block.get("dz");
+            if (material instanceof String materialName && materialName.equalsIgnoreCase("PLAYER_HEAD") &&
+                    "player-head".equals(marker) && yValue instanceof Number y && y.intValue() > 0 &&
+                    zValue instanceof Number z && z.intValue() > 0) {
+                block.put("material", "PLAYER_WALL_HEAD");
+                block.put("facing", "NORTH");
+                changed = true;
+            }
+            fixedBlocks.add(block);
+        }
+
+        for (Map<String, Object> block : new ArrayList<>(fixedBlocks)) {
+            if (!"PLAYER_WALL_HEAD".equals(block.get("material")) ||
+                    !"NORTH".equalsIgnoreCase(String.valueOf(block.get("facing")))) continue;
+            Object dxValue = block.get("dx");
+            Object dyValue = block.get("dy");
+            Object dzValue = block.get("dz");
+            if (!(dxValue instanceof Number dx) || !(dyValue instanceof Number dy) ||
+                    !(dzValue instanceof Number dz)) continue;
+            int supportZ = dz.intValue() + 1;
+            boolean supportExists = fixedBlocks.stream().anyMatch(other ->
+                other.get("dx") instanceof Number otherDx && otherDx.intValue() == dx.intValue() &&
+                other.get("dy") instanceof Number otherDy && otherDy.intValue() == dy.intValue() &&
+                other.get("dz") instanceof Number otherDz && otherDz.intValue() == supportZ);
+            if (!supportExists) {
+                Map<String, Object> support = new LinkedHashMap<>();
+                support.put("dx", dx.intValue());
+                support.put("dy", dy.intValue());
+                support.put("dz", supportZ);
+                support.put("material", "STONE_BRICKS");
+                fixedBlocks.add(support);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            structureConfig.set("full.blocks", fixedBlocks);
+            logger.info("[Grave] Reoriented the full grave marker to an upright wall head facing the grave.");
+        }
+        return changed;
     }
 
     private int getIntFromMap(Map<?, ?> map, String key, int defaultValue) {
@@ -191,10 +323,10 @@ public class GraveManager implements Listener {
     }
 
     private void addFallbackStructure() {
-        graveStructure.add(new GraveBlock(0, 0, 0, Material.COBBLESTONE, ""));
-        graveStructure.add(new GraveBlock(0, 1, 0, Material.COBBLESTONE, ""));
-        graveStructure.add(new GraveBlock(0, 1, 1, Material.PLAYER_HEAD, "player-head"));
-        graveStructure.add(new GraveBlock(0, 2, 0, Material.COBBLESTONE, ""));
+        graveStructure.add(new GraveBlock(0, 0, 0, Material.COBBLESTONE, "", ""));
+        graveStructure.add(new GraveBlock(0, 1, 0, Material.COBBLESTONE, "", ""));
+        graveStructure.add(new GraveBlock(0, 1, 1, Material.PLAYER_HEAD, "player-head", ""));
+        graveStructure.add(new GraveBlock(0, 2, 0, Material.COBBLESTONE, "", ""));
     }
 
     public void reload() {
@@ -284,21 +416,23 @@ public class GraveManager implements Listener {
             Block currentBlock = loc.getBlock();
             String key = block.dx + "_" + block.dy + "_" + block.dz;
             grave.structureKeys.add(key);
-            if (block.material == Material.PLAYER_HEAD || "player-head".equals(block.data)) {
-                grave.headBlockKey = key;
-            }
+            if (isHeadBlock(block)) grave.headBlockKey = key;
             grave.originalBlocks.put(key, currentBlock.getType() == Material.AIR ? "" :
                 currentBlock.getType().name() + ";" + currentBlock.getBlockData().getAsString());
         }
 
         // 2. Xây mộ
-        for (GraveBlock block : graveStructure) {
+        List<GraveBlock> blocksToPlace = new ArrayList<>(graveStructure);
+        blocksToPlace.sort(Comparator.comparing(block -> block.material == Material.PLAYER_WALL_HEAD));
+        for (GraveBlock block : blocksToPlace) {
             Location loc = baseLocation.clone().add(block.dx, block.dy, block.dz);
             Block currentBlock = loc.getBlock();
             String key = block.dx + "_" + block.dy + "_" + block.dz;
 
-            if (block.material == Material.PLAYER_HEAD || "player-head".equals(block.data)) {
-                currentBlock.setType(Material.PLAYER_HEAD);
+            if (isHeadBlock(block)) {
+                Material headMaterial = block.material == Material.PLAYER_WALL_HEAD
+                    ? Material.PLAYER_WALL_HEAD : Material.PLAYER_HEAD;
+                currentBlock.setType(headMaterial);
                 if (currentBlock.getState() instanceof org.bukkit.block.Skull skull) {
                     skull.setOwningPlayer(Bukkit.getOfflinePlayer(playerName));
                     skull.update();
@@ -306,11 +440,27 @@ public class GraveManager implements Listener {
             } else {
                 currentBlock.setType(block.material);
             }
+            if (!block.facing.isBlank()) {
+                try {
+                    BlockData placedData = currentBlock.getBlockData();
+                    if (placedData instanceof Directional directional) {
+                        directional.setFacing(BlockFace.valueOf(block.facing.toUpperCase(Locale.ROOT)));
+                        currentBlock.setBlockData(placedData);
+                    }
+                } catch (IllegalArgumentException exception) {
+                    logger.warning("[Grave] Invalid facing '" + block.facing + "' for " + block.material);
+                }
+            }
             grave.placedBlocks.put(key, serializeBlock(currentBlock));
         }
 
         // 3. Spawn ArmorStand hiển thị tên trên đỉnh bia
         spawnGraveNameDisplay(baseLocation, grave);
+    }
+
+    private static boolean isHeadBlock(GraveBlock block) {
+        return block.material == Material.PLAYER_HEAD || block.material == Material.PLAYER_WALL_HEAD ||
+            "player-head".equals(block.data);
     }
 
     private Location findGravePlacement(Location deathLocation) {
@@ -526,7 +676,9 @@ public class GraveManager implements Listener {
                 }
             }
         }
-        if (key.equals(grave.headBlockKey)) return block.getType() == Material.PLAYER_HEAD;
+        if (key.equals(grave.headBlockKey)) {
+            return block.getType() == Material.PLAYER_HEAD || block.getType() == Material.PLAYER_WALL_HEAD;
+        }
         // Keep legacy mini graves restorable after their configured footprint changes.
         return switch (block.getType()) {
             case DIRT, OXEYE_DAISY, TORCH, STONE_BRICK_WALL, STONE_BRICK_SLAB, COBBLESTONE -> true;
@@ -955,7 +1107,9 @@ public class GraveManager implements Listener {
                         grave.headBlockKey = data.getString("graves." + graveId + ".headBlockKey");
                         if (grave.headBlockKey == null) {
                             for (GraveBlock block : graveStructure) {
-                                if (block.material == Material.PLAYER_HEAD || "player-head".equals(block.data)) {
+                                if (block.material == Material.PLAYER_HEAD ||
+                                        block.material == Material.PLAYER_WALL_HEAD ||
+                                        "player-head".equals(block.data)) {
                                     grave.headBlockKey = block.dx + "_" + block.dy + "_" + block.dz;
                                     break;
                                 }

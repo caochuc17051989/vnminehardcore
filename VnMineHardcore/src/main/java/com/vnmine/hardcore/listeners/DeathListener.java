@@ -64,6 +64,7 @@ public class DeathListener implements Listener {
     private final Map<UUID, Long> combatTagged = new HashMap<>();
     private final Map<UUID, RespawnLock> respawnLocks = new HashMap<>();
     private final Set<UUID> awaitingRespawnChoice = new HashSet<>();
+    private final Set<UUID> noDamagePlayers = new HashSet<>();
     private long combatTagDurationMs;
     private BukkitRunnable combatCheckTask;
 
@@ -217,6 +218,13 @@ public class DeathListener implements Listener {
         return awaitingRespawnChoice.contains(player.getUniqueId());
     }
 
+    public boolean toggleNoDamageMode(Player player) {
+        UUID playerId = player.getUniqueId();
+        if (noDamagePlayers.remove(playerId)) return false;
+        noDamagePlayers.add(playerId);
+        return true;
+    }
+
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
@@ -319,6 +327,10 @@ public class DeathListener implements Listener {
     }
 
     private boolean isDamageImmune(Player player) {
+        return noDamagePlayers.contains(player.getUniqueId()) || isRespawnDamageImmune(player);
+    }
+
+    private boolean isRespawnDamageImmune(Player player) {
         if (!config.respawnProtectionEnabled) return false;
         if (awaitingRespawnChoice.contains(player.getUniqueId())) return true;
         RespawnLock lock = respawnLocks.get(player.getUniqueId());
@@ -337,6 +349,7 @@ public class DeathListener implements Listener {
         RespawnLock lock = respawnLocks.get(event.getPlayer().getUniqueId());
         Location destination = event.getTo();
         if (lock == null || destination == null) return;
+        if (lock.interactionEndsAtMillis <= System.currentTimeMillis()) return;
 
         double radius = config.respawnMovementRadiusBlocks;
         if (destination.getWorld() == null ||
@@ -382,7 +395,7 @@ public class DeathListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onRespawnMobTarget(EntityTargetEvent event) {
-        if (event.getTarget() instanceof Player player && isDamageImmune(player)) {
+        if (event.getTarget() instanceof Player player && isRespawnDamageImmune(player)) {
             event.setCancelled(true);
         }
     }
@@ -500,6 +513,7 @@ public class DeathListener implements Listener {
 
         clearRespawnLock(player.getUniqueId());
         awaitingRespawnChoice.remove(player.getUniqueId());
+        noDamagePlayers.remove(player.getUniqueId());
         combatTagged.remove(player.getUniqueId());
 
         event.quitMessage(Component.text("§8[§c-§8] §7" + player.getName()));

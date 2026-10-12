@@ -317,7 +317,8 @@ public class EnvironmentListener implements Listener {
         if (!config.flightBlock) return;
         if (event.isFlying()) {
             Player player = event.getPlayer();
-            if (!player.hasPermission("vnmine.hardcore.bypass")) {
+            if (!player.hasPermission("vnmine.hardcore.bypass") &&
+                    !player.hasPermission("vnmine.hardcore.admin")) {
                 event.setCancelled(true);
                 player.setAllowFlight(false);
                 player.setFlying(false);

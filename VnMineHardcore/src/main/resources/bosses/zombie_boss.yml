@@ -11,6 +11,8 @@ chance: 15
 duration-seconds: 1800
 warning-seconds: 45
 
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
 hp-by-level:
   1: 150
   2: 225

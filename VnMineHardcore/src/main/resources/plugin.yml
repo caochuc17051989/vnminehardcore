@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.3.1
+version: 1.3.2
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
@@ -24,6 +24,14 @@ commands:
   vnleave:
     description: Thoát game sau khi chết
     usage: /vnleave
+  fly:
+    description: Bật hoặc tắt bay trong chế độ Sinh tồn (admin)
+    usage: /fly
+    permission: vnmine.hardcore.admin
+  nodame:
+    description: Bật hoặc tắt miễn sát thương để thử boss (admin)
+    usage: /nodame
+    permission: vnmine.hardcore.admin
   vnhelp:
     description: Hiển thị hướng dẫn tất cả lệnh
     usage: /vnhelp
@@ -33,8 +41,8 @@ commands:
     usage: /vnevent [<id> <warning(s)> <duration(s)>]
     permission: vnmine.hardcore.admin
   vnboss:
-    description: Gọi boss thủ công. Gõ /vnboss để xem danh sách boss.
-    usage: /vnboss [<id> <warning(s)> <duration(s)>]
+    description: Gọi boss thủ công theo level. Nhập ID boss để xem gợi ý hoàn tất.
+    usage: /vnboss <id> <level> <warning(s)> <duration(s)>
     permission: vnmine.hardcore.admin
   vn:
     description: Lệnh chính của VnMineHardcore. Gõ /vn help để xem hướng dẫn.

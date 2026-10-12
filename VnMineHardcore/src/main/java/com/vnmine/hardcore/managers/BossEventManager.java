@@ -1249,6 +1249,14 @@ public class BossEventManager implements Listener {
         return config.bossConfigs.keySet();
     }
 
+    public Set<String> getEnabledBossIds() {
+        Set<String> ids = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (Map.Entry<String, ConfigManager.BossConfig> entry : config.bossConfigs.entrySet()) {
+            if (entry.getValue().enabled) ids.add(entry.getKey());
+        }
+        return ids;
+    }
+
     public String getBossName(String id) {
         ConfigManager.BossConfig bc = config.bossConfigs.get(id.toLowerCase());
         if (bc == null) return "Unknown Boss";
@@ -1256,10 +1264,15 @@ public class BossEventManager implements Listener {
     }
 
     public boolean triggerBoss(String bossId, int warningTimeSeconds, int durationSeconds) {
+        return triggerBoss(bossId, 1, warningTimeSeconds, durationSeconds);
+    }
+
+    public boolean triggerBoss(String bossId, int level, int warningTimeSeconds, int durationSeconds) {
         if (bossActive || pendingBoss != null) return false;
+        if (level < 1 || level > 1000 || warningTimeSeconds < 1 || durationSeconds < 1) return false;
 
         ConfigManager.BossConfig bc = config.bossConfigs.get(bossId.toLowerCase());
-        if (bc == null) return false;
+        if (bc == null || !bc.enabled) return false;
 
         ConfigManager.BossConfig manualBoss = new ConfigManager.BossConfig();
         manualBoss.enabled = bc.enabled;
@@ -1276,8 +1289,7 @@ public class BossEventManager implements Listener {
         if (bc.hpByLevel != null) manualBoss.hpByLevel.putAll(bc.hpByLevel);
         if (bc.skills != null) manualBoss.skills.putAll(bc.skills);
 
-        currentBossLevel = 1;
-        startWarning(manualBoss, 1);
+        startWarning(manualBoss, level);
         return true;
     }
 

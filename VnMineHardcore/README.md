@@ -23,8 +23,14 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 1.21.4. Người chơi kh
 | `/vn death reset <player>` | Reset số lần chết của player về 0 | `vnmine.hardcore.admin` |
 | `/vnevent` | Gọi thiên tai thủ công (xem danh sách) | `vnmine.hardcore.admin` |
 | `/vnevent <id> <warning(s)> <duration(s)>` | Gọi thiên tai cụ thể | `vnmine.hardcore.admin` |
+| `/vnboss <id> <level> <warning(s)> <duration(s)>` | Gọi boss theo level; nhấn Tab khi nhập ID để xem/gợi ý boss | `vnmine.hardcore.admin` |
+| `/fly` | Bật/tắt bay khi vẫn ở chế độ Sinh tồn | `vnmine.hardcore.admin` |
+| `/nodame` | Miễn sát thương nhưng vẫn có thể bị quái chọn làm mục tiêu (kiểm tra boss) | `vnmine.hardcore.admin` |
 | `/vnreload` | Tải lại file cấu hình config.yml | `vnmine.hardcore.admin` |
 | `/vnhelp` | Hiển thị hướng dẫn tất cả lệnh | `vnmine.hardcore.stats` |
+
+Ví dụ gọi boss Wither level 3, cảnh báo 30 giây, tồn tại 120 giây:
+`/vnboss wither 3 30 120`.
 
 ## Cấu hình (config.yml)
 
@@ -70,8 +76,10 @@ tác, mở/sửa inventory, nhặt hoặc thả đồ, hay tấn công. Tiêu đ
 ngược cho biết khi nào các thao tác được mở lại. Người chơi được miễn nhiễm
 sát thương trong lúc chờ và thêm số giây đặt ở
 `death.respawn-protection.damage-immunity-seconds` sau khi được tự do tương
-tác; quái vật không thể chọn họ làm mục tiêu trong toàn bộ thời gian miễn
-nhiễm. Chạy `/vnreload` sau khi thay đổi các thiết lập này.
+tác. Sau khi hết thời gian giới hạn di chuyển/tương tác, người chơi được di
+chuyển tự do ngay cả khi miễn nhiễm sát thương vẫn còn. Quái vật không thể
+chọn họ làm mục tiêu trong toàn bộ thời gian miễn nhiễm. Chạy `/vnreload` sau
+khi thay đổi các thiết lập này.
 
 ```yaml
 death:
@@ -81,6 +89,20 @@ death:
     movement-radius-blocks: 10
     damage-immunity-seconds: 10
 ```
+
+### Grave structures - Cấu trúc mộ
+
+`graves-structure.yml` chứa cả cấu trúc `full` và `mini`. Đặt
+`mini-graves: true` để dùng mộ mini, hoặc `false` để dùng mộ full. Khi nâng
+cấp, plugin tự bổ sung các cấu trúc/khóa còn thiếu vào file hiện có và giữ
+nguyên các giá trị tùy chỉnh. Bia mộ full dùng `PLAYER_WALL_HEAD` hướng về thân
+mộ để đầu dựng thẳng trên mặt bia.
+
+### Admin testing
+
+`/fly` bật/tắt bay khi người quản trị vẫn ở Survival. `/nodame` bật/tắt miễn
+nhiễm sát thương cho người chạy lệnh; quái vẫn có thể chọn người đó làm mục tiêu.
+Trạng thái `/nodame` sẽ tự tắt khi người chơi thoát máy chủ.
 
 ### Boss level & skills
 

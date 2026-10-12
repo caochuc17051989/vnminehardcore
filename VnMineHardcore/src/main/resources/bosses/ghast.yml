@@ -11,6 +11,8 @@ chance: 10
 duration-seconds: 1800
 warning-seconds: 45
 
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# damage là sát thương cơ sở (tăng theo level); số cầu lửa = level * multiply, tối đa 40.
 hp-by-level:
   1: 100
   2: 150
