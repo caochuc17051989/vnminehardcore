@@ -3,6 +3,7 @@ package com.vnmine.hardcore.managers;
 import com.vnmine.hardcore.VnMineHardcore;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -210,6 +211,9 @@ public class ConfigManager {
     public int bossEventSpawnRadius;
     public boolean bossLevelProgressionEnabled;
     public List<BossLevelThreshold> bossLevelThresholds = new ArrayList<>();
+    public boolean bossSpawnSuccessProgressionEnabled;
+    public double bossSpawnSuccessDefaultPercent = 100.0;
+    public List<BossSpawnSuccessThreshold> bossSpawnSuccessThresholds = new ArrayList<>();
 
     // Boss config map - each boss is a complete object (loaded from bosses/*.yml)
     public Map<String, BossConfig> bossConfigs = new HashMap<>();
@@ -293,6 +297,11 @@ public class ConfigManager {
         public int maxLevel;
     }
 
+    public static class BossSpawnSuccessThreshold {
+        public long minDay;
+        public double chancePercent;
+    }
+
     public static class BossSkillConfig {
         public boolean enabled;
         public double damage;
@@ -336,6 +345,10 @@ public class ConfigManager {
         plugin.reloadConfig();
         this.config = plugin.getConfig();
         migrateDeathPenaltyDefaults();
+
+        mergeDefaultResource("config.yml");
+        plugin.reloadConfig();
+        this.config = plugin.getConfig();
 
         // ===== Save default external configs (bosses/, disasters/) =====
         saveDefaultExternalConfigs();
@@ -722,6 +735,23 @@ public class ConfigManager {
         saveResourceIfNotExists("disasters/void-storm.yml");
         saveResourceIfNotExists("disasters/chorus-explosion.yml");
 
+        // Merge bundled samples into old disaster files without overwriting admin values.
+        mergeDefaultResource("disasters/_settings.yml");
+        mergeDefaultResource("disasters/blood-moon.yml");
+        mergeDefaultResource("disasters/meteor.yml");
+        mergeDefaultResource("disasters/mega-storm.yml");
+        mergeDefaultResource("disasters/solar-flare.yml");
+        mergeDefaultResource("disasters/plague.yml");
+        mergeDefaultResource("disasters/tornado.yml");
+        mergeDefaultResource("disasters/eclipse.yml");
+        mergeDefaultResource("disasters/earthquake.yml");
+        mergeDefaultResource("disasters/inferno-storm.yml");
+        mergeDefaultResource("disasters/soul-eruption.yml");
+        mergeDefaultResource("disasters/lava-geyser.yml");
+        mergeDefaultResource("disasters/end-surge.yml");
+        mergeDefaultResource("disasters/void-storm.yml");
+        mergeDefaultResource("disasters/chorus-explosion.yml");
+
         // Merge new boss settings into existing files without overwriting admin values.
         mergeDefaultResource("bosses/_settings.yml");
         mergeDefaultResource("bosses/wither.yml");
@@ -746,30 +776,33 @@ public class ConfigManager {
             return;
         }
 
-        InputStream resource = plugin.getResource(resourcePath);
-        if (resource == null) {
-            plugin.getLogger().warning("[Config] Missing bundled default resource: " + resourcePath);
-            return;
-        }
+        try (InputStream resource = plugin.getResource(resourcePath)) {
+            if (resource == null) {
+                plugin.getLogger().warning("[Config] Missing bundled default resource: " + resourcePath);
+                return;
+            }
 
-        YamlConfiguration target = YamlConfiguration.loadConfiguration(targetFile);
-        YamlConfiguration defaults;
-        try (InputStream input = resource;
-             InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
-            defaults = YamlConfiguration.loadConfiguration(reader);
-        } catch (IOException exception) {
-            plugin.getLogger().warning("[Config] Cannot read default " + resourcePath + ": " + exception.getMessage());
-            return;
-        }
-
-        if (mergeMissingKeys(target, defaults)) {
+            YamlConfiguration target = new YamlConfiguration();
             try {
+                target.load(targetFile);
+            } catch (IOException | InvalidConfigurationException exception) {
+                plugin.getLogger().severe("[Config] Cannot merge defaults into invalid " + resourcePath +
+                    ": " + exception.getMessage());
+                return;
+            }
+
+            YamlConfiguration defaults;
+            try (InputStreamReader reader = new InputStreamReader(resource, StandardCharsets.UTF_8)) {
+                defaults = YamlConfiguration.loadConfiguration(reader);
+            }
+
+            if (mergeMissingKeys(target, defaults)) {
                 target.save(targetFile);
                 plugin.getLogger().info("[Config] Added missing defaults to " + resourcePath +
                     " (existing values were preserved)");
-            } catch (IOException exception) {
-                plugin.getLogger().severe("[Config] Cannot update " + resourcePath + ": " + exception.getMessage());
             }
+        } catch (IOException exception) {
+            plugin.getLogger().severe("[Config] Cannot update " + resourcePath + ": " + exception.getMessage());
         }
     }
 
@@ -952,12 +985,11 @@ public class ConfigManager {
     private void loadBossSettings() {
         File settingsFile = new File(plugin.getDataFolder(), "bosses/_settings.yml");
         if (!settingsFile.exists()) {
-            bossEventsEnabled = false;
-            bossEventMinIntervalRaw = "1200";
-            bossEventSpawnRadius = 50;
-            bossLevelProgressionEnabled = false;
-            bossLevelThresholds.clear();
-            return;
+            File settingsDirectory = settingsFile.getParentFile();
+            if (settingsDirectory != null && !settingsDirectory.exists() && !settingsDirectory.mkdirs()) {
+                plugin.getLogger().warning("[Boss] Could not create bosses directory; boss settings will use defaults.");
+            }
+            plugin.saveResource("bosses/_settings.yml", false);
         }
 
         FileConfiguration bs = YamlConfiguration.loadConfiguration(settingsFile);
@@ -985,6 +1017,45 @@ public class ConfigManager {
             bossLevelThresholds.add(threshold);
         }
         bossLevelThresholds.sort(Comparator.comparingLong(threshold -> threshold.minDay));
+
+        bossSpawnSuccessProgressionEnabled = bs.getBoolean("spawn-success-progression.enabled", true);
+        double defaultChance = bs.getDouble("spawn-success-progression.default-percent", 100.0);
+        if (!Double.isFinite(defaultChance)) {
+            plugin.getLogger().warning("[Boss] Invalid spawn-success-progression.default-percent; using 100%.");
+            defaultChance = 100.0;
+        }
+        bossSpawnSuccessDefaultPercent = Math.max(0.0, Math.min(100.0, defaultChance));
+        if (bossSpawnSuccessDefaultPercent != defaultChance) {
+            plugin.getLogger().warning("[Boss] Clamped default boss spawn success chance to " +
+                bossSpawnSuccessDefaultPercent + "%.");
+        }
+        bossSpawnSuccessThresholds.clear();
+        for (Map<?, ?> thresholdMap : bs.getMapList("spawn-success-progression.thresholds")) {
+            Object dayValue = thresholdMap.get("min-day");
+            Object chanceValue = thresholdMap.get("chance-percent");
+            if (!(dayValue instanceof Number dayNumber) || !(chanceValue instanceof Number chanceNumber)) {
+                plugin.getLogger().warning("[Boss] Skipping malformed spawn-success-progression threshold in bosses/_settings.yml.");
+                continue;
+            }
+
+            double chance = chanceNumber.doubleValue();
+            if (!Double.isFinite(chance)) {
+                plugin.getLogger().warning("[Boss] Skipping non-finite spawn success chance in bosses/_settings.yml.");
+                continue;
+            }
+            BossSpawnSuccessThreshold threshold = new BossSpawnSuccessThreshold();
+            threshold.minDay = Math.max(0, dayNumber.longValue());
+            threshold.chancePercent = Math.max(0.0, Math.min(100.0, chance));
+            if (threshold.chancePercent != chance) {
+                plugin.getLogger().warning("[Boss] Clamped spawn success chance at day " +
+                    threshold.minDay + " to " + threshold.chancePercent + "%.");
+            }
+            bossSpawnSuccessThresholds.add(threshold);
+        }
+        bossSpawnSuccessThresholds.sort(Comparator.comparingLong(threshold -> threshold.minDay));
+        plugin.getLogger().info("[Boss] Loaded " + bossLevelThresholds.size() +
+            " daily level threshold(s) and " + bossSpawnSuccessThresholds.size() +
+            " daily spawn-success threshold(s) from bosses/_settings.yml.");
     }
 
     /**

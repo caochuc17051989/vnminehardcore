@@ -6,6 +6,7 @@ com/vnmine/hardcore/managers/ThirstManager.class
 com/vnmine/hardcore/managers/BossEventManager$1.class
 com/vnmine/hardcore/managers/BossEventManager.class
 com/vnmine/hardcore/managers/ConfigManager$BossSkillConfig.class
+com/vnmine/hardcore/managers/ConfigManager$BossSpawnSuccessThreshold.class
 com/vnmine/hardcore/managers/GraveManager$GraveData.class
 com/vnmine/hardcore/managers/BossEventManager$4.class
 com/vnmine/hardcore/managers/ThirstManager$1.class
