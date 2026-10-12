@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.3.2
+version: 1.3.4
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
@@ -31,6 +31,26 @@ commands:
   nodame:
     description: Bật hoặc tắt miễn sát thương để thử boss (admin)
     usage: /nodame
+    permission: vnmine.hardcore.admin
+  spawn:
+    description: Dịch chuyển về điểm spawn của thế giới (admin)
+    usage: /spawn
+    permission: vnmine.hardcore.admin
+  gm0:
+    description: Chuyển sang chế độ Sinh tồn (admin)
+    usage: /gm0
+    permission: vnmine.hardcore.admin
+  gm1:
+    description: Chuyển sang chế độ Sáng tạo (admin)
+    usage: /gm1
+    permission: vnmine.hardcore.admin
+  gm2:
+    description: Chuyển sang chế độ Phiêu lưu (admin)
+    usage: /gm2
+    permission: vnmine.hardcore.admin
+  gm3:
+    description: Chuyển sang chế độ Quan sát (admin)
+    usage: /gm3
     permission: vnmine.hardcore.admin
   vnhelp:
     description: Hiển thị hướng dẫn tất cả lệnh

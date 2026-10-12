@@ -49,6 +49,10 @@ public class BossEventManager implements Listener {
 
     // AI tracking
     private Location lastBossLocation = null;
+    private Location currentBossSpawnLocation = null;
+    private int currentBossActivityRadius = 100;
+    private int anchorReturnTicks;
+    private int anchorReturnCooldownTicks;
     private int stuckTicks = 0;
     private BukkitTask aiTask;
     private int currentBossLevel = 1;
@@ -322,20 +326,27 @@ public class BossEventManager implements Listener {
                 return true;
             }
             case ENDER_DRAGON -> {
-                // Keep the dragon moving around the target even while its volley is being cast.
-                double orbitAngle = Math.atan2(bossLoc.getZ() - targetLoc.getZ(), bossLoc.getX() - targetLoc.getX()) + 0.35;
-                Location flightPoint = targetLoc.clone().add(Math.cos(orbitAngle) * 9.0, 6.0, Math.sin(orbitAngle) * 9.0);
-                Vector flight = flightPoint.toVector().subtract(bossLoc.toVector());
-                if (flight.lengthSquared() > 0.0001) currentBoss.setVelocity(flight.normalize().multiply(0.65));
+                EnderDragon dragon = (EnderDragon) currentBoss;
+                dragon.setAware(true);
+                dragon.setTarget(target);
+                dragon.setPhase(EnderDragon.Phase.STRAFING);
+                Vector aim = target.getEyeLocation().toVector()
+                    .subtract(bossLoc.clone().add(0.0, 2.0, 0.0).toVector());
+                if (aim.lengthSquared() < 0.0001) aim = currentBoss.getLocation().getDirection();
+                aim.normalize();
+                Location launchLocation = bossLoc.clone().add(aim.clone().multiply(4.0)).add(0.0, 1.5, 0.0);
                 for (int i = 0; i < castCount; i++) {
-                    Vector fireballDir = dir.clone();
+                    Vector fireballDir = target.getEyeLocation().toVector().subtract(launchLocation.toVector());
+                    if (fireballDir.lengthSquared() < 0.0001) fireballDir = aim.clone();
                     if (skillSpread > 0.0) {
                         double offset = (i - (castCount - 1) / 2.0) * skillSpread / Math.max(1, castCount - 1);
                         fireballDir.rotateAroundY(offset);
                         fireballDir.setY(Math.max(-0.7, Math.min(0.9, fireballDir.getY() + (random.nextDouble() - 0.5) * skillSpread * 0.25)));
                     }
-                    LargeFireball fireball = world.spawn(bossLoc.clone().add(0.0, 1.5, 0.0), LargeFireball.class);
-                    fireball.setDirection(fireballDir.normalize().multiply(skillVelocity));
+                    fireballDir.normalize().multiply(skillVelocity);
+                    LargeFireball fireball = world.spawn(launchLocation, LargeFireball.class);
+                    fireball.setDirection(fireballDir);
+                    fireball.setVelocity(fireballDir);
                     fireball.setYield(0.0F);
                     fireball.setIsIncendiary(false);
                     fireball.setShooter(currentBoss);
@@ -759,6 +770,11 @@ public class BossEventManager implements Listener {
             return;
         }
         currentBoss = livingBoss;
+        currentBossSpawnLocation = spawnLoc.clone();
+        currentBossActivityRadius = bc.activityRadius;
+        anchorReturnTicks = 0;
+        anchorReturnCooldownTicks = 0;
+        stuckTicks = 0;
         if (currentBoss instanceof Creeper creeper) {
             creeper.setExplosionRadius(0);
         }
@@ -917,6 +933,32 @@ public class BossEventManager implements Listener {
                 World bossWorld = bossLoc.getWorld();
                 if (bossWorld == null) return;
 
+                anchorReturnCooldownTicks = Math.max(0, anchorReturnCooldownTicks - 10);
+                double distanceFromAnchorSquared = currentBossSpawnLocation == null
+                    ? 0.0 : horizontalDistanceSquared(bossLoc, currentBossSpawnLocation);
+                double edgeBuffer = Math.min(10.0, currentBossActivityRadius * 0.15);
+                double returnThreshold = Math.max(0.0, currentBossActivityRadius - edgeBuffer);
+                boolean nearActivityEdge = distanceFromAnchorSquared >= returnThreshold * returnThreshold;
+
+                if (anchorReturnTicks > 0) {
+                    steerBossTowardAnchor(bossLoc, bossWorld);
+                    anchorReturnTicks = Math.max(0, anchorReturnTicks - 10);
+                    return;
+                }
+                if (currentBossSpawnLocation != null &&
+                        distanceFromAnchorSquared > (double) currentBossActivityRadius * currentBossActivityRadius) {
+                    beginAnchorReturn();
+                    steerBossTowardAnchor(bossLoc, bossWorld);
+                    anchorReturnTicks = Math.max(0, anchorReturnTicks - 10);
+                    return;
+                }
+                if (nearActivityEdge || (anchorReturnCooldownTicks == 0 && random.nextDouble() < 0.08)) {
+                    beginAnchorReturn();
+                    steerBossTowardAnchor(bossLoc, bossWorld);
+                    anchorReturnTicks = Math.max(0, anchorReturnTicks - 10);
+                    return;
+                }
+
                 // === KIỂM TRA KẸT ===
                 if (lastBossLocation != null) {
                     double dist = bossLoc.distanceSquared(lastBossLocation);
@@ -956,6 +998,7 @@ public class BossEventManager implements Listener {
                     if (!p.getWorld().equals(bossWorld)) continue;
                     if (p.isDead() || !p.isOnline()) continue;
                     double d = p.getLocation().distanceSquared(bossLoc);
+                    if (!isWithinBossArea(p.getLocation())) continue;
                     if (d < nearestPlayerDist && d < searchRadius * searchRadius) {
                         nearestPlayerDist = d;
                         nearestPlayer = p;
@@ -980,6 +1023,7 @@ public class BossEventManager implements Listener {
                     if (e.equals(currentBoss)) continue;
                     if (e instanceof LivingEntity le && !(e instanceof Player)) {
                         double d = le.getLocation().distanceSquared(bossLoc);
+                        if (!isWithinBossArea(le.getLocation())) continue;
                         if (isFriendlyMob(le)) {
                             if (d < nearestFriendlyDist) {
                                 nearestFriendlyDist = d;
@@ -1030,10 +1074,10 @@ public class BossEventManager implements Listener {
         double distance = bossLoc.distance(targetLoc);
 
         if (currentBoss instanceof EnderDragon) {
-            double angle = Math.atan2(bossLoc.getZ() - targetLoc.getZ(), bossLoc.getX() - targetLoc.getX()) + 0.3;
-            Location flightPoint = targetLoc.clone().add(Math.cos(angle) * 8.0, 6.0, Math.sin(angle) * 8.0);
-            Vector flight = flightPoint.toVector().subtract(bossLoc.toVector());
-            if (flight.lengthSquared() > 0.0001) currentBoss.setVelocity(flight.normalize().multiply(0.65));
+            EnderDragon dragon = (EnderDragon) currentBoss;
+            dragon.setAware(true);
+            dragon.setTarget(target);
+            dragon.setPhase(EnderDragon.Phase.STRAFING);
             if (distance <= 3.0) {
                 target.damage(10.0 * bc.damageMultiplier, currentBoss);
                 Vector knockback = target.getLocation().toVector().subtract(bossLoc.toVector()).normalize();
@@ -1056,15 +1100,8 @@ public class BossEventManager implements Listener {
                 target.setVelocity(knockback.multiply(2.0));
             }
         } else if (currentBoss instanceof Mob mob) {
-            // Nếu là Mob (zombie, skeleton, v.v.) dùng pathfinder
-            if (distance > 2.0) {
-                mob.lookAt(targetLoc);
-                Vector dir = targetLoc.toVector().subtract(bossLoc.toVector()).normalize();
-                dir.setY(0);
-                if (distance > 1.0) {
-                    currentBoss.setVelocity(dir.multiply(0.3));
-                }
-            }
+            mob.setAware(true);
+            mob.setTarget(target);
         } else if (currentBoss instanceof Flying flying) {
             // Nếu là flying entity (Ghast)
             if (distance > 4.0) {
@@ -1092,26 +1129,32 @@ public class BossEventManager implements Listener {
     private void wander(Location bossLoc, World world) {
         if (currentBoss == null || currentBoss.isDead()) return;
 
+        Location center = currentBossSpawnLocation != null ? currentBossSpawnLocation : bossLoc;
+        double wanderRadius = Math.max(1.0, currentBossActivityRadius * 0.75);
         if (currentBoss instanceof EnderDragon) {
-            // Ender Dragon: bay vòng tròn ngẫu nhiên trên cao
             double angle = random.nextDouble() * 2 * Math.PI;
-            double radius = 5.0 + random.nextDouble() * 10.0;
-            double targetX = bossLoc.getX() + Math.cos(angle) * radius;
-            double targetZ = bossLoc.getZ() + Math.sin(angle) * radius;
-            double targetY = bossLoc.getY() + (random.nextDouble() - 0.5) * 10.0;
-            // Giới hạn độ cao
-            targetY = Math.max(20, Math.min(world.getMaxHeight() - 10, targetY));
-            
-            Vector dir = new Vector(targetX - bossLoc.getX(), targetY - bossLoc.getY(), targetZ - bossLoc.getZ()).normalize();
-            currentBoss.setVelocity(dir.multiply(0.5));
-            
+            double radius = Math.sqrt(random.nextDouble()) * wanderRadius;
+            double targetY = Math.max(20.0, Math.min(world.getMaxHeight() - 10.0,
+                center.getY() + random.nextDouble() * 30.0 - 15.0));
+            Location flightPoint = new Location(world,
+                center.getX() + Math.cos(angle) * radius,
+                targetY,
+                center.getZ() + Math.sin(angle) * radius);
+            Vector direction = flightPoint.toVector().subtract(bossLoc.toVector());
+            if (direction.lengthSquared() > 0.0001) {
+                currentBoss.setVelocity(direction.normalize().multiply(0.5));
+            }
+            ((EnderDragon) currentBoss).setPhase(EnderDragon.Phase.CIRCLING);
+
         } else if (currentBoss instanceof Giant) {
             // Giant: di chuyển ngẫu nhiên.
             if (random.nextInt(3) == 0) {
                 double angle = random.nextDouble() * 2 * Math.PI;
-                double dx = Math.cos(angle) * 3.0;
-                double dz = Math.sin(angle) * 3.0;
-                Location targetLoc = bossLoc.clone().add(dx, 0, dz);
+                double radius = Math.sqrt(random.nextDouble()) * wanderRadius;
+                Location targetLoc = new Location(world,
+                    center.getX() + Math.cos(angle) * radius,
+                    bossLoc.getY(),
+                    center.getZ() + Math.sin(angle) * radius);
                 
                 if (targetLoc.getBlock().getType() == Material.AIR) {
                     Vector dir = targetLoc.toVector().subtract(bossLoc.toVector()).normalize();
@@ -1123,9 +1166,11 @@ public class BossEventManager implements Listener {
             // Các boss khác: di chuyển ngẫu nhiên
             if (random.nextInt(5) == 0) {
                 double angle = random.nextDouble() * 2 * Math.PI;
-                double dx = Math.cos(angle) * 2.0;
-                double dz = Math.sin(angle) * 2.0;
-                Location targetLoc = bossLoc.clone().add(dx, 0, dz);
+                double radius = Math.sqrt(random.nextDouble()) * wanderRadius;
+                Location targetLoc = new Location(world,
+                    center.getX() + Math.cos(angle) * radius,
+                    bossLoc.getY(),
+                    center.getZ() + Math.sin(angle) * radius);
                 
                 if (targetLoc.getBlock().getType() == Material.AIR) {
                     Vector dir = targetLoc.toVector().subtract(bossLoc.toVector()).normalize();
@@ -1133,6 +1178,55 @@ public class BossEventManager implements Listener {
                     currentBoss.setVelocity(dir.multiply(0.2));
                 }
             }
+        }
+    }
+
+    private boolean isWithinBossArea(Location location) {
+        return currentBossSpawnLocation == null ||
+            location.getWorld() == currentBossSpawnLocation.getWorld() &&
+            horizontalDistanceSquared(location, currentBossSpawnLocation) <=
+                (double) currentBossActivityRadius * currentBossActivityRadius;
+    }
+
+    private double horizontalDistanceSquared(Location first, Location second) {
+        double dx = first.getX() - second.getX();
+        double dz = first.getZ() - second.getZ();
+        return dx * dx + dz * dz;
+    }
+
+    private void beginAnchorReturn() {
+        if (currentBossSpawnLocation == null || anchorReturnTicks > 0) return;
+        anchorReturnTicks = 80 + random.nextInt(61);
+        anchorReturnCooldownTicks = 100 + random.nextInt(101);
+        stuckTicks = 0;
+    }
+
+    private void steerBossTowardAnchor(Location bossLoc, World world) {
+        if (currentBoss == null || currentBossSpawnLocation == null) return;
+
+        Location anchor = currentBossSpawnLocation;
+        Vector direction = new Vector(anchor.getX() - bossLoc.getX(), 0.0, anchor.getZ() - bossLoc.getZ());
+        if (direction.lengthSquared() < 0.0001) {
+            anchorReturnTicks = 0;
+            return;
+        }
+        direction.normalize();
+
+        if (currentBoss instanceof EnderDragon dragon) {
+            dragon.setTarget(null);
+            currentBoss.setVelocity(new Vector(direction.getX() * 0.65, 0.0, direction.getZ() * 0.65));
+        } else if (currentBoss instanceof Mob mob) {
+            mob.setTarget(null);
+            Location destination = anchor.clone();
+            destination.setY(world.getHighestBlockYAt(destination) + 1.0);
+            boolean pathStarted = mob.getPathfinder().moveTo(destination, currentBoss instanceof Giant ? 1.1 : 1.0);
+            if (!pathStarted) {
+                currentBoss.setVelocity(new Vector(direction.getX() * 0.25,
+                    currentBoss.getVelocity().getY(), direction.getZ() * 0.25));
+            }
+        } else {
+            currentBoss.setVelocity(new Vector(direction.getX() * 0.35,
+                currentBoss.getVelocity().getY(), direction.getZ() * 0.35));
         }
     }
 
@@ -1210,6 +1304,10 @@ public class BossEventManager implements Listener {
         }
         bossActive = false;
         currentBoss = null;
+        currentBossSpawnLocation = null;
+        currentBossActivityRadius = 100;
+        anchorReturnTicks = 0;
+        anchorReturnCooldownTicks = 0;
         currentBossName = null;
         pendingBoss = null;
         pendingBossLevel = null;
@@ -1283,6 +1381,7 @@ public class BossEventManager implements Listener {
         manualBoss.chance = bc.chance;
         manualBoss.warningSeconds = warningTimeSeconds;
         manualBoss.durationSeconds = durationSeconds;
+        manualBoss.activityRadius = bc.activityRadius;
         manualBoss.immunities.putAll(bc.immunities);
         manualBoss.immunityPotionEffects = new ArrayList<>(bc.immunityPotionEffects);
         manualBoss.drops.putAll(bc.drops);

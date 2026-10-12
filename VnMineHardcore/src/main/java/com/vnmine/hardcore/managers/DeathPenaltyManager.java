@@ -333,6 +333,7 @@ public class DeathPenaltyManager {
     private void removeHealthPenalty(Player player) {
         AttributeInstance maxHpAttr = player.getAttribute(Attribute.MAX_HEALTH);
         if (maxHpAttr == null) return;
+        maxHpAttr.removeModifier(MODIFIER_UUID_MAX_HP);
         for (AttributeModifier modifier : new ArrayList<>(maxHpAttr.getModifiers())) {
             if (modifier.getName().equals(MODIFIER_NAME_MAX_HP)) {
                 maxHpAttr.removeModifier(modifier);

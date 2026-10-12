@@ -149,7 +149,7 @@ public class GraveManager implements Listener {
         YamlConfiguration structureConfig = YamlConfiguration.loadConfiguration(structureFile);
         mergeStructureDefaults(structureConfig, structureFile);
 
-        boolean miniGraves = structureConfig.getBoolean("mini-graves", false);
+        boolean miniGraves = structureConfig.getBoolean("mini-graves", true);
         String selectedVariant = miniGraves ? "mini" : "full";
         org.bukkit.configuration.ConfigurationSection selectedStructure =
             structureConfig.getConfigurationSection(selectedVariant);
@@ -470,12 +470,13 @@ public class GraveManager implements Listener {
         int baseX = deathLocation.getBlockX();
         int baseY = deathLocation.getBlockY();
         int baseZ = deathLocation.getBlockZ();
-        if (!wouldOverlapGrave(new Location(world, baseX, baseY, baseZ))) {
+        Set<String> occupied = getOccupiedGraveBlocks(world.getName());
+        if (!wouldOverlapGrave(new Location(world, baseX, baseY, baseZ), occupied)) {
             return new Location(world, baseX, baseY, baseZ);
         }
 
-        // Try progressively wider rings, favoring positions beside the original footprint.
-        for (int radius = 1; radius <= 4; radius++) {
+        int[] verticalOffsets = {0, 1, -1, 2, -2, 3, -3};
+        for (int radius = 1; radius <= 16; radius++) {
             List<int[]> offsets = new ArrayList<>();
             offsets.add(new int[] {radius, 0});
             offsets.add(new int[] {-radius, 0});
@@ -492,16 +493,22 @@ public class GraveManager implements Listener {
                 }
             }
             for (int[] offset : offsets) {
-                Location candidate = new Location(world, baseX + offset[0], baseY, baseZ + offset[1]);
-                if (!wouldOverlapGrave(candidate)) return candidate;
+                int x = baseX + offset[0];
+                int z = baseZ + offset[1];
+                if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+                for (int verticalOffset : verticalOffsets) {
+                    int y = baseY + verticalOffset;
+                    if (y <= world.getMinHeight() || y >= world.getMaxHeight()) continue;
+                    Location candidate = new Location(world, x, y, z);
+                    if (!wouldOverlapGrave(candidate, occupied)) return candidate;
+                }
             }
         }
         return null;
     }
 
-    private boolean wouldOverlapGrave(Location baseLocation) {
+    private Set<String> getOccupiedGraveBlocks(String worldName) {
         Set<String> occupied = new HashSet<>();
-        String worldName = baseLocation.getWorld().getName();
         for (GraveData grave : graves.values()) {
             if (grave.isEmpty || !grave.worldName.equals(worldName)) continue;
             for (String key : getStructureKeys(grave)) {
@@ -511,13 +518,17 @@ public class GraveManager implements Listener {
                 }
             }
         }
+        return occupied;
+    }
 
+    private boolean wouldOverlapGrave(Location baseLocation, Set<String> occupied) {
+        World world = baseLocation.getWorld();
         for (GraveBlock block : graveStructure) {
             int x = baseLocation.getBlockX() + block.dx;
             int y = baseLocation.getBlockY() + block.dy;
             int z = baseLocation.getBlockZ() + block.dz;
             if (occupied.contains(x + ":" + y + ":" + z)) return true;
-            Block existingBlock = baseLocation.getWorld().getBlockAt(x, y, z);
+            Block existingBlock = world.getBlockAt(x, y, z);
             if (existingBlock.getState() instanceof org.bukkit.block.TileState) return true;
             if ((block.dy > 0 || !block.material.isSolid()) &&
                 !existingBlock.getType().isAir() && !existingBlock.isReplaceable()) return true;
