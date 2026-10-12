@@ -11,7 +11,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
@@ -33,6 +36,7 @@ public class BossEventManager implements Listener {
     private final Random random = ThreadLocalRandom.current();
 
     private boolean bossActive = false;
+    private boolean hasPlayerDamagedBoss = false;
     private String currentBossName = null;
     private LivingEntity currentBoss = null;
     private BossBar bossBar;
@@ -274,6 +278,39 @@ public class BossEventManager implements Listener {
         if (belongsToCurrentBoss(event.getEntity())) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBossDamageProtection(EntityDamageEvent event) {
+        if (currentBoss == null || event.getEntity() != currentBoss) return;
+        if (!(event instanceof EntityDamageByEntityEvent damageEvent)
+                || playerAttacker(damageEvent.getDamager()) == null) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBossPlayerDamage(EntityDamageByEntityEvent event) {
+        if (currentBoss == null || event.getEntity() != currentBoss
+                || playerAttacker(event.getDamager()) == null) return;
+        double damage = event.getFinalDamage();
+        if (Double.isFinite(damage) && damage > 0.0) {
+            hasPlayerDamagedBoss = true;
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onBossDeathDrops(EntityDeathEvent event) {
+        if (currentBoss == event.getEntity() && !hasPlayerDamagedBoss) {
+            event.getDrops().clear();
+        }
+    }
+
+    private Player playerAttacker(Entity damager) {
+        if (damager instanceof Player player) return player;
+        if (damager instanceof Projectile projectile
+                && projectile.getShooter() instanceof Player player) return player;
+        return null;
     }
 
     private String findSkillKey(ConfigManager.BossConfig bc, String... candidates) {
@@ -837,6 +874,7 @@ public class BossEventManager implements Listener {
             return;
         }
         currentBoss = livingBoss;
+        hasPlayerDamagedBoss = false;
         currentBossSpawnLocation = spawnLoc.clone();
         currentBossActivityRadius = bc.activityRadius;
         anchorReturnTicks = 0;
@@ -1358,60 +1396,62 @@ public class BossEventManager implements Listener {
             Bukkit.broadcastMessage("§a§l🎉 " + bc.displayName + " đã bị tiêu diệt!");
         }
 
-        // Drop items
-        for (Map.Entry<String, ConfigManager.DropConfig> dropEntry : bc.drops.entrySet()) {
-            ConfigManager.DropConfig dc = dropEntry.getValue();
-            if (Double.isFinite(dc.chance) && dc.chance >= 0.0 && dc.chance <= 1.0 &&
-                    random.nextDouble() < dc.chance) {
-                String materialName = dropEntry.getKey();
-                try {
-                    Material material = Material.valueOf(materialName.toUpperCase());
-                    if (material.isAir() || dc.minAmount < 1 || dc.maxAmount < dc.minAmount ||
-                            dc.maxAmount > 64) continue;
-                    int amount = random.nextInt(dc.maxAmount - dc.minAmount + 1) + dc.minAmount;
-                    ItemStack dropItem = new ItemStack(material);
-                    String itemName = dc.name;
-                    List<String> itemLore = dc.lore;
-                    if (material == Material.ENCHANTED_BOOK) {
-                        if (itemName == null || itemName.isBlank()) itemName = bc.displayName + " §dBí Kíp";
-                        if (itemLore.isEmpty()) itemLore = List.of("§7Sách enchant có thể áp dụng lên vật phẩm.");
+        if (hasPlayerDamagedBoss) {
+            // Drop items
+            for (Map.Entry<String, ConfigManager.DropConfig> dropEntry : bc.drops.entrySet()) {
+                ConfigManager.DropConfig dc = dropEntry.getValue();
+                if (Double.isFinite(dc.chance) && dc.chance >= 0.0 && dc.chance <= 1.0 &&
+                        random.nextDouble() < dc.chance) {
+                    String materialName = dropEntry.getKey();
+                    try {
+                        Material material = Material.valueOf(materialName.toUpperCase());
+                        if (material.isAir() || dc.minAmount < 1 || dc.maxAmount < dc.minAmount ||
+                                dc.maxAmount > 64) continue;
+                        int amount = random.nextInt(dc.maxAmount - dc.minAmount + 1) + dc.minAmount;
+                        ItemStack dropItem = new ItemStack(material);
+                        String itemName = dc.name;
+                        List<String> itemLore = dc.lore;
+                        if (material == Material.ENCHANTED_BOOK) {
+                            if (itemName == null || itemName.isBlank()) itemName = bc.displayName + " §dBí Kíp";
+                            if (itemLore.isEmpty()) itemLore = List.of("§7Sách enchant có thể áp dụng lên vật phẩm.");
+                        }
+                        BossLeaderboardManager.applyMetadata(dropItem, itemName, itemLore, null, null);
+                        if (material == Material.ENCHANTED_BOOK && dc.bookEnchantments.isEmpty()) {
+                            addConfiguredEnchantment(dropItem, "unbreaking", 1, true);
+                        }
+                        for (Map.Entry<String, Integer> enchantment : dc.bookEnchantments.entrySet()) {
+                            addConfiguredEnchantment(dropItem, enchantment.getKey(), enchantment.getValue(), true);
+                        }
+                        if (currentBoss != null) {
+                            dropItemsNaturally(currentBoss.getLocation(), dropItem, amount);
+                        }
+                    } catch (IllegalArgumentException e) {
+                        logger.warning("[BossEvent] Invalid drop material: " + materialName);
                     }
-                    BossLeaderboardManager.applyMetadata(dropItem, itemName, itemLore, null, null);
-                    if (material == Material.ENCHANTED_BOOK && dc.bookEnchantments.isEmpty()) {
-                        addConfiguredEnchantment(dropItem, "unbreaking", 1, true);
-                    }
-                    for (Map.Entry<String, Integer> enchantment : dc.bookEnchantments.entrySet()) {
-                        addConfiguredEnchantment(dropItem, enchantment.getKey(), enchantment.getValue(), true);
-                    }
-                    if (currentBoss != null) {
-                        dropItemsNaturally(currentBoss.getLocation(), dropItem, amount);
-                    }
-                } catch (IllegalArgumentException e) {
-                    logger.warning("[BossEvent] Invalid drop material: " + materialName);
                 }
             }
-        }
 
-        if (currentBoss != null) {
-            for (ConfigManager.ConfiguredItem configuredItem : levelDropsFor(bc, currentBossLevel)) {
-                if (random.nextDouble() >= configuredItem.chance) continue;
-                Material material = Material.matchMaterial(configuredItem.material);
-                if (material == null || material.isAir()) {
-                    logger.warning("[BossEvent] Invalid configured drop material: " + configuredItem.material);
-                    continue;
+            if (currentBoss != null) {
+                for (ConfigManager.ConfiguredItem configuredItem : levelDropsFor(bc, currentBossLevel)) {
+                    if (random.nextDouble() >= configuredItem.chance) continue;
+                    Material material = Material.matchMaterial(configuredItem.material);
+                    if (material == null || material.isAir()) {
+                        logger.warning("[BossEvent] Invalid configured drop material: " + configuredItem.material);
+                        continue;
+                    }
+                    int amount = random.nextInt(configuredItem.maxAmount - configuredItem.minAmount + 1) +
+                        configuredItem.minAmount;
+                    ItemStack item = new ItemStack(material);
+                    BossLeaderboardManager.applyMetadata(item, configuredItem.name, configuredItem.lore,
+                        null, null);
+                    for (Map.Entry<String, Integer> enchantment : configuredItem.enchantments.entrySet()) {
+                        addConfiguredEnchantment(item, enchantment.getKey(), enchantment.getValue(), false);
+                    }
+                    for (Map.Entry<String, Integer> enchantment : configuredItem.bookEnchantments.entrySet()) {
+                        addConfiguredEnchantment(item, enchantment.getKey(), enchantment.getValue(), true);
+                    }
+                    dropItemsNaturally(currentBoss.getLocation(), item, amount);
                 }
-                int amount = random.nextInt(configuredItem.maxAmount - configuredItem.minAmount + 1) +
-                    configuredItem.minAmount;
-                ItemStack item = new ItemStack(material);
-                BossLeaderboardManager.applyMetadata(item, configuredItem.name, configuredItem.lore,
-                    null, null);
-                for (Map.Entry<String, Integer> enchantment : configuredItem.enchantments.entrySet()) {
-                    addConfiguredEnchantment(item, enchantment.getKey(), enchantment.getValue(), false);
-                }
-                for (Map.Entry<String, Integer> enchantment : configuredItem.bookEnchantments.entrySet()) {
-                    addConfiguredEnchantment(item, enchantment.getKey(), enchantment.getValue(), true);
-                }
-                dropItemsNaturally(currentBoss.getLocation(), item, amount);
             }
         }
         leaderboardManager.finishBoss(currentBossLevel, true);
@@ -1529,6 +1569,7 @@ public class BossEventManager implements Listener {
         lastBossLocation = null;
         stuckTicks = 0;
         currentBossLevel = 1;
+        hasPlayerDamagedBoss = false;
         bossElapsedSeconds = 0;
         bossDurationSeconds = 0;
         bossBar.name(Component.text(""));

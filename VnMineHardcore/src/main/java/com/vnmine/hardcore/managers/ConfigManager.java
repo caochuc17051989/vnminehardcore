@@ -217,6 +217,7 @@ public class ConfigManager {
 
     // Boss config map - each boss is a complete object (loaded from bosses/*.yml)
     public Map<String, BossConfig> bossConfigs = new HashMap<>();
+    private final Map<String, List<String>> bossItemStories = new HashMap<>();
 
     // Ore Control
     public boolean oreControlEnabled;
@@ -508,6 +509,7 @@ public class ConfigManager {
         loadDisasterConfigs();
         loadDisasterMessages();
         loadBossSettings();
+        loadBossItemStories();
         loadBossConfigs();
 
         // Ore Control
@@ -837,6 +839,7 @@ public class ConfigManager {
 
         saveResourceIfNotExists("scoreboard.yml");
         mergeDefaultResource("scoreboard.yml");
+        mergeDefaultResource("story.yml");
 
         // Merge new boss settings into existing files without overwriting admin values.
         mergeDefaultResource("bosses/_settings.yml");
@@ -1290,8 +1293,19 @@ public class ConfigManager {
                         if (materialValue instanceof String material) item.material = material;
                         Object nameValue = itemMap.get("name");
                         if (nameValue instanceof String name) item.name = name;
+                        Object storyIdValue = itemMap.get("story-id");
+                        if (storyIdValue instanceof String storyId) {
+                            List<String> story = bossItemStories.get(storyId);
+                            if (story == null) {
+                                plugin.getLogger().warning("[Boss] Missing story-id '" + storyId +
+                                    "' in story.yml for " + fileName + " level " + level + ".");
+                            } else {
+                                for (String line : story) item.lore.add(line.replace("{level}",
+                                    Integer.toString(level)));
+                            }
+                        }
                         Object loreValue = itemMap.get("lore");
-                        if (loreValue instanceof List<?> lore) {
+                        if (item.lore.isEmpty() && loreValue instanceof List<?> lore) {
                             for (Object line : lore) {
                                 if (line instanceof String text) item.lore.add(text);
                             }
@@ -1320,6 +1334,26 @@ public class ConfigManager {
 
             bossConfigs.put(bossId, bc);
         }
+    }
+
+    private void loadBossItemStories() {
+        bossItemStories.clear();
+        File storyFile = new File(plugin.getDataFolder(), "story.yml");
+        YamlConfiguration storyConfig = YamlConfiguration.loadConfiguration(storyFile);
+        ConfigurationSection artifacts = storyConfig.getConfigurationSection("artifacts");
+        if (artifacts == null) {
+            plugin.getLogger().warning("[Boss] story.yml has no 'artifacts' section; item lore will use boss files.");
+            return;
+        }
+
+        for (String storyId : artifacts.getKeys(false)) {
+            ConfigurationSection artifact = artifacts.getConfigurationSection(storyId);
+            if (artifact == null) continue;
+            List<String> lore = artifact.getStringList("lore");
+            if (!lore.isEmpty()) bossItemStories.put(storyId, List.copyOf(lore));
+        }
+        plugin.getLogger().info("[Boss] Loaded " + bossItemStories.size() +
+            " item stories from story.yml.");
     }
 
     private void readEnchantments(Object source, Map<String, Integer> destination) {

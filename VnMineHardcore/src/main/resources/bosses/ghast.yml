@@ -97,24 +97,16 @@ drops:
 level-drops:
   1:
     - material: BOW
-      name: "§e§lKhúc Cung Than Khóc · Cấp 1"
-      lore:
-        - "§7Tương truyền, giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Khi tiếng chuông thứ 1 vang lên, một khúc ca bị phong ấn dưới pháo đài Nether."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      name: "§e§lCung Ghast · Cấp 1"
+      story-id: ghast-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.160
       enchantments:
         power: 1
     - material: ENCHANTED_BOOK
-      name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 1"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      name: "§e§lSổ Ghast · Cấp 1"
+      story-id: ghast-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -123,12 +115,8 @@ level-drops:
 
   2:
     - material: BOW
-      name: "§e§lKhúc Cung Than Khóc · Cấp 2"
-      lore:
-        - "§7Tương truyền, giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Khi tiếng chuông thứ 2 vang lên, một khúc ca bị phong ấn dưới pháo đài Nether."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      name: "§e§lCung Ghast · Cấp 2"
+      story-id: ghast-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.146
@@ -136,12 +124,8 @@ level-drops:
         power: 1
         punch: 1
     - material: ENCHANTED_BOOK
-      name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 2"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      name: "§e§lSổ Ghast · Cấp 2"
+      story-id: ghast-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.095
@@ -152,11 +136,7 @@ level-drops:
   3:
     - material: BOW
       name: "§e§lKhúc Cung Than Khóc · Cấp 3"
-      lore:
-        - "§7Tương truyền, giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Khi tiếng chuông thứ 3 vang lên, một khúc ca bị phong ấn dưới pháo đài Nether."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-relic
       min-amount: 1
       max-amount: 1
       chance: 0.132
@@ -166,11 +146,7 @@ level-drops:
         flame: 2
     - material: ENCHANTED_BOOK
       name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 3"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-codex
       min-amount: 1
       max-amount: 1
       chance: 0.086
@@ -182,11 +158,7 @@ level-drops:
   4:
     - material: BOW
       name: "§e§lKhúc Cung Than Khóc · Cấp 4"
-      lore:
-        - "§7Tương truyền, giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Khi tiếng chuông thứ 4 vang lên, một khúc ca bị phong ấn dưới pháo đài Nether."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-relic
       min-amount: 1
       max-amount: 1
       chance: 0.118
@@ -197,11 +169,7 @@ level-drops:
         infinity: 2
     - material: ENCHANTED_BOOK
       name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 4"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-codex
       min-amount: 1
       max-amount: 1
       chance: 0.077
@@ -213,11 +181,7 @@ level-drops:
   5:
     - material: BOW
       name: "§e§lKhúc Cung Than Khóc · Cấp 5"
-      lore:
-        - "§7Tương truyền, giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Khi tiếng chuông thứ 5 vang lên, một khúc ca bị phong ấn dưới pháo đài Nether."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-relic
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -229,11 +193,7 @@ level-drops:
         unbreaking: 2
     - material: ENCHANTED_BOOK
       name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 5"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-codex
       min-amount: 1
       max-amount: 1
       chance: 0.068
@@ -247,11 +207,7 @@ level-drops:
   6:
     - material: BOW
       name: "§e§lKhúc Cung Than Khóc · Cấp 6"
-      lore:
-        - "§7Tương truyền, giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Khi tiếng chuông thứ 6 vang lên, một khúc ca bị phong ấn dưới pháo đài Nether."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-relic
       min-amount: 1
       max-amount: 1
       chance: 0.090
@@ -264,11 +220,7 @@ level-drops:
         mending: 3
     - material: ENCHANTED_BOOK
       name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 6"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-codex
       min-amount: 1
       max-amount: 1
       chance: 0.058
@@ -283,11 +235,7 @@ level-drops:
   7:
     - material: BOW
       name: "§e§lKhúc Cung Than Khóc · Cấp 7"
-      lore:
-        - "§7Tương truyền, giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Khi tiếng chuông thứ 7 vang lên, một khúc ca bị phong ấn dưới pháo đài Nether."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-relic
       min-amount: 1
       max-amount: 1
       chance: 0.076
@@ -301,11 +249,7 @@ level-drops:
         vanishing_curse: 3
     - material: ENCHANTED_BOOK
       name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 7"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-codex
       min-amount: 1
       max-amount: 1
       chance: 0.049
@@ -321,11 +265,7 @@ level-drops:
   8:
     - material: ENCHANTED_BOOK
       name: "§e§lKhúc Cung Than Khóc · Cấp 8"
-      lore:
-        - "§7Tương truyền, giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Khi tiếng chuông thứ 8 vang lên, một khúc ca bị phong ấn dưới pháo đài Nether."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-relic
       min-amount: 1
       max-amount: 1
       chance: 0.062
@@ -340,11 +280,7 @@ level-drops:
         protection: 3
     - material: ENCHANTED_BOOK
       name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 8"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-codex
       min-amount: 1
       max-amount: 1
       chance: 0.040
@@ -361,11 +297,7 @@ level-drops:
   9:
     - material: ENCHANTED_BOOK
       name: "§e§lKhúc Cung Than Khóc · Cấp 9"
-      lore:
-        - "§7Tương truyền, giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Khi tiếng chuông thứ 9 vang lên, một khúc ca bị phong ấn dưới pháo đài Nether."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-relic
       min-amount: 1
       max-amount: 1
       chance: 0.048
@@ -381,11 +313,7 @@ level-drops:
         thorns: 4
     - material: ENCHANTED_BOOK
       name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 9"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-codex
       min-amount: 1
       max-amount: 1
       chance: 0.031
@@ -403,11 +331,7 @@ level-drops:
   10:
     - material: ENCHANTED_BOOK
       name: "§e§lKhúc Cung Than Khóc · Cấp 10"
-      lore:
-        - "§7Tương truyền, giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Khi tiếng chuông thứ 10 vang lên, một khúc ca bị phong ấn dưới pháo đài Nether."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-relic
       min-amount: 1
       max-amount: 1
       chance: 0.034
@@ -424,11 +348,7 @@ level-drops:
         looting: 4
     - material: ENCHANTED_BOOK
       name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 10"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: giọt lệ ghast hóa thành thủy tinh giữa biển dung nham."
-        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy linh hồn lạc lối vẫn gọi tên người thợ rèn."
-        - "§dCổ tự khắc trên nó: “ngọn lửa trắng chưa từng tắt trong nghìn năm”."
+      story-id: ghast-codex
       min-amount: 1
       max-amount: 1
       chance: 0.022

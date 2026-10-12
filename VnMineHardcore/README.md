@@ -238,8 +238,14 @@ skills:
 ### Loot boss theo level và bảng xếp hạng
 
 Mỗi file `bosses/<id>.yml` có mục `level-drops` riêng cho boss đó, đầy đủ từ
-level 1 đến level 10. Mỗi cấp có hai di vật hiếm, truyền thuyết tối đa 4 dòng
-và số dòng enchant tăng theo level; có thể tùy chỉnh `material`, `name`, `lore`,
+level 1 đến level 10. Mỗi cấp có hai di vật hiếm; enchant tăng theo level và
+truyền thuyết được quản lý tập trung trong `plugins/VnMineHardcore/story.yml`.
+Mỗi item dùng `story-id` để liên kết tới `artifacts.<story-id>.lore`; có thể
+thêm chương mới bằng cách thêm ID duy nhất và danh sách lore vào file này.
+Các cấp 1–2 dùng hậu tố `-common` với tên và câu chuyện giản dị hơn; từ cấp 3
+trở lên dùng tuyến truyện phát triển theo sức mạnh của di vật.
+Lore hỗ trợ `{level}` để hiển thị cấp vật phẩm; mỗi dòng mặc định ngắn gọn,
+tối đa 6 cụm từ và 6 dòng. Trong file boss, có thể tùy chỉnh `material`, `name`,
 `min-amount`, `max-amount`, `chance`, `enchantments` (hỗ trợ over-enchant)
 hoặc `book-enchantments` (sách có enchant để áp dụng vào item). Boss tự nhiên
 có thể lên level 10 từ ngày 400 theo `bosses/_settings.yml`; `/vnboss` vẫn cho
@@ -252,7 +258,9 @@ thời gian title top 1, chu kỳ nhắc và quà của từng hạng top 1–10
 đánh boss nhận tổng cộng `10 × level` điểm, chia theo tỉ lệ damage. Điểm và quà
 đang chờ được lưu trong `scoreboard-data.yml`. Người chơi nhận quà bằng
 `/reward`; nếu inventory không đủ chỗ, quà vẫn chờ và có thể nhận lại sau khi
-dọn túi. Chạy `/vnreload` để nạp cấu hình.
+dọn túi. Boss không nhận sát thương từ môi trường (bao gồm sát thương rơi) hoặc
+skill/đòn đánh do chính boss tạo ra; mọi loot cấu hình và drop mặc định chỉ rơi
+nếu có ít nhất một người chơi gây sát thương. Chạy `/vnreload` để nạp cấu hình.
 
 ### Disasters - Thiên tai
 

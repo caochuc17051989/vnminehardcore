@@ -95,24 +95,16 @@ drops:
 level-drops:
   1:
     - material: BOW
-      name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 1"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 1 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      name: "§8§lCung Đêm · Cấp 1"
+      story-id: phantom-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.160
       enchantments:
         power: 1
     - material: ENCHANTED_BOOK
-      name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 1"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      name: "§8§lSổ Đêm · Cấp 1"
+      story-id: phantom-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -121,12 +113,8 @@ level-drops:
 
   2:
     - material: BOW
-      name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 2"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 2 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      name: "§8§lCung Đêm · Cấp 2"
+      story-id: phantom-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.146
@@ -134,12 +122,8 @@ level-drops:
         power: 1
         punch: 1
     - material: ENCHANTED_BOOK
-      name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 2"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      name: "§8§lSổ Đêm · Cấp 2"
+      story-id: phantom-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.095
@@ -150,11 +134,7 @@ level-drops:
   3:
     - material: BOW
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 3"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 3 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
       chance: 0.132
@@ -164,11 +144,7 @@ level-drops:
         flame: 2
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 3"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
       chance: 0.086
@@ -180,11 +156,7 @@ level-drops:
   4:
     - material: BOW
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 4"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 4 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
       chance: 0.118
@@ -195,11 +167,7 @@ level-drops:
         infinity: 2
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 4"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
       chance: 0.077
@@ -211,11 +179,7 @@ level-drops:
   5:
     - material: BOW
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 5"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 5 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -227,11 +191,7 @@ level-drops:
         unbreaking: 2
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 5"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
       chance: 0.068
@@ -245,11 +205,7 @@ level-drops:
   6:
     - material: BOW
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 6"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 6 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
       chance: 0.090
@@ -262,11 +218,7 @@ level-drops:
         mending: 3
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 6"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
       chance: 0.058
@@ -281,11 +233,7 @@ level-drops:
   7:
     - material: BOW
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 7"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 7 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
       chance: 0.076
@@ -299,11 +247,7 @@ level-drops:
         vanishing_curse: 3
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 7"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
       chance: 0.049
@@ -319,11 +263,7 @@ level-drops:
   8:
     - material: ENCHANTED_BOOK
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 8"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 8 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
       chance: 0.062
@@ -338,11 +278,7 @@ level-drops:
         protection: 3
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 8"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
       chance: 0.040
@@ -359,11 +295,7 @@ level-drops:
   9:
     - material: ENCHANTED_BOOK
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 9"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 9 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
       chance: 0.048
@@ -379,11 +311,7 @@ level-drops:
         feather_falling: 4
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 9"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
       chance: 0.031
@@ -401,11 +329,7 @@ level-drops:
   10:
     - material: ENCHANTED_BOOK
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 10"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 10 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
       chance: 0.034
@@ -422,11 +346,7 @@ level-drops:
         thorns: 4
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 10"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
       chance: 0.022

@@ -202,6 +202,38 @@ public class DisasterManager {
         return isLocationSafe(player.getLocation());
     }
 
+    private boolean isPlayerExposedToSky(Player player) {
+        Location location = player.getLocation();
+        World world = location.getWorld();
+        if (world == null) return false;
+
+        return world.getHighestBlockYAt(location.getBlockX(), location.getBlockZ()) < location.getBlockY();
+    }
+
+    private boolean canRainAt(Location location) {
+        World world = location.getWorld();
+        if (world == null) return false;
+
+        String biome = location.getBlock().getBiome().getKey().getKey();
+        boolean precipitationEnabled = switch (biome) {
+            case "desert", "savanna", "savanna_plateau", "windswept_savanna",
+                 "badlands", "eroded_badlands", "wooded_badlands", "mushroom_fields",
+                 "nether_wastes", "soul_sand_valley", "crimson_forest", "warped_forest",
+                 "basalt_deltas", "the_end", "small_end_islands", "end_midlands",
+                 "end_highlands", "end_barrens", "the_void" -> false;
+            default -> true;
+        };
+        return precipitationEnabled
+            && world.getTemperature(location.getBlockX(), location.getBlockY(), location.getBlockZ()) > 0.15;
+    }
+
+    private boolean isRainingOn(Player player) {
+        Location location = player.getLocation();
+        World world = location.getWorld();
+        return world != null && world.hasStorm()
+            && canRainAt(location) && isPlayerExposedToSky(player);
+    }
+
     /**
      * Kiểm tra một vị trí bất kỳ có nằm trong khu vực an toàn (dưới mái che) không
      * @param loc Vị trí cần kiểm tra
@@ -1519,12 +1551,15 @@ public class DisasterManager {
         List<Object> result = new ArrayList<>();
         boolean requireOutdoor = action.condition.requireOutdoor;
         boolean ignoreSafeZone = action.condition.ignoreSafeZone;
+        boolean requireRain = action.condition.requireRain;
 
         // Nếu không có targets, mặc định là tất cả player
         if (action.targets.isEmpty()) {
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (!matchesOptionalWorlds(eventWorlds, p.getWorld())) continue;
-                if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
+                if (requireRain && !isRainingOn(p)) continue;
+                if (requireOutdoor && (!isPlayerExposedToSky(p)
+                        || (!ignoreSafeZone && isPlayerSafe(p)))) continue;
                 result.add(p);
             }
             return result;
@@ -1542,11 +1577,10 @@ public class DisasterManager {
                 List<Player> players = new ArrayList<>();
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     if (!matchesWorldScope(eventWorlds, target.worlds, p.getWorld())) continue;
+                    if (requireRain && !isRainingOn(p)) continue;
                     // Check condition
-                    if (requireOutdoor && !ignoreSafeZone && isPlayerSafe(p)) continue;
-                    if (requireOutdoor && ignoreSafeZone) {
-                        if (p.getLocation().getBlock().getLightFromSky() <= 5) continue;
-                    }
+                    if (requireOutdoor && (!isPlayerExposedToSky(p)
+                            || (!ignoreSafeZone && isPlayerSafe(p)))) continue;
                     players.add(p);
                 }
 

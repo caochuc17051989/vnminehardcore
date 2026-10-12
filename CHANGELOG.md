@@ -1,15 +1,30 @@
 # Changelog
 
+## [v1.11.1] - 2026-10-12
+
+### Fixed
+- Mưa axit chỉ gây sát thương và hiệu ứng khi người chơi thực sự ở ngoài trời có mưa.
+
+## [v1.11.0] - 2026-10-12
+
+### Added
+- Thêm kho truyện `story.yml` cho di vật boss; tên và lore cấp thấp được cân chỉnh theo sức mạnh vật phẩm.
+
+### Fixed
+- Boss miễn nhiễm sát thương môi trường và sát thương từ skill tự tạo; chỉ rơi item khi người chơi đã gây sát thương.
+
 ## [v1.10.0] - 2026-10-12
 
 ### Added
 - Thêm quản lý nhóm/quyền trong `permission.yml` qua `/vngroup` và `/vnuser`, mặc định có nhóm `user` và `admin`.
 - Tách quyền lệnh theo chức năng để có thể cấp riêng quyền xem trạng thái, quản lý thiên tai/boss, spawn, thời gian, game mode và quản lý người dùng.
 - Thêm quyền `vnmine.spawnprotection.bypass` cho OP/nhân viên được ủy quyền.
+- Thêm `story.yml` làm kho lore tập trung cho các di vật hiếm boss, kết nối thành vũ trụ truyện chung và hỗ trợ mở rộng bằng `story-id`; cấp thấp dùng tên/lore giản dị hơn.
 
 ### Fixed
 - Spawn protection chặn cả phá/đặt block, cháy, dòng chất lỏng, thay đổi block do entity và phá block do vụ nổ.
 - Các thao tác đặt, đốt, thay thế, nhấc block và nổ trực tiếp từ thiên tai bỏ qua block nằm trong vùng bảo vệ.
+- Boss miễn nhiễm sát thương môi trường (kể cả sát thương rơi) và sát thương từ skill tự tạo; mọi drop chỉ rơi khi có người chơi gây sát thương.
 
 ## [v1.9.1] - 2026-10-12
 

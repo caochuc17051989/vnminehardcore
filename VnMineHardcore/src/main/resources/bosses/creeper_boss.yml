@@ -116,24 +116,16 @@ drops:
 level-drops:
   1:
     - material: IRON_SWORD
-      name: "§a§lLôi Tâm Hủy Diệt · Cấp 1"
-      lore:
-        - "§7Tương truyền, quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Khi tiếng chuông thứ 1 vang lên, những vụ nổ xé toạc bầu trời đen."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      name: "§a§lKiếm Lôi Tâm · Cấp 1"
+      story-id: creeper-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.160
       enchantments:
         sharpness: 1
     - material: ENCHANTED_BOOK
-      name: "§a§lMật Lục Lôi Tâm Hủy Diệt · Cấp 1"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      name: "§a§lMật Lục Lôi Tâm · Cấp 1"
+      story-id: creeper-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -142,12 +134,8 @@ level-drops:
 
   2:
     - material: IRON_SWORD
-      name: "§a§lLôi Tâm Hủy Diệt · Cấp 2"
-      lore:
-        - "§7Tương truyền, quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Khi tiếng chuông thứ 2 vang lên, những vụ nổ xé toạc bầu trời đen."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      name: "§a§lKiếm Lôi Tâm · Cấp 2"
+      story-id: creeper-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.146
@@ -155,12 +143,8 @@ level-drops:
         sharpness: 1
         smite: 1
     - material: ENCHANTED_BOOK
-      name: "§a§lMật Lục Lôi Tâm Hủy Diệt · Cấp 2"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      name: "§a§lMật Lục Lôi Tâm · Cấp 2"
+      story-id: creeper-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.095
@@ -171,11 +155,7 @@ level-drops:
   3:
     - material: DIAMOND_SWORD
       name: "§a§lLôi Tâm Hủy Diệt · Cấp 3"
-      lore:
-        - "§7Tương truyền, quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Khi tiếng chuông thứ 3 vang lên, những vụ nổ xé toạc bầu trời đen."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-relic
       min-amount: 1
       max-amount: 1
       chance: 0.132
@@ -185,11 +165,7 @@ level-drops:
         bane_of_arthropods: 2
     - material: ENCHANTED_BOOK
       name: "§a§lMật Lục Lôi Tâm Hủy Diệt · Cấp 3"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-codex
       min-amount: 1
       max-amount: 1
       chance: 0.086
@@ -201,11 +177,7 @@ level-drops:
   4:
     - material: DIAMOND_SWORD
       name: "§a§lLôi Tâm Hủy Diệt · Cấp 4"
-      lore:
-        - "§7Tương truyền, quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Khi tiếng chuông thứ 4 vang lên, những vụ nổ xé toạc bầu trời đen."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-relic
       min-amount: 1
       max-amount: 1
       chance: 0.118
@@ -216,11 +188,7 @@ level-drops:
         knockback: 2
     - material: ENCHANTED_BOOK
       name: "§a§lMật Lục Lôi Tâm Hủy Diệt · Cấp 4"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-codex
       min-amount: 1
       max-amount: 1
       chance: 0.077
@@ -232,11 +200,7 @@ level-drops:
   5:
     - material: DIAMOND_SWORD
       name: "§a§lLôi Tâm Hủy Diệt · Cấp 5"
-      lore:
-        - "§7Tương truyền, quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Khi tiếng chuông thứ 5 vang lên, những vụ nổ xé toạc bầu trời đen."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-relic
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -248,11 +212,7 @@ level-drops:
         fire_aspect: 2
     - material: ENCHANTED_BOOK
       name: "§a§lMật Lục Lôi Tâm Hủy Diệt · Cấp 5"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-codex
       min-amount: 1
       max-amount: 1
       chance: 0.068
@@ -266,11 +226,7 @@ level-drops:
   6:
     - material: NETHERITE_SWORD
       name: "§a§lLôi Tâm Hủy Diệt · Cấp 6"
-      lore:
-        - "§7Tương truyền, quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Khi tiếng chuông thứ 6 vang lên, những vụ nổ xé toạc bầu trời đen."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-relic
       min-amount: 1
       max-amount: 1
       chance: 0.090
@@ -283,11 +239,7 @@ level-drops:
         looting: 3
     - material: ENCHANTED_BOOK
       name: "§a§lMật Lục Lôi Tâm Hủy Diệt · Cấp 6"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-codex
       min-amount: 1
       max-amount: 1
       chance: 0.058
@@ -302,11 +254,7 @@ level-drops:
   7:
     - material: NETHERITE_SWORD
       name: "§a§lLôi Tâm Hủy Diệt · Cấp 7"
-      lore:
-        - "§7Tương truyền, quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Khi tiếng chuông thứ 7 vang lên, những vụ nổ xé toạc bầu trời đen."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-relic
       min-amount: 1
       max-amount: 1
       chance: 0.076
@@ -320,11 +268,7 @@ level-drops:
         unbreaking: 3
     - material: ENCHANTED_BOOK
       name: "§a§lMật Lục Lôi Tâm Hủy Diệt · Cấp 7"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-codex
       min-amount: 1
       max-amount: 1
       chance: 0.049
@@ -340,11 +284,7 @@ level-drops:
   8:
     - material: NETHERITE_SWORD
       name: "§a§lLôi Tâm Hủy Diệt · Cấp 8"
-      lore:
-        - "§7Tương truyền, quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Khi tiếng chuông thứ 8 vang lên, những vụ nổ xé toạc bầu trời đen."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-relic
       min-amount: 1
       max-amount: 1
       chance: 0.062
@@ -359,11 +299,7 @@ level-drops:
         mending: 3
     - material: ENCHANTED_BOOK
       name: "§a§lMật Lục Lôi Tâm Hủy Diệt · Cấp 8"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-codex
       min-amount: 1
       max-amount: 1
       chance: 0.040
@@ -380,11 +316,7 @@ level-drops:
   9:
     - material: NETHERITE_SWORD
       name: "§a§lLôi Tâm Hủy Diệt · Cấp 9"
-      lore:
-        - "§7Tương truyền, quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Khi tiếng chuông thứ 9 vang lên, những vụ nổ xé toạc bầu trời đen."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-relic
       min-amount: 1
       max-amount: 1
       chance: 0.048
@@ -400,11 +332,7 @@ level-drops:
         sweeping_edge: 4
     - material: ENCHANTED_BOOK
       name: "§a§lMật Lục Lôi Tâm Hủy Diệt · Cấp 9"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-codex
       min-amount: 1
       max-amount: 1
       chance: 0.031
@@ -422,11 +350,7 @@ level-drops:
   10:
     - material: NETHERITE_SWORD
       name: "§a§lLôi Tâm Hủy Diệt · Cấp 10"
-      lore:
-        - "§7Tương truyền, quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Khi tiếng chuông thứ 10 vang lên, những vụ nổ xé toạc bầu trời đen."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-relic
       min-amount: 1
       max-amount: 1
       chance: 0.034
@@ -443,11 +367,7 @@ level-drops:
         vanishing_curse: 4
     - material: ENCHANTED_BOOK
       name: "§a§lMật Lục Lôi Tâm Hủy Diệt · Cấp 10"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: quả cầu sấm sét bị chôn dưới miệng núi lửa."
-        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy tiếng chuông báo hiệu một thành trì sắp hóa tro."
-        - "§dCổ tự khắc trên nó: “tia chớp cuối cùng của cơn bão cổ”."
+      story-id: creeper-codex
       min-amount: 1
       max-amount: 1
       chance: 0.022
