@@ -11,6 +11,24 @@ chance: 20
 duration-seconds: 1800
 warning-seconds: 45
 
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
+hp-by-level:
+  1: 130
+  2: 195
+  3: 293
+  4: 440
+
+skills:
+  venom-web:
+    enabled: true
+    damage: 4.0
+    multiply: 1
+    cooldown-seconds: 10
+    radius: 5.0
+    velocity: 1.0
+    spread: 0.0
+
 immunities:
   potion-effects:
     - SLOWNESS

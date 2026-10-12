@@ -14,6 +14,24 @@ chance: 10
 duration-seconds: 1800
 warning-seconds: 60
 
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# damage là sát thương cơ sở (tăng theo level); số skull = level * multiply, tối đa 40.
+hp-by-level:
+  1: 600
+  2: 900
+  3: 1350
+  4: 2025
+
+skills:
+  skull-volley:
+    enabled: true
+    damage: 9.0
+    multiply: 3
+    cooldown-seconds: 12
+    radius: 6.0
+    velocity: 1.2
+    spread: 1.0
+
 # ===== MIỄN NHIỄM / IMMUNITIES =====
 # [VI] Các hiệu ứng boss này miễn nhiễm
 # [EN] Effects this boss is immune to

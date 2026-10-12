@@ -9,6 +9,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
 public final class VnMineHardcore extends JavaPlugin {
 
     private static VnMineHardcore instance;
@@ -30,6 +34,7 @@ public final class VnMineHardcore extends JavaPlugin {
     private SpawnerControlListener spawnerControlListener;
     private VillagerTradeManager villagerTradeManager;
     private OreControlListener oreControlListener;
+    private TimeControlManager timeControlManager;
     private GraveListener graveListener;
 
     @Override
@@ -38,11 +43,13 @@ public final class VnMineHardcore extends JavaPlugin {
         clearLegacyPluginBans();
 
         getLogger().info("§a==========================================");
-        getLogger().info("§a  VnMineHardcore v1.2.1 - KHỞI ĐỘNG");
+        getLogger().info("§a  VnMineHardcore v1.3.2 - KHỞI ĐỘNG");
         getLogger().info("§a==========================================");
 
         // Load config first
         this.configManager = new ConfigManager(this);
+        this.timeControlManager = new TimeControlManager(this, configManager);
+        this.timeControlManager.reload();
 
         // Initialize managers (pass config)
         this.logManager = new LogManager(this, configManager);
@@ -86,6 +93,10 @@ public final class VnMineHardcore extends JavaPlugin {
         this.getCommand("vnevent").setExecutor(this);
         this.getCommand("vnboss").setExecutor(this);
         this.getCommand("vn").setExecutor(this);
+        this.getCommand("vnrespawn").setExecutor(this);
+        this.getCommand("vnleave").setExecutor(this);
+        this.getCommand("fly").setExecutor(this);
+        this.getCommand("nodame").setExecutor(this);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
         getLogger().info("§a  Deaths are recorded; no death bans are applied.");
@@ -103,11 +114,76 @@ public final class VnMineHardcore extends JavaPlugin {
         if (bossEventManager != null) bossEventManager.stop();
         if (graveManager != null) graveManager.stop();
         if (logManager != null) logManager.stop();
+        if (timeControlManager != null) timeControlManager.stop();
         getLogger().info("VnMineHardcore disabled.");
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equalsIgnoreCase("fly")) {
+            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+                sender.sendMessage("§cBạn không có quyền!");
+                return true;
+            }
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Lệnh này chỉ dành cho người chơi.");
+                return true;
+            }
+            if (player.getGameMode() != org.bukkit.GameMode.SURVIVAL) {
+                player.sendMessage("§cLệnh /fly chỉ hoạt động trong chế độ Sinh tồn.");
+                return true;
+            }
+            if (player.getAllowFlight()) {
+                player.setFlying(false);
+                player.setAllowFlight(false);
+                player.sendMessage("§eĐã tắt bay trong chế độ Sinh tồn.");
+            } else {
+                player.setAllowFlight(true);
+                player.sendMessage("§aĐã bật bay trong chế độ Sinh tồn.");
+            }
+            return true;
+        }
+
+        if (command.getName().equalsIgnoreCase("nodame")) {
+            if (!sender.hasPermission("vnmine.hardcore.admin")) {
+                sender.sendMessage("§cBạn không có quyền!");
+                return true;
+            }
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Lệnh này chỉ dành cho người chơi.");
+                return true;
+            }
+            boolean enabled = deathListener.toggleNoDamageMode(player);
+            player.sendMessage(enabled
+                ? "§aĐã bật /nodame: quái vẫn có thể chọn bạn làm mục tiêu nhưng bạn không nhận sát thương."
+                : "§eĐã tắt /nodame.");
+            return true;
+        }
+
+        if (command.getName().equalsIgnoreCase("vnrespawn")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Lệnh này chỉ dành cho người chơi.");
+                return true;
+            }
+            if (!deathListener.requestRespawn(player)) {
+                player.sendMessage("§cBạn hiện không chờ chọn hồi sinh.");
+            }
+            return true;
+        }
+
+        if (command.getName().equalsIgnoreCase("vnleave")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("Lệnh này chỉ dành cho người chơi.");
+                return true;
+            }
+            if (!deathListener.isAwaitingRespawnChoice(player)) {
+                player.sendMessage("§cBạn chỉ có thể dùng lệnh này sau khi chết.");
+                return true;
+            }
+            player.kick(net.kyori.adventure.text.Component.text("Bạn đã chọn thoát game sau khi chết."));
+            return true;
+        }
+
         if (command.getName().equalsIgnoreCase("vnhelp")) {
             sender.sendMessage("§6§m========================================");
             sender.sendMessage("§6§l  VnMineHardcore - Command Help");
@@ -117,6 +193,9 @@ public final class VnMineHardcore extends JavaPlugin {
             sender.sendMessage("§e/vn death reset <player> §7- Reset số lần chết về 0");
             sender.sendMessage("§e/vnevent §7- Gọi thiên tai thủ công (xem danh sách)");
             sender.sendMessage("§e/vnevent <id> <time> <duration> §7- Gọi thiên tai cụ thể");
+            sender.sendMessage("§e/vnboss <id> <level> <warning> <duration> §7- Gọi boss theo level");
+            sender.sendMessage("§e/fly §7- Bật/tắt bay Survival (admin)");
+            sender.sendMessage("§e/nodame §7- Bật/tắt miễn sát thương để thử boss (admin)");
             sender.sendMessage("§e/vnreload §7- Tải lại config.yml");
             sender.sendMessage("§e/vnhelp §7- Hiển thị help này");
             sender.sendMessage("§6§m========================================");
@@ -129,6 +208,7 @@ public final class VnMineHardcore extends JavaPlugin {
                 return true;
             }
             configManager.reload();
+            timeControlManager.reload();
             hungerListener.reload();
             environmentListener.reload();
             thirstManager.reload();
@@ -203,7 +283,7 @@ public final class VnMineHardcore extends JavaPlugin {
                 sender.sendMessage("§6§m=======================================");
                 sender.sendMessage("§6§l  /vnboss - Gọi boss thủ công");
                 sender.sendMessage("§6§m=======================================");
-                sender.sendMessage("§eUsage: §7/vnboss <id> <warning(s)> <duration(s)>");
+                sender.sendMessage("§eUsage: §7/vnboss <id> <level> <warning(s)> <duration(s)>");
                 sender.sendMessage("§e  /vnboss §7- Hiển thị danh sách này");
                 sender.sendMessage("");
                 sender.sendMessage("§eDanh sách BOSS_ID có thể dùng:");
@@ -211,30 +291,33 @@ public final class VnMineHardcore extends JavaPlugin {
                     sender.sendMessage("§c  " + id + "  §7- " + bossEventManager.getBossName(id));
                 }
                 sender.sendMessage("");
-                sender.sendMessage("§eVí dụ: §7/vnboss wither 30 120");
+                sender.sendMessage("§eVí dụ: §7/vnboss wither 1 30 120");
+                sender.sendMessage("§e  /vnboss wither 3 30 120 §7- Gọi Wither level 3");
                 sender.sendMessage("§6§m=======================================");
                 return true;
             }
-            if (args.length < 3) {
-                sender.sendMessage("§cSử dụng: /vnboss <id> <warning(s)> <duration(s)>");
+            if (args.length != 4) {
+                sender.sendMessage("§cSử dụng: /vnboss <id> <level> <warning(s)> <duration(s)>");
                 return true;
             }
-            String bossId = args[0].toLowerCase();
-            int warningTime, duration;
+            String bossId = args[0].toLowerCase(Locale.ROOT);
+            int level, warningTime, duration;
             try {
-                warningTime = Integer.parseInt(args[1]);
-                duration = Integer.parseInt(args[2]);
+                level = Integer.parseInt(args[1]);
+                warningTime = Integer.parseInt(args[2]);
+                duration = Integer.parseInt(args[3]);
             } catch (NumberFormatException e) {
-                sender.sendMessage("§cThời gian phải là số nguyên (giây)!");
+                sender.sendMessage("§cLevel và thời gian phải là số nguyên!");
                 return true;
             }
-            if (warningTime < 1 || duration < 1) {
-                sender.sendMessage("§cThời gian phải >= 1 giây!");
+            if (level < 1 || level > 1000 || warningTime < 1 || duration < 1) {
+                sender.sendMessage("§cLevel phải từ 1 đến 1000; thời gian phải >= 1 giây!");
                 return true;
             }
-            boolean success = bossEventManager.triggerBoss(bossId, warningTime, duration);
+            boolean success = bossEventManager.triggerBoss(bossId, level, warningTime, duration);
             if (success) {
-                sender.sendMessage("§a✅ Đã kích hoạt boss §e" + bossEventManager.getBossName(bossId));
+                sender.sendMessage("§a✅ Đã kích hoạt boss §e" + bossEventManager.getBossName(bossId) +
+                    " §7(level " + level + ")");
             } else {
                 if (bossEventManager.isBossActive()) {
                     sender.sendMessage("§c❌ Đã có boss đang hoạt động: " + bossEventManager.getCurrentBossName());
@@ -317,6 +400,20 @@ public final class VnMineHardcore extends JavaPlugin {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (command.getName().equalsIgnoreCase("vnboss") && args.length == 1
+                && sender.hasPermission("vnmine.hardcore.admin")) {
+            String partial = args[0].toLowerCase(Locale.ROOT);
+            List<String> matches = new ArrayList<>();
+            for (String id : bossEventManager.getEnabledBossIds()) {
+                if (id.toLowerCase(Locale.ROOT).startsWith(partial)) matches.add(id);
+            }
+            return matches;
+        }
+        return List.of();
     }
 
     public static VnMineHardcore getInstance() { return instance; }

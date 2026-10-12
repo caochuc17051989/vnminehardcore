@@ -2,14 +2,21 @@ package com.vnmine.hardcore.listeners;
 
 import com.vnmine.hardcore.VnMineHardcore;
 import com.vnmine.hardcore.managers.ConfigManager;
+import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.world.ChunkPopulateEvent;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -23,8 +30,10 @@ public class OreControlListener implements Listener {
     private final ConfigManager config;
     private final Logger logger;
     private final Random random = new Random();
+    private ExplosionContext activeExplosion;
 
-    // Danh sách các block quặng cần kiểm soát
+    private record ExplosionContext(World world, Location location, double radius, boolean damagePlayer) {}
+
     private static final Set<Material> ORE_MATERIALS = new HashSet<>();
 
     static {
@@ -49,7 +58,6 @@ public class OreControlListener implements Listener {
         ORE_MATERIALS.add(Material.ANCIENT_DEBRIS);
     }
 
-    // Map ore -> default replacement (stone equivalent)
     private static final Map<Material, Material> ORE_REPLACEMENT = Map.ofEntries(
         Map.entry(Material.DIAMOND_ORE, Material.STONE),
         Map.entry(Material.EMERALD_ORE, Material.STONE),
@@ -86,35 +94,94 @@ public class OreControlListener implements Listener {
 
         Chunk chunk = event.getChunk();
         World world = chunk.getWorld();
-        String worldName = world.getName();
-
-        // Kiểm tra world có trong config không
-        Map<String, Double> oreRates = config.oreControlWorlds.get(worldName);
+        Map<String, Double> oreRates = config.oreControlWorlds.get(world.getName());
         if (oreRates == null || oreRates.isEmpty()) return;
 
-        // Quét tất cả block trong chunk
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 for (int y = world.getMinHeight(); y < world.getMaxHeight(); y++) {
                     Block block = chunk.getBlock(x, y, z);
                     Material type = block.getType();
+                    if (!ORE_MATERIALS.contains(type)) continue;
 
-                    if (ORE_MATERIALS.contains(type)) {
-                        String oreName = type.name();
-                        Double targetRate = oreRates.get(oreName);
-
-                        if (targetRate != null) {
-                            // Tính tỉ lệ hiện tại so với mục tiêu
-                            // Nếu random > targetRate/100 thì thay thế bằng đá
-                            double randomValue = random.nextDouble() * 100;
-                            if (randomValue > targetRate) {
-                                Material replacement = ORE_REPLACEMENT.getOrDefault(type, Material.STONE);
-                                block.setType(replacement);
-                            }
-                        }
+                    Double targetRate = oreRates.get(type.name());
+                    if (targetRate != null && random.nextDouble() * 100 > targetRate) {
+                        block.setType(ORE_REPLACEMENT.getOrDefault(type, Material.STONE));
                     }
                 }
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent event) {
+        if (!config.blockDropSettingsEnabled || event.getPlayer().getGameMode() == GameMode.CREATIVE) return;
+
+        Map<Material, ConfigManager.BlockMiningRule> toolRules =
+            config.blockMiningRules.get(event.getBlock().getType());
+        if (toolRules == null) return;
+        ConfigManager.BlockMiningRule rule =
+            toolRules.get(event.getPlayer().getInventory().getItemInMainHand().getType());
+        if (rule == null) return;
+
+        if (config.dropReplaceEnabled && rule.replaceEnabled && rule.replaceMaterial != null &&
+            rollChance(rule.replaceChance)) {
+            event.setDropItems(false);
+            event.getBlock().getWorld().dropItemNaturally(
+                event.getBlock().getLocation().add(0.5, 0.5, 0.5),
+                new ItemStack(rule.replaceMaterial)
+            );
+        }
+
+        Player player = event.getPlayer();
+        if (config.toolBreakEnabled && rule.toolBreakEnabled && rollChance(rule.toolBreakChance)) {
+            player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+            sendConfiguredMessage(player, rule.toolBreakMessage);
+        }
+
+        if (config.oreExplodeEnabled && rule.explodeEnabled && rollChance(rule.explosionChance)) {
+            sendConfiguredMessage(player, rule.explosionMessage);
+            Location location = event.getBlock().getLocation().add(0.5, 0.5, 0.5);
+            ExplosionContext previousExplosion = activeExplosion;
+            activeExplosion = new ExplosionContext(
+                event.getBlock().getWorld(),
+                location,
+                rule.explosionPower * 2.0,
+                rule.explosionDamagePlayer
+            );
+            try {
+                event.getBlock().getWorld().createExplosion(
+                    location,
+                    rule.explosionPower,
+                    rule.explosionSetFire,
+                    rule.explosionBreakBlocks
+                );
+            } finally {
+                activeExplosion = previousExplosion;
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onExplosionDamage(EntityDamageEvent event) {
+        ExplosionContext explosion = activeExplosion;
+        if (explosion == null || explosion.damagePlayer() ||
+            !(event.getEntity() instanceof Player player) ||
+            event.getCause() != EntityDamageEvent.DamageCause.BLOCK_EXPLOSION ||
+            explosion.world() != player.getWorld() ||
+            explosion.location().distanceSquared(player.getLocation()) > explosion.radius() * explosion.radius()) {
+            return;
+        }
+        event.setCancelled(true);
+    }
+
+    private boolean rollChance(double chance) {
+        return random.nextDouble() * 100.0 < chance;
+    }
+
+    private void sendConfiguredMessage(Player player, String message) {
+        if (message != null && !message.isBlank()) {
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
         }
     }
 }

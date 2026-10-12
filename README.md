@@ -403,6 +403,26 @@ For the **full configuration** with bilingual comments, see `plugins/VnMineHardc
 
 Mỗi disaster được cấu hình trong file riêng tại `plugins/VnMineHardcore/disasters/<id>.yml`.
 
+### Xác suất thiên tai theo ngày
+
+Trong `plugins/VnMineHardcore/disasters/_settings.yml`, `success-probability` quyết định xác suất thiên tai bắt đầu **sau khi** hệ thống đã chọn loại thiên tai. `chance` trong file từng disaster vẫn chỉ là trọng số chọn loại, không phải xác suất thành công.
+
+```yaml
+success-probability:
+  default-percent: 100
+  day-thresholds:
+    - min-day: 1
+      percent: 100
+    - min-day: 10
+      percent: 75
+    - min-day: 30
+      percent: 50
+```
+
+Có thể thêm tùy ý số dòng ngưỡng. Hệ thống áp dụng `percent` của `min-day` lớn nhất không vượt quá ngày hiện tại; nếu chưa tới ngưỡng nào, dùng `default-percent`. Ngày lấy từ thời gian đã trôi qua của world đầu tiên được load, bắt đầu từ ngày 1. Giá trị được giới hạn trong khoảng 0–100: 0% luôn bỏ qua thiên tai đã chọn và bắt đầu lại thời gian chờ; 100% luôn cho phép thiên tai đã chọn xảy ra.
+
+Khu vực an toàn kiểm tra toàn bộ cột phía trên người chơi đến giới hạn chiều cao của world, vì vậy mái hang ở xa vẫn được nhận diện. `safe-zone.roof-height` cũ vẫn được đọc để tương thích nhưng không còn giới hạn độ cao kiểm tra.
+
 ### Action Types
 
 | Action Type | Mô tả | Parameters |

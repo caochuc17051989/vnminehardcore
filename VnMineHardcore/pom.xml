@@ -6,14 +6,15 @@
 
     <groupId>com.vnmine</groupId>
     <artifactId>VnMineHardcore</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.2</version>
     <packaging>jar</packaging>
 
     <name>VnMineHardcore</name>
-    <description>Ultimate hardcore plugin - Hell difficulty for Paper 26.1.2</description>
+    <description>Ultimate hardcore plugin for Paper</description>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
+        <paper.api.version>1.21.4-R0.1-SNAPSHOT</paper.api.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -32,7 +33,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21.4-R0.1-SNAPSHOT</version>
+            <version>${paper.api.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

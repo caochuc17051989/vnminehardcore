@@ -11,6 +11,24 @@ chance: 5
 duration-seconds: 1800
 warning-seconds: 120
 
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# damage là sát thương cơ sở (tăng theo level); số cầu lửa = level * multiply, tối đa 40.
+hp-by-level:
+  1: 1000
+  2: 1500
+  3: 2250
+  4: 3375
+
+skills:
+  fireball-volley:
+    enabled: true
+    damage: 10.0
+    multiply: 5
+    cooldown-seconds: 15
+    radius: 5.0
+    velocity: 1.3
+    spread: 1.8
+
 immunities:
   fire: true
   poison: true

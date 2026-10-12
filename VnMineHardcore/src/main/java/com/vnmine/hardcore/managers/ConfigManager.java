@@ -1,15 +1,21 @@
 package com.vnmine.hardcore.managers;
 
 import com.vnmine.hardcore.VnMineHardcore;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -56,6 +62,10 @@ public class ConfigManager {
     // Death
     public boolean broadcastDeath;
     public boolean playSound;
+    public boolean respawnProtectionEnabled;
+    public int respawnProtectionSeconds;
+    public int respawnMovementRadiusBlocks;
+    public int respawnDamageImmunitySeconds;
 
     // Death Penalty
     public boolean deathPenaltyEnabled;
@@ -168,6 +178,18 @@ public class ConfigManager {
     public boolean disastersEnabled;
     public String disasterMinIntervalRaw;
     public int disasterWarningSeconds;
+    public int disasterDefaultSuccessProbability;
+    public List<DisasterSuccessThreshold> disasterSuccessThresholds = new ArrayList<>();
+
+    public static class DisasterSuccessThreshold {
+        public final int minDay;
+        public final int probabilityPercent;
+
+        public DisasterSuccessThreshold(int minDay, int probabilityPercent) {
+            this.minDay = minDay;
+            this.probabilityPercent = probabilityPercent;
+        }
+    }
 
     // Safe Zone settings (loaded from disasters/_settings.yml)
     public boolean safeZoneEnabled;
@@ -186,6 +208,8 @@ public class ConfigManager {
     public boolean bossEventsEnabled;
     public String bossEventMinIntervalRaw;
     public int bossEventSpawnRadius;
+    public boolean bossLevelProgressionEnabled;
+    public List<BossLevelThreshold> bossLevelThresholds = new ArrayList<>();
 
     // Boss config map - each boss is a complete object (loaded from bosses/*.yml)
     public Map<String, BossConfig> bossConfigs = new HashMap<>();
@@ -193,6 +217,24 @@ public class ConfigManager {
     // Ore Control
     public boolean oreControlEnabled;
     public Map<String, Map<String, Double>> oreControlWorlds = new HashMap<>();
+
+    // Time Control
+    public boolean timeControlEnabled;
+    public int dayDurationMinutes;
+    public int nightDurationMinutes;
+    public Map<String, WorldTimeConfig> worldTimeConfigs = new HashMap<>();
+
+    public static class WorldTimeConfig {
+        public Integer dayDurationMinutes;
+        public Integer nightDurationMinutes;
+    }
+
+    // Block drop, tool break, and explosion rules
+    public boolean blockDropSettingsEnabled;
+    public boolean dropReplaceEnabled;
+    public boolean toolBreakEnabled;
+    public boolean oreExplodeEnabled;
+    public Map<Material, Map<Material, BlockMiningRule>> blockMiningRules = new HashMap<>();
 
     // Rename
     public boolean renameEnabled;
@@ -240,6 +282,24 @@ public class ConfigManager {
         public Map<String, Boolean> immunities = new HashMap<>();
         public java.util.List<String> immunityPotionEffects = new java.util.ArrayList<>();
         public Map<String, DropConfig> drops = new HashMap<>();
+        public Map<Integer, Double> hpByLevel = new HashMap<>();
+        public Map<String, BossSkillConfig> skills = new HashMap<>();
+    }
+
+    public static class BossLevelThreshold {
+        public long minDay;
+        public int minLevel;
+        public int maxLevel;
+    }
+
+    public static class BossSkillConfig {
+        public boolean enabled;
+        public double damage;
+        public int multiply;
+        public int cooldownSeconds;
+        public double radius;
+        public double velocity;
+        public double spread;
     }
 
     // DropConfig class - holds drop configuration
@@ -247,6 +307,22 @@ public class ConfigManager {
         public int minAmount = 1;
         public int maxAmount = 1;
         public double chance = 0.5;
+    }
+
+    public static class BlockMiningRule {
+        public boolean replaceEnabled;
+        public Material replaceMaterial;
+        public double replaceChance;
+        public boolean toolBreakEnabled;
+        public double toolBreakChance;
+        public String toolBreakMessage;
+        public boolean explodeEnabled;
+        public float explosionPower;
+        public boolean explosionBreakBlocks;
+        public boolean explosionSetFire;
+        public boolean explosionDamagePlayer;
+        public double explosionChance;
+        public String explosionMessage;
     }
 
     public ConfigManager(VnMineHardcore plugin) {
@@ -266,6 +342,22 @@ public class ConfigManager {
         // Death
         broadcastDeath = config.getBoolean("death.broadcast-death", true);
         playSound = config.getBoolean("death.play-sound", true);
+        respawnProtectionEnabled = config.getBoolean("death.respawn-protection.enabled", true);
+        respawnProtectionSeconds = config.getInt("death.respawn-protection.delay-seconds", 10);
+        respawnMovementRadiusBlocks = config.getInt("death.respawn-protection.movement-radius-blocks", 10);
+        respawnDamageImmunitySeconds = config.getInt("death.respawn-protection.damage-immunity-seconds", 10);
+        if (respawnProtectionSeconds < 0) {
+            plugin.getLogger().warning("[Config] death.respawn-protection.delay-seconds cannot be negative; using 0.");
+            respawnProtectionSeconds = 0;
+        }
+        if (respawnMovementRadiusBlocks < 0) {
+            plugin.getLogger().warning("[Config] death.respawn-protection.movement-radius-blocks cannot be negative; using 0.");
+            respawnMovementRadiusBlocks = 0;
+        }
+        if (respawnDamageImmunitySeconds < 0) {
+            plugin.getLogger().warning("[Config] death.respawn-protection.damage-immunity-seconds cannot be negative; using 0.");
+            respawnDamageImmunitySeconds = 0;
+        }
 
         // Death Penalty
         deathPenaltyEnabled = config.getBoolean("death-penalty.enabled", true);
@@ -400,6 +492,49 @@ public class ConfigManager {
             }
         }
 
+        // Time Control
+        timeControlEnabled = config.getBoolean("time-control.enabled", true);
+        String globalTimePath = config.isConfigurationSection("time-control.global")
+            ? "time-control.global."
+            : "time-control.";
+        dayDurationMinutes = getPositiveMinutes(globalTimePath + "day-duration-minutes",
+            config.getInt("time-control.day-duration-minutes", 10), 10);
+        nightDurationMinutes = getPositiveMinutes(globalTimePath + "night-duration-minutes",
+            config.getInt("time-control.night-duration-minutes", 10), 10);
+        worldTimeConfigs.clear();
+        ConfigurationSection worldTimeSection = config.getConfigurationSection("time-control.worlds");
+        if (worldTimeSection != null) {
+            for (String worldName : worldTimeSection.getKeys(false)) {
+                ConfigurationSection worldSection = worldTimeSection.getConfigurationSection(worldName);
+                if (worldSection == null) {
+                    plugin.getLogger().warning("[Config] time-control.worlds." + worldName +
+                        " must be a configuration section; using global time settings.");
+                    continue;
+                }
+
+                WorldTimeConfig worldTimeConfig = new WorldTimeConfig();
+                String worldPath = "time-control.worlds." + worldName + ".";
+                if (worldSection.contains("day-duration-minutes")) {
+                    worldTimeConfig.dayDurationMinutes = getPositiveMinutes(
+                        worldPath + "day-duration-minutes",
+                        worldSection.getInt("day-duration-minutes"),
+                        dayDurationMinutes
+                    );
+                }
+                if (worldSection.contains("night-duration-minutes")) {
+                    worldTimeConfig.nightDurationMinutes = getPositiveMinutes(
+                        worldPath + "night-duration-minutes",
+                        worldSection.getInt("night-duration-minutes"),
+                        nightDurationMinutes
+                    );
+                }
+                worldTimeConfigs.put(worldName, worldTimeConfig);
+            }
+        }
+
+        // Block drop, tool break, and explosion rules
+        loadBlockMiningRules();
+
         // Rename
         renameEnabled = config.getBoolean("rename.enabled", true);
         nameStructure = config.getString("rename.name-structure", "<name> ☠ 000");
@@ -412,6 +547,134 @@ public class ConfigManager {
         plugin.getLogger().info("[Config] Loaded configuration with " + config.getKeys(true).size() + " keys");
         plugin.getLogger().info("[Config] Loaded " + bossConfigs.size() + " bosses from bosses/");
         plugin.getLogger().info("[Config] Loaded " + disasterConfigs.size() + " disasters from disasters/");
+    }
+
+    private int getPositiveMinutes(String path, int minutes, int defaultValue) {
+        if (minutes > 0) return minutes;
+
+        plugin.getLogger().warning("[Config] " + path + " must be greater than 0; using " + defaultValue + ".");
+        return defaultValue;
+    }
+
+    public int getDayDurationMinutes(String worldName) {
+        WorldTimeConfig worldConfig = worldTimeConfigs.get(worldName);
+        return worldConfig != null && worldConfig.dayDurationMinutes != null
+            ? worldConfig.dayDurationMinutes
+            : dayDurationMinutes;
+    }
+
+    public int getNightDurationMinutes(String worldName) {
+        WorldTimeConfig worldConfig = worldTimeConfigs.get(worldName);
+        return worldConfig != null && worldConfig.nightDurationMinutes != null
+            ? worldConfig.nightDurationMinutes
+            : nightDurationMinutes;
+    }
+
+    private void loadBlockMiningRules() {
+        blockDropSettingsEnabled = config.getBoolean("block-drop-settings.enabled", false);
+        dropReplaceEnabled = config.getBoolean("block-drop-settings.replace-enabled", true);
+        toolBreakEnabled = config.getBoolean("block-drop-settings.break-enabled", true);
+        oreExplodeEnabled = config.getBoolean("block-drop-settings.explode-enabled", true);
+        blockMiningRules.clear();
+
+        List<Map<?, ?>> rules = config.getMapList("block-drop-settings.rules");
+        for (int index = 0; index < rules.size(); index++) {
+            Map<?, ?> ruleMap = rules.get(index);
+            Material blockMaterial = parseMaterial(ruleMap.get("block"),
+                "block-drop-settings.rules[" + index + "].block");
+            if (blockMaterial == null || !blockMaterial.isBlock()) continue;
+
+            for (Map.Entry<?, ?> entry : ruleMap.entrySet()) {
+                if (!(entry.getKey() instanceof String toolName) || "block".equalsIgnoreCase(toolName)) continue;
+                Material toolMaterial = parseMaterial(toolName,
+                    "block-drop-settings.rules[" + index + "]." + toolName);
+                if (toolMaterial == null || !(entry.getValue() instanceof Map<?, ?> toolMap)) continue;
+
+                BlockMiningRule miningRule = new BlockMiningRule();
+                Map<?, ?> replaceMap = nestedMap(toolMap.get("drop-replace"));
+                if (replaceMap != null) {
+                    miningRule.replaceEnabled = readBoolean(replaceMap, "enabled", false);
+                    miningRule.replaceMaterial = parseMaterial(replaceMap.get("replace-block"),
+                        "block-drop-settings.rules[" + index + "]." + toolName + ".drop-replace.replace-block");
+                    miningRule.replaceChance = readChance(replaceMap, "chance",
+                        "block-drop-settings.rules[" + index + "]." + toolName + ".drop-replace.chance");
+                    if (miningRule.replaceMaterial != null &&
+                        (!miningRule.replaceMaterial.isItem() || miningRule.replaceMaterial.isAir())) {
+                        plugin.getLogger().warning("[Config] Replacement material " +
+                            miningRule.replaceMaterial + " is not an item; drop replacement disabled.");
+                        miningRule.replaceEnabled = false;
+                    }
+                }
+
+                Map<?, ?> breakMap = nestedMap(toolMap.get("tool-break"));
+                if (breakMap != null) {
+                    miningRule.toolBreakEnabled = readBoolean(breakMap, "enabled", false);
+                    miningRule.toolBreakChance = readChance(breakMap, "chance",
+                        "block-drop-settings.rules[" + index + "]." + toolName + ".tool-break.chance");
+                    miningRule.toolBreakMessage = readString(breakMap, "message", "");
+                }
+
+                Map<?, ?> explodeMap = nestedMap(toolMap.get("explode"));
+                if (explodeMap != null) {
+                    miningRule.explodeEnabled = readBoolean(explodeMap, "enabled", false);
+                    miningRule.explosionPower = (float) readNonNegativeNumber(explodeMap, "power",
+                        "block-drop-settings.rules[" + index + "]." + toolName + ".explode.power", 0.0);
+                    miningRule.explosionBreakBlocks = readBoolean(explodeMap, "break-blocks", false);
+                    miningRule.explosionSetFire = readBoolean(explodeMap, "set-fire", false);
+                    miningRule.explosionDamagePlayer = readBoolean(explodeMap, "damage-player", true);
+                    miningRule.explosionChance = readChance(explodeMap, "chance",
+                        "block-drop-settings.rules[" + index + "]." + toolName + ".explode.chance");
+                    miningRule.explosionMessage = readString(explodeMap, "message", "");
+                    if (miningRule.explosionPower <= 0.0f) miningRule.explodeEnabled = false;
+                }
+
+                blockMiningRules.computeIfAbsent(blockMaterial, ignored -> new HashMap<>())
+                    .put(toolMaterial, miningRule);
+            }
+        }
+    }
+
+    private Material parseMaterial(Object value, String path) {
+        if (!(value instanceof String name) || name.isBlank()) {
+            plugin.getLogger().warning("[Config] Missing or invalid material at " + path + ".");
+            return null;
+        }
+        Material material = Material.matchMaterial(name.trim());
+        if (material == null) plugin.getLogger().warning("[Config] Unknown material '" + name + "' at " + path + ".");
+        return material;
+    }
+
+    private Map<?, ?> nestedMap(Object value) {
+        return value instanceof Map<?, ?> map ? map : null;
+    }
+
+    private boolean readBoolean(Map<?, ?> values, String key, boolean defaultValue) {
+        Object value = values.get(key);
+        return value instanceof Boolean bool ? bool : defaultValue;
+    }
+
+    private String readString(Map<?, ?> values, String key, String defaultValue) {
+        Object value = values.get(key);
+        return value instanceof String string ? string : defaultValue;
+    }
+
+    private double readChance(Map<?, ?> values, String key, String path) {
+        double chance = readNonNegativeNumber(values, key, path, 0.0);
+        if (chance <= 100.0) return chance;
+
+        plugin.getLogger().warning("[Config] " + path + " must be between 0 and 100; using 0.");
+        return 0.0;
+    }
+
+    private double readNonNegativeNumber(Map<?, ?> values, String key, String path, double defaultValue) {
+        Object value = values.get(key);
+        if (!(value instanceof Number number)) return defaultValue;
+        double result = number.doubleValue();
+        if (Double.isFinite(result) && result >= 0.0) return result;
+
+        plugin.getLogger().warning("[Config] " + path + " must be a finite non-negative number; using " +
+            defaultValue + ".");
+        return defaultValue;
     }
 
     private void migrateDeathPenaltyDefaults() {
@@ -458,21 +721,79 @@ public class ConfigManager {
         saveResourceIfNotExists("disasters/void-storm.yml");
         saveResourceIfNotExists("disasters/chorus-explosion.yml");
 
-        // Save bosses/_settings.yml
-        saveResourceIfNotExists("bosses/_settings.yml");
-        // Save boss files
-        saveResourceIfNotExists("bosses/wither.yml");
-        saveResourceIfNotExists("bosses/ender_dragon.yml");
-        saveResourceIfNotExists("bosses/ghast.yml");
-        saveResourceIfNotExists("bosses/zombie_boss.yml");
-        saveResourceIfNotExists("bosses/skeleton_boss.yml");
-        saveResourceIfNotExists("bosses/spider_boss.yml");
-        saveResourceIfNotExists("bosses/creeper_boss.yml");
-        saveResourceIfNotExists("bosses/enderman_boss.yml");
-        saveResourceIfNotExists("bosses/witch_boss.yml");
-        saveResourceIfNotExists("bosses/ravager_boss.yml");
-        saveResourceIfNotExists("bosses/vindicator_boss.yml");
-        saveResourceIfNotExists("bosses/phantom_boss.yml");
+        // Merge new boss settings into existing files without overwriting admin values.
+        mergeDefaultResource("bosses/_settings.yml");
+        mergeDefaultResource("bosses/wither.yml");
+        mergeDefaultResource("bosses/ender_dragon.yml");
+        mergeDefaultResource("bosses/ghast.yml");
+        mergeDefaultResource("bosses/zombie_boss.yml");
+        mergeDefaultResource("bosses/skeleton_boss.yml");
+        mergeDefaultResource("bosses/spider_boss.yml");
+        mergeDefaultResource("bosses/creeper_boss.yml");
+        mergeDefaultResource("bosses/enderman_boss.yml");
+        mergeDefaultResource("bosses/witch_boss.yml");
+        mergeDefaultResource("bosses/ravager_boss.yml");
+        mergeDefaultResource("bosses/vindicator_boss.yml");
+        mergeDefaultResource("bosses/phantom_boss.yml");
+        mergeDefaultResource("bosses/giant_boss.yml");
+    }
+
+    private void mergeDefaultResource(String resourcePath) {
+        File targetFile = new File(plugin.getDataFolder(), resourcePath);
+        if (!targetFile.exists()) {
+            saveResourceIfNotExists(resourcePath);
+            return;
+        }
+
+        InputStream resource = plugin.getResource(resourcePath);
+        if (resource == null) {
+            plugin.getLogger().warning("[Config] Missing bundled default resource: " + resourcePath);
+            return;
+        }
+
+        YamlConfiguration target = YamlConfiguration.loadConfiguration(targetFile);
+        YamlConfiguration defaults;
+        try (InputStream input = resource;
+             InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
+            defaults = YamlConfiguration.loadConfiguration(reader);
+        } catch (IOException exception) {
+            plugin.getLogger().warning("[Config] Cannot read default " + resourcePath + ": " + exception.getMessage());
+            return;
+        }
+
+        if (mergeMissingKeys(target, defaults)) {
+            try {
+                target.save(targetFile);
+                plugin.getLogger().info("[Config] Added missing defaults to " + resourcePath +
+                    " (existing values were preserved)");
+            } catch (IOException exception) {
+                plugin.getLogger().severe("[Config] Cannot update " + resourcePath + ": " + exception.getMessage());
+            }
+        }
+    }
+
+    private boolean mergeMissingKeys(ConfigurationSection target, ConfigurationSection defaults) {
+        boolean changed = false;
+        for (String key : defaults.getKeys(false)) {
+            ConfigurationSection defaultChild = defaults.getConfigurationSection(key);
+            if (defaultChild != null) {
+                ConfigurationSection targetChild = target.getConfigurationSection(key);
+                if (targetChild == null) {
+                    if (target.contains(key)) {
+                        plugin.getLogger().warning("[Config] Preserving non-section custom value at " + key +
+                            " while merging defaults.");
+                        continue;
+                    }
+                    targetChild = target.createSection(key);
+                    changed = true;
+                }
+                changed |= mergeMissingKeys(targetChild, defaultChild);
+            } else if (!target.contains(key)) {
+                target.set(key, defaults.get(key));
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     /**
@@ -498,6 +819,8 @@ public class ConfigManager {
             disastersEnabled = false;
             disasterMinIntervalRaw = "2400";
             disasterWarningSeconds = 120;
+            disasterDefaultSuccessProbability = 100;
+            disasterSuccessThresholds.clear();
             safeZoneEnabled = false;
             return;
         }
@@ -507,6 +830,22 @@ public class ConfigManager {
         disastersEnabled = ds.getBoolean("enabled", true);
         disasterMinIntervalRaw = getStringFromConfig(ds.getConfigurationSection(""), "min-interval-seconds", "2400-4800");
         disasterWarningSeconds = ds.getInt("warning-seconds", 120);
+        disasterDefaultSuccessProbability = clampPercent(
+            ds.getInt("success-probability.default-percent", 100));
+        disasterSuccessThresholds.clear();
+        for (Map<?, ?> row : ds.getMapList("success-probability.day-thresholds")) {
+            Object minDayValue = row.get("min-day");
+            Object probabilityValue = row.get("percent");
+            if (!(minDayValue instanceof Number minDayNumber)
+                || !(probabilityValue instanceof Number probabilityNumber)) {
+                continue;
+            }
+            int minDay = minDayNumber.intValue();
+            if (minDay < 0) continue;
+            disasterSuccessThresholds.add(new DisasterSuccessThreshold(
+                minDay, clampPercent(probabilityNumber.intValue())));
+        }
+        disasterSuccessThresholds.sort((first, second) -> Integer.compare(first.minDay, second.minDay));
 
         // Safe Zone
         ConfigurationSection sz = ds.getConfigurationSection("safe-zone");
@@ -519,6 +858,10 @@ public class ConfigManager {
         } else {
             safeZoneEnabled = false;
         }
+    }
+
+    private int clampPercent(int percent) {
+        return Math.max(0, Math.min(100, percent));
     }
 
     /**
@@ -611,6 +954,8 @@ public class ConfigManager {
             bossEventsEnabled = false;
             bossEventMinIntervalRaw = "1200";
             bossEventSpawnRadius = 50;
+            bossLevelProgressionEnabled = false;
+            bossLevelThresholds.clear();
             return;
         }
 
@@ -619,6 +964,26 @@ public class ConfigManager {
         bossEventsEnabled = bs.getBoolean("enabled", true);
         bossEventMinIntervalRaw = getStringFromConfig(bs.getConfigurationSection(""), "min-interval-seconds", "1200-2400");
         bossEventSpawnRadius = bs.getInt("spawn-radius", 50);
+        bossLevelProgressionEnabled = bs.getBoolean("level-progression.enabled", true);
+        bossLevelThresholds.clear();
+        for (Map<?, ?> thresholdMap : bs.getMapList("level-progression.thresholds")) {
+            Object dayValue = thresholdMap.get("min-day");
+            Object minLevelValue = thresholdMap.get("min-level");
+            Object maxLevelValue = thresholdMap.get("max-level");
+            if (!(dayValue instanceof Number dayNumber) ||
+                !(minLevelValue instanceof Number minNumber) ||
+                !(maxLevelValue instanceof Number maxNumber)) {
+                plugin.getLogger().warning("[Boss] Skipping malformed level-progression threshold in bosses/_settings.yml.");
+                continue;
+            }
+
+            BossLevelThreshold threshold = new BossLevelThreshold();
+            threshold.minDay = Math.max(0, dayNumber.longValue());
+            threshold.minLevel = Math.max(1, minNumber.intValue());
+            threshold.maxLevel = Math.max(threshold.minLevel, maxNumber.intValue());
+            bossLevelThresholds.add(threshold);
+        }
+        bossLevelThresholds.sort(Comparator.comparingLong(threshold -> threshold.minDay));
     }
 
     /**
@@ -650,6 +1015,42 @@ public class ConfigManager {
             bc.chance = section.getInt("chance", 10);
             bc.durationSeconds = section.getInt("duration-seconds", 120);
             bc.warningSeconds = section.getInt("warning-seconds", 60);
+
+            ConfigurationSection hpByLevelSection = section.getConfigurationSection("hp-by-level");
+            if (hpByLevelSection != null) {
+                for (String levelKey : hpByLevelSection.getKeys(false)) {
+                    try {
+                        int level = Integer.parseInt(levelKey);
+                        double hp = hpByLevelSection.getDouble(levelKey);
+                        if (level > 0 && Double.isFinite(hp) && hp > 0) {
+                            bc.hpByLevel.put(level, hp);
+                        } else {
+                            plugin.getLogger().warning("[Boss] Ignoring invalid hp-by-level." + levelKey +
+                                " in " + fileName);
+                        }
+                    } catch (NumberFormatException exception) {
+                        plugin.getLogger().warning("[Boss] Ignoring non-numeric hp-by-level key '" +
+                            levelKey + "' in " + fileName);
+                    }
+                }
+            }
+
+            ConfigurationSection skillsSection = section.getConfigurationSection("skills");
+            if (skillsSection != null) {
+                for (String skillId : skillsSection.getKeys(false)) {
+                    ConfigurationSection skillSection = skillsSection.getConfigurationSection(skillId);
+                    if (skillSection == null) continue;
+                    BossSkillConfig skill = new BossSkillConfig();
+                    skill.enabled = skillSection.getBoolean("enabled", false);
+                    skill.damage = Math.max(0, skillSection.getDouble("damage", 4.0));
+                    skill.multiply = Math.max(1, skillSection.getInt("multiply", 1));
+                    skill.cooldownSeconds = Math.max(1, skillSection.getInt("cooldown-seconds", 8));
+                    skill.radius = Math.max(0, skillSection.getDouble("radius", 4.0));
+                    skill.velocity = Math.max(0.1, skillSection.getDouble("velocity", 1.0));
+                    skill.spread = Math.max(0, skillSection.getDouble("spread", 1.0));
+                    bc.skills.put(skillId.toLowerCase(Locale.ROOT), skill);
+                }
+            }
 
             // Load immunities
             ConfigurationSection immunitiesSection = section.getConfigurationSection("immunities");

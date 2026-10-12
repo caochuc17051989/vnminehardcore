@@ -25,3 +25,16 @@ min-interval-seconds: 1200-2400
 # [VI] Bán kính spawn boss quanh player ngẫu nhiên (khối)
 # [EN] Boss spawn radius around random player (blocks)
 spawn-radius: 50
+
+# [VI] Tiến trình cấp độ boss dựa theo ngày trong game.
+#      Ngày 0 là từ lúc bắt đầu thế giới. Mỗi mốc chọn ngẫu nhiên một level
+#      trong khoảng min-level..max-level; mốc sau áp dụng từ ngày đó trở đi.
+# [EN] Boss level progression based on in-game days.
+#      Day 0 is the start of the world. A random level is selected from the
+#      min-level..max-level range; each threshold applies from its min-day onward.
+level-progression:
+  enabled: true
+  thresholds:
+    - {min-day: 0, min-level: 1, max-level: 1}
+    - {min-day: 50, min-level: 2, max-level: 3}
+    - {min-day: 100, min-level: 3, max-level: 4}
