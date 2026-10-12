@@ -1,5 +1,24 @@
 # Changelog
 
+## [v1.9.0] - 2026-10-12
+
+### Added
+- `/vnspawn set` đặt spawn của world hiện tại tại vị trí và hướng đang đứng.
+- `/vnspawn go <world>` dịch chuyển người gọi đến spawn của world đang tải; hỗ trợ gợi ý tên world bằng Tab.
+
+## [v1.8.0] - 2026-10-12
+
+### Added
+- `/tp <user> <world>` dịch chuyển người chơi đang trực tuyến đến spawn của world; Tab gợi ý người chơi và world.
+- `/vnspawn protect <X>`, `/vnspawn list`, `/vnspawn remove <ID>` quản lý vùng bảo vệ theo world, lưu trong `spawns-protection.yml`.
+- `/vnevent stop` hủy cảnh báo hoặc thiên tai đang hoạt động, dừng các tác vụ liên quan và khôi phục trạng thái world được theo dõi.
+- Earthquake hất người chơi ngoài trời theo phương ngang và dọc; vận tốc có thể chỉnh trong `disasters/earthquake.yml`.
+- Mỗi file thiên tai có `chat-description` tùy chỉnh; chat hiển thị tác động, gợi ý phòng tránh và tên world tại lúc cảnh báo/bắt đầu.
+
+### Fixed
+- Bộ lọc thiên tai nhận diện đúng tên world và tên dimension; điều kiện `conditions.worlds` hiện được áp dụng.
+- Chorus Explosion tắt mặc định để tránh khởi chạy tự động ngoài ý muốn.
+
 ## [v1.7.0] - 2026-10-12
 
 ### Added

@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.7.0
+version: 1.9.0
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
@@ -57,8 +57,8 @@ commands:
     usage: /vnhelp
     permission: vnmine.hardcore.stats
   vnevent:
-    description: Gọi thiên tai thủ công. Gõ /vnevent để xem danh sách sự kiện.
-    usage: /vnevent [<id> <warning(s)> <duration(s)>]
+    description: Gọi hoặc dừng thiên tai. Gõ /vnevent để xem danh sách sự kiện.
+    usage: /vnevent [<id> <warning(s)> <duration(s)>|stop]
     permission: vnmine.hardcore.admin
   vnboss:
     description: Gọi boss thủ công theo level. Nhập ID boss để xem gợi ý hoàn tất.
@@ -83,6 +83,14 @@ commands:
   vnday:
     description: Đặt world hiện tại về một ngày trong game
     usage: /vnday set <ngày>
+    permission: vnmine.hardcore.admin
+  vnspawn:
+    description: Quản lý điểm spawn và các khu vực được bảo vệ
+    usage: /vnspawn <set|go <world>|protect <X>|list|remove <ID>>
+    permission: vnmine.hardcore.admin
+  tp:
+    description: Dịch chuyển người chơi đến điểm spawn của world
+    usage: /tp <user> <world>
     permission: vnmine.hardcore.admin
 
 permissions:

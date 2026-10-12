@@ -254,6 +254,8 @@ public class ConfigManager {
         public boolean enabled = true;
         public int chance = 5;
         public String name = "Unknown Disaster";
+        public List<String> worlds = new ArrayList<>();
+        public String chatDescription = "";
         public int effectIntervalSeconds = 5;
         public int effectDurationSeconds = 5;
         public int durationSeconds = 600;
@@ -1006,6 +1008,8 @@ public class ConfigManager {
             dc.enabled = section.getBoolean("enabled", true);
             dc.chance = section.getInt("chance", 5);
             dc.name = section.getString("name", disasterId);
+            dc.worlds = section.getStringList("conditions.worlds");
+            dc.chatDescription = section.getString("chat-description", "");
             dc.effectIntervalSeconds = section.getInt("effect-interval-seconds", 5);
             dc.effectDurationSeconds = section.getInt("effect-duration-seconds", 5);
             dc.durationSeconds = section.getInt("duration-seconds", 600);

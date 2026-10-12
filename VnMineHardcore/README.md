@@ -1,6 +1,6 @@
 # VnMineHardcore
 
-Plugin tăng độ khó sinh tồn cho Minecraft Paper 1.21.4. Người chơi không bị ban khi chết.
+Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.x. Người chơi không bị ban khi chết.
 
 ## Tính năng chính
 
@@ -9,7 +9,7 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 1.21.4. Người chơi kh
 - 🍔 **Hệ thống đói** (hao hụt nhanh, ngộ độc thức ăn sống, nghẹn khi ăn nhanh)
 - 💧 **Hệ thống khát nước** (uống từ nguồn, chai, xô; nước tự nhiên gây độc)
 - 🌍 **Môi trường khắc nghiệt** (nhiệt độ, sương mù, chặn ngủ, chóng mặt, sợ hầm)
-- 🌋 **Thiên tai tự động** (Blood Moon, Meteor, Storm, Solar Flare, Plague, Tornado, Eclipse)
+- 🌋 **Thiên tai tự động** (Blood Moon, Meteor, Storm, Solar Flare, Plague, Tornado, Earthquake, Eclipse và các thiên tai theo dimension)
 - ☀️🌙 **Điều khiển ngày/đêm** (cấu hình riêng thời lượng ban ngày và ban đêm)
 - ⛏️💥 **Kiểm soát đào quặng** (thay vật phẩm rơi, gãy cúp và nổ theo block/cúp)
 - 🏷 **Đổi tên hiển thị sau khi chết** (tùy chỉnh format trong config)
@@ -29,6 +29,13 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 1.21.4. Người chơi kh
 | `/scoreboard reset` | Xóa điểm mùa và phần thưởng chờ (bí danh: `/vnscoreboard`, `/sb`) | `vnmine.hardcore.admin` |
 | `/vntime set <day\|night> <phút> [world]` | Đặt thời lượng ngày/đêm toàn cục hoặc riêng cho world đang tải | `vnmine.hardcore.admin` |
 | `/vnday set <ngày>` | Đặt world hiện tại về bình minh của ngày trong game tương ứng (chỉ người chơi) | `vnmine.hardcore.admin` |
+| `/tp <user> <world>` | Đưa người chơi đang trực tuyến đến điểm spawn của world | `vnmine.hardcore.admin` |
+| `/vnspawn set` | Đặt spawn của world hiện tại tại vị trí và hướng đang đứng | `vnmine.hardcore.admin` |
+| `/vnspawn go <world>` | Dịch chuyển bản thân đến spawn của world đang tải | `vnmine.hardcore.admin` |
+| `/vnspawn protect <X>` | Bảo vệ bán kính tròn X/Z quanh vị trí hiện tại, xuyên suốt độ cao world | `vnmine.hardcore.admin` |
+| `/vnspawn list` | Liệt kê ID, world, tọa độ tâm và bán kính các khu bảo vệ | `vnmine.hardcore.admin` |
+| `/vnspawn remove <ID>` | Xóa khu vực bảo vệ theo ID | `vnmine.hardcore.admin` |
+| `/vnevent stop` | Dừng ngay thiên tai đang cảnh báo hoặc đang diễn ra | `vnmine.hardcore.admin` |
 | `/vnrespawn` | Chọn hồi sinh khi đang chờ sau khi chết | Không cần |
 | `/vnleave` | Thoát máy chủ khi đang chờ sau khi chết | Không cần |
 | `/fly` | Bật/tắt bay trong Survival (chỉ người chơi) | `vnmine.hardcore.admin` |
@@ -41,8 +48,10 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 1.21.4. Người chơi kh
 
 Ví dụ gọi boss Wither level 3, cảnh báo 30 giây, tồn tại 120 giây:
 `/vnboss wither 3 30 120`.
-Các lệnh có tham số hỗ trợ nhấn Tab để gợi ý ID, tên người chơi và các giá trị
-phổ biến cho từng vị trí tham số.
+Các lệnh có tham số hỗ trợ nhấn Tab để gợi ý ID, tên người chơi, world, ID
+bảo vệ và các giá trị phổ biến cho từng vị trí tham số. `/vnspawn protect X`
+dùng bán kính ngang X/Z tính từ block hiện tại và bảo vệ ở mọi độ cao; dữ liệu
+được lưu trong `plugins/VnMineHardcore/spawns-protection.yml`.
 
 ## Cấu hình (config.yml)
 
@@ -115,6 +124,40 @@ mộ để đầu dựng thẳng trên mặt bia.
 `/fly` bật/tắt bay khi người quản trị vẫn ở Survival. `/nodame` bật/tắt miễn
 nhiễm sát thương cho người chạy lệnh; quái vẫn có thể chọn người đó làm mục tiêu.
 Trạng thái `/nodame` sẽ tự tắt khi người chơi thoát máy chủ.
+
+### Spawn protection
+
+`/vnspawn protect <X>` tạo khu vực hình tròn bán kính X block theo mặt phẳng
+X/Z quanh block hiện tại; khu vực áp dụng ở mọi độ cao nhưng chỉ trong world
+được tạo. Người chơi không thể phá block bên trong. Dữ liệu và bộ đếm ID được
+lưu tại `plugins/VnMineHardcore/spawns-protection.yml`, nên vẫn còn sau khi
+khởi động lại.
+
+```text
+/vnspawn set
+/vnspawn go world_the_end
+/vnspawn protect 25
+/vnspawn list
+/vnspawn remove 1
+/tp Steve world_the_end
+/vnevent stop
+```
+
+Lệnh `/tp <user> <world>` đưa người chơi đang trực tuyến đến spawn của world.
+`/vnspawn set` đặt spawn của world hiện tại theo vị trí và hướng người gọi;
+`/vnspawn go <world>` đưa người gọi đến spawn của world đang tải. Tên world
+được gợi ý bằng Tab.
+`/vnevent stop` hủy cảnh báo hoặc thiên tai đang chạy, dọn các task/thực thể
+do thiên tai tạo và khôi phục thời tiết, thời gian cùng hiệu ứng đang được theo
+dõi. Các lệnh quản trị này cần `vnmine.hardcore.admin`.
+
+### Thiên tai Chorus Explosion
+
+Chorus Explosion mặc định tắt (`enabled: false`) trong
+`plugins/VnMineHardcore/disasters/chorus-explosion.yml`. Khi được bật, điều
+kiện `worlds` và bộ lọc trên từng action hỗ trợ tên world thật (ví dụ
+`world_the_end`) cũng như tên dimension (ví dụ `the_end`); cấu hình mặc định
+chỉ cho phép thiên tai này ảnh hưởng `world_the_end`.
 
 ### Boss level & skills
 
@@ -196,6 +239,13 @@ Thiên tai không nằm trong `config.yml`. Cấu hình chung ở
 `plugins/VnMineHardcore/disasters/_settings.yml`; mỗi loại thiên tai có file
 riêng `plugins/VnMineHardcore/disasters/<id>.yml`.
 
+Trong từng file thiên tai, `chat-description` là nội dung tác động/gợi ý
+phòng tránh được hiển thị trong chat lúc cảnh báo và lúc bắt đầu. Danh sách
+world hiển thị được lấy từ `conditions.worlds`, chuyển thành tên các world
+đang tải; cùng điều kiện đó cũng giới hạn những world mà action của sự kiện
+có thể tác động. Có thể chỉnh cả hai mục trong file riêng của từng thiên tai.
+Các file cũ được bổ sung khóa còn thiếu nhưng giữ nguyên giá trị tùy chỉnh.
+
 ### Time Control - Thời lượng ngày và đêm
 
 Trong `config.yml`, `time-control.global.day-duration-minutes` và
@@ -232,8 +282,15 @@ sẽ được bỏ qua và ghi cảnh báo.
 
 ### Phiên bản tương thích
 
-Dự án nhắm tới Paper 1.21.4 và Java 21. Các phiên bản Paper khác chưa được xác
-minh trong tài liệu này.
+Dự án nhắm tới Paper 26.x và Java 25+ cho server. Mã nguồn hiện biên dịch với
+Paper API 1.21.4 để giữ tương thích API như mô tả trong `BUILD_GUIDE.md`.
+`api-version` trong `plugin.yml` hiện vẫn là `1.21`.
+
+`config.yml` và các file boss/disaster giữ nguyên giá trị tùy chỉnh khi plugin
+cập nhật. Vì vậy, nếu máy chủ đã có file
+`plugins/VnMineHardcore/disasters/chorus-explosion.yml` từ phiên bản trước,
+hãy đặt `enabled: false` thủ công nếu muốn áp dụng mặc định mới; giá trị
+`enabled: true` được admin cấu hình có chủ ý sẽ không bị ghi đè.
 
 ### Block Drop, Tool Break & Explosion - Hiệu ứng khi đào
 
@@ -246,8 +303,9 @@ sát thương người chơi, thông báo và tỷ lệ. Chạy `/vnreload` sau 
 
 ## Yêu cầu
 
-- Paper 1.21.4
-- Java 21+
+- Paper 26.x
+- Java 25+ (runtime server)
+- Paper API 1.21.4 dùng làm compile baseline
 
 ## Cài đặt
 
@@ -258,6 +316,17 @@ sát thương người chơi, thông báo và tỷ lệ. Chạy `/vnreload` sau 
 5. Gõ `/vnreload` để áp dụng thay đổi
 
 ## Changelog
+
+### v1.9.0
+- Thêm `/vnspawn set` để đặt spawn world hiện tại và `/vnspawn go <world>` để tới spawn của world đang tải; hỗ trợ gợi ý Tab tên world.
+
+### v1.8.0
+- Thêm `/tp <user> <world>` và nhóm lệnh `/vnspawn protect|list|remove`; lưu khu bảo vệ trong `spawns-protection.yml`.
+- Thêm `/vnevent stop` để dừng cảnh báo hoặc thiên tai đang hoạt động.
+- Động đất hất người chơi ngoài trời theo phương ngang và dọc; lực có thể chỉnh trong file thiên tai.
+- Mỗi file thiên tai có `chat-description`; chat lúc cảnh báo/bắt đầu hiển thị tác động, gợi ý phòng tránh và world bị ảnh hưởng.
+- Sửa so khớp world/dimension cho điều kiện thiên tai; Chorus Explosion tắt mặc định.
+- Cập nhật phiên bản Paper mục tiêu trong tài liệu lên 26.x.
 
 ### v1.7.0
 - `/vntime set <day|night> <phút> [world]`: bỏ `[world]` để đổi mặc định toàn cục,

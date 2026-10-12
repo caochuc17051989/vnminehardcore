@@ -1,8 +1,8 @@
 # 🔥 VnMineHardcore
 
-**Hell Difficulty Plugin for Paper 1.21.4**
+**Hell Difficulty Plugin for Paper 26.x**
 
-Plugin Paper 1.21.4 bổ sung các hệ thống sinh tồn khó hơn. Người chơi không bị ban khi chết.
+Plugin Paper 26.x bổ sung các hệ thống sinh tồn khó hơn. Người chơi không bị ban khi chết.
 
 ---
 
@@ -97,8 +97,8 @@ Plugin Paper 1.21.4 bổ sung các hệ thống sinh tồn khó hơn. Người c
 - **Fix cobblestone/stone generation**: Không sinh khoáng sản ngẫu nhiên khi lava + nước
 - Hỗ trợ blackstone/cobbled deepslate generation
 
-### 👹 Boss Events (12 types)
-11/12 boss bật mặc định; `ender_dragon` tắt mặc định:
+### 👹 Boss Events (13 types)
+12/13 boss bật mặc định; `ender_dragon` tắt mặc định. Trạng thái được cấu hình trong file riêng:
 
 | ID | Name | Entity Type | HP | Damage |
 |----|------|-------------|-----|--------|
@@ -114,6 +114,8 @@ Plugin Paper 1.21.4 bổ sung các hệ thống sinh tồn khó hơn. Người c
 | `ravager_boss` | §4§lRavager Boss | Ravager | 250 | x2.5 |
 | `vindicator_boss` | §c§lVindicator Boss | Vindicator | 160 | x2.0 |
 | `phantom_boss` | §8§lPhantom Boss | Phantom | 100 | x1.5 |
+| `giant_boss` | §6§lKhổng Lồ | Giant | 400 | x2.5 |
+| `giant_boss` | §c§lGiant Boss | Giant | cấu hình trong file boss | cấu hình trong file boss |
 
 **Manual trigger**: `/vnboss <id> <warning> <duration>`
 
@@ -129,7 +131,7 @@ Plugin Paper 1.21.4 bổ sung các hệ thống sinh tồn khó hơn. Người c
 - **Mùa thưởng**: Reset theo ngày trong game; top 10 nhận quà một lần qua `/reward`, nhắc người chơi còn quà
 
 ### 🌋 Disasters (14 types)
-Tất cả disasters đều **enabled by default**:
+Mỗi thiên tai có công tắc `enabled` riêng trong file cấu hình. `chorus-explosion` **tắt mặc định**:
 
 | ID | Name | Dimension | Effect |
 |----|------|-----------|--------|
@@ -146,9 +148,18 @@ Tất cả disasters đều **enabled by default**:
 | `lava-geyser` | 🌋 Lava Geyser | Nether | Cột lava phun trào |
 | `end-surge` | 👁️ End Surge | The End | Spawn Shulker/Endermite |
 | `void-storm` | 🌌 Void Storm | The End | Blindness + Darkness + damage |
-| `chorus-explosion` | 🌀 Chorus Explosion | The End | Damage + random teleport |
+| `chorus-explosion` | 🌀 Chorus Explosion | `world_the_end` | Damage + random teleport (mặc định tắt) |
 
 **Manual trigger**: `/vnevent <id> <warning> <duration>`
+
+Earthquake also launches exposed players horizontally and vertically. Tune
+`velocity-y`, `velocity-x-range`, and `velocity-z-range` in
+`disasters/earthquake.yml`.
+
+At warning and start, chat also shows each event's editable effect/prevention
+summary (`chat-description`) and the loaded world names affected. Edit that
+summary and `conditions.worlds` in the event's own
+`plugins/VnMineHardcore/disasters/<id>.yml` file.
 
 **Disable specific disasters:**
 ```yaml
@@ -161,9 +172,9 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 
 | Requirement | Version |
 |-------------|---------|
-| **Server** | Paper 1.21.4 |
-| **Java** | 21+ |
-| **API** | Paper API 1.21.4 |
+| **Server** | Paper 26.x |
+| **Java runtime** | 25+ |
+| **Compile API** | Paper API 1.21.4 (tương thích với Paper 26.x theo build guide của dự án) |
 
 ---
 
@@ -192,6 +203,13 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 | `/scoreboard reset` | Clear season scores and pending rewards; aliases: `/vnscoreboard reset`, `/sb reset` | `vnmine.hardcore.admin` |
 | `/vntime set <day\|night> <minutes> [world]` | Set and save global day/night length, or an override for a loaded world | `vnmine.hardcore.admin` |
 | `/vnday set <day>` | Set the current world to dawn of the specified in-game day (player only) | `vnmine.hardcore.admin` |
+| `/tp <user> <world>` | Teleport an online player to the selected world's spawn | `vnmine.hardcore.admin` |
+| `/vnspawn set` | Set the current world's spawn at your current position and facing | `vnmine.hardcore.admin` |
+| `/vnspawn go <world>` | Teleport yourself to the spawn of a loaded world | `vnmine.hardcore.admin` |
+| `/vnspawn protect <X>` | Protect a circular X/Z radius around your current position, through all world heights | `vnmine.hardcore.admin` |
+| `/vnspawn list` | List protection IDs, worlds, centers, and radii | `vnmine.hardcore.admin` |
+| `/vnspawn remove <ID>` | Remove a protection area | `vnmine.hardcore.admin` |
+| `/vnevent stop` | Immediately stop a pending or active disaster | `vnmine.hardcore.admin` |
 | `/vnrespawn` | Choose to respawn while awaiting the post-death choice | None |
 | `/vnleave` | Leave the server while awaiting the post-death choice | None |
 | `/fly` | Toggle flight in Survival mode (player only) | `vnmine.hardcore.admin` |
@@ -215,12 +233,16 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 /vnday set 100                             - Set the current world to dawn of day 100
 ```
 
-`/vnevent` takes `<id> <warning-seconds> <duration-seconds>`. `/vnboss` takes
+`/vnevent` takes `<id> <warning-seconds> <duration-seconds>` or `stop`. `/vnboss` takes
 `<id> <level> <warning-seconds> <duration-seconds>`. Tab completion suggests
 valid IDs, world names, and common values for each parameter. Omitting
 `[world]` changes the global default; specifying a loaded world stores an
 override for that world. `/vnday` is player-only and changes the current
 world's full time to the start of the requested day (day 0 is world creation).
+For spawn protections, `X` is a positive integer radius measured horizontally
+from the player's current block; the protection spans every Y level in that
+world. Protection data is stored in `plugins/VnMineHardcore/spawns-protection.yml`.
+The `/tp` and `/vnspawn` command parameters also provide Tab completion.
 
 **All Disaster IDs:**
 - `blood-moon` - 🌕 Blood Moon
@@ -260,6 +282,7 @@ world's full time to the start of the requested day (day 0 is world creation).
 - `ravager_boss` - §4§lRavager Boss
 - `vindicator_boss` - §c§lVindicator Boss
 - `phantom_boss` - §8§lPhantom Boss
+- `giant_boss` - §6§lKhổng Lồ
 
 ---
 
@@ -727,6 +750,17 @@ Located in `plugins/VnMineHardcore/`:
 ---
 
 ## 📝 Changelog
+
+### v1.9.0
+- Added `/vnspawn set` and `/vnspawn go <world>` for setting the current world's spawn and travelling to a loaded world's spawn; world-name Tab completion is available.
+
+### v1.8.0
+- Added `/tp <user> <world>` and `/vnspawn protect|list|remove`; protection areas persist in `spawns-protection.yml`
+- Added `/vnevent stop` for cancelling a warning or active disaster immediately
+- Earthquakes now launch exposed players with configurable horizontal and vertical velocity
+- Each disaster file configures its chat effect/prevention summary; warnings and starts show affected world names
+- Fixed disaster world filters to recognize world names and dimension names; Chorus Explosion is disabled by default
+- Updated the documented server target to Paper 26.x
 
 ### v1.7.0
 - Added world-specific `/vntime set <day|night> <minutes> [world]` and `/vnday set <day>`

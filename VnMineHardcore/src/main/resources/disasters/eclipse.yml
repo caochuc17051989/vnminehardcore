@@ -8,6 +8,9 @@ disaster-id: eclipse
 enabled: true
 chance: 1
 name: "§0§l📉 Nhật Thực"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Thời gian Overworld chuyển về đêm, bóng tối bao phủ và quái xuất hiện ngoài trời. Ở trong nhà để tránh quái."
 duration-seconds: 180
 effect-interval-seconds: 10
 warning-seconds: 120

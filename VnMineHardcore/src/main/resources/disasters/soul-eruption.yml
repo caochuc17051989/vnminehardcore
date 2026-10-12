@@ -8,6 +8,9 @@ disaster-id: soul-eruption
 enabled: true
 chance: 2
 name: "§2§l💀 Thần Hồn Câu Diệt"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Người ngoài trời trong Nether chịu sát thương, Wither/Slowness, vụ nổ phá block và Wither Skeleton. Rời khu vực hoặc tìm nơi trú kín."
 duration-seconds: 120
 effect-interval-seconds: 4
 warning-seconds: 120
