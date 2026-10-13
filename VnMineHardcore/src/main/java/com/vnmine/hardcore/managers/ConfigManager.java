@@ -217,7 +217,8 @@ public class ConfigManager {
     public boolean bossSkillCastPlayerBroadcastEnabled;
     public double bossRewardDamageThresholdPercent;
     public boolean bossArmyTokenDropEnabled = true;
-    public double bossArmyTokenDropChance = 0.35;
+    public double bossArmyTokenDropChance = 0.30;
+    public double bossExperiencePerLevelMultiplier = 1.0;
     public String bossEventMinIntervalRaw;
     public int bossEventSpawnRadius;
     public boolean bossLevelProgressionEnabled;
@@ -299,6 +300,7 @@ public class ConfigManager {
         public double hp = 100.0;
         public double damageMultiplier = 1.0;
         public int chance = 10;
+        public int experience = 100;
         public int durationSeconds = 1200;
         public int warningSeconds = 60;
         public int activityRadius = 100;
@@ -1140,6 +1142,28 @@ public class ConfigManager {
         }
 
         FileConfiguration bs = YamlConfiguration.loadConfiguration(settingsFile);
+        boolean migrateBossSettings = false;
+        if (Math.abs(bs.getDouble("army-token-drop.chance", 0.30) - 0.35) < 0.000001) {
+            bs.set("army-token-drop.chance", 0.30);
+            bs.setComments("army-token-drop.chance", List.of(
+                "[VI] Tỉ lệ token rơi khi nhận thưởng; mặc định 30%, hợp lệ 0-1.",
+                "[EN] Chance for a token to drop on a rewarded boss kill; default 30%, valid range 0-1."));
+            migrateBossSettings = true;
+        }
+        if (!bs.contains("experience-per-level-multiplier")) {
+            bs.set("experience-per-level-multiplier", 1.0);
+            bs.setComments("experience-per-level-multiplier", List.of(
+                "[VI] Hệ số tăng EXP boss theo level; mặc định 1, hợp lệ 0-10.",
+                "[EN] Boss XP scaling by level; default 1, valid range 0-10."));
+            migrateBossSettings = true;
+        }
+        if (migrateBossSettings) {
+            try {
+                bs.save(settingsFile);
+            } catch (IOException exception) {
+                plugin.getLogger().log(Level.SEVERE, "[Boss] Could not migrate bosses/_settings.yml.", exception);
+            }
+        }
 
         bossEventsEnabled = bs.getBoolean("enabled", true);
         bossSkillCastLogsEnabled = bs.getBoolean("skill-cast-feedback.console-log", true);
@@ -1153,7 +1177,9 @@ public class ConfigManager {
         bossRewardDamageThresholdPercent = Double.isFinite(rewardDamageThreshold)
             ? Math.max(0.0, Math.min(100.0, rewardDamageThreshold)) : 50.0;
         bossArmyTokenDropEnabled = bs.getBoolean("army-token-drop.enabled", true);
-        bossArmyTokenDropChance = readBoundedDouble(bs, "army-token-drop.chance", 0.35, 0.0, 1.0);
+        bossArmyTokenDropChance = readBoundedDouble(bs, "army-token-drop.chance", 0.30, 0.0, 1.0);
+        bossExperiencePerLevelMultiplier = readBoundedDouble(
+            bs, "experience-per-level-multiplier", 1.0, 0.0, 10.0);
         bossArmorPieceDropChance = readBoundedDouble(bs, "reward-items.armor-piece-chance",
             0.45, 0.0, 1.0);
         int armorLevelGap = bs.getInt("reward-items.armor-natural-level-gap", 2);
@@ -1258,6 +1284,12 @@ public class ConfigManager {
             bc.hp = section.getDouble("hp", 100.0);
             bc.damageMultiplier = section.getDouble("damage-multiplier", 1.0);
             bc.chance = section.getInt("chance", 10);
+            bc.experience = section.getInt("experience", defaultBossExperience(bossId));
+            if (bc.experience < 1 || bc.experience > 1_000_000) {
+                plugin.getLogger().warning("[Boss] Invalid experience in " + fileName
+                    + "; using default 100.");
+                bc.experience = 100;
+            }
             bc.durationSeconds = section.getInt("duration-seconds", 1200);
             bc.warningSeconds = section.getInt("warning-seconds", 60);
             bc.activityRadius = section.getInt("activity-radius", 100);
@@ -1475,6 +1507,22 @@ public class ConfigManager {
 
             bossConfigs.put(bossId, bc);
         }
+    }
+
+    private static int defaultBossExperience(String bossId) {
+        return switch (bossId) {
+            case "zombie_boss" -> 200;
+            case "skeleton_boss", "spider_boss" -> 250;
+            case "enderman_boss", "phantom_boss" -> 300;
+            case "creeper_boss", "witch_boss" -> 350;
+            case "ghast" -> 400;
+            case "vindicator_boss" -> 450;
+            case "ravager_boss" -> 600;
+            case "giant_boss" -> 1000;
+            case "wither" -> 1500;
+            case "ender_dragon" -> 2000;
+            default -> 100;
+        };
     }
 
     private void loadBossItemStories() {

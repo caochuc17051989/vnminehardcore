@@ -6,8 +6,11 @@
 
 disaster-id: end-surge
 enabled: true
-chance: 2
+chance: 5
 name: "§5§l👁️ Tận Thế Dâng Trào"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Endermite/Shulker xuất hiện và người chơi ngoài trời bị Levitation. Ở nơi kín hoặc rời khu vực nguy hiểm."
 duration-seconds: 180
 effect-interval-seconds: 5
 warning-seconds: 120

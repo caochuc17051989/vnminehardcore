@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.11.1
+version: 1.19.0
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
@@ -63,8 +63,8 @@ commands:
     usage: /vnevent [<id> <warning(s)> <duration(s)>|stop]
     permission: vnmine.command.disasters
   vnboss:
-    description: Gọi boss thủ công theo level. Nhập ID boss để xem gợi ý hoàn tất.
-    usage: /vnboss <id> <level> <warning(s)> <duration(s)>
+    description: Gọi boss theo level hoặc kết thúc boss đang xuất hiện (không điểm/loot).
+    usage: /vnboss <id> <level> <warning(s)> <duration(s)> | /vnboss kill
     permission: vnmine.command.bosses
   vn:
     description: Lệnh tiện ích. Dùng /vn death reset <player> để reset số lần chết.
@@ -103,6 +103,13 @@ commands:
     description: Quản lý nhóm và quyền riêng của người chơi
     usage: /vnuser <info|group|permission|reset>
     permission: vnmine.command.users.manage
+  vnarmy:
+    description: Thuê và quản lý lính đánh thuê của người chơi
+    usage: /vnarmy <gui|list|hire|recall [ID]|rest [ID]|rename|attack|defend|protect|gear|mute|remove|clear|give|token>
+    permission: vnmine.command.army
+  vnmenu:
+    description: Mở menu chức năng của VnMineHardcore
+    usage: /vnmenu
 
 permissions:
   vnmine.command.stats:
@@ -170,6 +177,12 @@ permissions:
     default: op
   vnmine.command.users.manage:
     description: Cho phép quản lý quyền người chơi bằng /vnuser
+    default: op
+  vnmine.command.army:
+    description: Cho phép thuê và quản lý lính đánh thuê bằng /vnarmy
+    default: true
+  vnmine.command.army.admin:
+    description: Cho phép cấp và quản lý lính của người chơi bằng /vnarmy
     default: op
   vnmine.spawnprotection.bypass:
     description: Cho phép người chơi phá hoặc đặt block trong vùng spawn protection

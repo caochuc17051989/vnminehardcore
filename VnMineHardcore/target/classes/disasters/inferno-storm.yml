@@ -6,8 +6,11 @@
 
 disaster-id: inferno-storm
 enabled: true
-chance: 3
+chance: 5
 name: "§4§l🔥 Bão Lửa Địa Ngục"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Người ngoài trời trong Nether bị sát thương, bốc cháy; lửa và Ghast/Magma Cube xuất hiện gần đó. Tìm nơi trú kín."
 duration-seconds: 180
 effect-interval-seconds: 3
 warning-seconds: 120

@@ -7,6 +7,9 @@ entity-type: GIANT
 display-name: "§6§lKhổng Lồ"
 hp: 400
 damage-multiplier: 2.5
+# [VI] EXP thưởng cơ bản level 1; mặc định 1000, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
+# [EN] Base XP reward at level 1; default 1000, valid range 1-1000000; boss level scaling is in _settings.yml.
+experience: 1000
 chance: 3
 # [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1200 = 20 phút.
 # [EN] Default boss lifetime after spawning (seconds); 1200 = 20 minutes.

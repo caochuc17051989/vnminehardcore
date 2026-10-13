@@ -1,0 +1,18 @@
+# [VI] Thời gian và chế độ chọn tooltip; các thiết lập đặt ở đầu file.
+# [EN] Tooltip timing and selection mode; settings are defined at the top of this file.
+settings:
+  # [VI] Khoảng thời gian giữa các lần nhắc (giây); mặc định 300, hợp lệ 1-86400.
+  # [EN] Time between reminders (seconds); default 300, valid range 1-86400.
+  interval-seconds: 300
+  # [VI] Cách chọn: random (ngẫu nhiên) hoặc sequential (theo thứ tự).
+  # [EN] Selection mode: random or sequential.
+  mode: random
+
+# [VI] Danh sách thông báo chức năng; mỗi mục là một tooltip gửi tới người chơi đang online.
+# [EN] Feature reminder list; each entry is sent to currently online players.
+tooltips:
+  - "§eMẹo: Dùng §a/vnarmy gui §eđể thuê, triệu hồi và quản lý lính đánh thuê."
+  - "§eMẹo: Dùng §a/vnarmy gear <ID> §eđể chỉnh trang bị và kho đồ của lính."
+  - "§eMẹo: Boss có thể rơi lệnh triệu hồi lính; hãy xem Bậc ghi trên vật phẩm."
+  - "§eMẹo: Dùng §a/vnevent §eđể xem các thiên tai có thể gọi."
+  - "§eMẹo: Dùng §a/vnboss §eđể xem lệnh gọi boss dành cho quản trị viên."

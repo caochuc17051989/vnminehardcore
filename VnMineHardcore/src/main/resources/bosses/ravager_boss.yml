@@ -7,6 +7,9 @@ entity-type: RAVAGER
 display-name: "§4§lRavager Boss"
 hp: 250
 damage-multiplier: 2.5
+# [VI] EXP thưởng cơ bản level 1; mặc định 600, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
+# [EN] Base XP reward at level 1; default 600, valid range 1-1000000; boss level scaling is in _settings.yml.
+experience: 600
 chance: 8
 # [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1200 = 20 phút.
 # [EN] Default boss lifetime after spawning (seconds); 1200 = 20 minutes.

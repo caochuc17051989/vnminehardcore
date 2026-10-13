@@ -1,5 +1,29 @@
 # Changelog
 
+## [v1.19.0] - 2026-10-13
+
+### Added
+- Mở rộng quân đội lên 10 class với Pháp Sư Lửa, Druid, Sát Thủ và Pháp Sư Băng; mỗi class có vũ khí, chỉ số, skill và chi phí nâng bậc riêng.
+- Thêm skill `FIRE_BOLT`, `ROOT_TARGET`, `LIFESTEAL`, `BERSERK`; thông số và cooldown có thể tùy chỉnh trong `armies.yml`.
+
+## [v1.18.0] - 2026-10-13
+
+### Added
+- Nâng giới hạn đội lính mặc định lên 10; tách bậc thuê khỏi cấp farm tối đa 30 và hiển thị EXP/trạng thái đầy đủ.
+- Thêm `/vnarmy rename <ID> <Tên mới>`, recall/rest theo ID, nâng bậc bằng nút GUI và chi phí vật phẩm theo class/bậc.
+- Thêm hồi phục lính sau khi bị hạ, EXP boss theo loại/level và EXP cho người gây sát thương cùng lính đang xuất chiến.
+- Thêm trang bị mặc định, tự nhận diện vũ khí/giáp, kho vật phẩm bền vững, mũi tên vô hạn và thức ăn hồi máu.
+- Mỗi class mặc định có 4–5 kỹ năng; hiệu ứng cast, sức mạnh theo level và thông số chiến đấu có thể cấu hình trong `armies.yml`.
+- Bổ sung `VOLLEY` cho Xạ Thủ, `POWER_STRIKE`/`TAUNT` cho Vệ Binh và `CLEANSE_OWNER` cho Y Sư; cấu hình riêng cooldown, sát thương, số/tốc độ/độ tỏa tên, bán kính và danh sách hiệu ứng.
+- Vũ khí mặc định được ghi vào trang bị ngay lúc triệu hồi; gear đã tùy chỉnh của người chơi không bị ghi đè.
+- Thêm ba class lính: Cuồng Chiến (`berserker`), Trinh Sát (`ranger`) và Thánh Kỵ (`paladin`), mỗi class có 4–5 skill, vũ khí, chỉ số và chi phí nâng bậc riêng trong `armies.yml`.
+- Thêm `tooltips.yml` với nhắc nhở định kỳ theo thứ tự hoặc ngẫu nhiên; tinh chỉnh AI vẫn ở `armies.yml`.
+- Đặt tỉ lệ token boss mặc định 30% và thêm dòng EXP cơ bản riêng cho từng boss.
+
+### Changed
+- Bỏ dòng chat mô tả tác động/cách phòng tránh thiên tai; thông báo world bị ảnh hưởng vẫn giữ.
+- Lính đánh thuê bỏ qua sát thương môi trường và không nhận mục tiêu khuất tầm nhìn.
+
 ## [v1.17.0] - 2026-10-13
 
 ### Added

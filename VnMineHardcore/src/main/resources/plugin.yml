@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.17.0
+version: 1.19.0
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
@@ -105,7 +105,7 @@ commands:
     permission: vnmine.command.users.manage
   vnarmy:
     description: Thuê và quản lý lính đánh thuê của người chơi
-    usage: /vnarmy <gui|list|hire|recall|rest|attack|defend|protect|gear|mute|remove|clear|give|token>
+    usage: /vnarmy <gui|list|hire|recall [ID]|rest [ID]|rename|attack|defend|protect|gear|mute|remove|clear|give|token>
     permission: vnmine.command.army
   vnmenu:
     description: Mở menu chức năng của VnMineHardcore

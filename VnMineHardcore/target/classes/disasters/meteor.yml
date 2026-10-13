@@ -24,6 +24,9 @@ disaster-id: meteor
 enabled: true
 chance: 5
 name: "§6§l☄️ Mưa Sao Băng"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Fireball và vụ nổ có thể gây sát thương, cháy và phá block ở ngoài trời. Ở trong nhà có mái che chắc chắn."
 duration-seconds: 60
 effect-interval-seconds: 5
 warning-seconds: 120

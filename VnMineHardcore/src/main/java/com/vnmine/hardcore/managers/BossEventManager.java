@@ -566,6 +566,7 @@ public class BossEventManager implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onBossDeathDrops(EntityDeathEvent event) {
+        if (currentBoss == event.getEntity()) event.setDroppedExp(0);
         if (currentBoss == event.getEntity() && getRewardEligiblePlayers().isEmpty()) {
             event.getDrops().clear();
         }
@@ -2500,12 +2501,14 @@ public class BossEventManager implements Listener {
     private void onBossKilled(ConfigManager.BossConfig bc) {
         EntityDamageEvent lastDamage = currentBoss == null ? null : currentBoss.getLastDamageCause();
         Set<UUID> eligiblePlayers = getRewardEligiblePlayers();
+        awardBossExperience(bc);
         boolean playerEarnedRewards = !eligiblePlayers.isEmpty();
         if (!playerEarnedRewards) {
             String damageSource = lastDamage == null ? "unknown" : lastDamage.getCause().name();
             if (lastDamage instanceof EntityDamageByEntityEvent damageByEntity) {
                 damageSource += " from " + damageByEntity.getDamager().getType();
             }
+
             logger.warning("[BossEvent] Boss died without a qualified player contribution: " + bc.displayName
                 + ", cause=" + damageSource
                 + ", requiredDamage=" + bossRewardThresholdHealth * config.bossRewardDamageThresholdPercent / 100.0
@@ -2574,15 +2577,41 @@ public class BossEventManager implements Listener {
                     }
                     dropItemsNaturally(currentBoss.getLocation(), item, amount);
                 }
-                dropArmySummonToken(currentBoss.getLocation(), currentBossLevel);
                 dropBossArmorSet(bc, currentBossLevel);
             }
+        }
+        if (currentBoss != null && bossDamageContributions.values().stream().anyMatch(damage -> damage > 0.0)) {
+            dropArmySummonToken(currentBoss.getLocation(), currentBossLevel);
         }
         leaderboardManager.finishBoss(currentBossLevel, eligiblePlayers);
         logManager.logDisaster("BOSS: " + bc.displayName +
             (playerEarnedRewards ? " defeated; eligible contributors=" + eligiblePlayers
                 : " died without eligible contribution") +
             "; cause=" + (lastDamage == null ? "unknown" : lastDamage.getCause().name()));
+    }
+
+    private void awardBossExperience(ConfigManager.BossConfig bossConfig) {
+        int level = Math.max(1, currentBossLevel);
+        double multiplier = 1.0 + (level - 1) * config.bossExperiencePerLevelMultiplier;
+        int experience = (int) Math.max(1L, Math.min(1_000_000L,
+            Math.round(bossConfig.experience * multiplier)));
+        int playersRewarded = 0;
+        int mercenariesRewarded = 0;
+        for (Map.Entry<UUID, Double> entry : bossDamageContributions.entrySet()) {
+            if (entry.getValue() <= 0.0) continue;
+            Player player = Bukkit.getPlayer(entry.getKey());
+            if (player == null || !player.isOnline()) continue;
+            player.giveExp(experience);
+            playersRewarded++;
+            if (plugin.getMercenaryManager() != null) {
+                mercenariesRewarded += plugin.getMercenaryManager()
+                    .awardBossExperience(player.getUniqueId(), experience);
+            }
+            player.sendMessage("§aBạn nhận được §e" + experience + " EXP§a khi hạ "
+                + bossConfig.displayName + ".");
+        }
+        logger.info("[BossEvent] Awarded " + experience + " XP to " + playersRewarded
+            + " contributor(s) and " + mercenariesRewarded + " deployed mercenary unit(s).");
     }
 
     private List<ConfigManager.ConfiguredItem> levelDropsFor(ConfigManager.BossConfig bc, int level) {
@@ -2599,8 +2628,8 @@ public class BossEventManager implements Listener {
         if (!config.bossArmyTokenDropEnabled || random.nextDouble() >= config.bossArmyTokenDropChance) return;
         ItemStack token = new ItemStack(Material.PAPER);
         ItemMeta meta = token.getItemMeta();
-        meta.setDisplayName("§6§lLệnh Triệu Hồi §fTier " + level);
-        meta.setLore(List.of("§7Gọi lính tier " + level + ".", "§8Dùng /vnarmy hire."));
+        meta.setDisplayName("§6§lLệnh Triệu Hồi §fBậc " + level);
+        meta.setLore(List.of("§7Gọi lính Bậc " + level + ".", "§8Dùng /vnarmy hire."));
         meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "army_token_class"),
             PersistentDataType.STRING, "any");
         meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "army_token_level"),

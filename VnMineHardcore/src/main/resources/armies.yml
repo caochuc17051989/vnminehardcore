@@ -5,9 +5,9 @@
 # [EN] Enable the system; default true, accepts true/false.
 enabled: true
 
-# [VI] Số lính tối đa mỗi chủ; mặc định 4, hợp lệ 1-100.
-# [EN] Maximum units per owner; default 4, valid range 1-100.
-max-units-per-player: 4
+# [VI] Số lính tối đa mỗi chủ; mặc định 10, hợp lệ 1-100.
+# [EN] Maximum units per owner; default 10, valid range 1-100.
+max-units-per-player: 10
 
 # [VI] Khoảng cách theo chủ; mặc định 8 block, hợp lệ 2-64.
 # [EN] Follow distance; default 8 blocks, valid range 2-64.
@@ -25,8 +25,8 @@ target-radius-blocks: 20.0
 # [EN] AI update interval; default 20 ticks, valid range 10-100.
 ai-interval-ticks: 20
 
-# [VI] Tiến trình level farm riêng biệt với tier triệu hồi; mặc định 5 XP mỗi mạng, 100 XP mỗi level, tối đa level 50.
-# [EN] Farming progression is separate from summon tier; defaults to 5 XP per kill, 100 XP per level, maximum level 50.
+# [VI] Tiến trình cấp lính; mặc định 5 XP mỗi mạng, 100 XP mỗi cấp, tối đa cấp 30.
+# [EN] Mercenary progression; defaults to 5 XP per kill, 100 XP per level, maximum level 30.
 progression:
   # [VI] XP lính nhận khi hạ quái; mặc định 5, hợp lệ 0-100000.
   # [EN] XP awarded to a mercenary per mob kill; default 5, valid range 0-100000.
@@ -34,9 +34,24 @@ progression:
   # [VI] XP cơ bản cần cho level tiếp theo; yêu cầu tăng theo level hiện tại; mặc định 100, hợp lệ 1-100000.
   # [EN] Base XP required for the next level; requirement scales with current level; default 100, valid range 1-100000.
   experience-per-level: 100
-  # [VI] Level farm tối đa; mặc định 50, hợp lệ 1-1000.
-  # [EN] Maximum farming level; default 50, valid range 1-1000.
-  max-level: 50
+  # [VI] Cấp tối đa; mặc định 30, hợp lệ 1-30.
+  # [EN] Maximum level; default 30, valid range 1-30.
+  max-level: 30
+  # [VI] Tăng sức mạnh kỹ năng theo mỗi cấp; mặc định 2%, hợp lệ 0-100%.
+  # [EN] Skill power increase per level; default 2%, valid range 0-100%.
+  skill-power-per-level: 0.02
+
+# [VI] Thời gian hồi phục sau khi bị hạ; mặc định 300 giây, hợp lệ 1-86400.
+# [EN] Recovery time after being defeated; default 300 seconds, valid range 1-86400.
+recovery:
+  seconds: 300
+
+# [VI] Cấu hình dùng vật phẩm trong kho lính.
+# [EN] Configure item use from the mercenary inventory.
+gear:
+  # [VI] Máu hồi mỗi lần dùng một món ăn; mặc định 6 HP, hợp lệ 0-100.
+  # [EN] Health restored per consumed food item; default 6 HP, valid range 0-100.
+  food-heal-amount: 6.0
 
 # [VI] Giá trị mặc định cho kỹ năng hỗ trợ; giới hạn được ghi tại từng khóa.
 # [EN] Support skill defaults; limits are documented for each key.
@@ -96,15 +111,22 @@ classes:
     menu-icon: BOW
     # [VI] Skill Xạ Thủ; có thể bật/tắt bằng cách thêm/xóa ID skill.
     # [EN] Archer skills; enable/disable skills by adding/removing skill IDs.
-    # [VI] Hợp lệ: ATTACK, RANGED_ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, SHIELD_OWNER.
-    # [EN] Valid: ATTACK, RANGED_ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, SHIELD_OWNER.
-    skills: [RANGED_ATTACK]
+    # [VI] ID hợp lệ gồm: ATTACK, RANGED_ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, SHIELD_OWNER, VOLLEY, POWER_STRIKE, TAUNT, CLEANSE_OWNER, FIRE_BOLT, ROOT_TARGET, LIFESTEAL, BERSERK.
+    # [EN] Valid IDs: ATTACK, RANGED_ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, SHIELD_OWNER, VOLLEY, POWER_STRIKE, TAUNT, CLEANSE_OWNER, FIRE_BOLT, ROOT_TARGET, LIFESTEAL, BERSERK.
+    skills: [ATTACK, RANGED_ATTACK, BUFF_OWNER, VOLLEY]
+    # [VI] Vũ khí mặc định khi thuê; mặc định BOW, phải là Material hợp lệ.
+    # [EN] Starting weapon on hire; default BOW, must be a valid material.
+    starting-weapon: BOW
     # [VI] Tầm tìm mục tiêu; mặc định 24 block, hợp lệ 4-64.
     # [EN] Target acquisition range; default 24 blocks, valid range 4-64.
     target-radius-blocks: 24.0
     # [VI] Tùy chỉnh riêng skill; cooldown giây 1-3600, sát thương 0-100.
     # [EN] Per-skill tuning; cooldown seconds 1-3600, damage 0-100.
     skill-settings:
+      ATTACK:
+        # [VI] Thời gian hồi giữa các đòn tấn công; mặc định 3 giây, hợp lệ 1-3600.
+        # [EN] Cooldown between melee strikes; default 3 seconds, valid range 1-3600.
+        cooldown-seconds: 3
       RANGED_ATTACK:
         # [VI] Thời gian giữa các phát tên; mặc định 2 giây, hợp lệ 1-3600.
         # [EN] Delay between arrows; default 2 seconds, valid range 1-3600.
@@ -115,6 +137,37 @@ classes:
         # [VI] Tầm giữ vị trí bắn; mặc định 16 block, hợp lệ 4-64.
         # [EN] Preferred firing distance; default 16 blocks, valid range 4-64.
         range-blocks: 16.0
+      VOLLEY:
+        # [VI] Thời gian hồi bắn loạt; mặc định 12 giây, hợp lệ 1-3600.
+        # [EN] Volley cooldown; default 12 seconds, valid range 1-3600.
+        cooldown-seconds: 12
+        # [VI] Số tên mỗi loạt; mặc định 3, hợp lệ 2-5.
+        # [EN] Arrows per volley; default 3, valid range 2-5.
+        arrow-count: 3
+        # [VI] Tốc độ tên; mặc định 2.0, hợp lệ 0.5-4.0.
+        # [EN] Arrow velocity; default 2.0, valid range 0.5-4.0.
+        arrow-speed: 2.0
+        # [VI] Góc tỏa mỗi mũi tên; mặc định 8 độ, hợp lệ 0-30.
+        # [EN] Spread angle per arrow; default 8 degrees, valid range 0-30.
+        spread-degrees: 8.0
+        # [VI] Sát thương mỗi tên; mặc định 3, hợp lệ 0-100.
+        # [EN] Damage per arrow; default 3, valid range 0-100.
+        damage: 3.0
+    # [VI] Chi phí vật phẩm cho nút nâng bậc trong GUI; khóa là bậc đích (2-13), số lượng 0-1000000.
+    # [EN] Item costs for the GUI tier-upgrade button; keys are target tiers (2-13), amounts 0-1000000.
+    tier-upgrades:
+      2: {materials: {EMERALD: 16}}
+      3: {materials: {EMERALD: 24}}
+      4: {materials: {EMERALD: 32}}
+      5: {materials: {EMERALD: 40}}
+      6: {materials: {EMERALD: 48}}
+      7: {materials: {EMERALD: 56}}
+      8: {materials: {EMERALD: 64}}
+      9: {materials: {EMERALD: 72}}
+      10: {materials: {EMERALD: 80}}
+      11: {materials: {EMERALD: 88}}
+      12: {materials: {EMERALD: 96}}
+      13: {materials: {EMERALD: 104}}
   guardian:
     # [VI] Tên hiển thị; mặc định Vệ Binh.
     # [EN] Display name; default Guardian.
@@ -148,13 +201,20 @@ classes:
     menu-icon: SHIELD
     # [VI] Skill Vệ Binh; danh sách ID hợp lệ giống mô tả của Xạ Thủ.
     # [EN] Guardian skills; valid IDs are listed in the Archer description.
-    skills: [ATTACK, SHIELD_OWNER]
+    skills: [ATTACK, SHIELD_OWNER, HEAL_OWNER, POWER_STRIKE, TAUNT]
+    # [VI] Vũ khí mặc định khi thuê; mặc định IRON_SWORD, phải là Material hợp lệ.
+    # [EN] Starting weapon on hire; default IRON_SWORD, must be a valid material.
+    starting-weapon: IRON_SWORD
     # [VI] Tầm tìm mục tiêu; mặc định 20 block, hợp lệ 4-64.
     # [EN] Target acquisition range; default 20 blocks, valid range 4-64.
     target-radius-blocks: 20.0
     # [VI] Tùy chỉnh khiên; cooldown giây 1-3600, tầm 1-32 block, giảm sát thương 0-0.9.
     # [EN] Shield tuning; cooldown seconds 1-3600, range 1-32 blocks, damage reduction 0-0.9.
     skill-settings:
+      ATTACK:
+        # [VI] Thời gian hồi giữa các đòn tấn công; mặc định 3 giây, hợp lệ 1-3600.
+        # [EN] Cooldown between melee strikes; default 3 seconds, valid range 1-3600.
+        cooldown-seconds: 3
       SHIELD_OWNER:
         # [VI] Thời gian hồi; mặc định 8 giây, hợp lệ 1-3600.
         # [EN] Cooldown; default 8 seconds, valid range 1-3600.
@@ -165,6 +225,35 @@ classes:
         # [VI] Phần sát thương bị giảm; mặc định 0.3, hợp lệ 0-0.9.
         # [EN] Fraction of damage reduced; default 0.3, valid range 0-0.9.
         damage-reduction: 0.3
+      POWER_STRIKE:
+        # [VI] Thời gian hồi cường kích; mặc định 10 giây, hợp lệ 1-3600.
+        # [EN] Power Strike cooldown; default 10 seconds, valid range 1-3600.
+        cooldown-seconds: 10
+        # [VI] Sát thương cộng thêm; mặc định 8, hợp lệ 0-100.
+        # [EN] Bonus strike damage; default 8, valid range 0-100.
+        damage: 8.0
+      TAUNT:
+        # [VI] Thời gian hồi khiêu khích; mặc định 20 giây, hợp lệ 1-3600.
+        # [EN] Taunt cooldown; default 20 seconds, valid range 1-3600.
+        cooldown-seconds: 20
+        # [VI] Bán kính kéo quái khỏi chủ; mặc định 8 block, hợp lệ 1-32.
+        # [EN] Radius to draw hostile mobs off the owner; default 8 blocks, valid range 1-32.
+        radius-blocks: 8.0
+    # [VI] Chi phí vật phẩm cho nút nâng bậc trong GUI; khóa là bậc đích (2-13), số lượng 0-1000000.
+    # [EN] Item costs for the GUI tier-upgrade button; keys are target tiers (2-13), amounts 0-1000000.
+    tier-upgrades:
+      2: {materials: {IRON_INGOT: 16}}
+      3: {materials: {IRON_INGOT: 24}}
+      4: {materials: {IRON_INGOT: 32}}
+      5: {materials: {IRON_INGOT: 40}}
+      6: {materials: {IRON_INGOT: 48}}
+      7: {materials: {IRON_INGOT: 56}}
+      8: {materials: {IRON_INGOT: 64}}
+      9: {materials: {IRON_INGOT: 72}}
+      10: {materials: {IRON_INGOT: 80}}
+      11: {materials: {IRON_INGOT: 88}}
+      12: {materials: {IRON_INGOT: 96}}
+      13: {materials: {IRON_INGOT: 104}}
   medic:
     # [VI] Tên hiển thị; mặc định Y Sư.
     # [EN] Display name; default Medic.
@@ -198,7 +287,10 @@ classes:
     menu-icon: GOLDEN_APPLE
     # [VI] Skill Y Sư; mục tiêu hỗ trợ: OWNER, ALLIES hoặc OWNER_AND_ALLIES.
     # [EN] Medic skills; support targets: OWNER, ALLIES, or OWNER_AND_ALLIES.
-    skills: [HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES]
+    skills: [HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, CLEANSE_OWNER]
+    # [VI] Vũ khí mặc định khi thuê; mặc định GOLDEN_HOE, phải là Material hợp lệ.
+    # [EN] Starting weapon on hire; default GOLDEN_HOE, must be a valid material.
+    starting-weapon: GOLDEN_HOE
     # [VI] Tùy chỉnh hồi/buff; mọi cooldown tính bằng giây, hợp lệ 1-3600.
     # [EN] Heal/buff tuning; cooldowns are seconds, valid range 1-3600.
     skill-settings:
@@ -251,6 +343,741 @@ classes:
         # [VI] Bán kính buff; mặc định 8 block, hợp lệ 1-32.
         # [EN] Buff radius; default 8 blocks, valid range 1-32.
         radius-blocks: 8.0
+      CLEANSE_OWNER:
+        # [VI] Thời gian hồi giải hiệu ứng; mặc định 30 giây, hợp lệ 1-3600.
+        # [EN] Cleanse cooldown; default 30 seconds, valid range 1-3600.
+        cooldown-seconds: 30
+        # [VI] Danh sách hiệu ứng Y Sư có thể gỡ khỏi chủ nhân.
+        # [EN] Potion effects the Medic can remove from its owner.
+        effects: [POISON, WITHER, SLOWNESS, WEAKNESS, BLINDNESS, HUNGER]
+    # [VI] Chi phí vật phẩm cho nút nâng bậc trong GUI; khóa là bậc đích (2-13), số lượng 0-1000000.
+    # [EN] Item costs for the GUI tier-upgrade button; keys are target tiers (2-13), amounts 0-1000000.
+    tier-upgrades:
+      2: {materials: {GOLD_INGOT: 16}}
+      3: {materials: {GOLD_INGOT: 24}}
+      4: {materials: {GOLD_INGOT: 32}}
+      5: {materials: {GOLD_INGOT: 40}}
+      6: {materials: {GOLD_INGOT: 48}}
+      7: {materials: {GOLD_INGOT: 56}}
+      8: {materials: {GOLD_INGOT: 64}}
+      9: {materials: {GOLD_INGOT: 72}}
+      10: {materials: {GOLD_INGOT: 80}}
+      11: {materials: {GOLD_INGOT: 88}}
+      12: {materials: {GOLD_INGOT: 96}}
+      13: {materials: {GOLD_INGOT: 104}}
+
+  berserker:
+    # [VI] Tên hiển thị của class.
+    # [EN] Display name for this class.
+    display-name: "Cuồng Chiến"
+    # [VI] Mô tả chức năng hiện trong GUI.
+    # [EN] Short role description shown in the GUI.
+    description: "Áp sát, gây sát thương lớn và kéo quái khỏi chủ nhân."
+    # [VI] Entity phải là mob có AI; mặc định PIGLIN_BRUTE.
+    # [EN] Entity must be an AI mob; default PIGLIN_BRUTE.
+    entity-type: PIGLIN_BRUTE
+    # [VI] Máu cấp 1; mặc định 36, phải lớn hơn 0.
+    # [EN] Level-1 health; default 36, must be positive.
+    base-health: 36
+    # [VI] Máu thêm mỗi cấp; mặc định 3, không âm.
+    # [EN] Health per level; default 3, must be nonnegative.
+    health-per-level: 3
+    # [VI] Sát thương cơ bản; mặc định 9, không âm.
+    # [EN] Base damage; default 9, must be nonnegative.
+    base-damage: 9
+    # [VI] Giáp ban đầu; mặc định 3, hợp lệ 0-100.
+    # [EN] Starting armor; default 3, valid range 0-100.
+    base-armor: 3
+    # [VI] Giáp tăng mỗi cấp; mặc định 0.2, không âm.
+    # [EN] Armor per level; default 0.2, must be nonnegative.
+    armor-per-level: 0.2
+    # [VI] Sát thương tăng mỗi cấp; mặc định 0.7, không âm.
+    # [EN] Damage per level; default 0.7, must be nonnegative.
+    damage-per-level: 0.7
+    # [VI] Biểu tượng GUI; mặc định IRON_AXE.
+    # [EN] GUI icon; default IRON_AXE.
+    menu-icon: IRON_AXE
+    # [VI] Bộ skill cận chiến: đánh thường, cường kích, khiêu khích và chắn chủ.
+    # [EN] Melee kit: basic attack, power strike, taunt, and owner shield.
+    skills: [ATTACK, POWER_STRIKE, TAUNT, SHIELD_OWNER]
+    # [VI] Vũ khí mặc định khi triệu hồi; mặc định IRON_AXE.
+    # [EN] Default weapon on summon; default IRON_AXE.
+    starting-weapon: IRON_AXE
+    # [VI] Bán kính tìm mục tiêu; mặc định 20 block, hợp lệ 4-64.
+    # [EN] Target acquisition radius; default 20 blocks, valid range 4-64.
+    target-radius-blocks: 20.0
+    # [VI] Cooldown skill tính bằng giây; sát thương 0-100, bán kính 1-32 block.
+    # [EN] Skill cooldowns are in seconds; damage 0-100, radius 1-32 blocks.
+    skill-settings:
+      ATTACK:
+        # [VI] Cooldown đánh thường; mặc định 3 giây, hợp lệ 1-3600.
+        # [EN] Basic attack cooldown; default 3 seconds, valid range 1-3600.
+        cooldown-seconds: 3
+      POWER_STRIKE:
+        # [VI] Cooldown cường kích; mặc định 12 giây, hợp lệ 1-3600.
+        # [EN] Power Strike cooldown; default 12 seconds, valid range 1-3600.
+        cooldown-seconds: 12
+        # [VI] Sát thương cộng thêm; mặc định 12, hợp lệ 0-100.
+        # [EN] Bonus strike damage; default 12, valid range 0-100.
+        damage: 12.0
+      TAUNT:
+        # [VI] Cooldown khiêu khích; mặc định 18 giây, hợp lệ 1-3600.
+        # [EN] Taunt cooldown; default 18 seconds, valid range 1-3600.
+        cooldown-seconds: 18
+        # [VI] Bán kính kéo quái; mặc định 10 block, hợp lệ 1-32.
+        # [EN] Taunt radius; default 10 blocks, valid range 1-32.
+        radius-blocks: 10.0
+      SHIELD_OWNER:
+        # [VI] Cooldown chắn chủ; mặc định 8 giây, hợp lệ 1-3600.
+        # [EN] Owner shield cooldown; default 8 seconds, valid range 1-3600.
+        cooldown-seconds: 8
+        # [VI] Khoảng cách bảo vệ; mặc định 9 block, hợp lệ 1-32.
+        # [EN] Protection radius; default 9 blocks, valid range 1-32.
+        radius-blocks: 9.0
+        # [VI] Tỉ lệ sát thương giảm; mặc định 0.25, hợp lệ 0-0.9.
+        # [EN] Damage reduction; default 0.25, valid range 0-0.9.
+        damage-reduction: 0.25
+    # [VI] Chi phí nâng bậc; tier đích 2-13, mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Tier-upgrade costs; target tier 2-13, each material amount 0-1000000.
+    tier-upgrades:
+      2: {materials: {IRON_INGOT: 16}}
+      3: {materials: {IRON_INGOT: 24}}
+      4: {materials: {IRON_INGOT: 32}}
+      5: {materials: {IRON_INGOT: 40}}
+      6: {materials: {IRON_INGOT: 48}}
+      7: {materials: {IRON_INGOT: 56}}
+      8: {materials: {IRON_INGOT: 64}}
+      9: {materials: {IRON_INGOT: 72}}
+      10: {materials: {IRON_INGOT: 80}}
+      11: {materials: {IRON_INGOT: 88}}
+      12: {materials: {IRON_INGOT: 96}}
+      13: {materials: {IRON_INGOT: 104}}
+
+  ranger:
+    # [VI] Tên hiển thị của class.
+    # [EN] Display name for this class.
+    display-name: "Trinh Sát"
+    # [VI] Mô tả chức năng hiện trong GUI.
+    # [EN] Short role description shown in the GUI.
+    description: "Bắn loạt tên tầm xa, tăng tốc và giải hiệu ứng xấu cho chủ."
+    # [VI] Entity phải là mob có AI; mặc định STRAY.
+    # [EN] Entity must be an AI mob; default STRAY.
+    entity-type: STRAY
+    # [VI] Máu cấp 1; mặc định 22, phải lớn hơn 0.
+    # [EN] Level-1 health; default 22, must be positive.
+    base-health: 22
+    # [VI] Máu thêm mỗi cấp; mặc định 2.5, không âm.
+    # [EN] Health per level; default 2.5, must be nonnegative.
+    health-per-level: 2.5
+    # [VI] Sát thương cơ bản; mặc định 4, không âm.
+    # [EN] Base damage; default 4, must be nonnegative.
+    base-damage: 4
+    # [VI] Giáp ban đầu; mặc định 0.5, hợp lệ 0-100.
+    # [EN] Starting armor; default 0.5, valid range 0-100.
+    base-armor: 0.5
+    # [VI] Giáp tăng mỗi cấp; mặc định 0.1, không âm.
+    # [EN] Armor per level; default 0.1, must be nonnegative.
+    armor-per-level: 0.1
+    # [VI] Sát thương tăng mỗi cấp; mặc định 0.45, không âm.
+    # [EN] Damage per level; default 0.45, must be nonnegative.
+    damage-per-level: 0.45
+    # [VI] Biểu tượng GUI; mặc định CROSSBOW.
+    # [EN] GUI icon; default CROSSBOW.
+    menu-icon: CROSSBOW
+    # [VI] Bộ skill tầm xa và hỗ trợ chủ nhân; class có 4 skill.
+    # [EN] Ranged and owner-support kit; this class has 4 skills.
+    skills: [RANGED_ATTACK, VOLLEY, BUFF_OWNER, CLEANSE_OWNER]
+    # [VI] Vũ khí mặc định khi triệu hồi; mặc định BOW.
+    # [EN] Default weapon on summon; default BOW.
+    starting-weapon: BOW
+    # [VI] Tầm tìm mục tiêu; mặc định 28 block, hợp lệ 4-64.
+    # [EN] Target acquisition radius; default 28 blocks, valid range 4-64.
+    target-radius-blocks: 28.0
+    skill-settings:
+      RANGED_ATTACK:
+        # [VI] Cooldown bắn thường; mặc định 3 giây, hợp lệ 1-3600.
+        # [EN] Ranged attack cooldown; default 3 seconds, valid range 1-3600.
+        cooldown-seconds: 3
+        # [VI] Sát thương tên; mặc định 5, hợp lệ 0-100.
+        # [EN] Arrow damage; default 5, valid range 0-100.
+        damage: 5.0
+        # [VI] Tầm giữ vị trí bắn; mặc định 18 block, hợp lệ 4-64.
+        # [EN] Preferred firing distance; default 18 blocks, valid range 4-64.
+        range-blocks: 18.0
+      VOLLEY:
+        # [VI] Cooldown bắn loạt; mặc định 14 giây, hợp lệ 1-3600.
+        # [EN] Volley cooldown; default 14 seconds, valid range 1-3600.
+        cooldown-seconds: 14
+        # [VI] Số tên mỗi loạt; mặc định 4, hợp lệ 2-5.
+        # [EN] Arrows per volley; default 4, valid range 2-5.
+        arrow-count: 4
+        # [VI] Tốc độ tên; mặc định 2.2, hợp lệ 0.5-4.0.
+        # [EN] Arrow velocity; default 2.2, valid range 0.5-4.0.
+        arrow-speed: 2.2
+        # [VI] Góc tỏa mỗi tên; mặc định 6 độ, hợp lệ 0-30.
+        # [EN] Spread angle per arrow; default 6 degrees, valid range 0-30.
+        spread-degrees: 6.0
+        # [VI] Sát thương mỗi tên; mặc định 2.5, hợp lệ 0-100.
+        # [EN] Damage per arrow; default 2.5, valid range 0-100.
+        damage: 2.5
+      BUFF_OWNER:
+        # [VI] Cooldown tăng tốc chủ; mặc định 35 giây, hợp lệ 1-3600.
+        # [EN] Owner speed buff cooldown; default 35 seconds, valid range 1-3600.
+        cooldown-seconds: 35
+        # [VI] Hiệu ứng hợp lệ trong Bukkit; mặc định SPEED.
+        # [EN] Bukkit potion effect; default SPEED.
+        effect: SPEED
+        # [VI] Thời lượng tăng tốc; mặc định 8 giây, hợp lệ 1-600.
+        # [EN] Speed buff duration; default 8 seconds, valid range 1-600.
+        duration-seconds: 8
+      CLEANSE_OWNER:
+        # [VI] Cooldown giải hiệu ứng; mặc định 40 giây, hợp lệ 1-3600.
+        # [EN] Cleanse cooldown; default 40 seconds, valid range 1-3600.
+        cooldown-seconds: 40
+        # [VI] Hiệu ứng Trinh Sát có thể gỡ khỏi chủ nhân.
+        # [EN] Potion effects the Ranger can remove from its owner.
+        effects: [POISON, WITHER, SLOWNESS, WEAKNESS, BLINDNESS, HUNGER]
+    # [VI] Chi phí nâng bậc; tier đích 2-13, mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Tier-upgrade costs; target tier 2-13, each material amount 0-1000000.
+    tier-upgrades:
+      2: {materials: {EMERALD: 16}}
+      3: {materials: {EMERALD: 24}}
+      4: {materials: {EMERALD: 32}}
+      5: {materials: {EMERALD: 40}}
+      6: {materials: {EMERALD: 48}}
+      7: {materials: {EMERALD: 56}}
+      8: {materials: {EMERALD: 64}}
+      9: {materials: {EMERALD: 72}}
+      10: {materials: {EMERALD: 80}}
+      11: {materials: {EMERALD: 88}}
+      12: {materials: {EMERALD: 96}}
+      13: {materials: {EMERALD: 104}}
+
+  paladin:
+    # [VI] Tên hiển thị của class.
+    # [EN] Display name for this class.
+    display-name: "Thánh Kỵ"
+    # [VI] Mô tả chức năng hiện trong GUI.
+    # [EN] Short role description shown in the GUI.
+    description: "Đỡ đòn, hồi máu và tăng kháng cự cho cả đội."
+    # [VI] Entity phải là mob có AI; mặc định IRON_GOLEM.
+    # [EN] Entity must be an AI mob; default IRON_GOLEM.
+    entity-type: IRON_GOLEM
+    # [VI] Máu cấp 1; mặc định 40, phải lớn hơn 0.
+    # [EN] Level-1 health; default 40, must be positive.
+    base-health: 40
+    # [VI] Máu thêm mỗi cấp; mặc định 5, không âm.
+    # [EN] Health per level; default 5, must be nonnegative.
+    health-per-level: 5
+    # [VI] Sát thương cơ bản; mặc định 6, không âm.
+    # [EN] Base damage; default 6, must be nonnegative.
+    base-damage: 6
+    # [VI] Giáp ban đầu; mặc định 4, hợp lệ 0-100.
+    # [EN] Starting armor; default 4, valid range 0-100.
+    base-armor: 4
+    # [VI] Giáp tăng mỗi cấp; mặc định 0.3, không âm.
+    # [EN] Armor per level; default 0.3, must be nonnegative.
+    armor-per-level: 0.3
+    # [VI] Sát thương tăng mỗi cấp; mặc định 0.6, không âm.
+    # [EN] Damage per level; default 0.6, must be nonnegative.
+    damage-per-level: 0.6
+    # [VI] Biểu tượng GUI; mặc định IRON_SWORD.
+    # [EN] GUI icon; default IRON_SWORD.
+    menu-icon: IRON_SWORD
+    # [VI] Bộ skill đỡ đòn, tấn công và hỗ trợ; class có 5 skill.
+    # [EN] Tank, attack, and support kit; this class has 5 skills.
+    skills: [ATTACK, SHIELD_OWNER, HEAL_ALLIES, BUFF_ALLIES, POWER_STRIKE]
+    # [VI] Vũ khí mặc định khi triệu hồi; mặc định IRON_SWORD.
+    # [EN] Default weapon on summon; default IRON_SWORD.
+    starting-weapon: IRON_SWORD
+    # [VI] Tầm tìm mục tiêu; mặc định 18 block, hợp lệ 4-64.
+    # [EN] Target acquisition radius; default 18 blocks, valid range 4-64.
+    target-radius-blocks: 18.0
+    skill-settings:
+      ATTACK:
+        # [VI] Cooldown đánh thường; mặc định 3 giây, hợp lệ 1-3600.
+        # [EN] Basic attack cooldown; default 3 seconds, valid range 1-3600.
+        cooldown-seconds: 3
+      SHIELD_OWNER:
+        # [VI] Cooldown bảo vệ chủ; mặc định 8 giây, hợp lệ 1-3600.
+        # [EN] Owner shield cooldown; default 8 seconds, valid range 1-3600.
+        cooldown-seconds: 8
+        # [VI] Bán kính bảo vệ; mặc định 10 block, hợp lệ 1-32.
+        # [EN] Protection radius; default 10 blocks, valid range 1-32.
+        radius-blocks: 10.0
+        # [VI] Tỉ lệ sát thương giảm; mặc định 0.35, hợp lệ 0-0.9.
+        # [EN] Damage reduction; default 0.35, valid range 0-0.9.
+        damage-reduction: 0.35
+      HEAL_ALLIES:
+        # [VI] Cooldown hồi máu; mặc định 16 giây, hợp lệ 1-3600.
+        # [EN] Ally heal cooldown; default 16 seconds, valid range 1-3600.
+        cooldown-seconds: 16
+        # [VI] Mục tiêu hồi máu; OWNER, ALLIES hoặc OWNER_AND_ALLIES.
+        # [EN] Healing targets; OWNER, ALLIES, or OWNER_AND_ALLIES.
+        target: OWNER_AND_ALLIES
+        # [VI] Lượng máu hồi; mặc định 4, hợp lệ 0-100.
+        # [EN] Health restored; default 4, valid range 0-100.
+        amount: 4.0
+        # [VI] Bán kính hồi; mặc định 10 block, hợp lệ 1-32.
+        # [EN] Healing radius; default 10 blocks, valid range 1-32.
+        radius-blocks: 10.0
+      BUFF_ALLIES:
+        # [VI] Cooldown tăng kháng cự; mặc định 45 giây, hợp lệ 1-3600.
+        # [EN] Resistance buff cooldown; default 45 seconds, valid range 1-3600.
+        cooldown-seconds: 45
+        # [VI] Mục tiêu buff; OWNER, ALLIES hoặc OWNER_AND_ALLIES.
+        # [EN] Buff targets; OWNER, ALLIES, or OWNER_AND_ALLIES.
+        target: OWNER_AND_ALLIES
+        # [VI] Hiệu ứng hợp lệ trong Bukkit; mặc định RESISTANCE.
+        # [EN] Bukkit potion effect; default RESISTANCE.
+        effect: RESISTANCE
+        # [VI] Thời lượng; mặc định 8 giây, hợp lệ 1-600.
+        # [EN] Duration; default 8 seconds, valid range 1-600.
+        duration-seconds: 8
+        # [VI] Cấp hiệu ứng; mặc định 0, hợp lệ 0-10.
+        # [EN] Potion amplifier; default 0, valid range 0-10.
+        amplifier: 0
+        # [VI] Bán kính buff; mặc định 10 block, hợp lệ 1-32.
+        # [EN] Buff radius; default 10 blocks, valid range 1-32.
+        radius-blocks: 10.0
+      POWER_STRIKE:
+        # [VI] Cooldown đòn đánh mạnh; mặc định 16 giây, hợp lệ 1-3600.
+        # [EN] Heavy strike cooldown; default 16 seconds, valid range 1-3600.
+        cooldown-seconds: 16
+        # [VI] Sát thương cộng thêm; mặc định 5, hợp lệ 0-100.
+        # [EN] Bonus strike damage; default 5, valid range 0-100.
+        damage: 5.0
+    # [VI] Chi phí nâng bậc; tier đích 2-13, mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Tier-upgrade costs; target tier 2-13, each material amount 0-1000000.
+    tier-upgrades:
+      2: {materials: {GOLD_INGOT: 16}}
+      3: {materials: {GOLD_INGOT: 24}}
+      4: {materials: {GOLD_INGOT: 32}}
+      5: {materials: {GOLD_INGOT: 40}}
+      6: {materials: {GOLD_INGOT: 48}}
+      7: {materials: {GOLD_INGOT: 56}}
+      8: {materials: {GOLD_INGOT: 64}}
+      9: {materials: {GOLD_INGOT: 72}}
+      10: {materials: {GOLD_INGOT: 80}}
+      11: {materials: {GOLD_INGOT: 88}}
+      12: {materials: {GOLD_INGOT: 96}}
+      13: {materials: {GOLD_INGOT: 104}}
+
+  pyromancer:
+    # [VI] Tên hiển thị của class.
+    # [EN] Display name for this class.
+    display-name: "Pháp Sư Lửa"
+    # [VI] Mô tả chức năng trong GUI.
+    # [EN] Role description shown in the GUI.
+    description: "Thiêu đốt mục tiêu, làm chậm kẻ địch và kháng lửa cho chủ."
+    # [VI] Entity AI; mặc định WITCH.
+    # [EN] AI entity; default WITCH.
+    entity-type: WITCH
+    # [VI] Máu cấp 1; mặc định 24, phải lớn hơn 0.
+    # [EN] Level-1 health; default 24, must be positive.
+    base-health: 24
+    # [VI] Máu thêm mỗi cấp; mặc định 2.5, không âm.
+    # [EN] Health per level; default 2.5, must be nonnegative.
+    health-per-level: 2.5
+    # [VI] Sát thương cơ bản; mặc định 4, không âm.
+    # [EN] Base damage; default 4, must be nonnegative.
+    base-damage: 4
+    # [VI] Giáp ban đầu; mặc định 1, hợp lệ 0-100.
+    # [EN] Starting armor; default 1, valid range 0-100.
+    base-armor: 1
+    # [VI] Giáp tăng mỗi cấp; mặc định 0.1, không âm.
+    # [EN] Armor per level; default 0.1, must be nonnegative.
+    armor-per-level: 0.1
+    # [VI] Sát thương tăng mỗi cấp; mặc định 0.5, không âm.
+    # [EN] Damage per level; default 0.5, must be nonnegative.
+    damage-per-level: 0.5
+    # [VI] Biểu tượng GUI; mặc định BLAZE_POWDER.
+    # [EN] GUI icon; default BLAZE_POWDER.
+    menu-icon: BLAZE_POWDER
+    # [VI] Skill: bắn xa, cầu lửa, làm chậm và kháng lửa; tổng 4.
+    # [EN] Ranged kit: fire bolt, slow, and fire resistance; 4 skills total.
+    skills: [RANGED_ATTACK, FIRE_BOLT, ROOT_TARGET, BUFF_OWNER]
+    # [VI] Vũ khí mặc định; mặc định BLAZE_ROD.
+    # [EN] Default weapon; default BLAZE_ROD.
+    starting-weapon: BLAZE_ROD
+    # [VI] Tầm tìm mục tiêu; mặc định 24 block, hợp lệ 4-64.
+    # [EN] Target acquisition radius; default 24 blocks, valid range 4-64.
+    target-radius-blocks: 24.0
+    skill-settings:
+      RANGED_ATTACK:
+        # [VI] Cooldown bắn thường; mặc định 4 giây, hợp lệ 1-3600.
+        # [EN] Ranged attack cooldown; default 4 seconds, valid range 1-3600.
+        cooldown-seconds: 4
+        # [VI] Sát thương tên; mặc định 4, hợp lệ 0-100.
+        # [EN] Arrow damage; default 4, valid range 0-100.
+        damage: 4.0
+        # [VI] Tầm giữ vị trí; mặc định 16 block, hợp lệ 4-64.
+        # [EN] Preferred firing distance; default 16 blocks, valid range 4-64.
+        range-blocks: 16.0
+      FIRE_BOLT:
+        # [VI] Cooldown cầu lửa; mặc định 8 giây, hợp lệ 1-3600.
+        # [EN] Fire Bolt cooldown; default 8 seconds, valid range 1-3600.
+        cooldown-seconds: 8
+        # [VI] Sát thương cầu lửa; mặc định 7, hợp lệ 0-100.
+        # [EN] Fire Bolt damage; default 7, valid range 0-100.
+        damage: 7.0
+        # [VI] Thời gian đốt; mặc định 4 giây, hợp lệ 0-15.
+        # [EN] Burn duration; default 4 seconds, valid range 0-15.
+        fire-seconds: 4
+      ROOT_TARGET:
+        # [VI] Cooldown trói chậm; mặc định 12 giây, hợp lệ 1-3600.
+        # [EN] Root cooldown; default 12 seconds, valid range 1-3600.
+        cooldown-seconds: 12
+        # [VI] Hiệu ứng hợp lệ trong Bukkit; mặc định SLOWNESS.
+        # [EN] Valid Bukkit effect; default SLOWNESS.
+        effect: SLOWNESS
+        # [VI] Thời lượng; mặc định 4 giây, hợp lệ 1-600.
+        # [EN] Duration; default 4 seconds, valid range 1-600.
+        duration-seconds: 4
+        # [VI] Cấp hiệu ứng; mặc định 1, hợp lệ 0-10.
+        # [EN] Effect amplifier; default 1, valid range 0-10.
+        amplifier: 1
+      BUFF_OWNER:
+        # [VI] Cooldown kháng lửa; mặc định 40 giây, hợp lệ 1-3600.
+        # [EN] Fire resistance cooldown; default 40 seconds, valid range 1-3600.
+        cooldown-seconds: 40
+        # [VI] Hiệu ứng hợp lệ; mặc định FIRE_RESISTANCE.
+        # [EN] Valid potion effect; default FIRE_RESISTANCE.
+        effect: FIRE_RESISTANCE
+        # [VI] Thời lượng; mặc định 8 giây, hợp lệ 1-600.
+        # [EN] Duration; default 8 seconds, valid range 1-600.
+        duration-seconds: 8
+    # [VI] Chi phí nâng bậc; tier đích 2-13, số lượng vật liệu 0-1000000.
+    # [EN] Tier-upgrade costs; target tier 2-13, material amount 0-1000000.
+    tier-upgrades:
+      2: {materials: {BLAZE_POWDER: 16}}
+      3: {materials: {BLAZE_POWDER: 24}}
+      4: {materials: {BLAZE_POWDER: 32}}
+      5: {materials: {BLAZE_POWDER: 40}}
+      6: {materials: {BLAZE_POWDER: 48}}
+      7: {materials: {BLAZE_POWDER: 56}}
+      8: {materials: {BLAZE_POWDER: 64}}
+      9: {materials: {BLAZE_POWDER: 72}}
+      10: {materials: {BLAZE_POWDER: 80}}
+      11: {materials: {BLAZE_POWDER: 88}}
+      12: {materials: {BLAZE_POWDER: 96}}
+      13: {materials: {BLAZE_POWDER: 104}}
+
+  druid:
+    # [VI] Tên hiển thị của class.
+    # [EN] Display name for this class.
+    display-name: "Druid"
+    # [VI] Mô tả chức năng trong GUI.
+    # [EN] Role description shown in the GUI.
+    description: "Khống chế quái, hồi máu và thanh tẩy cho cả đội."
+    # [VI] Entity AI; mặc định EVOKER.
+    # [EN] AI entity; default EVOKER.
+    entity-type: EVOKER
+    # [VI] Máu cấp 1; mặc định 28, phải lớn hơn 0.
+    # [EN] Level-1 health; default 28, must be positive.
+    base-health: 28
+    # [VI] Máu thêm mỗi cấp; mặc định 3, không âm.
+    # [EN] Health per level; default 3, must be nonnegative.
+    health-per-level: 3
+    # [VI] Sát thương cơ bản; mặc định 3, không âm.
+    # [EN] Base damage; default 3, must be nonnegative.
+    base-damage: 3
+    # [VI] Giáp ban đầu; mặc định 1, hợp lệ 0-100.
+    # [EN] Starting armor; default 1, valid range 0-100.
+    base-armor: 1
+    # [VI] Giáp tăng mỗi cấp; mặc định 0.15, không âm.
+    # [EN] Armor per level; default 0.15, must be nonnegative.
+    armor-per-level: 0.15
+    # [VI] Sát thương tăng mỗi cấp; mặc định 0.25, không âm.
+    # [EN] Damage per level; default 0.25, must be nonnegative.
+    damage-per-level: 0.25
+    # [VI] Biểu tượng GUI; mặc định OAK_SAPLING.
+    # [EN] GUI icon; default OAK_SAPLING.
+    menu-icon: OAK_SAPLING
+    # [VI] Skill: bắn xa, trói chậm, hồi/buff và thanh tẩy; tổng 5.
+    # [EN] Ranged control, healing, buff, and cleanse kit; 5 skills total.
+    skills: [RANGED_ATTACK, ROOT_TARGET, HEAL_ALLIES, BUFF_ALLIES, CLEANSE_OWNER]
+    # [VI] Vũ khí mặc định; mặc định STICK.
+    # [EN] Default weapon; default STICK.
+    starting-weapon: STICK
+    # [VI] Tầm tìm mục tiêu; mặc định 20 block, hợp lệ 4-64.
+    # [EN] Target acquisition radius; default 20 blocks, valid range 4-64.
+    target-radius-blocks: 20.0
+    skill-settings:
+      RANGED_ATTACK:
+        # [VI] Cooldown bắn; mặc định 5 giây, hợp lệ 1-3600.
+        # [EN] Ranged cooldown; default 5 seconds, valid range 1-3600.
+        cooldown-seconds: 5
+        # [VI] Sát thương tên; mặc định 3, hợp lệ 0-100.
+        # [EN] Arrow damage; default 3, valid range 0-100.
+        damage: 3.0
+        # [VI] Tầm giữ vị trí; mặc định 14 block, hợp lệ 4-64.
+        # [EN] Preferred firing distance; default 14 blocks, valid range 4-64.
+        range-blocks: 14.0
+      ROOT_TARGET:
+        # [VI] Cooldown khống chế; mặc định 15 giây, hợp lệ 1-3600.
+        # [EN] Control cooldown; default 15 seconds, valid range 1-3600.
+        cooldown-seconds: 15
+        # [VI] Hiệu ứng hợp lệ; mặc định SLOWNESS.
+        # [EN] Valid potion effect; default SLOWNESS.
+        effect: SLOWNESS
+        # [VI] Thời lượng; mặc định 5 giây, hợp lệ 1-600.
+        # [EN] Duration; default 5 seconds, valid range 1-600.
+        duration-seconds: 5
+        # [VI] Cấp hiệu ứng; mặc định 1, hợp lệ 0-10.
+        # [EN] Effect amplifier; default 1, valid range 0-10.
+        amplifier: 1
+      HEAL_ALLIES:
+        # [VI] Cooldown hồi máu; mặc định 14 giây, hợp lệ 1-3600.
+        # [EN] Ally heal cooldown; default 14 seconds, valid range 1-3600.
+        cooldown-seconds: 14
+        # [VI] Đối tượng hồi; OWNER, ALLIES hoặc OWNER_AND_ALLIES.
+        # [EN] Healing targets; OWNER, ALLIES, or OWNER_AND_ALLIES.
+        target: OWNER_AND_ALLIES
+        # [VI] Lượng máu hồi; mặc định 5, hợp lệ 0-100.
+        # [EN] Health restored; default 5, valid range 0-100.
+        amount: 5.0
+        # [VI] Bán kính hồi; mặc định 10 block, hợp lệ 1-32.
+        # [EN] Healing radius; default 10 blocks, valid range 1-32.
+        radius-blocks: 10.0
+      BUFF_ALLIES:
+        # [VI] Cooldown buff; mặc định 40 giây, hợp lệ 1-3600.
+        # [EN] Buff cooldown; default 40 seconds, valid range 1-3600.
+        cooldown-seconds: 40
+        # [VI] Đối tượng buff; OWNER, ALLIES hoặc OWNER_AND_ALLIES.
+        # [EN] Buff targets; OWNER, ALLIES, or OWNER_AND_ALLIES.
+        target: OWNER_AND_ALLIES
+        # [VI] Hiệu ứng hợp lệ; mặc định REGENERATION.
+        # [EN] Valid potion effect; default REGENERATION.
+        effect: REGENERATION
+        # [VI] Thời lượng; mặc định 6 giây, hợp lệ 1-600.
+        # [EN] Duration; default 6 seconds, valid range 1-600.
+        duration-seconds: 6
+        # [VI] Cấp hiệu ứng; mặc định 0, hợp lệ 0-10.
+        # [EN] Potion amplifier; default 0, valid range 0-10.
+        amplifier: 0
+        # [VI] Bán kính buff; mặc định 10 block, hợp lệ 1-32.
+        # [EN] Buff radius; default 10 blocks, valid range 1-32.
+        radius-blocks: 10.0
+      CLEANSE_OWNER:
+        # [VI] Cooldown thanh tẩy; mặc định 45 giây, hợp lệ 1-3600.
+        # [EN] Cleanse cooldown; default 45 seconds, valid range 1-3600.
+        cooldown-seconds: 45
+        # [VI] Danh sách hiệu ứng có thể gỡ khỏi chủ.
+        # [EN] Potion effects removable from the owner.
+        effects: [POISON, WITHER, SLOWNESS, WEAKNESS, BLINDNESS, HUNGER]
+    # [VI] Chi phí nâng bậc; tier đích 2-13, số lượng vật liệu 0-1000000.
+    # [EN] Tier-upgrade costs; target tier 2-13, material amount 0-1000000.
+    tier-upgrades:
+      2: {materials: {GOLDEN_CARROT: 16}}
+      3: {materials: {GOLDEN_CARROT: 24}}
+      4: {materials: {GOLDEN_CARROT: 32}}
+      5: {materials: {GOLDEN_CARROT: 40}}
+      6: {materials: {GOLDEN_CARROT: 48}}
+      7: {materials: {GOLDEN_CARROT: 56}}
+      8: {materials: {GOLDEN_CARROT: 64}}
+      9: {materials: {GOLDEN_CARROT: 72}}
+      10: {materials: {GOLDEN_CARROT: 80}}
+      11: {materials: {GOLDEN_CARROT: 88}}
+      12: {materials: {GOLDEN_CARROT: 96}}
+      13: {materials: {GOLDEN_CARROT: 104}}
+
+  assassin:
+    # [VI] Tên hiển thị của class.
+    # [EN] Display name for this class.
+    display-name: "Sát Thủ"
+    # [VI] Mô tả chức năng trong GUI.
+    # [EN] Role description shown in the GUI.
+    description: "Ám sát mục tiêu, hút máu và cuồng nộ khi nguy cấp."
+    # [VI] Entity AI; mặc định WITHER_SKELETON.
+    # [EN] AI entity; default WITHER_SKELETON.
+    entity-type: WITHER_SKELETON
+    # [VI] Máu cấp 1; mặc định 24, phải lớn hơn 0.
+    # [EN] Level-1 health; default 24, must be positive.
+    base-health: 24
+    # [VI] Máu thêm mỗi cấp; mặc định 2.5, không âm.
+    # [EN] Health per level; default 2.5, must be nonnegative.
+    health-per-level: 2.5
+    # [VI] Sát thương cơ bản; mặc định 7, không âm.
+    # [EN] Base damage; default 7, must be nonnegative.
+    base-damage: 7
+    # [VI] Giáp ban đầu; mặc định 1.5, hợp lệ 0-100.
+    # [EN] Starting armor; default 1.5, valid range 0-100.
+    base-armor: 1.5
+    # [VI] Giáp tăng mỗi cấp; mặc định 0.1, không âm.
+    # [EN] Armor per level; default 0.1, must be nonnegative.
+    armor-per-level: 0.1
+    # [VI] Sát thương tăng mỗi cấp; mặc định 0.8, không âm.
+    # [EN] Damage per level; default 0.8, must be nonnegative.
+    damage-per-level: 0.8
+    # [VI] Biểu tượng GUI; mặc định DIAMOND_SWORD.
+    # [EN] GUI icon; default DIAMOND_SWORD.
+    menu-icon: DIAMOND_SWORD
+    # [VI] Skill: cận chiến, cường kích, hút máu và cuồng nộ; tổng 4.
+    # [EN] Melee, power strike, lifesteal, and low-health rage kit; 4 skills total.
+    skills: [ATTACK, POWER_STRIKE, LIFESTEAL, BERSERK]
+    # [VI] Vũ khí mặc định; mặc định IRON_SWORD.
+    # [EN] Default weapon; default IRON_SWORD.
+    starting-weapon: IRON_SWORD
+    # [VI] Tầm tìm mục tiêu; mặc định 18 block, hợp lệ 4-64.
+    # [EN] Target acquisition radius; default 18 blocks, valid range 4-64.
+    target-radius-blocks: 18.0
+    skill-settings:
+      ATTACK:
+        # [VI] Cooldown đánh thường; mặc định 2 giây, hợp lệ 1-3600.
+        # [EN] Basic attack cooldown; default 2 seconds, valid range 1-3600.
+        cooldown-seconds: 2
+      POWER_STRIKE:
+        # [VI] Cooldown cường kích; mặc định 14 giây, hợp lệ 1-3600.
+        # [EN] Power Strike cooldown; default 14 seconds, valid range 1-3600.
+        cooldown-seconds: 14
+        # [VI] Sát thương cộng thêm; mặc định 7, hợp lệ 0-100.
+        # [EN] Bonus strike damage; default 7, valid range 0-100.
+        damage: 7.0
+      LIFESTEAL:
+        # [VI] Cooldown hút máu; mặc định 12 giây, hợp lệ 1-3600.
+        # [EN] Lifesteal cooldown; default 12 seconds, valid range 1-3600.
+        cooldown-seconds: 12
+        # [VI] Sát thương hút máu; mặc định 5, hợp lệ 0-100.
+        # [EN] Lifesteal damage; default 5, valid range 0-100.
+        damage: 5.0
+        # [VI] Máu tự hồi; mặc định 4, hợp lệ 0-100.
+        # [EN] Self-healing amount; default 4, valid range 0-100.
+        heal-amount: 4.0
+      BERSERK:
+        # [VI] Cooldown cuồng nộ; mặc định 45 giây, hợp lệ 1-3600.
+        # [EN] Berserk cooldown; default 45 seconds, valid range 1-3600.
+        cooldown-seconds: 45
+        # [VI] Kích hoạt khi máu còn bằng hoặc thấp hơn 40%, hợp lệ 1-99.
+        # [EN] Activates at or below 40% health, valid range 1-99.
+        health-percent: 40.0
+        # [VI] Hiệu ứng hợp lệ; mặc định STRENGTH.
+        # [EN] Valid potion effect; default STRENGTH.
+        effect: STRENGTH
+        # [VI] Thời lượng; mặc định 8 giây, hợp lệ 1-600.
+        # [EN] Duration; default 8 seconds, valid range 1-600.
+        duration-seconds: 8
+        # [VI] Cấp hiệu ứng; mặc định 0, hợp lệ 0-10.
+        # [EN] Potion amplifier; default 0, valid range 0-10.
+        amplifier: 0
+    # [VI] Chi phí nâng bậc; tier đích 2-13, số lượng vật liệu 0-1000000.
+    # [EN] Tier-upgrade costs; target tier 2-13, material amount 0-1000000.
+    tier-upgrades:
+      2: {materials: {IRON_INGOT: 20}}
+      3: {materials: {IRON_INGOT: 30}}
+      4: {materials: {IRON_INGOT: 40}}
+      5: {materials: {IRON_INGOT: 50}}
+      6: {materials: {IRON_INGOT: 60}}
+      7: {materials: {IRON_INGOT: 70}}
+      8: {materials: {IRON_INGOT: 80}}
+      9: {materials: {IRON_INGOT: 90}}
+      10: {materials: {IRON_INGOT: 100}}
+      11: {materials: {IRON_INGOT: 110}}
+      12: {materials: {IRON_INGOT: 120}}
+      13: {materials: {IRON_INGOT: 130}}
+
+  frost_mage:
+    # [VI] Tên hiển thị của class.
+    # [EN] Display name for this class.
+    display-name: "Pháp Sư Băng"
+    # [VI] Mô tả chức năng trong GUI.
+    # [EN] Role description shown in the GUI.
+    description: "Bắn loạt băng, làm chậm quái và hồi máu cho chủ nhân."
+    # [VI] Entity AI; mặc định SNOW_GOLEM.
+    # [EN] AI entity; default SNOW_GOLEM.
+    entity-type: SNOW_GOLEM
+    # [VI] Máu cấp 1; mặc định 26, phải lớn hơn 0.
+    # [EN] Level-1 health; default 26, must be positive.
+    base-health: 26
+    # [VI] Máu thêm mỗi cấp; mặc định 3, không âm.
+    # [EN] Health per level; default 3, must be nonnegative.
+    health-per-level: 3
+    # [VI] Sát thương cơ bản; mặc định 3, không âm.
+    # [EN] Base damage; default 3, must be nonnegative.
+    base-damage: 3
+    # [VI] Giáp ban đầu; mặc định 1, hợp lệ 0-100.
+    # [EN] Starting armor; default 1, valid range 0-100.
+    base-armor: 1
+    # [VI] Giáp tăng mỗi cấp; mặc định 0.1, không âm.
+    # [EN] Armor per level; default 0.1, must be nonnegative.
+    armor-per-level: 0.1
+    # [VI] Sát thương tăng mỗi cấp; mặc định 0.35, không âm.
+    # [EN] Damage per level; default 0.35, must be nonnegative.
+    damage-per-level: 0.35
+    # [VI] Biểu tượng GUI; mặc định SNOWBALL.
+    # [EN] GUI icon; default SNOWBALL.
+    menu-icon: SNOWBALL
+    # [VI] Skill: bắn xa/loạt, khống chế băng và hồi máu; tổng 4.
+    # [EN] Ranged volley, frost control, and healing kit; 4 skills total.
+    skills: [RANGED_ATTACK, VOLLEY, ROOT_TARGET, HEAL_OWNER]
+    # [VI] Vũ khí mặc định cho skill bắn tên; mặc định BOW.
+    # [EN] Default weapon for arrow skills; default BOW.
+    starting-weapon: BOW
+    # [VI] Tầm tìm mục tiêu; mặc định 24 block, hợp lệ 4-64.
+    # [EN] Target acquisition radius; default 24 blocks, valid range 4-64.
+    target-radius-blocks: 24.0
+    skill-settings:
+      RANGED_ATTACK:
+        # [VI] Cooldown bắn thường; mặc định 4 giây, hợp lệ 1-3600.
+        # [EN] Ranged cooldown; default 4 seconds, valid range 1-3600.
+        cooldown-seconds: 4
+        # [VI] Sát thương tên; mặc định 3.5, hợp lệ 0-100.
+        # [EN] Arrow damage; default 3.5, valid range 0-100.
+        damage: 3.5
+        # [VI] Tầm giữ vị trí; mặc định 16 block, hợp lệ 4-64.
+        # [EN] Preferred firing distance; default 16 blocks, valid range 4-64.
+        range-blocks: 16.0
+      VOLLEY:
+        # [VI] Cooldown bắn loạt; mặc định 16 giây, hợp lệ 1-3600.
+        # [EN] Volley cooldown; default 16 seconds, valid range 1-3600.
+        cooldown-seconds: 16
+        # [VI] Số đạn mỗi loạt; mặc định 3, hợp lệ 2-5.
+        # [EN] Projectiles per volley; default 3, valid range 2-5.
+        arrow-count: 3
+        # [VI] Tốc độ đạn; mặc định 1.8, hợp lệ 0.5-4.0.
+        # [EN] Projectile velocity; default 1.8, valid range 0.5-4.0.
+        arrow-speed: 1.8
+        # [VI] Góc tỏa; mặc định 5 độ, hợp lệ 0-30.
+        # [EN] Spread angle; default 5 degrees, valid range 0-30.
+        spread-degrees: 5.0
+        # [VI] Sát thương mỗi đạn; mặc định 2, hợp lệ 0-100.
+        # [EN] Damage per projectile; default 2, valid range 0-100.
+        damage: 2.0
+      ROOT_TARGET:
+        # [VI] Cooldown đóng băng; mặc định 14 giây, hợp lệ 1-3600.
+        # [EN] Freeze cooldown; default 14 seconds, valid range 1-3600.
+        cooldown-seconds: 14
+        # [VI] Hiệu ứng hợp lệ; mặc định SLOWNESS.
+        # [EN] Valid potion effect; default SLOWNESS.
+        effect: SLOWNESS
+        # [VI] Thời lượng; mặc định 5 giây, hợp lệ 1-600.
+        # [EN] Duration; default 5 seconds, valid range 1-600.
+        duration-seconds: 5
+        # [VI] Cấp hiệu ứng; mặc định 2, hợp lệ 0-10.
+        # [EN] Effect amplifier; default 2, valid range 0-10.
+        amplifier: 2
+      HEAL_OWNER:
+        # [VI] Cooldown hồi chủ; mặc định 18 giây, hợp lệ 1-3600.
+        # [EN] Owner heal cooldown; default 18 seconds, valid range 1-3600.
+        cooldown-seconds: 18
+        # [VI] Lượng máu hồi; mặc định 4, hợp lệ 0-100.
+        # [EN] Health restored; default 4, valid range 0-100.
+        amount: 4.0
+    # [VI] Chi phí nâng bậc; tier đích 2-13, số lượng vật liệu 0-1000000.
+    # [EN] Tier-upgrade costs; target tier 2-13, material amount 0-1000000.
+    tier-upgrades:
+      2: {materials: {DIAMOND: 4}}
+      3: {materials: {DIAMOND: 6}}
+      4: {materials: {DIAMOND: 8}}
+      5: {materials: {DIAMOND: 10}}
+      6: {materials: {DIAMOND: 12}}
+      7: {materials: {DIAMOND: 14}}
+      8: {materials: {DIAMOND: 16}}
+      9: {materials: {DIAMOND: 18}}
+      10: {materials: {DIAMOND: 20}}
+      11: {materials: {DIAMOND: 22}}
+      12: {materials: {DIAMOND: 24}}
+      13: {materials: {DIAMOND: 26}}
 
 # [VI] Chi phí và cấp lính; phải có token đúng lớp/cấp, XP/vật liệu chỉ trừ khi thuê thành công.
 # [EN] Tier costs; an exact class/level token is required and XP/materials are charged only on success.

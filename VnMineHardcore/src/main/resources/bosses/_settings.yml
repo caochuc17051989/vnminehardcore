@@ -51,9 +51,13 @@ army-token-drop:
   # [VI] Bật/tắt nguồn token từ boss; mặc định true.
   # [EN] Enable summon-token boss drops; default true.
   enabled: true
-  # [VI] Tỉ lệ token rơi khi nhận thưởng; mặc định 35%, hợp lệ 0-1.
-  # [EN] Chance for a token to drop on a rewarded boss kill; default 35%, valid range 0-1.
-  chance: 0.35
+  # [VI] Tỉ lệ token rơi khi nhận thưởng; mặc định 30%, hợp lệ 0-1.
+  # [EN] Chance for a token to drop on a rewarded boss kill; default 30%, valid range 0-1.
+  chance: 0.30
+
+# [VI] Hệ số tăng EXP boss theo level: EXP = exp-boss * (1 + (level - 1) * hệ số); mặc định 1, hợp lệ 0-10.
+# [EN] Boss XP scaling by level: XP = boss exp * (1 + (level - 1) * multiplier); default 1, valid range 0-10.
+experience-per-level-multiplier: 1.0
 
 # [VI] Cấu hình chung cho bộ giáp boss; có thể ghi đè tỷ lệ trong armor-set của từng boss.
 # [EN] Shared boss armor reward settings; per-boss armor-set may override the drop chance.
