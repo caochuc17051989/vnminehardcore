@@ -95,12 +95,14 @@ public class DisasterAction {
     public static class ActionCondition {
         public boolean requireOutdoor = false;
         public boolean ignoreSafeZone = false;
+        public boolean requireRain = false;
 
         public static ActionCondition fromSection(ConfigurationSection section) {
             ActionCondition c = new ActionCondition();
             if (section == null) return c;
             c.requireOutdoor = section.getBoolean("require-outdoor", false);
             c.ignoreSafeZone = section.getBoolean("ignore-safe-zone", false);
+            c.requireRain = section.getBoolean("require-rain", false);
             return c;
         }
     }
@@ -204,6 +206,7 @@ public class DisasterAction {
                 Map<?, ?> condMap = (Map<?, ?>) actionMap.get("condition");
                 action.condition.requireOutdoor = toBool(condMap.get("require-outdoor"), false);
                 action.condition.ignoreSafeZone = toBool(condMap.get("ignore-safe-zone"), false);
+                action.condition.requireRain = toBool(condMap.get("require-rain"), false);
             }
 
             // Parse targets

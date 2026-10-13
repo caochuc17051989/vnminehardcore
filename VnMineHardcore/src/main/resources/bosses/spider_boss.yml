@@ -29,6 +29,12 @@ hp-by-level:
   8: 2228
   9: 3342
   10: 5013
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
 skills:
   venom-web:
     enabled: true
@@ -38,6 +44,46 @@ skills:
     radius: 5.0
     velocity: 1.0
     spread: 0.0
+  cobweb-trap:
+    enabled: true
+    damage: 0.0
+    multiply: 1
+    cooldown-seconds: 14
+    radius: 4.0
+    velocity: 1.2
+    spread: 0.0
+    # [VI] Bán kính bẫy (1 tạo vùng 3x3); mặc định 1; hợp lệ 1-2.
+    # [EN] Trap radius (1 creates a 3x3 area); default 1; valid range 1-2.
+    trap-radius: 1
+    # [VI] Thời gian tơ tồn tại (giây); mặc định 6; hợp lệ 1-30.
+    # [EN] Cobweb lifetime (seconds); default 6; valid range 1-30.
+    trap-duration-seconds: 6
+  venom-pounce:
+    enabled: true
+    damage: 7.0
+    multiply: 1
+    cooldown-seconds: 12
+    radius: 2.5
+    velocity: 1.2
+    spread: 0.0
+    # [VI] Vận tốc nhảy dọc; mặc định 0.75; hợp lệ 0.3-1.5.
+    # [EN] Vertical jump velocity; default 0.75; valid range 0.3-1.5.
+    jump-y: 0.75
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  brood-release:
+    enabled: true
+    # [VI] Ngưỡng máu triệu hồi; mặc định 0.5 (50%); hợp lệ 0.1-0.9.
+    # [EN] Health threshold for summoning; default 0.5 (50%); valid range 0.1-0.9.
+    health-threshold: 0.5
+    # [VI] Số nhện con ít nhất; mặc định 4; hợp lệ 1-8.
+    # [EN] Minimum Cave Spider minions; default 4; valid range 1-8.
+    minions-min: 4
+    # [VI] Số nhện con nhiều nhất; mặc định 6; hợp lệ minions-min..8.
+    # [EN] Maximum Cave Spider minions; default 6; valid range minions-min..8.
+    minions-max: 6
 
 immunities:
   potion-effects:
@@ -92,24 +138,16 @@ drops:
 level-drops:
   1:
     - material: IRON_BOOTS
-      name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 1"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 1 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      name: "§0§lỦng Tơ Nhện · Cấp 1"
+      story-id: spider-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.160
       enchantments:
         protection: 1
     - material: ENCHANTED_BOOK
-      name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 1"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      name: "§0§lSổ Tơ Nhện · Cấp 1"
+      story-id: spider-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -118,12 +156,8 @@ level-drops:
 
   2:
     - material: IRON_BOOTS
-      name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 2"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 2 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      name: "§0§lỦng Tơ Nhện · Cấp 2"
+      story-id: spider-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.146
@@ -131,12 +165,8 @@ level-drops:
         protection: 1
         feather_falling: 1
     - material: ENCHANTED_BOOK
-      name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 2"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      name: "§0§lSổ Tơ Nhện · Cấp 2"
+      story-id: spider-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.095
@@ -147,11 +177,7 @@ level-drops:
   3:
     - material: DIAMOND_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 3"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 3 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
       chance: 0.132
@@ -161,11 +187,7 @@ level-drops:
         depth_strider: 2
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 3"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
       chance: 0.086
@@ -177,11 +199,7 @@ level-drops:
   4:
     - material: DIAMOND_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 4"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 4 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
       chance: 0.118
@@ -192,11 +210,7 @@ level-drops:
         frost_walker: 2
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 4"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
       chance: 0.077
@@ -208,11 +222,7 @@ level-drops:
   5:
     - material: DIAMOND_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 5"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 5 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -224,11 +234,7 @@ level-drops:
         soul_speed: 2
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 5"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
       chance: 0.068
@@ -242,11 +248,7 @@ level-drops:
   6:
     - material: NETHERITE_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 6"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 6 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
       chance: 0.090
@@ -259,11 +261,7 @@ level-drops:
         thorns: 3
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 6"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
       chance: 0.058
@@ -278,11 +276,7 @@ level-drops:
   7:
     - material: NETHERITE_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 7"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 7 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
       chance: 0.076
@@ -296,11 +290,7 @@ level-drops:
         unbreaking: 3
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 7"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
       chance: 0.049
@@ -316,11 +306,7 @@ level-drops:
   8:
     - material: NETHERITE_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 8"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 8 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
       chance: 0.062
@@ -335,11 +321,7 @@ level-drops:
         mending: 3
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 8"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
       chance: 0.040
@@ -356,11 +338,7 @@ level-drops:
   9:
     - material: NETHERITE_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 9"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 9 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
       chance: 0.048
@@ -376,11 +354,7 @@ level-drops:
         vanishing_curse: 4
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 9"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
       chance: 0.031
@@ -398,11 +372,7 @@ level-drops:
   10:
     - material: NETHERITE_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 10"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 10 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
       chance: 0.034
@@ -419,11 +389,7 @@ level-drops:
         binding_curse: 4
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 10"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
       chance: 0.022

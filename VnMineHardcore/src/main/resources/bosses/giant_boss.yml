@@ -29,8 +29,14 @@ hp-by-level:
   8: 6836
   9: 10254
   10: 15381
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
 skills:
-  stomp:
+  ground-slam:
     enabled: true
     damage: 10.0
     multiply: 1
@@ -38,6 +44,26 @@ skills:
     radius: 6.0
     velocity: 1.0
     spread: 0.0
+    # [VI] Độ dài đường xung kích (block); mặc định 15; hợp lệ 4-24.
+    # [EN] Shockwave line length (blocks); default 15; valid range 4-24.
+    line-length: 15
+  boulder-toss:
+    enabled: true
+    damage: 12.0
+    multiply: 1
+    cooldown-seconds: 20
+    radius: 3.0
+    velocity: 1.1
+    spread: 0.0
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  giant-armor:
+    enabled: true
+    # [VI] Hệ số sát thương vào điểm yếu đầu; mặc định 2; hợp lệ 1-5.
+    # [EN] Head weakpoint damage multiplier; default 2; valid range 1-5.
+    headshot-multiplier: 2.0
 
 immunities:
   fall-damage: true
@@ -67,24 +93,16 @@ drops:
 level-drops:
   1:
     - material: IRON_AXE
-      name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 1"
-      lore:
-        - "§7Tương truyền, một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Khi tiếng chuông thứ 1 vang lên, người khổng lồ đã nâng cả ngọn núi để tìm lại quê nhà."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      name: "§6§lRìu Địa Mạch · Cấp 1"
+      story-id: giant-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.160
       enchantments:
         sharpness: 1
     - material: ENCHANTED_BOOK
-      name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 1"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      name: "§6§lSổ Địa Mạch · Cấp 1"
+      story-id: giant-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -93,12 +111,8 @@ level-drops:
 
   2:
     - material: IRON_AXE
-      name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 2"
-      lore:
-        - "§7Tương truyền, một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Khi tiếng chuông thứ 2 vang lên, người khổng lồ đã nâng cả ngọn núi để tìm lại quê nhà."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      name: "§6§lRìu Địa Mạch · Cấp 2"
+      story-id: giant-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.146
@@ -106,12 +120,8 @@ level-drops:
         sharpness: 1
         smite: 1
     - material: ENCHANTED_BOOK
-      name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 2"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      name: "§6§lSổ Địa Mạch · Cấp 2"
+      story-id: giant-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.095
@@ -122,11 +132,7 @@ level-drops:
   3:
     - material: DIAMOND_AXE
       name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 3"
-      lore:
-        - "§7Tương truyền, một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Khi tiếng chuông thứ 3 vang lên, người khổng lồ đã nâng cả ngọn núi để tìm lại quê nhà."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-relic
       min-amount: 1
       max-amount: 1
       chance: 0.132
@@ -136,11 +142,7 @@ level-drops:
         bane_of_arthropods: 2
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 3"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-codex
       min-amount: 1
       max-amount: 1
       chance: 0.086
@@ -152,11 +154,7 @@ level-drops:
   4:
     - material: DIAMOND_AXE
       name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 4"
-      lore:
-        - "§7Tương truyền, một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Khi tiếng chuông thứ 4 vang lên, người khổng lồ đã nâng cả ngọn núi để tìm lại quê nhà."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-relic
       min-amount: 1
       max-amount: 1
       chance: 0.118
@@ -167,11 +165,7 @@ level-drops:
         efficiency: 2
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 4"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-codex
       min-amount: 1
       max-amount: 1
       chance: 0.077
@@ -183,11 +177,7 @@ level-drops:
   5:
     - material: DIAMOND_AXE
       name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 5"
-      lore:
-        - "§7Tương truyền, một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Khi tiếng chuông thứ 5 vang lên, người khổng lồ đã nâng cả ngọn núi để tìm lại quê nhà."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-relic
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -199,11 +189,7 @@ level-drops:
         silk_touch: 2
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 5"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-codex
       min-amount: 1
       max-amount: 1
       chance: 0.068
@@ -217,11 +203,7 @@ level-drops:
   6:
     - material: NETHERITE_AXE
       name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 6"
-      lore:
-        - "§7Tương truyền, một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Khi tiếng chuông thứ 6 vang lên, người khổng lồ đã nâng cả ngọn núi để tìm lại quê nhà."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-relic
       min-amount: 1
       max-amount: 1
       chance: 0.090
@@ -234,11 +216,7 @@ level-drops:
         fortune: 3
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 6"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-codex
       min-amount: 1
       max-amount: 1
       chance: 0.058
@@ -253,11 +231,7 @@ level-drops:
   7:
     - material: NETHERITE_AXE
       name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 7"
-      lore:
-        - "§7Tương truyền, một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Khi tiếng chuông thứ 7 vang lên, người khổng lồ đã nâng cả ngọn núi để tìm lại quê nhà."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-relic
       min-amount: 1
       max-amount: 1
       chance: 0.076
@@ -271,11 +245,7 @@ level-drops:
         unbreaking: 3
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 7"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-codex
       min-amount: 1
       max-amount: 1
       chance: 0.049
@@ -291,11 +261,7 @@ level-drops:
   8:
     - material: NETHERITE_AXE
       name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 8"
-      lore:
-        - "§7Tương truyền, một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Khi tiếng chuông thứ 8 vang lên, người khổng lồ đã nâng cả ngọn núi để tìm lại quê nhà."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-relic
       min-amount: 1
       max-amount: 1
       chance: 0.062
@@ -310,11 +276,7 @@ level-drops:
         mending: 3
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 8"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-codex
       min-amount: 1
       max-amount: 1
       chance: 0.040
@@ -331,11 +293,7 @@ level-drops:
   9:
     - material: NETHERITE_AXE
       name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 9"
-      lore:
-        - "§7Tương truyền, một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Khi tiếng chuông thứ 9 vang lên, người khổng lồ đã nâng cả ngọn núi để tìm lại quê nhà."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-relic
       min-amount: 1
       max-amount: 1
       chance: 0.048
@@ -351,11 +309,7 @@ level-drops:
         fire_aspect: 4
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 9"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-codex
       min-amount: 1
       max-amount: 1
       chance: 0.031
@@ -373,11 +327,7 @@ level-drops:
   10:
     - material: NETHERITE_AXE
       name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 10"
-      lore:
-        - "§7Tương truyền, một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Khi tiếng chuông thứ 10 vang lên, người khổng lồ đã nâng cả ngọn núi để tìm lại quê nhà."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-relic
       min-amount: 1
       max-amount: 1
       chance: 0.034
@@ -394,11 +344,7 @@ level-drops:
         vanishing_curse: 4
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 10"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một chiếc răng hóa thạch lớn hơn cả tháp chuông."
-        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy dấu chân cuối cùng làm đổi dòng một con sông."
-        - "§dCổ tự khắc trên nó: “lời ru của đất đá vọng qua lòng sâu”."
+      story-id: giant-codex
       min-amount: 1
       max-amount: 1
       chance: 0.022

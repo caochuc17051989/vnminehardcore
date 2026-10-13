@@ -29,8 +29,14 @@ hp-by-level:
   8: 3078
   9: 4617
   10: 6926
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
 skills:
-  shadow-strike:
+  void-snatch:
     enabled: true
     damage: 8.0
     multiply: 1
@@ -38,6 +44,41 @@ skills:
     radius: 4.0
     velocity: 1.0
     spread: 0.0
+    # [VI] Khoảng cách teleport ra sau mục tiêu (block); mặc định 1.5; hợp lệ 0.5-4.
+    # [EN] Teleport offset behind target (blocks); default 1.5; valid range 0.5-4.
+    behind-distance: 1.5
+  end-rift:
+    enabled: true
+    damage: 0.0
+    multiply: 1
+    cooldown-seconds: 20
+    radius: 6.0
+    velocity: 1.0
+    spread: 0.0
+    # [VI] Nửa chiều dài chữ thập (block); mặc định 6; hợp lệ 2-12.
+    # [EN] Cross half-length (blocks); default 6; valid range 2-12.
+    length: 6
+    # [VI] Nửa bề rộng dải particle (block); mặc định 1; hợp lệ 0-2.
+    # [EN] Hazard half-width (blocks); default 1; valid range 0-2.
+    half-width: 1
+    # [VI] Thời gian báo hiệu trước khi hất tung (tick); mặc định 30; hợp lệ 10-100.
+    # [EN] Warning before launch (ticks); default 30; valid range 10-100.
+    warning-ticks: 30
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  hydro-phobic-aura:
+    enabled: true
+    # [VI] Bán kính aura khi ở nước/mưa (block); mặc định 5; hợp lệ 1-12.
+    # [EN] Aura radius while touching water/rain (blocks); default 5; valid range 1-12.
+    radius: 5.0
+    # [VI] Độ bền giáp bị ăn mòn mỗi lần; mặc định 1; hợp lệ 0-5.
+    # [EN] Armor durability consumed per pulse; default 1; valid range 0-5.
+    armor-damage: 1
+    # [VI] Hồi aura (giây); mặc định 3; hợp lệ 1-30.
+    # [EN] Aura cooldown (seconds); default 3; valid range 1-30.
+    cooldown-seconds: 3
 
 immunities:
   potion-effects:
@@ -92,24 +133,16 @@ drops:
 level-drops:
   1:
     - material: IRON_PICKAXE
-      name: "§5§lCuốc Mắt Tận Cùng · Cấp 1"
-      lore:
-        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Khi tiếng chuông thứ 1 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      name: "§5§lCuốc Mắt End · Cấp 1"
+      story-id: enderman-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.160
       enchantments:
         efficiency: 1
     - material: ENCHANTED_BOOK
-      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 1"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      name: "§5§lGhi Chép Mắt End · Cấp 1"
+      story-id: enderman-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -118,12 +151,8 @@ level-drops:
 
   2:
     - material: IRON_PICKAXE
-      name: "§5§lCuốc Mắt Tận Cùng · Cấp 2"
-      lore:
-        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Khi tiếng chuông thứ 2 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      name: "§5§lCuốc Mắt End · Cấp 2"
+      story-id: enderman-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.146
@@ -131,12 +160,8 @@ level-drops:
         efficiency: 1
         fortune: 1
     - material: ENCHANTED_BOOK
-      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 2"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      name: "§5§lGhi Chép Mắt End · Cấp 2"
+      story-id: enderman-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.095
@@ -147,11 +172,7 @@ level-drops:
   3:
     - material: DIAMOND_PICKAXE
       name: "§5§lCuốc Mắt Tận Cùng · Cấp 3"
-      lore:
-        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Khi tiếng chuông thứ 3 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-relic
       min-amount: 1
       max-amount: 1
       chance: 0.132
@@ -161,11 +182,7 @@ level-drops:
         silk_touch: 2
     - material: ENCHANTED_BOOK
       name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 3"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-codex
       min-amount: 1
       max-amount: 1
       chance: 0.086
@@ -177,11 +194,7 @@ level-drops:
   4:
     - material: DIAMOND_PICKAXE
       name: "§5§lCuốc Mắt Tận Cùng · Cấp 4"
-      lore:
-        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Khi tiếng chuông thứ 4 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-relic
       min-amount: 1
       max-amount: 1
       chance: 0.118
@@ -192,11 +205,7 @@ level-drops:
         unbreaking: 2
     - material: ENCHANTED_BOOK
       name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 4"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-codex
       min-amount: 1
       max-amount: 1
       chance: 0.077
@@ -208,11 +217,7 @@ level-drops:
   5:
     - material: DIAMOND_PICKAXE
       name: "§5§lCuốc Mắt Tận Cùng · Cấp 5"
-      lore:
-        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Khi tiếng chuông thứ 5 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-relic
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -224,11 +229,7 @@ level-drops:
         mending: 2
     - material: ENCHANTED_BOOK
       name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 5"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-codex
       min-amount: 1
       max-amount: 1
       chance: 0.068
@@ -242,11 +243,7 @@ level-drops:
   6:
     - material: NETHERITE_PICKAXE
       name: "§5§lCuốc Mắt Tận Cùng · Cấp 6"
-      lore:
-        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Khi tiếng chuông thứ 6 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-relic
       min-amount: 1
       max-amount: 1
       chance: 0.090
@@ -259,11 +256,7 @@ level-drops:
         sharpness: 3
     - material: ENCHANTED_BOOK
       name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 6"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-codex
       min-amount: 1
       max-amount: 1
       chance: 0.058
@@ -278,11 +271,7 @@ level-drops:
   7:
     - material: NETHERITE_PICKAXE
       name: "§5§lCuốc Mắt Tận Cùng · Cấp 7"
-      lore:
-        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Khi tiếng chuông thứ 7 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-relic
       min-amount: 1
       max-amount: 1
       chance: 0.076
@@ -296,11 +285,7 @@ level-drops:
         smite: 3
     - material: ENCHANTED_BOOK
       name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 7"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-codex
       min-amount: 1
       max-amount: 1
       chance: 0.049
@@ -316,11 +301,7 @@ level-drops:
   8:
     - material: NETHERITE_PICKAXE
       name: "§5§lCuốc Mắt Tận Cùng · Cấp 8"
-      lore:
-        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Khi tiếng chuông thứ 8 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-relic
       min-amount: 1
       max-amount: 1
       chance: 0.062
@@ -335,11 +316,7 @@ level-drops:
         bane_of_arthropods: 3
     - material: ENCHANTED_BOOK
       name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 8"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-codex
       min-amount: 1
       max-amount: 1
       chance: 0.040
@@ -356,11 +333,7 @@ level-drops:
   9:
     - material: NETHERITE_PICKAXE
       name: "§5§lCuốc Mắt Tận Cùng · Cấp 9"
-      lore:
-        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Khi tiếng chuông thứ 9 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-relic
       min-amount: 1
       max-amount: 1
       chance: 0.048
@@ -376,11 +349,7 @@ level-drops:
         fire_aspect: 4
     - material: ENCHANTED_BOOK
       name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 9"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-codex
       min-amount: 1
       max-amount: 1
       chance: 0.031
@@ -398,11 +367,7 @@ level-drops:
   10:
     - material: NETHERITE_PICKAXE
       name: "§5§lCuốc Mắt Tận Cùng · Cấp 10"
-      lore:
-        - "§7Tương truyền, một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Khi tiếng chuông thứ 10 vang lên, kẻ lữ hành đã đánh cắp tọa độ của chính bầu trời."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-relic
       min-amount: 1
       max-amount: 1
       chance: 0.034
@@ -419,11 +384,7 @@ level-drops:
         vanishing_curse: 4
     - material: ENCHANTED_BOOK
       name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 10"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: một con mắt tím được tìm thấy trong chiếc rương không có đáy."
-        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy những khối đá tự đổi chỗ sau mỗi lần chớp mắt."
-        - "§dCổ tự khắc trên nó: “bí mật về cánh cổng chưa từng được mở”."
+      story-id: enderman-codex
       min-amount: 1
       max-amount: 1
       chance: 0.022

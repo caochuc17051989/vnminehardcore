@@ -1,0 +1,60 @@
+# [VI] Cấu hình nhóm và quyền của VnMineHardcore. Thay đổi file này khi server đã chạy rồi dùng /vnreload.
+# [EN] VnMineHardcore group and permission configuration. After editing while the server is running, use /vnreload.
+# [VI] default-group là nhóm mặc định cho người mới và /vnuser reset; mặc định: user. Đổi khóa không tự đổi nhóm đã lưu.
+# [EN] default-group is used for new players and /vnuser reset; default: user. Changing it does not alter saved assignments.
+# [VI] Nhóm user/admin được tạo sẵn. Không xóa nhóm đang là mặc định hoặc đang có người dùng.
+# [EN] The user/admin groups are created by default. Do not delete the default group or a group with assigned users.
+# [VI] Quyền là các node chính xác, không hỗ trợ wildcard, phủ định hoặc kế thừa; quyền nhóm và cá nhân được cộng gộp.
+# [EN] Permissions are exact nodes; wildcards, negation and inheritance are unsupported. Group and user grants are additive.
+# [VI] OP và console luôn có đầy đủ quyền; node spawnprotection.bypass cho phép người chơi thường tương tác trong vùng bảo vệ.
+# [EN] Operators and console have all permissions; spawnprotection.bypass lets non-operators interact in protected areas.
+
+format-version: 1
+default-group: user
+
+groups:
+  user:
+    # [VI] Chỉ cấp các lệnh cơ bản cho người chơi.
+    # [EN] Basic commands available to regular players only.
+    permissions:
+      - vnmine.command.stats
+      - vnmine.command.help
+      - vnmine.command.utility
+      - vnmine.command.reward
+      - vnmine.command.respawn
+      - vnmine.command.leave
+      - vnmine.hardcore.stats
+  admin:
+    # [VI] Nhóm quản trị được cấp toàn bộ quyền plugin, bao gồm bỏ qua spawn protection.
+    # [EN] Administrators receive all plugin permissions, including spawn-protection bypass.
+    permissions:
+      - vnmine.command.stats
+      - vnmine.command.status
+      - vnmine.command.reload
+      - vnmine.command.disasters
+      - vnmine.command.bosses
+      - vnmine.command.utility
+      - vnmine.command.death.reset
+      - vnmine.command.reward
+      - vnmine.command.respawn
+      - vnmine.command.leave
+      - vnmine.command.fly
+      - vnmine.command.nodame
+      - vnmine.command.spawn
+      - vnmine.command.gamemode
+      - vnmine.command.scoreboard.reset
+      - vnmine.command.time.manage
+      - vnmine.command.day.manage
+      - vnmine.command.spawn.manage
+      - vnmine.command.teleport.other
+      - vnmine.command.help
+      - vnmine.command.groups.manage
+      - vnmine.command.users.manage
+      - vnmine.spawnprotection.bypass
+      - vnmine.hardcore.stats
+      - vnmine.hardcore.admin
+      - vnmine.hardcore.bypass
+
+# [VI] Người chơi được lưu theo UUID. Mỗi bản ghi có tên gần nhất, nhóm, và các quyền cá nhân cộng thêm.
+# [EN] Players are stored by UUID. Each record contains the last known name, group, and additive per-user grants.
+users: {}

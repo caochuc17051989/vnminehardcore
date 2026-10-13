@@ -97,24 +97,22 @@ drops:
 level-drops:
   1:
     - material: BOW
-      name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 1"
-      lore:
-        - "§7Tương truyền, đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Khi tiếng chuông thứ 1 vang lên, mũi tên đã bay qua cả bức tường thời gian."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      name: "§8§lCung Lửa Vạn Cốt · Cấp 1"
+      story-id: skeleton-relic-common
       min-amount: 1
       max-amount: 1
-      chance: 0.160
+      # [VI] Cung level 1 luôn rơi; xác suất 1.0 (100%), hợp lệ 0-1.
+      # [EN] Always drop the level-1 bow; chance 1.0 (100%), valid range 0-1.
+      chance: 1.0
+      # [VI] Sức mạnh I, Lửa I và Vô hạn I; Vô hạn cần mang ít nhất 1 mũi tên.
+      # [EN] Power I, Flame I, and Infinity I; Infinity requires one carried arrow.
       enchantments:
         power: 1
+        flame: 1
+        infinity: 1
     - material: ENCHANTED_BOOK
-      name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 1"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      name: "§8§lSổ Xương · Cấp 1"
+      story-id: skeleton-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -123,12 +121,8 @@ level-drops:
 
   2:
     - material: BOW
-      name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 2"
-      lore:
-        - "§7Tương truyền, đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Khi tiếng chuông thứ 2 vang lên, mũi tên đã bay qua cả bức tường thời gian."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      name: "§8§lCung Xương · Cấp 2"
+      story-id: skeleton-relic-common
       min-amount: 1
       max-amount: 1
       chance: 0.146
@@ -136,12 +130,8 @@ level-drops:
         power: 1
         punch: 1
     - material: ENCHANTED_BOOK
-      name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 2"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      name: "§8§lSổ Xương · Cấp 2"
+      story-id: skeleton-codex-common
       min-amount: 1
       max-amount: 1
       chance: 0.095
@@ -152,11 +142,7 @@ level-drops:
   3:
     - material: BOW
       name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 3"
-      lore:
-        - "§7Tương truyền, đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Khi tiếng chuông thứ 3 vang lên, mũi tên đã bay qua cả bức tường thời gian."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
       chance: 0.132
@@ -166,11 +152,7 @@ level-drops:
         flame: 2
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 3"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
       chance: 0.086
@@ -182,11 +164,7 @@ level-drops:
   4:
     - material: BOW
       name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 4"
-      lore:
-        - "§7Tương truyền, đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Khi tiếng chuông thứ 4 vang lên, mũi tên đã bay qua cả bức tường thời gian."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
       chance: 0.118
@@ -197,11 +175,7 @@ level-drops:
         infinity: 2
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 4"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
       chance: 0.077
@@ -213,11 +187,7 @@ level-drops:
   5:
     - material: BOW
       name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 5"
-      lore:
-        - "§7Tương truyền, đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Khi tiếng chuông thứ 5 vang lên, mũi tên đã bay qua cả bức tường thời gian."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
       chance: 0.104
@@ -229,11 +199,7 @@ level-drops:
         unbreaking: 2
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 5"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
       chance: 0.068
@@ -247,11 +213,7 @@ level-drops:
   6:
     - material: BOW
       name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 6"
-      lore:
-        - "§7Tương truyền, đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Khi tiếng chuông thứ 6 vang lên, mũi tên đã bay qua cả bức tường thời gian."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
       chance: 0.090
@@ -264,11 +226,7 @@ level-drops:
         mending: 3
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 6"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
       chance: 0.058
@@ -283,11 +241,7 @@ level-drops:
   7:
     - material: BOW
       name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 7"
-      lore:
-        - "§7Tương truyền, đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Khi tiếng chuông thứ 7 vang lên, mũi tên đã bay qua cả bức tường thời gian."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
       chance: 0.076
@@ -301,11 +255,7 @@ level-drops:
         vanishing_curse: 3
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 7"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
       chance: 0.049
@@ -321,11 +271,7 @@ level-drops:
   8:
     - material: ENCHANTED_BOOK
       name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 8"
-      lore:
-        - "§7Tương truyền, đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Khi tiếng chuông thứ 8 vang lên, mũi tên đã bay qua cả bức tường thời gian."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
       chance: 0.062
@@ -340,11 +286,7 @@ level-drops:
         protection: 3
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 8"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
       chance: 0.040
@@ -361,11 +303,7 @@ level-drops:
   9:
     - material: ENCHANTED_BOOK
       name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 9"
-      lore:
-        - "§7Tương truyền, đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Khi tiếng chuông thứ 9 vang lên, mũi tên đã bay qua cả bức tường thời gian."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
       chance: 0.048
@@ -381,11 +319,7 @@ level-drops:
         thorns: 4
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 9"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
       chance: 0.031
@@ -403,11 +337,7 @@ level-drops:
   10:
     - material: ENCHANTED_BOOK
       name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 10"
-      lore:
-        - "§7Tương truyền, đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Khi tiếng chuông thứ 10 vang lên, mũi tên đã bay qua cả bức tường thời gian."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
       chance: 0.034
@@ -424,11 +354,7 @@ level-drops:
         looting: 4
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 10"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: đốt ngón tay của xạ thủ chưa từng bắn trượt."
-        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy đội quân xương vẫn đứng gác trong nghĩa địa không tên."
-        - "§dCổ tự khắc trên nó: “lời nguyền của vị vua bị xóa khỏi sử sách”."
+      story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
       chance: 0.022

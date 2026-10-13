@@ -197,6 +197,7 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 | `/vn death reset <player>` | Reset a player's death count (online or previously joined player) | `vnmine.command.death.reset` |
 | `/vnevent [<id> <warning-seconds> <duration-seconds>\|stop]` | List, trigger, or stop disasters | `vnmine.command.disasters` |
 | `/vnboss <id> <level> <warning-seconds> <duration-seconds>` | Manually trigger a boss | `vnmine.command.bosses` |
+| `/vnboss kill` | End the active boss without kill points or drops | `vnmine.command.bosses` |
 | `/reward` | Claim pending boss rewards; inventory must have enough space | `vnmine.command.reward` |
 | `/scoreboard reset` | Clear season scores and pending rewards; aliases: `/vnscoreboard reset`, `/sb reset` | `vnmine.command.scoreboard.reset` |
 | `/vntime set <day\|night> <minutes> [world]` | Set global day/night length or a loaded world's override | `vnmine.command.time.manage` |
@@ -738,17 +739,35 @@ drops:
 ### Creeper Boss: charged-explosion
 
 Skill `charged-explosion` trong `bosses/creeper_boss.yml` gọi sét hiệu ứng,
-gây sát thương `damage` lên boss và mọi sinh vật trong `radius` block, rồi
-giữ trạng thái charged trong `duration-seconds`. Boss creeper vẫn phát nổ
-nhưng không tự biến mất hoặc phá block; `explosion-power` và
+gây sát thương `damage` lên sinh vật trong `radius` block, rồi giữ trạng thái
+charged trong `duration-seconds`. Boss creeper không tự nhận sát thương,
+không tự biến mất hoặc phá block; `explosion-power` và
 `charged-explosion-power` cấu hình sức mạnh vụ nổ thường và charged. Các giá
 trị đều có thể tùy chỉnh trong file boss.
+
+Điểm leaderboard chỉ được trao khi boss bị hạ trước khi hết thời gian tồn tại.
+Boss hết hạn hoặc bị kết thúc bằng `/vnboss kill` không cho điểm; lệnh admin
+này cũng không làm rơi loot. Skill mở rộng của các boss Enderman, Ravager,
+Phantom, Ghast, Spider, Vindicator, Witch và Giant được bật/tùy chỉnh trong
+file boss tương ứng. Các thay đổi block tạm thời được khôi phục sau thời hạn
+đã cấu hình hoặc khi encounter kết thúc; block trong vùng spawn protection
+không bị thay đổi.
+
+Thông báo skill cast được cấu hình trong `bosses/_settings.yml`:
+`skill-cast-feedback.console-log` bật log console, còn
+`skill-cast-feedback.broadcast-to-ops` chỉ gửi thông báo đến OP đang online;
+cả hai mặc định bật. Boss dạng mob dùng AI/pathfinding mặc định để di chuyển
+và tìm mục tiêu; hệ thống custom chỉ điều phối target, skill và boundary
+recovery để không ép vận tốc mỗi vòng.
 
 ### Rare drops theo level và bảng xếp hạng boss
 
 Mỗi file `bosses/<id>.yml` có `level-drops` riêng cho level 1–10. Mỗi level
-có hai di vật hiếm với truyền thuyết riêng; mỗi món có tối đa 4 dòng lore và
-số dòng enchant tăng theo level. Loot vẫn có thể tùy chỉnh bằng các trường:
+có hai di vật hiếm với truyền thuyết riêng; lore được liên kết qua `story-id`
+đến `story.yml`, tối đa 30 ký tự mỗi dòng và 6 dòng mỗi món. Số dòng enchant
+tăng theo level. Cung Skeleton level 1 luôn rơi cung có Flame I và Infinity I;
+Infinity vẫn yêu cầu người chơi mang theo ít nhất một mũi tên. Loot có thể tùy
+chỉnh bằng các trường:
 `material`, `name`, `lore`, `min-amount`, `max-amount`,
 `chance`, `enchantments` (kể cả over-enchant) và `book-enchantments` (lưu
 enchant để người chơi dùng sách lên item). Boss tự nhiên tăng cấp theo ngày

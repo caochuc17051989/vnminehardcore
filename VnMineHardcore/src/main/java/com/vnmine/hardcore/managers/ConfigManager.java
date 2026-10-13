@@ -207,6 +207,8 @@ public class ConfigManager {
 
     // Boss Events - General settings (loaded from bosses/_settings.yml)
     public boolean bossEventsEnabled;
+    public boolean bossSkillCastLogsEnabled;
+    public boolean bossSkillCastOpBroadcastEnabled;
     public String bossEventMinIntervalRaw;
     public int bossEventSpawnRadius;
     public boolean bossLevelProgressionEnabled;
@@ -217,6 +219,7 @@ public class ConfigManager {
 
     // Boss config map - each boss is a complete object (loaded from bosses/*.yml)
     public Map<String, BossConfig> bossConfigs = new HashMap<>();
+    private final Map<String, List<String>> bossItemStories = new HashMap<>();
 
     // Ore Control
     public boolean oreControlEnabled;
@@ -292,6 +295,7 @@ public class ConfigManager {
         public Map<Integer, List<ConfiguredItem>> levelDrops = new HashMap<>();
         public Map<Integer, Double> hpByLevel = new HashMap<>();
         public Map<String, BossSkillConfig> skills = new HashMap<>();
+        public Map<String, Object> traits = new HashMap<>();
     }
 
     public static class BossLevelThreshold {
@@ -317,6 +321,7 @@ public class ConfigManager {
         public double explosionPower;
         public double chargedExplosionPower;
         public int explosionCooldownSeconds;
+        public Map<String, Object> options = new HashMap<>();
     }
 
     // DropConfig class - holds drop configuration
@@ -508,6 +513,7 @@ public class ConfigManager {
         loadDisasterConfigs();
         loadDisasterMessages();
         loadBossSettings();
+        loadBossItemStories();
         loadBossConfigs();
 
         // Ore Control
@@ -837,6 +843,7 @@ public class ConfigManager {
 
         saveResourceIfNotExists("scoreboard.yml");
         mergeDefaultResource("scoreboard.yml");
+        mergeDefaultResource("story.yml");
 
         // Merge new boss settings into existing files without overwriting admin values.
         mergeDefaultResource("bosses/_settings.yml");
@@ -1083,6 +1090,8 @@ public class ConfigManager {
         FileConfiguration bs = YamlConfiguration.loadConfiguration(settingsFile);
 
         bossEventsEnabled = bs.getBoolean("enabled", true);
+        bossSkillCastLogsEnabled = bs.getBoolean("skill-cast-feedback.console-log", true);
+        bossSkillCastOpBroadcastEnabled = bs.getBoolean("skill-cast-feedback.broadcast-to-ops", true);
         bossEventMinIntervalRaw = getStringFromConfig(bs.getConfigurationSection(""), "min-interval-seconds", "1200-2400");
         bossEventSpawnRadius = bs.getInt("spawn-radius", 50);
         bossLevelProgressionEnabled = bs.getBoolean("level-progression.enabled", true);
@@ -1222,7 +1231,16 @@ public class ConfigManager {
                         skillSection.getDouble("charged-explosion-power", 6.0)));
                     skill.explosionCooldownSeconds = Math.max(1, Math.min(120,
                         skillSection.getInt("explosion-cooldown-seconds", 4)));
+                    skill.options.putAll(skillSection.getValues(false));
                     bc.skills.put(skillId.toLowerCase(Locale.ROOT), skill);
+                }
+            }
+
+            ConfigurationSection traitsSection = section.getConfigurationSection("traits");
+            if (traitsSection != null) {
+                for (String traitId : traitsSection.getKeys(false)) {
+                    ConfigurationSection trait = traitsSection.getConfigurationSection(traitId);
+                    if (trait != null) bc.traits.put(traitId, trait.getValues(false));
                 }
             }
 
@@ -1290,8 +1308,19 @@ public class ConfigManager {
                         if (materialValue instanceof String material) item.material = material;
                         Object nameValue = itemMap.get("name");
                         if (nameValue instanceof String name) item.name = name;
+                        Object storyIdValue = itemMap.get("story-id");
+                        if (storyIdValue instanceof String storyId) {
+                            List<String> story = bossItemStories.get(storyId);
+                            if (story == null) {
+                                plugin.getLogger().warning("[Boss] Missing story-id '" + storyId +
+                                    "' in story.yml for " + fileName + " level " + level + ".");
+                            } else {
+                                for (String line : story) item.lore.add(line.replace("{level}",
+                                    Integer.toString(level)));
+                            }
+                        }
                         Object loreValue = itemMap.get("lore");
-                        if (loreValue instanceof List<?> lore) {
+                        if (item.lore.isEmpty() && loreValue instanceof List<?> lore) {
                             for (Object line : lore) {
                                 if (line instanceof String text) item.lore.add(text);
                             }
@@ -1320,6 +1349,26 @@ public class ConfigManager {
 
             bossConfigs.put(bossId, bc);
         }
+    }
+
+    private void loadBossItemStories() {
+        bossItemStories.clear();
+        File storyFile = new File(plugin.getDataFolder(), "story.yml");
+        YamlConfiguration storyConfig = YamlConfiguration.loadConfiguration(storyFile);
+        ConfigurationSection artifacts = storyConfig.getConfigurationSection("artifacts");
+        if (artifacts == null) {
+            plugin.getLogger().warning("[Boss] story.yml has no 'artifacts' section; item lore will use boss files.");
+            return;
+        }
+
+        for (String storyId : artifacts.getKeys(false)) {
+            ConfigurationSection artifact = artifacts.getConfigurationSection(storyId);
+            if (artifact == null) continue;
+            List<String> lore = artifact.getStringList("lore");
+            if (!lore.isEmpty()) bossItemStories.put(storyId, List.copyOf(lore));
+        }
+        plugin.getLogger().info("[Boss] Loaded " + bossItemStories.size() +
+            " item stories from story.yml.");
     }
 
     private void readEnchantments(Object source, Map<String, Integer> destination) {

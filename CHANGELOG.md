@@ -1,15 +1,71 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Ghi console log và thông báo skill cast riêng cho OP; có thể bật/tắt trong `bosses/_settings.yml`.
+
+### Fixed
+- Creeper không còn bị bộ xử lý kẹt giữ nguyên vận tốc dọc và bay tăng độ cao; khôi phục gravity và chỉ dùng pathfinding cho mob.
+- Các boss mob giữ AI/navigation vanilla trong truy đuổi và đi lang thang; bỏ ép quay về tâm ngẫu nhiên gây ngắt hành vi.
+- Enderman có hiệu ứng cổng và âm thanh khi dùng Void Snatch; chỉ đánh dấu cast thành công khi teleport hợp lệ.
+- Ground Slam không còn gây sát thương nhiều lần khi các vùng sóng chồng lấn; khối tạm không ghi đè thay đổi của người chơi.
+- Ender Dragon không còn bị ép bay tới điểm ngẫu nhiên mới mỗi chu kỳ AI.
+
+## [v1.13.1] - 2026-10-13
+
+### Fixed
+- Chặn sát thương Ground Slam lặp trong cùng một lần cast và bảo vệ chỉnh sửa của người chơi với khối tạm.
+- Giảm điều khiển cưỡng bức chuyển động Ender Dragon để tránh đường bay giật.
+
+## [v1.13.0] - 2026-10-13
+
+### Added
+- Thêm `/vnboss kill` để kết thúc boss hiện tại mà không trao điểm hoặc loot.
+- Thêm skill và trait cấu hình cho Enderman, Ravager, Phantom, Ghast, Spider, Vindicator, Witch và Giant.
+- Thêm cấu hình terrain hazard tạm thời và allowlist block cho Ravager phá địa hình.
+
+### Changed
+- Chỉ trao điểm tiêu diệt boss khi người chơi hạ boss trước khi hết thời gian; timeout/despawn không được điểm.
+- Giữ AI mặc định của boss; Creeper tiếp tục truy đuổi mục tiêu nhưng không tự kích nổ vanilla.
+- Bảo vệ spawn region khỏi thay đổi địa hình do skill boss.
+
+## [v1.12.0] - 2026-10-12
+
+### Added
+- Cung Skeleton level 1 luôn rơi cung Flame I và Infinity I.
+
+### Changed
+- Rút gọn lore di vật trong `story.yml` còn tối đa 30 ký tự mỗi dòng và 6 dòng mỗi item, giữ liên kết giữa các chương boss.
+
+### Fixed
+- Boss không còn bị dịch chuyển lên cao khi thoát kẹt; Creeper không còn tự nhận sát thương từ skill sét.
+
+## [v1.11.1] - 2026-10-12
+
+### Fixed
+- Mưa axit chỉ gây sát thương và hiệu ứng khi người chơi thực sự ở ngoài trời có mưa.
+
+## [v1.11.0] - 2026-10-12
+
+### Added
+- Thêm kho truyện `story.yml` cho di vật boss; tên và lore cấp thấp được cân chỉnh theo sức mạnh vật phẩm.
+
+### Fixed
+- Boss miễn nhiễm sát thương môi trường và sát thương từ skill tự tạo; chỉ rơi item khi người chơi đã gây sát thương.
+
 ## [v1.10.0] - 2026-10-12
 
 ### Added
 - Thêm quản lý nhóm/quyền trong `permission.yml` qua `/vngroup` và `/vnuser`, mặc định có nhóm `user` và `admin`.
 - Tách quyền lệnh theo chức năng để có thể cấp riêng quyền xem trạng thái, quản lý thiên tai/boss, spawn, thời gian, game mode và quản lý người dùng.
 - Thêm quyền `vnmine.spawnprotection.bypass` cho OP/nhân viên được ủy quyền.
+- Thêm `story.yml` làm kho lore tập trung cho các di vật hiếm boss, kết nối thành vũ trụ truyện chung và hỗ trợ mở rộng bằng `story-id`; cấp thấp dùng tên/lore giản dị hơn.
 
 ### Fixed
 - Spawn protection chặn cả phá/đặt block, cháy, dòng chất lỏng, thay đổi block do entity và phá block do vụ nổ.
 - Các thao tác đặt, đốt, thay thế, nhấc block và nổ trực tiếp từ thiên tai bỏ qua block nằm trong vùng bảo vệ.
+- Boss miễn nhiễm sát thương môi trường (kể cả sát thương rơi) và sát thương từ skill tự tạo; mọi drop chỉ rơi khi có người chơi gây sát thương.
 
 ## [v1.9.1] - 2026-10-12
 

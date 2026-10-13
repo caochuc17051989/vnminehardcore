@@ -23,6 +23,7 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.x. Người chơi khô
 | `/vn death reset <player>` | Reset số lần chết của player về 0 | `vnmine.command.death.reset` |
 | `/vnevent [<id> <warning-giây> <duration-giây>\|stop]` | Xem, gọi hoặc dừng thiên tai | `vnmine.command.disasters` |
 | `/vnboss <id> <level> <warning-giây> <duration-giây>` | Gọi boss theo level | `vnmine.command.bosses` |
+| `/vnboss kill` | Kết thúc boss đang hoạt động, không điểm và không loot | `vnmine.command.bosses` |
 | `/reward` | Nhận phần thưởng xếp hạng boss đang chờ (cần chỗ trống trong inventory) | `vnmine.command.reward` |
 | `/scoreboard reset` | Xóa điểm mùa và phần thưởng chờ (bí danh: `/vnscoreboard`, `/sb`) | `vnmine.command.scoreboard.reset` |
 | `/vntime set <day\|night> <phút> [world]` | Đặt thời lượng ngày/đêm toàn cục hoặc riêng cho world đang tải | `vnmine.command.time.manage` |
@@ -192,7 +193,7 @@ base damage, projectile count multiplier, cooldown, area, velocity, and spread.
 Configured skill damage scales by boss level; projectile skills use
 `boss-level * multiply` projectiles, capped at 40 per cast.
 The creeper's `charged-explosion` skill calls a visual lightning strike,
-damages the boss and nearby living entities using `damage` and `radius`, then
+damages nearby living entities using `damage` and `radius` without self-damage, then
 keeps the creeper charged for `duration-seconds`. Its explosion power is
 configured separately for normal and charged states; boss creeper explosions
 do not break blocks and the boss survives each explosion. Values are in
@@ -202,6 +203,30 @@ Available skill IDs are `arrow-barrage` (skeleton), `fireball-volley`
 (creeper), `shadow-strike` (enderman), `dive-bomb` (phantom), `charge`
 (ravager), `venom-web` (spider), `shockwave` (vindicator), `potion-volley`
 (witch), and `skull-volley` (wither).
+
+Eight bosses also support the extended skills and traits configured in their
+individual `bosses/*.yml` files: Enderman (`void-snatch`, `end-rift`,
+`hydro-phobic-aura`), Ravager (`siege-charge`, `roar-weakness`,
+`thorns-armor`), Phantom (`dive-bomb`, `phantom-minions`, `nocturnal-cloak`),
+Ghast (`fireball-volley`, `fiery-drag`, `fireball-shield`), Spider
+(`cobweb-trap`, `venom-pounce`, `brood-release`), Vindicator (`axe-spin`,
+`axe-throw`, `enrage`), Witch (`potion-rain`, `disarm-magic`,
+`witchcraft-drain`), and Giant (`ground-slam`, `boulder-toss`, `giant-armor`).
+Terrain-changing skills are controlled by `terrain-enabled`, and temporary
+blocks are restored after their configured duration or when the encounter ends.
+Ravager block breaking uses the `break-blocks`, `max-break-blocks`, and
+`breakable-blocks` allowlist settings.
+
+Boss damage only contributes leaderboard points when the boss is killed before
+its configured lifetime expires. A timeout, despawn, or `/vnboss kill` ends the
+encounter without kill points; `/vnboss kill` also suppresses boss loot.
+
+Global boss skill cast feedback is configured in `bosses/_settings.yml`:
+`skill-cast-feedback.console-log` logs successful casts to the console and
+`skill-cast-feedback.broadcast-to-ops` sends cast notices only to online OPs.
+Both options default to `true`. Grounded boss mobs use native AI/pathfinding
+for target pursuit and idle wandering; custom movement is reserved for defined
+skills and boundary recovery.
 
 ```yaml
 # bosses/_settings.yml
@@ -238,8 +263,16 @@ skills:
 ### Loot boss theo level và bảng xếp hạng
 
 Mỗi file `bosses/<id>.yml` có mục `level-drops` riêng cho boss đó, đầy đủ từ
-level 1 đến level 10. Mỗi cấp có hai di vật hiếm, truyền thuyết tối đa 4 dòng
-và số dòng enchant tăng theo level; có thể tùy chỉnh `material`, `name`, `lore`,
+level 1 đến level 10. Mỗi cấp có hai di vật hiếm; enchant tăng theo level và
+truyền thuyết được quản lý tập trung trong `plugins/VnMineHardcore/story.yml`.
+Mỗi item dùng `story-id` để liên kết tới `artifacts.<story-id>.lore`; có thể
+thêm chương mới bằng cách thêm ID duy nhất và danh sách lore vào file này.
+Các cấp 1–2 dùng hậu tố `-common` với tên và câu chuyện giản dị hơn; từ cấp 3
+trở lên dùng tuyến truyện phát triển theo sức mạnh của di vật.
+Lore hỗ trợ `{level}` để hiển thị cấp vật phẩm; mỗi dòng không quá 30 ký tự,
+tối đa 6 dòng. Cung Skeleton level 1 luôn rơi cung có Flame I và Infinity I;
+Infinity vẫn cần người chơi mang theo ít nhất một mũi tên. Trong file boss,
+có thể tùy chỉnh `material`, `name`,
 `min-amount`, `max-amount`, `chance`, `enchantments` (hỗ trợ over-enchant)
 hoặc `book-enchantments` (sách có enchant để áp dụng vào item). Boss tự nhiên
 có thể lên level 10 từ ngày 400 theo `bosses/_settings.yml`; `/vnboss` vẫn cho
@@ -252,7 +285,9 @@ thời gian title top 1, chu kỳ nhắc và quà của từng hạng top 1–10
 đánh boss nhận tổng cộng `10 × level` điểm, chia theo tỉ lệ damage. Điểm và quà
 đang chờ được lưu trong `scoreboard-data.yml`. Người chơi nhận quà bằng
 `/reward`; nếu inventory không đủ chỗ, quà vẫn chờ và có thể nhận lại sau khi
-dọn túi. Chạy `/vnreload` để nạp cấu hình.
+dọn túi. Boss không nhận sát thương từ môi trường (bao gồm sát thương rơi) hoặc
+skill/đòn đánh do chính boss tạo ra; mọi loot cấu hình và drop mặc định chỉ rơi
+nếu có ít nhất một người chơi gây sát thương. Chạy `/vnreload` để nạp cấu hình.
 
 ### Disasters - Thiên tai
 
