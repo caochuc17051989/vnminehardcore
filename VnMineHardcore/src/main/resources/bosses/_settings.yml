@@ -45,6 +45,16 @@ skill-cast-feedback:
 #      Default 50; valid range 0-100, and contribution must be strictly greater than the threshold.
 reward-damage-threshold-percent: 50
 
+# [VI] Cho phép boss rơi lệnh triệu hồi phổ thông có cấp bằng cấp boss; mặc định bật.
+# [EN] Allow bosses to drop a generic summon token matching the boss level; default true.
+army-token-drop:
+  # [VI] Bật/tắt nguồn token từ boss; mặc định true.
+  # [EN] Enable summon-token boss drops; default true.
+  enabled: true
+  # [VI] Tỉ lệ token rơi khi nhận thưởng; mặc định 35%, hợp lệ 0-1.
+  # [EN] Chance for a token to drop on a rewarded boss kill; default 35%, valid range 0-1.
+  chance: 0.35
+
 # [VI] Cấu hình chung cho bộ giáp boss; có thể ghi đè tỷ lệ trong armor-set của từng boss.
 # [EN] Shared boss armor reward settings; per-boss armor-set may override the drop chance.
 reward-items:

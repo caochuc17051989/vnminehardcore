@@ -25,6 +25,8 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.potion.PotionEffect;
@@ -2563,6 +2565,7 @@ public class BossEventManager implements Listener {
                     }
                     dropItemsNaturally(currentBoss.getLocation(), item, amount);
                 }
+                dropArmySummonToken(currentBoss.getLocation(), currentBossLevel);
                 dropBossArmorSet(bc, currentBossLevel);
             }
         }
@@ -2581,6 +2584,20 @@ public class BossEventManager implements Listener {
             .max()
             .orElse(-1);
         return selectedLevel < 0 ? List.of() : bc.levelDrops.getOrDefault(selectedLevel, List.of());
+    }
+
+    private void dropArmySummonToken(Location location, int level) {
+        if (!config.bossArmyTokenDropEnabled || random.nextDouble() >= config.bossArmyTokenDropChance) return;
+        ItemStack token = new ItemStack(Material.PAPER);
+        ItemMeta meta = token.getItemMeta();
+        meta.setDisplayName("§6§lLệnh Triệu Hồi §fCấp " + level);
+        meta.setLore(List.of("§7Gọi lính cấp " + level + ".", "§8Dùng /vnarmy hire."));
+        meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "army_token_class"),
+            PersistentDataType.STRING, "any");
+        meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "army_token_level"),
+            PersistentDataType.INTEGER, level);
+        token.setItemMeta(meta);
+        dropItemsNaturally(location, token, 1);
     }
 
     private void dropBossArmorSet(ConfigManager.BossConfig bossConfig, int level) {

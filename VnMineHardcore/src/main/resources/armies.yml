@@ -43,6 +43,9 @@ skills:
   # [VI] Thời lượng buff; mặc định 8 giây, hợp lệ 1-600.
   # [EN] Buff duration; default 8 seconds, valid range 1-600.
   owner-buff-seconds: 8
+  # [VI] Tỉ lệ giảm sát thương cho chủ khi SHIELD_OWNER kích hoạt; mặc định 20%, hợp lệ 0-0.9.
+  # [EN] Owner damage reduction when SHIELD_OWNER triggers; default 20%, valid range 0-0.9.
+  owner-damage-reduction: 0.2
 
 # [VI] Các lớp lính; entity-type phải là mob có Bukkit AI.
 # [EN] Mercenary classes; entity-type must be a Bukkit AI mob.
@@ -66,9 +69,30 @@ classes:
     # [VI] Sát thương thêm mỗi cấp; mặc định 0.5, phải không âm.
     # [EN] Damage per level; default 0.5, must be nonnegative.
     damage-per-level: 0.5
-    # [VI] Skill mặc định ATTACK; skill hợp lệ: ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER.
-    # [EN] Default skill ATTACK; valid skills: ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER.
-    skills: [ATTACK]
+    # [VI] Biểu tượng trong GUI; mặc định BOW, phải là Material Bukkit hợp lệ.
+    # [EN] GUI icon; default BOW, must be a valid Bukkit Material.
+    menu-icon: BOW
+    # [VI] Skill Xạ Thủ; có thể bật/tắt bằng cách thêm/xóa ID skill.
+    # [EN] Archer skills; enable/disable skills by adding/removing skill IDs.
+    # [VI] Hợp lệ: ATTACK, RANGED_ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, SHIELD_OWNER.
+    # [EN] Valid: ATTACK, RANGED_ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, SHIELD_OWNER.
+    skills: [RANGED_ATTACK]
+    # [VI] Tầm tìm mục tiêu; mặc định 24 block, hợp lệ 4-64.
+    # [EN] Target acquisition range; default 24 blocks, valid range 4-64.
+    target-radius-blocks: 24.0
+    # [VI] Tùy chỉnh riêng skill; cooldown giây 1-3600, sát thương 0-100.
+    # [EN] Per-skill tuning; cooldown seconds 1-3600, damage 0-100.
+    skill-settings:
+      RANGED_ATTACK:
+        # [VI] Thời gian giữa các phát tên; mặc định 2 giây, hợp lệ 1-3600.
+        # [EN] Delay between arrows; default 2 seconds, valid range 1-3600.
+        cooldown-seconds: 2
+        # [VI] Sát thương tên; mặc định 6, hợp lệ 0-100.
+        # [EN] Arrow damage; default 6, valid range 0-100.
+        damage: 6.0
+        # [VI] Tầm giữ vị trí bắn; mặc định 16 block, hợp lệ 4-64.
+        # [EN] Preferred firing distance; default 16 blocks, valid range 4-64.
+        range-blocks: 16.0
   guardian:
     # [VI] Tên hiển thị; mặc định Vệ Binh.
     # [EN] Display name; default Guardian.
@@ -88,9 +112,28 @@ classes:
     # [VI] Sát thương thêm mỗi cấp; mặc định 0.75, phải không âm.
     # [EN] Damage per level; default 0.75, must be nonnegative.
     damage-per-level: 0.75
-    # [VI] Skill mặc định ATTACK; skill hợp lệ: ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER.
-    # [EN] Default skill ATTACK; valid skills: ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER.
-    skills: [ATTACK]
+    # [VI] Biểu tượng trong GUI; mặc định SHIELD, phải là Material Bukkit hợp lệ.
+    # [EN] GUI icon; default SHIELD, must be a valid Bukkit Material.
+    menu-icon: SHIELD
+    # [VI] Skill Vệ Binh; danh sách ID hợp lệ giống mô tả của Xạ Thủ.
+    # [EN] Guardian skills; valid IDs are listed in the Archer description.
+    skills: [ATTACK, SHIELD_OWNER]
+    # [VI] Tầm tìm mục tiêu; mặc định 20 block, hợp lệ 4-64.
+    # [EN] Target acquisition range; default 20 blocks, valid range 4-64.
+    target-radius-blocks: 20.0
+    # [VI] Tùy chỉnh khiên; cooldown giây 1-3600, tầm 1-32 block, giảm sát thương 0-0.9.
+    # [EN] Shield tuning; cooldown seconds 1-3600, range 1-32 blocks, damage reduction 0-0.9.
+    skill-settings:
+      SHIELD_OWNER:
+        # [VI] Thời gian hồi; mặc định 8 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 8 seconds, valid range 1-3600.
+        cooldown-seconds: 8
+        # [VI] Khoảng cách bảo vệ chủ; mặc định 8 block, hợp lệ 1-32.
+        # [EN] Owner protection radius; default 8 blocks, valid range 1-32.
+        radius-blocks: 8.0
+        # [VI] Phần sát thương bị giảm; mặc định 0.3, hợp lệ 0-0.9.
+        # [EN] Fraction of damage reduced; default 0.3, valid range 0-0.9.
+        damage-reduction: 0.3
   medic:
     # [VI] Tên hiển thị; mặc định Y Sư.
     # [EN] Display name; default Medic.
@@ -110,9 +153,64 @@ classes:
     # [VI] Sát thương thêm mỗi cấp; mặc định 0, phải không âm.
     # [EN] Damage per level; default 0, must be nonnegative.
     damage-per-level: 0
-    # [VI] Skill mặc định hồi chủ, hồi đồng minh và buff chủ.
-    # [EN] Default skills heal allies/owner and buff the owner.
-    skills: [HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER]
+    # [VI] Biểu tượng trong GUI; mặc định GOLDEN_APPLE.
+    # [EN] GUI icon; default GOLDEN_APPLE.
+    menu-icon: GOLDEN_APPLE
+    # [VI] Skill Y Sư; mục tiêu hỗ trợ: OWNER, ALLIES hoặc OWNER_AND_ALLIES.
+    # [EN] Medic skills; support targets: OWNER, ALLIES, or OWNER_AND_ALLIES.
+    skills: [HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES]
+    # [VI] Tùy chỉnh hồi/buff; mọi cooldown tính bằng giây, hợp lệ 1-3600.
+    # [EN] Heal/buff tuning; cooldowns are seconds, valid range 1-3600.
+    skill-settings:
+      HEAL_OWNER:
+        # [VI] Thời gian hồi; mặc định 10 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 10 seconds, valid range 1-3600.
+        cooldown-seconds: 10
+        # [VI] Máu hồi; mặc định 6, hợp lệ 0-100.
+        # [EN] Health restored; default 6, valid range 0-100.
+        amount: 6.0
+      HEAL_ALLIES:
+        # [VI] Thời gian hồi; mặc định 12 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 12 seconds, valid range 1-3600.
+        cooldown-seconds: 12
+        # [VI] Mục tiêu hồi máu; mặc định OWNER_AND_ALLIES.
+        # [EN] Healing targets; default OWNER_AND_ALLIES.
+        target: OWNER_AND_ALLIES
+        # [VI] Máu hồi; mặc định 5, hợp lệ 0-100.
+        # [EN] Health restored; default 5, valid range 0-100.
+        amount: 5.0
+        # [VI] Bán kính hồi; mặc định 8 block, hợp lệ 1-32.
+        # [EN] Healing radius; default 8 blocks, valid range 1-32.
+        radius-blocks: 8.0
+      BUFF_OWNER:
+        # [VI] Thời gian hồi; mặc định 30 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 30 seconds, valid range 1-3600.
+        cooldown-seconds: 30
+        # [VI] Hiệu ứng hợp lệ trong Bukkit; mặc định REGENERATION.
+        # [EN] Effect must be registered by Bukkit; default REGENERATION.
+        effect: REGENERATION
+        # [VI] Thời lượng; mặc định 5 giây, hợp lệ 1-600.
+        # [EN] Duration; default 5 seconds, valid range 1-600.
+        duration-seconds: 5
+      BUFF_ALLIES:
+        # [VI] Thời gian hồi; mặc định 45 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 45 seconds, valid range 1-3600.
+        cooldown-seconds: 45
+        # [VI] Mục tiêu buff; mặc định OWNER_AND_ALLIES.
+        # [EN] Buff targets; default OWNER_AND_ALLIES.
+        target: OWNER_AND_ALLIES
+        # [VI] Hiệu ứng hợp lệ trong Bukkit; mặc định REGENERATION.
+        # [EN] Effect must be registered by Bukkit; default REGENERATION.
+        effect: REGENERATION
+        # [VI] Thời lượng; mặc định 4 giây, hợp lệ 1-600.
+        # [EN] Duration; default 4 seconds, valid range 1-600.
+        duration-seconds: 4
+        # [VI] Cấp hiệu ứng; mặc định 0, hợp lệ 0-10.
+        # [EN] Potion amplifier; default 0, valid range 0-10.
+        amplifier: 0
+        # [VI] Bán kính buff; mặc định 8 block, hợp lệ 1-32.
+        # [EN] Buff radius; default 8 blocks, valid range 1-32.
+        radius-blocks: 8.0
 
 # [VI] Chi phí và cấp lính; phải có token đúng lớp/cấp, XP/vật liệu chỉ trừ khi thuê thành công.
 # [EN] Tier costs; an exact class/level token is required and XP/materials are charged only on success.

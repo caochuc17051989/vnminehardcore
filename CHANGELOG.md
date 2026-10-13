@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.16.0] - 2026-10-13
+
+### Added
+- Boss có thể rơi lệnh triệu hồi lính cấp trùng với cấp boss; bật/tắt và chỉnh tỉ lệ trong `bosses/_settings.yml`.
+- Thêm `/vnarmy gui` để xem đội quân, đổi mode, nghỉ/triệu hồi từng lính và mở giao diện trang bị.
+- Thêm `/vnarmy give <player> token <level>` và `/vnarmy give <player> army <class> <level>`; lệnh cấp lính trực tiếp vẫn tuân giới hạn quân số.
+- Thêm skill lính `RANGED_ATTACK`, `BUFF_ALLIES`, `SHIELD_OWNER`; cooldown, mục tiêu, tầm và hiệu ứng có thể tùy chỉnh theo lớp trong `armies.yml`.
+
 ## [v1.15.0] - 2026-10-13
 
 ### Added

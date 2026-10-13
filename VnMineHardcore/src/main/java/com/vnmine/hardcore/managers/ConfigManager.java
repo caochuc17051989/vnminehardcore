@@ -216,6 +216,8 @@ public class ConfigManager {
     public boolean bossSkillCastOpBroadcastEnabled;
     public boolean bossSkillCastPlayerBroadcastEnabled;
     public double bossRewardDamageThresholdPercent;
+    public boolean bossArmyTokenDropEnabled = true;
+    public double bossArmyTokenDropChance = 0.35;
     public String bossEventMinIntervalRaw;
     public int bossEventSpawnRadius;
     public boolean bossLevelProgressionEnabled;
@@ -1150,6 +1152,8 @@ public class ConfigManager {
         }
         bossRewardDamageThresholdPercent = Double.isFinite(rewardDamageThreshold)
             ? Math.max(0.0, Math.min(100.0, rewardDamageThreshold)) : 50.0;
+        bossArmyTokenDropEnabled = bs.getBoolean("army-token-drop.enabled", true);
+        bossArmyTokenDropChance = readBoundedDouble(bs, "army-token-drop.chance", 0.35, 0.0, 1.0);
         bossArmorPieceDropChance = readBoundedDouble(bs, "reward-items.armor-piece-chance",
             0.45, 0.0, 1.0);
         int armorLevelGap = bs.getInt("reward-items.armor-natural-level-gap", 2);

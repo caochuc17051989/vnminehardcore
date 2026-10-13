@@ -77,13 +77,16 @@ chủ, các lớp, kỹ năng và chi phí XP/vật phẩm theo cấp. Mặc đ�
 Vệ Binh và Y Sư; token triệu hồi phải khớp đúng lớp/cấp và bị tiêu thụ khi thuê.
 
 ```text
+/vnarmy gui
 /vnarmy list
 /vnarmy hire <loại> <cấp>
 /vnarmy recall
 /vnarmy rest
 /vnarmy attack | defend | protect
 /vnarmy gear <ID>
-/vnarmy token give <người chơi> <loại> <cấp>  # OP/admin
+/vnarmy give <người chơi> token <cấp>              # OP/admin
+/vnarmy give <người chơi> army <loại> <cấp>       # OP/admin
+/vnarmy token give <người chơi> <loại> <cấp>      # token theo lớp, tương thích cũ
 ```
 
 Hồ sơ và trang bị được lưu trong `plugins/VnMineHardcore/mercenaries.yml`.
@@ -92,6 +95,16 @@ hoặc server dừng, entity được thu hồi nhưng hồ sơ/trang bị vẫn
 đối soát UUID và PersistentData tag trước khi tạo entity thay thế để hạn chế
 nhân bản. `attack` tìm quái thù địch quanh lính; `defend` bảo vệ khu vực quanh
 chủ; `protect` ưu tiên mục tiêu đang tấn công chủ nhân.
+
+GUI cho phép chọn từng lính để đổi chế độ, cho nghỉ/triệu hồi và mở kho trang bị.
+Token phổ thông do boss rơi có cấp bằng cấp boss, có thể dùng để thuê một lớp
+bất kỳ cùng cấp. Tỉ lệ rơi được chỉnh tại `bosses/_settings.yml` trong
+`army-token-drop`; token chỉ rơi khi boss có người chơi đủ ngưỡng nhận thưởng.
+`armies.yml` hỗ trợ skill `RANGED_ATTACK`, `BUFF_ALLIES`, `SHIELD_OWNER` cùng
+cooldown, mục tiêu hỗ trợ, tầm, lượng hồi, sát thương và hiệu ứng riêng theo lớp.
+Skill mặc định gồm Xạ Thủ bắn tên theo cooldown, Vệ Binh giảm sát thương cho chủ,
+Y Sư hồi máu và buff chủ/đồng minh. `give ... army` cấp lính trực tiếp và vẫn
+tôn trọng giới hạn quân số; `give ... token` cấp token chung cấp.
 
 Để tránh xung đột, chỉ dùng một hệ thống làm nguồn cấp quyền cho node
 `vnmine.*`; permission từ plugin khác có thể cộng thêm quyền. Chỉ cấp
