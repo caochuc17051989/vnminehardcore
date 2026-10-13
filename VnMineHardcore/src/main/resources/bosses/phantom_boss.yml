@@ -29,6 +29,12 @@ hp-by-level:
   8: 1710
   9: 2565
   10: 3848
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
 skills:
   dive-bomb:
     enabled: true
@@ -38,6 +44,32 @@ skills:
     radius: 4.0
     velocity: 1.6
     spread: 0.0
+    # [VI] Bán kính gây Mù khi chạm đất (block); mặc định 5; hợp lệ 1-12.
+    # [EN] Blindness radius on landing (blocks); default 5; valid range 1-12.
+    blindness-radius: 5.0
+  phantom-minions:
+    enabled: true
+    damage: 0.0
+    multiply: 1
+    cooldown-seconds: 40
+    radius: 8.0
+    velocity: 1.0
+    spread: 0.0
+    # [VI] Số Phantom con tối thiểu; mặc định 3; hợp lệ 1-8.
+    # [EN] Minimum Phantom minions; default 3; valid range 1-8.
+    minions-min: 3
+    # [VI] Số Phantom con tối đa; mặc định 5; hợp lệ minions-min..8.
+    # [EN] Maximum Phantom minions; default 5; valid range minions-min..8.
+    minions-max: 5
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  nocturnal-cloak:
+    enabled: true
+    # [VI] Ngưỡng ánh sáng để tàng hình; mặc định 7; hợp lệ 0-15.
+    # [EN] Light level threshold for invisibility; default 7; valid range 0-15.
+    light-threshold: 7
 
 immunities:
   fall-damage: true

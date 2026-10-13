@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.11.1
+version: 1.13.1
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
@@ -63,8 +63,8 @@ commands:
     usage: /vnevent [<id> <warning(s)> <duration(s)>|stop]
     permission: vnmine.command.disasters
   vnboss:
-    description: Gọi boss thủ công theo level. Nhập ID boss để xem gợi ý hoàn tất.
-    usage: /vnboss <id> <level> <warning(s)> <duration(s)>
+    description: Gọi boss theo level hoặc kết thúc boss đang xuất hiện (không điểm/loot).
+    usage: /vnboss <id> <level> <warning(s)> <duration(s)> | /vnboss kill
     permission: vnmine.command.bosses
   vn:
     description: Lệnh tiện ích. Dùng /vn death reset <player> để reset số lần chết.

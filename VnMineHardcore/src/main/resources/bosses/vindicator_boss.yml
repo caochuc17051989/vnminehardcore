@@ -29,15 +29,53 @@ hp-by-level:
   8: 2733
   9: 4100
   10: 6150
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
 skills:
-  shockwave:
+  axe-spin:
     enabled: true
     damage: 6.0
     multiply: 1
     cooldown-seconds: 10
-    radius: 5.0
+    radius: 2.5
     velocity: 1.2
     spread: 0.0
+    # [VI] Thời gian xoay rìu (giây); mặc định 3; hợp lệ 1-6.
+    # [EN] Axe spin duration (seconds); default 3; valid range 1-6.
+    duration-seconds: 3
+    # [VI] Hồi đánh cùng mục tiêu (tick); mặc định 10; hợp lệ 5-40.
+    # [EN] Per-player hit interval (ticks); default 10; valid range 5-40.
+    hit-interval-ticks: 10
+    # [VI] Thời gian vô hiệu khiên (tick); mặc định 100 (5 giây); hợp lệ 20-200.
+    # [EN] Shield disable cooldown (ticks); default 100 (5 seconds); valid range 20-200.
+    shield-cooldown-ticks: 100
+  axe-throw:
+    enabled: true
+    damage: 8.0
+    multiply: 1
+    cooldown-seconds: 16
+    radius: 2.0
+    velocity: 0.8
+    spread: 0.0
+    # [VI] Vật liệu rìu hiển thị; mặc định IRON_AXE; dùng tên Material hợp lệ.
+    # [EN] Visual thrown axe material; default IRON_AXE; use a valid Material name.
+    axe-material: IRON_AXE
+    # [VI] Tầm bay một chiều (block); mặc định 16; hợp lệ 6-32.
+    # [EN] One-way throw distance (blocks); default 16; valid range 6-32.
+    max-distance: 16
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  enrage:
+    enabled: true
+    # [VI] Ngưỡng kích hoạt cuồng bạo; mặc định 0.3 (30%); hợp lệ 0.05-0.8.
+    # [EN] Enrage health threshold; default 0.3 (30%); valid range 0.05-0.8.
+    health-threshold: 0.3
 
 immunities: {}
 

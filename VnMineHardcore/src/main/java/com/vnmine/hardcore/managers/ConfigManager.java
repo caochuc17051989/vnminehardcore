@@ -207,6 +207,8 @@ public class ConfigManager {
 
     // Boss Events - General settings (loaded from bosses/_settings.yml)
     public boolean bossEventsEnabled;
+    public boolean bossSkillCastLogsEnabled;
+    public boolean bossSkillCastOpBroadcastEnabled;
     public String bossEventMinIntervalRaw;
     public int bossEventSpawnRadius;
     public boolean bossLevelProgressionEnabled;
@@ -293,6 +295,7 @@ public class ConfigManager {
         public Map<Integer, List<ConfiguredItem>> levelDrops = new HashMap<>();
         public Map<Integer, Double> hpByLevel = new HashMap<>();
         public Map<String, BossSkillConfig> skills = new HashMap<>();
+        public Map<String, Object> traits = new HashMap<>();
     }
 
     public static class BossLevelThreshold {
@@ -318,6 +321,7 @@ public class ConfigManager {
         public double explosionPower;
         public double chargedExplosionPower;
         public int explosionCooldownSeconds;
+        public Map<String, Object> options = new HashMap<>();
     }
 
     // DropConfig class - holds drop configuration
@@ -1086,6 +1090,8 @@ public class ConfigManager {
         FileConfiguration bs = YamlConfiguration.loadConfiguration(settingsFile);
 
         bossEventsEnabled = bs.getBoolean("enabled", true);
+        bossSkillCastLogsEnabled = bs.getBoolean("skill-cast-feedback.console-log", true);
+        bossSkillCastOpBroadcastEnabled = bs.getBoolean("skill-cast-feedback.broadcast-to-ops", true);
         bossEventMinIntervalRaw = getStringFromConfig(bs.getConfigurationSection(""), "min-interval-seconds", "1200-2400");
         bossEventSpawnRadius = bs.getInt("spawn-radius", 50);
         bossLevelProgressionEnabled = bs.getBoolean("level-progression.enabled", true);
@@ -1225,7 +1231,16 @@ public class ConfigManager {
                         skillSection.getDouble("charged-explosion-power", 6.0)));
                     skill.explosionCooldownSeconds = Math.max(1, Math.min(120,
                         skillSection.getInt("explosion-cooldown-seconds", 4)));
+                    skill.options.putAll(skillSection.getValues(false));
                     bc.skills.put(skillId.toLowerCase(Locale.ROOT), skill);
+                }
+            }
+
+            ConfigurationSection traitsSection = section.getConfigurationSection("traits");
+            if (traitsSection != null) {
+                for (String traitId : traitsSection.getKeys(false)) {
+                    ConfigurationSection trait = traitsSection.getConfigurationSection(traitId);
+                    if (trait != null) bc.traits.put(traitId, trait.getValues(false));
                 }
             }
 

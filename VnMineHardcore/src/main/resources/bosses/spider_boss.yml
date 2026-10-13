@@ -29,6 +29,12 @@ hp-by-level:
   8: 2228
   9: 3342
   10: 5013
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
 skills:
   venom-web:
     enabled: true
@@ -38,6 +44,46 @@ skills:
     radius: 5.0
     velocity: 1.0
     spread: 0.0
+  cobweb-trap:
+    enabled: true
+    damage: 0.0
+    multiply: 1
+    cooldown-seconds: 14
+    radius: 4.0
+    velocity: 1.2
+    spread: 0.0
+    # [VI] Bán kính bẫy (1 tạo vùng 3x3); mặc định 1; hợp lệ 1-2.
+    # [EN] Trap radius (1 creates a 3x3 area); default 1; valid range 1-2.
+    trap-radius: 1
+    # [VI] Thời gian tơ tồn tại (giây); mặc định 6; hợp lệ 1-30.
+    # [EN] Cobweb lifetime (seconds); default 6; valid range 1-30.
+    trap-duration-seconds: 6
+  venom-pounce:
+    enabled: true
+    damage: 7.0
+    multiply: 1
+    cooldown-seconds: 12
+    radius: 2.5
+    velocity: 1.2
+    spread: 0.0
+    # [VI] Vận tốc nhảy dọc; mặc định 0.75; hợp lệ 0.3-1.5.
+    # [EN] Vertical jump velocity; default 0.75; valid range 0.3-1.5.
+    jump-y: 0.75
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  brood-release:
+    enabled: true
+    # [VI] Ngưỡng máu triệu hồi; mặc định 0.5 (50%); hợp lệ 0.1-0.9.
+    # [EN] Health threshold for summoning; default 0.5 (50%); valid range 0.1-0.9.
+    health-threshold: 0.5
+    # [VI] Số nhện con ít nhất; mặc định 4; hợp lệ 1-8.
+    # [EN] Minimum Cave Spider minions; default 4; valid range 1-8.
+    minions-min: 4
+    # [VI] Số nhện con nhiều nhất; mặc định 6; hợp lệ minions-min..8.
+    # [EN] Maximum Cave Spider minions; default 6; valid range minions-min..8.
+    minions-max: 6
 
 immunities:
   potion-effects:

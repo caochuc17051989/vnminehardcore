@@ -34,8 +34,8 @@ skills:
     # [VI] Bật skill sét tự cường hóa; mặc định true; chỉ true/false.
     # [EN] Enable the self-lightning charge skill; default true; accepts true/false.
     enabled: true
-    # [VI] Sát thương lên boss và mục tiêu trong bán kính, nhân theo level; mặc định 12; hợp lệ 0-1024 mỗi level.
-    # [EN] Damage to the boss and nearby targets, scaled by level; default 12; valid range 0-1024 per level.
+    # [VI] Sát thương sinh vật gần đó, nhân theo level; boss miễn sát thương; mặc định 12; hợp lệ 0-1024.
+    # [EN] Damage to nearby entities, scaled by level; boss is immune; default 12; valid range 0-1024.
     damage: 12.0
     # [VI] Hệ số số lần tung skill; mặc định 1; hợp lệ 1-40.
     # [EN] Skill cast multiplier; default 1; valid range 1-40.

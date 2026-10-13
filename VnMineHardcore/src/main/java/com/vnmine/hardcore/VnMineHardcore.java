@@ -488,9 +488,10 @@ public final class VnMineHardcore extends JavaPlugin {
             }
             if (args.length == 0) {
                 sender.sendMessage("§6§m=======================================");
-                sender.sendMessage("§6§l  /vnboss - Gọi boss thủ công");
+                sender.sendMessage("§6§l  /vnboss - Quản lý boss");
                 sender.sendMessage("§6§m=======================================");
-                sender.sendMessage("§eUsage: §7/vnboss <id> <level> <warning(s)> <duration(s)>");
+                sender.sendMessage("§eSử dụng: §7/vnboss <id> <level> <warning(s)> <duration(s)>");
+                sender.sendMessage("§e  /vnboss kill §7- Kết thúc boss đang xuất hiện (không điểm/loot)");
                 sender.sendMessage("§e  /vnboss §7- Hiển thị danh sách này");
                 sender.sendMessage("");
                 sender.sendMessage("§eDanh sách BOSS_ID có thể dùng:");
@@ -503,8 +504,16 @@ public final class VnMineHardcore extends JavaPlugin {
                 sender.sendMessage("§6§m=======================================");
                 return true;
             }
+            if (args.length == 1 && args[0].equalsIgnoreCase("kill")) {
+                if (bossEventManager.killActiveBoss()) {
+                    sender.sendMessage("§aĐã kết thúc boss đang hoạt động; không trao điểm hoặc loot.");
+                } else {
+                    sender.sendMessage("§cHiện không có boss nào đang xuất hiện.");
+                }
+                return true;
+            }
             if (args.length != 4) {
-                sender.sendMessage("§cSử dụng: /vnboss <id> <level> <warning(s)> <duration(s)>");
+                sender.sendMessage("§cSử dụng: /vnboss <id> <level> <warning(s)> <duration(s)> hoặc /vnboss kill");
                 return true;
             }
             String bossId = args[0].toLowerCase(Locale.ROOT);
@@ -792,6 +801,7 @@ public final class VnMineHardcore extends JavaPlugin {
                 && permissionManager.hasPermission(sender, "vnmine.command.bosses")) {
             String partial = args[0].toLowerCase(Locale.ROOT);
             List<String> matches = new ArrayList<>();
+            if ("kill".startsWith(partial)) matches.add("kill");
             for (String id : bossEventManager.getEnabledBossIds()) {
                 if (id.toLowerCase(Locale.ROOT).startsWith(partial)) matches.add(id);
             }

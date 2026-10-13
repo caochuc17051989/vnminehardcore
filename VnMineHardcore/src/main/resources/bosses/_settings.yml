@@ -26,6 +26,14 @@ min-interval-seconds: 1200-2400
 # [EN] Boss spawn radius around random player (blocks)
 spawn-radius: 50
 
+# [VI] Bật ghi log console khi boss cast skill; mặc định true.
+# [EN] Log a console entry whenever a boss casts a skill; default true.
+skill-cast-feedback:
+  console-log: true
+  # [VI] Gửi thông báo skill chỉ tới người chơi OP đang online; mặc định true.
+  # [EN] Send skill-cast notices only to online operators; default true.
+  broadcast-to-ops: true
+
 # [VI] Tiến trình cấp độ boss dựa theo ngày trong game, tăng dần đến level 10.
 #      Ngày 0 là từ lúc bắt đầu thế giới. Mỗi mốc chọn ngẫu nhiên một level
 #      trong khoảng min-level..max-level; mốc sau áp dụng từ ngày đó trở đi.

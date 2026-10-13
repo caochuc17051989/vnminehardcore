@@ -29,8 +29,14 @@ hp-by-level:
   8: 4272
   9: 6408
   10: 9612
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
 skills:
-  charge:
+  siege-charge:
     enabled: true
     damage: 9.0
     multiply: 1
@@ -38,6 +44,50 @@ skills:
     radius: 4.0
     velocity: 1.8
     spread: 0.0
+    # [VI] Thời gian lao (giây); mặc định 3; hợp lệ 1-6.
+    # [EN] Charge duration (seconds); default 3; valid range 1-6.
+    duration-seconds: 3
+    # [VI] Tốc độ lao; mặc định 1.15; hợp lệ 0.4-2.0.
+    # [EN] Charge speed; default 1.15; valid range 0.4-2.0.
+    charge-speed: 1.15
+    # [VI] Cho phép phá block; mặc định bật; true/false.
+    # [EN] Allow configured block breaking; enabled by default; true/false.
+    break-blocks: true
+    # [VI] Số block tối đa mỗi lần lao; mặc định 12; hợp lệ 0-40.
+    # [EN] Maximum blocks broken per charge; default 12; valid range 0-40.
+    max-break-blocks: 12
+    # [VI] Danh sách block được phá; block khác chặn cú lao.
+    # [EN] Breakable block allowlist; all other blocks stop the charge.
+    breakable-blocks:
+      - DIRT
+      - GRASS_BLOCK
+      - STONE
+      - COBBLESTONE
+      - OAK_PLANKS
+      - OAK_LOG
+    # [VI] Lực hất mục tiêu; mặc định 1.8; hợp lệ 0.5-3.
+    # [EN] Hit knockback; default 1.8; valid range 0.5-3.
+    knockback: 1.8
+  roar-weakness:
+    enabled: true
+    damage: 0.0
+    multiply: 1
+    cooldown-seconds: 18
+    radius: 8.0
+    velocity: 1.2
+    spread: 0.0
+    # [VI] Lực đẩy lùi; mặc định 1.2; hợp lệ 0.3-2.5.
+    # [EN] Knockback strength; default 1.2; valid range 0.3-2.5.
+    knockback: 1.2
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  thorns-armor:
+    enabled: true
+    # [VI] Tỷ lệ sát thương cận chiến phản lại; mặc định 0.2; hợp lệ 0-1.
+    # [EN] Fraction of melee damage reflected; default 0.2; valid range 0-1.
+    reflection-percent: 0.2
 
 immunities: {}
 

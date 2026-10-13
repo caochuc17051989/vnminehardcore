@@ -20,7 +20,7 @@ artifacts:
     item: "Lôi Tâm Hủy Diệt"
     lore:
       - "§7Lôi Tâm nằm dưới núi lửa."
-      - "§8Chuông {level} gọi Bão Rạn Nứt."
+      - "§8Chuông {level} gọi Bão."
       - "§8Tia sét xé Cổng Vạn Giới."
       - "§dChấn động gọi Cự Nhân tỉnh."
   creeper-codex:
@@ -44,7 +44,7 @@ artifacts:
     item: "Mật Lục Địa Mạch Cự Nhân"
     lore:
       - "§7Mật lục ghi chấn động cổ."
-      - "§8Trang {level} đánh dấu Địa Mạch."
+      - "§8Trang {level} ghi Địa Mạch."
       - "§8Bản đồ dẫn tới ổ nhện."
       - "§dKý hiệu mang màu Hoàng Hôn."
   spider-relic:
@@ -52,7 +52,7 @@ artifacts:
     item: "Ủng Tơ Độc Hoàng Hôn"
     lore:
       - "§7Nhện Hoàng Hôn giăng tơ độc."
-      - "§8Đường tơ {level} dẫn Trăng Máu."
+      - "§8Tơ {level} dẫn Trăng Máu."
       - "§8Ổ kén khóa Cổng Vạn Giới."
       - "§dTơ độc gọi Nữ Phù Thủy."
   spider-codex:
@@ -68,7 +68,7 @@ artifacts:
     item: "Dược Thư Trăng Máu"
     lore:
       - "§7Phù Thủy pha dưới Trăng Máu."
-      - "§8Bình {level} giữ lời nguyền đỏ."
+      - "§8Bình {level} giữ lời nguyền."
       - "§8Máu gọi xương sống dậy."
       - "§dKhói thuốc dẫn Cung Vạn Cốt."
   witch-codex:
@@ -84,31 +84,31 @@ artifacts:
     item: "Cung Vạn Cốt Câm Lặng"
     lore:
       - "§7Cung Vạn Cốt canh Mật Lục."
-      - "§8Tên {level} xuyên màn im lặng."
-      - "§8Xương khắc tọa độ Chiến Trường."
+      - "§8Tên {level} xuyên màn đêm."
+      - "§8Xương ghi chiến địa Vạn Cốt."
       - "§dDây cung gọi Cuồng Nộ."
   skeleton-codex:
     boss: skeleton_boss
     item: "Mật Lục Cung Vạn Cốt Câm Lặng"
     lore:
       - "§7Mật lục khâu bằng xương."
-      - "§8Trang {level} hé tọa độ chiến."
+      - "§8Trang {level} hé tọa độ."
       - "§8Bản đồ dẫn tới Chiến Trường."
-      - "§dKý hiệu gọi Ravager Cuồng Nộ."
+      - "§dDấu gọi Ravager Cuồng Nộ."
   ravager-relic:
     boss: ravager_boss
     item: "Rìu Cuồng Nộ Chiến Trường"
     lore:
-      - "§7Rìu Chiến Trường uống giận dữ."
+      - "§7Rìu uống giận Chiến Trường."
       - "§8Vết chém {level} mở cổng đỏ."
       - "§8Kỵ binh kéo tới Phán Quyết."
-      - "§dChiến trường vọng tiếng Zombie."
+      - "§dZombie gọi chiến trường."
   ravager-codex:
     boss: ravager_boss
     item: "Mật Lục Rìu Cuồng Nộ Chiến Trường"
     lore:
       - "§7Mật lục ghi trận chiến."
-      - "§8Trang {level} đánh dấu cổng đỏ."
+      - "§8Trang {level} đánh dấu cổng."
       - "§8Tọa độ dẫn tới Rìu Đỏ."
       - "§dDư âm gọi xác sống dậy."
   vindicator-relic:
@@ -116,7 +116,7 @@ artifacts:
     item: "Rìu Phán Quyết Đỏ"
     lore:
       - "§7Rìu Đỏ tuyên án kẻ sống."
-      - "§8Nhát bổ {level} khắc lời phán."
+      - "§8Nhát bổ {level} khắc lời án."
       - "§8Án lệnh chôn dưới Mộ Sâu."
       - "§dTiếng rìu gọi Lưỡi Hái."
   vindicator-codex:
@@ -124,7 +124,7 @@ artifacts:
     item: "Mật Lục Rìu Phán Quyết Đỏ"
     lore:
       - "§7Mật lục ghi bản án đỏ."
-      - "§8Trang {level} phán quyết kẻ sống."
+      - "§8Trang {level} phán kẻ sống."
       - "§8Dấu son chỉ về Mộ Sâu."
       - "§dLưỡi Hái chờ dưới mộ."
   zombie-relic:
@@ -132,7 +132,7 @@ artifacts:
     item: "Lưỡi Hái Mộ Sâu"
     lore:
       - "§7Lưỡi Hái thức tỉnh Mộ Sâu."
-      - "§8Mộ {level} giữ tên người mất."
+      - "§8Mộ {level} ghi tên người."
       - "§8Đất nứt mở đường tới Nether."
       - "§dHơi thở gọi Ghast Than Khóc."
   zombie-codex:
@@ -140,17 +140,17 @@ artifacts:
     item: "Mật Lục Lưỡi Hái Mộ Sâu"
     lore:
       - "§7Mật lục ngủ giữa mộ."
-      - "§8Trang {level} ghi tên người mất."
+      - "§8Trang {level} ghi tên tử sĩ."
       - "§8Bản đồ mở cổng Nether."
       - "§dLời gọi đánh thức Ghast."
   ghast-relic:
     boss: ghast
     item: "Khúc Cung Than Khóc"
     lore:
-      - "§7Khúc Cung Than Khóc vang Nether."
-      - "§8Nốt {level} vọng qua tro tàn."
+      - "§7Khúc Cung vang trong Nether."
+      - "§8Nốt {level} vọng tro tàn."
       - "§8Nước mắt rơi thành sao đỏ."
-      - "§dTiếng khóc đánh thức Phantom."
+      - "§dTiếng khóc gọi Phantom."
   ghast-codex:
     boss: ghast
     item: "Mật Lục Khúc Cung Than Khóc"
@@ -164,7 +164,7 @@ artifacts:
     item: "Cung Mộng Ảnh Vĩnh Dạ"
     lore:
       - "§7Mộng Ảnh Vĩnh Dạ phủ trời."
-      - "§8Cánh {level} che kín trăng tàn."
+      - "§8Cánh {level} che trăng tàn."
       - "§8Bóng tối chỉ lối Enderman."
       - "§dGiấc mơ giấu Mắt Tận Cùng."
   phantom-codex:
@@ -179,8 +179,8 @@ artifacts:
     boss: enderman_boss
     item: "Cuốc Mắt Tận Cùng"
     lore:
-      - "§7Mắt Tận Cùng nhìn xuyên cổng."
-      - "§8Cú đào {level} chạm hư không."
+      - "§7Mắt Tận Cùng soi cổng."
+      - "§8Đào {level} chạm hư không."
       - "§8Ender dẫn đường tới Rồng."
       - "§dKhối chorus mở đường bay."
   enderman-codex:
@@ -188,14 +188,14 @@ artifacts:
     item: "Mật Lục Cuốc Mắt Tận Cùng"
     lore:
       - "§7Mật lục ghi tọa độ End."
-      - "§8Trang {level} mở lối hư không."
+      - "§8Trang {level} mở cõi End."
       - "§8Dấu Ender dẫn tới Rồng."
       - "§dCổng cổ chờ Long Kiếm."
   dragon-relic:
     boss: ender_dragon
     item: "Long Kiếm Hư Không"
     lore:
-      - "§7Long Kiếm canh Cổng Hư Không."
+      - "§7Long Kiếm canh Cổng End."
       - "§8Vảy {level} khắc trời End."
       - "§8Rồng gom mọi mảnh di vật."
       - "§dKiếm vạch mặt Wither cuối."
@@ -206,13 +206,13 @@ artifacts:
       - "§7Mật lục ghi lời Rồng."
       - "§8Trang {level} hé cổng cuối."
       - "§8Di vật hội tụ tại End."
-      - "§dWither chờ sau Cổng Hư Không."
+      - "§dWither chờ sau Cổng End."
   wither-relic:
     boss: wither
     item: "Lưỡi Hái Ba Đầu Hư Vô"
     lore:
       - "§7Ba Đầu hút linh hồn cổ."
-      - "§8Đòn {level} làm tắt sao trời."
+      - "§8Đòn {level} dập tắt sao."
       - "§8Wither gom mảnh Rạn Nứt."
       - "§dChu kỳ khép, cổng còn thức."
   wither-codex:
@@ -220,9 +220,9 @@ artifacts:
     item: "Mật Lục Lưỡi Hái Ba Đầu Hư Vô"
     lore:
       - "§7Mật lục ghi hồi kết Wither."
-      - "§8Trang {level} tắt một vì sao."
+      - "§8Trang {level} tắt sao trời."
       - "§8Mảnh vỡ gọi chu kỳ mới."
-      - "§dCánh cổng vẫn chờ chương sau."
+      - "§dCổng chờ chương kế."
   creeper-relic-common:
     boss: creeper_boss
     item: "Kiếm Lôi Tâm"
@@ -324,7 +324,7 @@ artifacts:
     item: "Rìu Đỏ"
     lore:
       - "§7Chiếc rìu có cán đỏ."
-      - "§8Vindicator bỏ quên trong làng."
+      - "§8Vindicator quên rìu làng."
       - "§8Lưỡi rìu chỉ sứt nhẹ."
       - "§dDân làng nhắc ngôi mộ."
   vindicator-codex-common:
@@ -388,7 +388,7 @@ artifacts:
     item: "Cuốc Mắt End"
     lore:
       - "§7Cuốc sắt có vết tím."
-      - "§8Enderman thường đào quanh đây."
+      - "§8Enderman đào quanh đây."
       - "§8Mắt Ender nằm trong túi."
       - "§dCổng đá ở phía xa."
   enderman-codex-common:
