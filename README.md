@@ -212,6 +212,7 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 | `/vnhelp`, `/vn help` | Show command help | `vnmine.command.help`, `.utility` |
 | `/vngroup ...` | Create/delete groups and grant/revoke group permissions | `vnmine.command.groups.manage` |
 | `/vnuser ...` | Inspect users, assign groups, manage personal permission grants | `vnmine.command.users.manage` |
+| `/vnarmy ...` | Hire, recall/rest, set army behavior, and manage mercenary gear | `vnmine.command.army` |
 
 ### `/vnevent` Usage
 
@@ -320,6 +321,8 @@ Operators and the console have all plugin permissions by default.
 | `vnmine.command.time.manage`, `.day.manage`, `.scoreboard.reset` | World time and scoreboard administration |
 | `vnmine.command.death.reset` | Reset player death statistics |
 | `vnmine.command.groups.manage`, `.users.manage` | Manage permission groups and player assignments |
+| `vnmine.command.army` | Hire and manage a player's mercenary army (default: true) |
+| `vnmine.command.army.admin` | Grant summon tokens with `/vnarmy token give` (default: op) |
 | `vnmine.spawnprotection.bypass` | Let a non-operator place/break blocks inside protected regions |
 
 The old `vnmine.hardcore.admin` and `vnmine.hardcore.stats` nodes remain
@@ -330,6 +333,26 @@ above. Migrate old permission assignments to the corresponding command nodes;
 ---
 
 ## ⚙️ Configuration
+
+### Mercenaries
+
+Mercenary classes, skill sets, follow/target distances, unit caps, and tier costs
+are configured in `plugins/VnMineHardcore/armies.yml`. Each hire consumes a
+matching class-and-level summon token, the configured XP levels, and materials.
+An operator grants a token with:
+
+```text
+/vnarmy token give <player> <class> <level>
+```
+
+Players can use `/vnarmy hire <class> <level>`, `/vnarmy list`,
+`/vnarmy recall`, `/vnarmy rest`, `/vnarmy attack`, `/vnarmy defend`, and
+`/vnarmy protect`. Use `/vnarmy gear <ID>` to open the selected unit's gear
+inventory; changes are saved when it closes and kept when the unit rests,
+the owner logs out, or the server stops. `recall` reconciles the stored unit ID
+with entities carrying its persistent tag before creating a replacement.
+`/vnarmy token give` requires `vnmine.command.army.admin`; player commands use
+`vnmine.command.army`.
 
 File: `plugins/VnMineHardcore/config.yml`
 

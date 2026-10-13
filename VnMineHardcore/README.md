@@ -38,6 +38,7 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.x. Người chơi khô
 | `/vnhelp`, `/vn help` | Hiển thị hướng dẫn lệnh | `vnmine.command.help`, `.utility` |
 | `/vngroup ...` | Tạo/xóa nhóm, xem nhóm, cấp/thu hồi quyền nhóm | `vnmine.command.groups.manage` |
 | `/vnuser ...` | Xem/gán nhóm, cấp/thu hồi quyền cá nhân, reset người chơi | `vnmine.command.users.manage` |
+| `/vnarmy ...` | Thuê/quản lý lính, đổi chế độ AI và trang bị | `vnmine.command.army` |
 
 Ví dụ gọi boss Wither level 3, cảnh báo 30 giây, tồn tại 120 giây:
 `/vnboss wither 3 30 120`.
@@ -61,11 +62,36 @@ Các permission node được tách theo chức năng và liệt kê trong `plug
 Ví dụ: `vnmine.command.disasters`, `vnmine.command.spawn.manage`,
 `vnmine.command.users.manage`; node bypass vùng bảo vệ là
 `vnmine.spawnprotection.bypass`. OP và console luôn có toàn quyền.
+`vnmine.command.army` mặc định cấp cho người chơi; quyền
+`vnmine.command.army.admin` mặc định chỉ dành cho OP để cấp token triệu hồi.
 Sau khi chỉnh `permission.yml` thủ công, chạy `/vnreload`.
 Nhóm/quyền không hỗ trợ wildcard, phủ định hoặc kế thừa; quyền nhóm và quyền
 cá nhân được cộng lại, vì vậy xóa quyền cá nhân không thể phủ định quyền được
 cấp bởi nhóm. Nhóm mặc định áp dụng cho người mới và `/vnuser reset`; đổi
 `default-group` không tự chuyển người đã có nhóm được lưu.
+
+### Lính đánh thuê (`armies.yml`)
+
+`plugins/VnMineHardcore/armies.yml` cấu hình giới hạn quân số, khoảng cách theo
+chủ, các lớp, kỹ năng và chi phí XP/vật phẩm theo cấp. Mặc định có Xạ Thủ,
+Vệ Binh và Y Sư; token triệu hồi phải khớp đúng lớp/cấp và bị tiêu thụ khi thuê.
+
+```text
+/vnarmy list
+/vnarmy hire <loại> <cấp>
+/vnarmy recall
+/vnarmy rest
+/vnarmy attack | defend | protect
+/vnarmy gear <ID>
+/vnarmy token give <người chơi> <loại> <cấp>  # OP/admin
+```
+
+Hồ sơ và trang bị được lưu trong `plugins/VnMineHardcore/mercenaries.yml`.
+Lính đang triển khai được gọi lại khi chủ nhân vào game; khi nghỉ, thoát game
+hoặc server dừng, entity được thu hồi nhưng hồ sơ/trang bị vẫn giữ. `recall`
+đối soát UUID và PersistentData tag trước khi tạo entity thay thế để hạn chế
+nhân bản. `attack` tìm quái thù địch quanh lính; `defend` bảo vệ khu vực quanh
+chủ; `protect` ưu tiên mục tiêu đang tấn công chủ nhân.
 
 Để tránh xung đột, chỉ dùng một hệ thống làm nguồn cấp quyền cho node
 `vnmine.*`; permission từ plugin khác có thể cộng thêm quyền. Chỉ cấp

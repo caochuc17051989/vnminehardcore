@@ -50,6 +50,8 @@ groups:
       - vnmine.command.help
       - vnmine.command.groups.manage
       - vnmine.command.users.manage
+      - vnmine.command.army
+      - vnmine.command.army.admin
       - vnmine.spawnprotection.bypass
       - vnmine.hardcore.stats
       - vnmine.hardcore.admin

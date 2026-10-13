@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.15.0] - 2026-10-13
+
+### Added
+- Thêm nền tảng `/vnarmy`: thuê lính theo token, XP và vật liệu; dữ liệu, chế độ và trang bị được lưu bền vững.
+- Thêm các lệnh recall/rest, attack/defend/protect, danh sách quân và giao diện trang bị.
+- Thêm lớp Xạ Thủ, Vệ Binh, Y Sư; hỗ trợ AI chiến đấu, hồi máu chủ nhân/đồng minh và buff.
+- Thêm `armies.yml` để cấu hình số lượng, chi phí, cấp, lớp lính, AI và kỹ năng.
+
 ## [v1.14.0] - 2026-10-13
 
 ### Added

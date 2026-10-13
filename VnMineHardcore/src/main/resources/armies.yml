@@ -1,0 +1,219 @@
+# [VI] Cấu hình lính đánh thuê; có thể chỉnh mà không cần biên dịch lại.
+# [EN] Mercenary settings; editable without recompiling the plugin.
+
+# [VI] Bật hệ thống; mặc định true, chỉ nhận true/false.
+# [EN] Enable the system; default true, accepts true/false.
+enabled: true
+
+# [VI] Số lính tối đa mỗi chủ; mặc định 4, hợp lệ 1-100.
+# [EN] Maximum units per owner; default 4, valid range 1-100.
+max-units-per-player: 4
+
+# [VI] Khoảng cách theo chủ; mặc định 8 block, hợp lệ 2-64.
+# [EN] Follow distance; default 8 blocks, valid range 2-64.
+follow-distance-blocks: 8.0
+
+# [VI] Ngưỡng dịch chuyển về chủ; mặc định 40 block, hợp lệ 8-256.
+# [EN] Teleport-to-owner threshold; default 40 blocks, valid range 8-256.
+teleport-distance-blocks: 40.0
+
+# [VI] Bán kính tìm mục tiêu; mặc định 20 block, hợp lệ 4-64.
+# [EN] Target search radius; default 20 blocks, valid range 4-64.
+target-radius-blocks: 20.0
+
+# [VI] Chu kỳ cập nhật AI; mặc định 20 tick, hợp lệ 10-100.
+# [EN] AI update interval; default 20 ticks, valid range 10-100.
+ai-interval-ticks: 20
+
+# [VI] Giá trị mặc định cho kỹ năng hỗ trợ; giới hạn được ghi tại từng khóa.
+# [EN] Support skill defaults; limits are documented for each key.
+skills:
+  # [VI] Hồi riêng từng kỹ năng; mặc định 15 giây, hợp lệ 1-3600.
+  # [EN] Per-skill cooldown; default 15 seconds, valid range 1-3600.
+  cooldown-seconds: 15
+  # [VI] Máu hồi mỗi lần; mặc định 4, hợp lệ 0-100.
+  # [EN] Health restored per use; default 4, valid range 0-100.
+  heal-amount: 4.0
+  # [VI] Bán kính hồi đồng minh; mặc định 8 block, hợp lệ 1-32.
+  # [EN] Ally healing radius; default 8 blocks, valid range 1-32.
+  heal-radius-blocks: 8.0
+  # [VI] Hiệu ứng buff; mặc định SPEED, phải là hiệu ứng hợp lệ.
+  # [EN] Owner buff; default SPEED, must be a valid effect.
+  owner-buff: SPEED
+  # [VI] Thời lượng buff; mặc định 8 giây, hợp lệ 1-600.
+  # [EN] Buff duration; default 8 seconds, valid range 1-600.
+  owner-buff-seconds: 8
+
+# [VI] Các lớp lính; entity-type phải là mob có Bukkit AI.
+# [EN] Mercenary classes; entity-type must be a Bukkit AI mob.
+classes:
+  archer:
+    # [VI] Tên hiển thị; mặc định Xạ Thủ.
+    # [EN] Display name; default Archer.
+    display-name: "Xạ Thủ"
+    # [VI] Entity; mặc định SKELETON.
+    # [EN] Entity type; default SKELETON.
+    entity-type: SKELETON
+    # [VI] Máu cấp 1; mặc định 20, phải lớn hơn 0.
+    # [EN] Level-1 health; default 20, must be positive.
+    base-health: 20
+    # [VI] Máu thêm mỗi cấp; mặc định 3, phải không âm.
+    # [EN] Health per level; default 3, must be nonnegative.
+    health-per-level: 3
+    # [VI] Sát thương cơ bản; mặc định 4, phải không âm.
+    # [EN] Base damage; default 4, must be nonnegative.
+    base-damage: 4
+    # [VI] Sát thương thêm mỗi cấp; mặc định 0.5, phải không âm.
+    # [EN] Damage per level; default 0.5, must be nonnegative.
+    damage-per-level: 0.5
+    # [VI] Skill mặc định ATTACK; skill hợp lệ: ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER.
+    # [EN] Default skill ATTACK; valid skills: ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER.
+    skills: [ATTACK]
+  guardian:
+    # [VI] Tên hiển thị; mặc định Vệ Binh.
+    # [EN] Display name; default Guardian.
+    display-name: "Vệ Binh"
+    # [VI] Entity; mặc định VINDICATOR.
+    # [EN] Entity type; default VINDICATOR.
+    entity-type: VINDICATOR
+    # [VI] Máu cấp 1; mặc định 32, phải lớn hơn 0.
+    # [EN] Level-1 health; default 32, must be positive.
+    base-health: 32
+    # [VI] Máu thêm mỗi cấp; mặc định 5, phải không âm.
+    # [EN] Health per level; default 5, must be nonnegative.
+    health-per-level: 5
+    # [VI] Sát thương cơ bản; mặc định 7, phải không âm.
+    # [EN] Base damage; default 7, must be nonnegative.
+    base-damage: 7
+    # [VI] Sát thương thêm mỗi cấp; mặc định 0.75, phải không âm.
+    # [EN] Damage per level; default 0.75, must be nonnegative.
+    damage-per-level: 0.75
+    # [VI] Skill mặc định ATTACK; skill hợp lệ: ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER.
+    # [EN] Default skill ATTACK; valid skills: ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER.
+    skills: [ATTACK]
+  medic:
+    # [VI] Tên hiển thị; mặc định Y Sư.
+    # [EN] Display name; default Medic.
+    display-name: "Y Sư"
+    # [VI] Entity; mặc định VILLAGER.
+    # [EN] Entity type; default VILLAGER.
+    entity-type: VILLAGER
+    # [VI] Máu cấp 1; mặc định 24, phải lớn hơn 0.
+    # [EN] Level-1 health; default 24, must be positive.
+    base-health: 24
+    # [VI] Máu thêm mỗi cấp; mặc định 3, phải không âm.
+    # [EN] Health per level; default 3, must be nonnegative.
+    health-per-level: 3
+    # [VI] Sát thương cơ bản; mặc định 0, phải không âm.
+    # [EN] Base damage; default 0, must be nonnegative.
+    base-damage: 0
+    # [VI] Sát thương thêm mỗi cấp; mặc định 0, phải không âm.
+    # [EN] Damage per level; default 0, must be nonnegative.
+    damage-per-level: 0
+    # [VI] Skill mặc định hồi chủ, hồi đồng minh và buff chủ.
+    # [EN] Default skills heal allies/owner and buff the owner.
+    skills: [HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER]
+
+# [VI] Chi phí và cấp lính; phải có token đúng lớp/cấp, XP/vật liệu chỉ trừ khi thuê thành công.
+# [EN] Tier costs; an exact class/level token is required and XP/materials are charged only on success.
+tiers:
+  # [VI] Chi phí lính cấp 1.
+  # [EN] Tier 1 hiring costs.
+  1:
+    # [VI] XP level; mặc định 8, hợp lệ 0-100000.
+    # [EN] XP levels; default 8, valid range 0-100000.
+    experience-levels: 8
+    # [VI] Chi phí mặc định 8 Emerald; số lượng mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Default cost 8 Emeralds; each material amount must be 0-1000000.
+    materials:
+      EMERALD: 8
+  # [VI] Chi phí lính cấp 2.
+  # [EN] Tier 2 hiring costs.
+  2:
+    # [VI] XP level; mặc định 12, hợp lệ 0-100000.
+    # [EN] XP levels; default 12, valid range 0-100000.
+    experience-levels: 12
+    # [VI] Chi phí mặc định 12 Emerald; số lượng mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Default cost 12 Emeralds; each material amount must be 0-1000000.
+    materials:
+      EMERALD: 12
+  # [VI] Chi phí lính cấp 3.
+  # [EN] Tier 3 hiring costs.
+  3:
+    # [VI] XP level; mặc định 16, hợp lệ 0-100000.
+    # [EN] XP levels; default 16, valid range 0-100000.
+    experience-levels: 16
+    # [VI] Chi phí mặc định 16 Emerald; số lượng mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Default cost 16 Emeralds; each material amount must be 0-1000000.
+    materials:
+      EMERALD: 16
+  # [VI] Chi phí lính cấp 4.
+  # [EN] Tier 4 hiring costs.
+  4:
+    # [VI] XP level; mặc định 20, hợp lệ 0-100000.
+    # [EN] XP levels; default 20, valid range 0-100000.
+    experience-levels: 20
+    # [VI] Chi phí mặc định 20 Emerald; số lượng mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Default cost 20 Emeralds; each material amount must be 0-1000000.
+    materials:
+      EMERALD: 20
+  # [VI] Chi phí lính cấp 5.
+  # [EN] Tier 5 hiring costs.
+  5:
+    # [VI] XP level; mặc định 24, hợp lệ 0-100000.
+    # [EN] XP levels; default 24, valid range 0-100000.
+    experience-levels: 24
+    # [VI] Chi phí mặc định 24 Emerald; số lượng mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Default cost 24 Emeralds; each material amount must be 0-1000000.
+    materials:
+      EMERALD: 24
+  # [VI] Chi phí lính cấp 6.
+  # [EN] Tier 6 hiring costs.
+  6:
+    # [VI] XP level; mặc định 28, hợp lệ 0-100000.
+    # [EN] XP levels; default 28, valid range 0-100000.
+    experience-levels: 28
+    # [VI] Chi phí mặc định 28 Emerald; số lượng mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Default cost 28 Emeralds; each material amount must be 0-1000000.
+    materials:
+      EMERALD: 28
+  # [VI] Chi phí lính cấp 7.
+  # [EN] Tier 7 hiring costs.
+  7:
+    # [VI] XP level; mặc định 32, hợp lệ 0-100000.
+    # [EN] XP levels; default 32, valid range 0-100000.
+    experience-levels: 32
+    # [VI] Chi phí mặc định 32 Emerald; số lượng mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Default cost 32 Emeralds; each material amount must be 0-1000000.
+    materials:
+      EMERALD: 32
+  # [VI] Chi phí lính cấp 8.
+  # [EN] Tier 8 hiring costs.
+  8:
+    # [VI] XP level; mặc định 36, hợp lệ 0-100000.
+    # [EN] XP levels; default 36, valid range 0-100000.
+    experience-levels: 36
+    # [VI] Chi phí mặc định 36 Emerald; số lượng mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Default cost 36 Emeralds; each material amount must be 0-1000000.
+    materials:
+      EMERALD: 36
+  # [VI] Chi phí lính cấp 9.
+  # [EN] Tier 9 hiring costs.
+  9:
+    # [VI] XP level; mặc định 40, hợp lệ 0-100000.
+    # [EN] XP levels; default 40, valid range 0-100000.
+    experience-levels: 40
+    # [VI] Chi phí mặc định 40 Emerald; số lượng mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Default cost 40 Emeralds; each material amount must be 0-1000000.
+    materials:
+      EMERALD: 40
+  # [VI] Chi phí lính cấp 10.
+  # [EN] Tier 10 hiring costs.
+  10:
+    # [VI] XP level; mặc định 44, hợp lệ 0-100000.
+    # [EN] XP levels; default 44, valid range 0-100000.
+    experience-levels: 44
+    # [VI] Chi phí mặc định 44 Emerald; số lượng mỗi vật liệu hợp lệ 0-1000000.
+    # [EN] Default cost 44 Emeralds; each material amount must be 0-1000000.
+    materials:
+      EMERALD: 44

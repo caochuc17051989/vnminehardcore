@@ -29,6 +29,7 @@ public final class VnMineHardcore extends JavaPlugin {
     private GraveManager graveManager;
     private SpawnProtectionManager spawnProtectionManager;
     private PermissionManager permissionManager;
+    private MercenaryManager mercenaryManager;
     private VillagerDataManager villagerDataManager;
     private DeathListener deathListener;
     private CombatListener combatListener;
@@ -68,6 +69,7 @@ public final class VnMineHardcore extends JavaPlugin {
         this.graveManager = new GraveManager(this, configManager);
         this.spawnProtectionManager = new SpawnProtectionManager(this);
         this.permissionManager = new PermissionManager(this);
+        this.mercenaryManager = new MercenaryManager(this);
 
         // Create listeners (pass config)
         this.deathListener = new DeathListener(this, configManager, deathRenameManager, deathPenaltyManager);
@@ -104,6 +106,7 @@ public final class VnMineHardcore extends JavaPlugin {
         }
         registerCommand("vngroup", permissionManager, permissionManager);
         registerCommand("vnuser", permissionManager, permissionManager);
+        registerCommand("vnarmy", mercenaryManager, mercenaryManager);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
         getLogger().info("§a  Deaths are recorded; no death bans are applied.");
@@ -131,6 +134,7 @@ public final class VnMineHardcore extends JavaPlugin {
         if (bossEventManager != null) bossEventManager.stop();
         if (bossLeaderboardManager != null) bossLeaderboardManager.stop();
         if (graveManager != null) graveManager.stop();
+        if (mercenaryManager != null) mercenaryManager.stop();
         if (logManager != null) logManager.stop();
         if (timeControlManager != null) timeControlManager.stop();
         getLogger().info("VnMineHardcore disabled.");
@@ -388,6 +392,8 @@ public final class VnMineHardcore extends JavaPlugin {
             sender.sendMessage("§e/vnreload §7- Tải lại config và các hệ thống (admin).");
             sender.sendMessage("§e/vngroup §7- Liệt kê/tạo/xóa nhóm và chỉnh quyền nhóm (admin).");
             sender.sendMessage("§e/vnuser §7- Xem, gán nhóm hoặc chỉnh quyền riêng người chơi (admin).");
+            sender.sendMessage("§e/vnarmy §7- Thuê, triệu hồi, nghỉ, chỉnh chế độ và trang bị lính đánh thuê.");
+            sender.sendMessage("§7  /vnarmy list | hire <loại> <cấp> | recall | rest | attack | defend | protect | gear <ID>");
             sender.sendMessage("§e/vn help §7- Hướng dẫn lệnh /vn.");
             sender.sendMessage("§e/vnhelp §7- Hiển thị danh sách lệnh này.");
             sender.sendMessage("§6§m========================================");
@@ -410,6 +416,10 @@ public final class VnMineHardcore extends JavaPlugin {
             disasterManager.reload();
             bossLeaderboardManager.reload();
             bossEventManager.reload();
+            if (!mercenaryManager.reload()) {
+                sender.sendMessage("§cCác hệ thống khác đã tải lại nhưng armies.yml lỗi; cấu hình lính cũ vẫn được giữ.");
+                return true;
+            }
             if (!permissionManager.reload()) {
                 sender.sendMessage("§cCác cấu hình khác đã được tải lại nhưng permission.yml không hợp lệ/không đọc được; quyền cũ vẫn được giữ.");
                 return true;
