@@ -99,7 +99,8 @@ public final class VnMineHardcore extends JavaPlugin {
 
         // Register commands
         for (String commandName : List.of("vnstats", "vnhardcore", "vnreload", "vnhelp",
-                "vnevent", "vnboss", "vn", "reward", "vnrespawn", "vnleave", "fly",
+                "vnevent", "vnboss", "vn", "vnmenu", "reward", "vnrespawn", "vnleave", "fly",
+                                "vnevent", "vnboss", "vn", "reward", "vnrespawn", "vnleave", "fly",
                 "nodame", "spawn", "gm0", "gm1", "gm2", "gm3", "scoreboard",
                 "vntime", "vnday", "vnspawn", "tp")) {
             registerCommand(commandName, this, this);
@@ -107,6 +108,7 @@ public final class VnMineHardcore extends JavaPlugin {
         registerCommand("vngroup", permissionManager, permissionManager);
         registerCommand("vnuser", permissionManager, permissionManager);
         registerCommand("vnarmy", mercenaryManager, mercenaryManager);
+        registerCommand("vnmenu", mercenaryManager, mercenaryManager);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
         getLogger().info("§a  Deaths are recorded; no death bans are applied.");
@@ -393,7 +395,9 @@ public final class VnMineHardcore extends JavaPlugin {
             sender.sendMessage("§e/vngroup §7- Liệt kê/tạo/xóa nhóm và chỉnh quyền nhóm (admin).");
             sender.sendMessage("§e/vnuser §7- Xem, gán nhóm hoặc chỉnh quyền riêng người chơi (admin).");
             sender.sendMessage("§e/vnarmy §7- Thuê, triệu hồi, nghỉ, chỉnh chế độ và trang bị lính đánh thuê.");
-            sender.sendMessage("§7  /vnarmy list | hire <loại> <cấp> | recall | rest | attack | defend | protect | gear <ID>");
+            sender.sendMessage("§e/vnmenu §7- Mở menu chính; phím F cũng mở menu này.");
+            sender.sendMessage("§7  /vnarmy list [user] | hire <loại> <tier> | recall | rest | attack | defend | protect");
+            sender.sendMessage("§7  /vnarmy gear <ID> | mute <ID> | remove <ID> | remove <user> <ID> | clear <user>");
             sender.sendMessage("§e/vn help §7- Hướng dẫn lệnh /vn.");
             sender.sendMessage("§e/vnhelp §7- Hiển thị danh sách lệnh này.");
             sender.sendMessage("§6§m========================================");

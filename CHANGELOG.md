@@ -1,6 +1,17 @@
 # Changelog
 
-## [v1.16.0] - 2026-10-13
+## [v1.17.0] - 2026-10-13
+
+### Added
+- Thêm menu chức năng mở bằng F hoặc `/vnmenu`, menu admin và luồng GUI thuê/cấp lính theo lớp, tier.
+- Tách tier triệu hồi khỏi level farm; lính nhận XP khi hạ quái, tăng chỉ số theo level và lưu tiến trình riêng.
+- Thêm `/vnarmy remove`, `/vnarmy clear`, `/vnarmy list <user>` và bật/tắt âm thanh riêng từng lính.
+- GUI hiển thị HP, giáp, sát thương, skill, thông số và cooldown; chọn tier có tooltip requirement.
+
+### Fixed
+- Sửa lệch vị trí click GUI, ngăn gear mất độ bền, chặn lính phản công chủ và loại mục tiêu đang bay.
+- Lính bám mục tiêu chủ vừa đánh, ngừng khi mục tiêu chết; tự dịch chuyển theo ngưỡng cấu hình.
+- Recall triệu hồi cạnh chủ; damage boss và loot do lính gây ra được tính cho chủ nhân.
 
 ### Added
 - Boss có thể rơi lệnh triệu hồi lính cấp trùng với cấp boss; bật/tắt và chỉnh tỉ lệ trong `bosses/_settings.yml`.

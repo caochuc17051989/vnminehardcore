@@ -9,6 +9,27 @@
 # ============================================================
 config-version: 2
 
+# [VI] Menu tổng hợp và phím mở menu; mặc định bật, F sẽ mở menu thay vì đổi tay phụ.
+# [EN] Main menu and its hotkey; enabled by default, F opens the menu instead of swapping hands.
+menus:
+  # [VI] Menu chính; mặc định bật.
+  # [EN] Main menu; default enabled.
+  main:
+    enabled: true
+    # [VI] Chặn sự kiện đổi tay bằng phím F để mở menu; mặc định bật.
+    # [EN] Cancel the F-key hand-swap event to open the menu; default enabled.
+    intercept-f-key: true
+  # [VI] Hiển thị mục menu admin cho người có quyền; mặc định bật.
+  # [EN] Show admin menu to players with permission; default enabled.
+  admin:
+    enabled: true
+    # [VI] Thời gian cảnh báo trước khi gọi thiên tai/boss; mặc định 30 giây, hợp lệ 1-3600.
+    # [EN] Warning time before a disaster/boss is summoned; default 30 seconds, valid range 1-3600.
+    warning-seconds: 30
+    # [VI] Thời gian thiên tai/boss hoạt động; mặc định 120 giây, hợp lệ 1-86400.
+    # [EN] Disaster/boss active duration; default 120 seconds, valid range 1-86400.
+    duration-seconds: 120
+
 # ============================================================
 # [DEATH] ☠ TỬ THẦN / DEATH
 # ============================================================

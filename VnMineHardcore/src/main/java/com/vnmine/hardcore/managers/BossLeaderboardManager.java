@@ -23,6 +23,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
@@ -65,6 +66,7 @@ public final class BossLeaderboardManager implements Listener {
     );
 
     private final VnMineHardcore plugin;
+    private final NamespacedKey armyOwnerKey;
     private final File dataFile;
     private final Map<UUID, Double> seasonPoints = new HashMap<>();
     private final Map<UUID, String> playerNames = new HashMap<>();
@@ -89,6 +91,7 @@ public final class BossLeaderboardManager implements Listener {
 
     public BossLeaderboardManager(VnMineHardcore plugin) {
         this.plugin = plugin;
+        this.armyOwnerKey = new NamespacedKey(plugin, "army_owner");
         this.dataFile = new File(plugin.getDataFolder(), "scoreboard-data.yml");
         reload();
         Bukkit.getPluginManager().registerEvents(this, plugin);
@@ -402,9 +405,17 @@ public final class BossLeaderboardManager implements Listener {
     }
 
     private Player playerAttacker(Entity damager) {
-        if (damager instanceof Player player) return player;
-        if (damager instanceof Projectile projectile && projectile.getShooter() instanceof Player player) return player;
-        return null;
+        Entity source = damager;
+        if (source instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) {
+            source = shooter;
+        }
+        if (source instanceof Player player) return player;
+        String owner = source.getPersistentDataContainer().get(armyOwnerKey, PersistentDataType.STRING);
+        try {
+            return owner == null ? null : Bukkit.getPlayer(UUID.fromString(owner));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 
     @EventHandler

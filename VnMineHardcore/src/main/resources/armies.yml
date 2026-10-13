@@ -25,6 +25,19 @@ target-radius-blocks: 20.0
 # [EN] AI update interval; default 20 ticks, valid range 10-100.
 ai-interval-ticks: 20
 
+# [VI] Tiến trình level farm riêng biệt với tier triệu hồi; mặc định 5 XP mỗi mạng, 100 XP mỗi level, tối đa level 50.
+# [EN] Farming progression is separate from summon tier; defaults to 5 XP per kill, 100 XP per level, maximum level 50.
+progression:
+  # [VI] XP lính nhận khi hạ quái; mặc định 5, hợp lệ 0-100000.
+  # [EN] XP awarded to a mercenary per mob kill; default 5, valid range 0-100000.
+  experience-per-kill: 5
+  # [VI] XP cơ bản cần cho level tiếp theo; yêu cầu tăng theo level hiện tại; mặc định 100, hợp lệ 1-100000.
+  # [EN] Base XP required for the next level; requirement scales with current level; default 100, valid range 1-100000.
+  experience-per-level: 100
+  # [VI] Level farm tối đa; mặc định 50, hợp lệ 1-1000.
+  # [EN] Maximum farming level; default 50, valid range 1-1000.
+  max-level: 50
+
 # [VI] Giá trị mặc định cho kỹ năng hỗ trợ; giới hạn được ghi tại từng khóa.
 # [EN] Support skill defaults; limits are documented for each key.
 skills:
@@ -54,6 +67,9 @@ classes:
     # [VI] Tên hiển thị; mặc định Xạ Thủ.
     # [EN] Display name; default Archer.
     display-name: "Xạ Thủ"
+    # [VI] Mô tả chức năng hiện trong GUI.
+    # [EN] Short role description shown in the GUI.
+    description: "Tấn công mục tiêu từ xa bằng cung tên."
     # [VI] Entity; mặc định SKELETON.
     # [EN] Entity type; default SKELETON.
     entity-type: SKELETON
@@ -66,6 +82,12 @@ classes:
     # [VI] Sát thương cơ bản; mặc định 4, phải không âm.
     # [EN] Base damage; default 4, must be nonnegative.
     base-damage: 4
+    # [VI] Giáp cấp đầu tiên; mặc định 0, hợp lệ 0-100.
+    # [EN] Base armor at the initial rank; default 0, valid range 0-100.
+    base-armor: 0
+    # [VI] Giáp tăng mỗi bậc tổng hợp; mặc định 0, hợp lệ 0-100.
+    # [EN] Armor gained per combined rank; default 0, valid range 0-100.
+    armor-per-level: 0
     # [VI] Sát thương thêm mỗi cấp; mặc định 0.5, phải không âm.
     # [EN] Damage per level; default 0.5, must be nonnegative.
     damage-per-level: 0.5
@@ -97,6 +119,9 @@ classes:
     # [VI] Tên hiển thị; mặc định Vệ Binh.
     # [EN] Display name; default Guardian.
     display-name: "Vệ Binh"
+    # [VI] Mô tả chức năng hiện trong GUI.
+    # [EN] Short role description shown in the GUI.
+    description: "Chiến đấu cận chiến và bảo vệ chủ nhân."
     # [VI] Entity; mặc định VINDICATOR.
     # [EN] Entity type; default VINDICATOR.
     entity-type: VINDICATOR
@@ -109,6 +134,12 @@ classes:
     # [VI] Sát thương cơ bản; mặc định 7, phải không âm.
     # [EN] Base damage; default 7, must be nonnegative.
     base-damage: 7
+    # [VI] Giáp cấp đầu tiên; mặc định 0, hợp lệ 0-100.
+    # [EN] Base armor at the initial rank; default 0, valid range 0-100.
+    base-armor: 0
+    # [VI] Giáp tăng mỗi bậc tổng hợp; mặc định 0, hợp lệ 0-100.
+    # [EN] Armor gained per combined rank; default 0, valid range 0-100.
+    armor-per-level: 0
     # [VI] Sát thương thêm mỗi cấp; mặc định 0.75, phải không âm.
     # [EN] Damage per level; default 0.75, must be nonnegative.
     damage-per-level: 0.75
@@ -138,6 +169,9 @@ classes:
     # [VI] Tên hiển thị; mặc định Y Sư.
     # [EN] Display name; default Medic.
     display-name: "Y Sư"
+    # [VI] Mô tả chức năng hiện trong GUI.
+    # [EN] Short role description shown in the GUI.
+    description: "Hồi máu và tăng hiệu ứng cho chủ nhân, đồng minh."
     # [VI] Entity; mặc định VILLAGER.
     # [EN] Entity type; default VILLAGER.
     entity-type: VILLAGER
@@ -150,6 +184,12 @@ classes:
     # [VI] Sát thương cơ bản; mặc định 0, phải không âm.
     # [EN] Base damage; default 0, must be nonnegative.
     base-damage: 0
+    # [VI] Giáp cấp đầu tiên; mặc định 0, hợp lệ 0-100.
+    # [EN] Base armor at the initial rank; default 0, valid range 0-100.
+    base-armor: 0
+    # [VI] Giáp tăng mỗi bậc tổng hợp; mặc định 0, hợp lệ 0-100.
+    # [EN] Armor gained per combined rank; default 0, valid range 0-100.
+    armor-per-level: 0
     # [VI] Sát thương thêm mỗi cấp; mặc định 0, phải không âm.
     # [EN] Damage per level; default 0, must be nonnegative.
     damage-per-level: 0

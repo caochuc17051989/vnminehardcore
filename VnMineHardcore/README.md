@@ -36,6 +36,7 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.x. Người chơi khô
 | `/gm0`, `/gm1`, `/gm2`, `/gm3` | Chuyển game mode (chỉ người chơi) | `vnmine.command.gamemode` |
 | `/vnreload` | Tải lại config và các hệ thống | `vnmine.command.reload` |
 | `/vnhelp`, `/vn help` | Hiển thị hướng dẫn lệnh | `vnmine.command.help`, `.utility` |
+| `/vnmenu` hoặc phím `F` | Mở menu chức năng; phím F thay thao tác đổi tay phụ | Không yêu cầu quyền riêng |
 | `/vngroup ...` | Tạo/xóa nhóm, xem nhóm, cấp/thu hồi quyền nhóm | `vnmine.command.groups.manage` |
 | `/vnuser ...` | Xem/gán nhóm, cấp/thu hồi quyền cá nhân, reset người chơi | `vnmine.command.users.manage` |
 | `/vnarmy ...` | Thuê/quản lý lính, đổi chế độ AI và trang bị | `vnmine.command.army` |
@@ -63,7 +64,12 @@ Ví dụ: `vnmine.command.disasters`, `vnmine.command.spawn.manage`,
 `vnmine.command.users.manage`; node bypass vùng bảo vệ là
 `vnmine.spawnprotection.bypass`. OP và console luôn có toàn quyền.
 `vnmine.command.army` mặc định cấp cho người chơi; quyền
-`vnmine.command.army.admin` mặc định chỉ dành cho OP để cấp token triệu hồi.
+`vnmine.command.army.admin` mặc định chỉ dành cho OP để cấp/xóa và xem quân đội
+của người khác. `F` mở menu chính thay thao tác đổi tay phụ; cấu hình tại
+`menus.main` và `menus.admin` trong `config.yml`.
+Menu admin có các thao tác trực tiếp cho quân đội, thiên tai/boss, thời gian/ngày,
+spawn protection, teleport, tiện ích người chơi và nhóm/quyền; các thao tác reset
+có bước xác nhận.
 Sau khi chỉnh `permission.yml` thủ công, chạy `/vnreload`.
 Nhóm/quyền không hỗ trợ wildcard, phủ định hoặc kế thừa; quyền nhóm và quyền
 cá nhân được cộng lại, vì vậy xóa quyền cá nhân không thể phủ định quyền được
@@ -73,32 +79,40 @@ cấp bởi nhóm. Nhóm mặc định áp dụng cho người mới và `/vnuse
 ### Lính đánh thuê (`armies.yml`)
 
 `plugins/VnMineHardcore/armies.yml` cấu hình giới hạn quân số, khoảng cách theo
-chủ, các lớp, kỹ năng và chi phí XP/vật phẩm theo cấp. Mặc định có Xạ Thủ,
-Vệ Binh và Y Sư; token triệu hồi phải khớp đúng lớp/cấp và bị tiêu thụ khi thuê.
+chủ, tiến trình farm XP, các lớp, kỹ năng và chi phí XP/vật phẩm theo tier.
+Mặc định có Xạ Thủ, Vệ Binh và Y Sư; token phải khớp đúng lớp/tier và bị tiêu thụ khi thuê.
 
 ```text
 /vnarmy gui
-/vnarmy list
-/vnarmy hire <loại> <cấp>
+/vnarmy list [user]                             # user khác cần quyền admin
+/vnarmy hire <loại> <tier>
 /vnarmy recall
 /vnarmy rest
 /vnarmy attack | defend | protect
 /vnarmy gear <ID>
-/vnarmy give <người chơi> token <cấp>              # OP/admin
-/vnarmy give <người chơi> army <loại> <cấp>       # OP/admin
-/vnarmy token give <người chơi> <loại> <cấp>      # token theo lớp, tương thích cũ
+/vnarmy mute <ID>
+/vnarmy remove <ID>
+/vnarmy remove <user> <ID>                     # admin
+/vnarmy clear <user>                           # admin
+/vnarmy give <người chơi> token <tier>             # admin
+/vnarmy give <người chơi> army <loại> <tier>       # admin
+/vnarmy token give <người chơi> <loại> <tier>      # token theo lớp, tương thích cũ
 ```
 
 Hồ sơ và trang bị được lưu trong `plugins/VnMineHardcore/mercenaries.yml`.
 Lính đang triển khai được gọi lại khi chủ nhân vào game; khi nghỉ, thoát game
 hoặc server dừng, entity được thu hồi nhưng hồ sơ/trang bị vẫn giữ. `recall`
 đối soát UUID và PersistentData tag trước khi tạo entity thay thế để hạn chế
-nhân bản. `attack` tìm quái thù địch quanh lính; `defend` bảo vệ khu vực quanh
-chủ; `protect` ưu tiên mục tiêu đang tấn công chủ nhân.
+nhân bản. Lính ưu tiên mục tiêu chủ nhân vừa đánh; `attack` tìm thêm quái thù
+địch quanh lính; `defend` bảo vệ khu vực quanh chủ; `protect` ưu tiên mục tiêu
+đang tấn công chủ nhân.
 
-GUI cho phép chọn từng lính để đổi chế độ, cho nghỉ/triệu hồi và mở kho trang bị.
-Token phổ thông do boss rơi có cấp bằng cấp boss, có thể dùng để thuê một lớp
-bất kỳ cùng cấp. Tỉ lệ rơi được chỉnh tại `bosses/_settings.yml` trong
+GUI cho phép chọn lớp và tier trước khi thuê; tooltip nêu skill, yêu cầu XP/vật
+liệu và chỉ số HP/giáp/sát thương. Menu đội quân mở chi tiết từng lính, đổi chế
+độ, mute, xóa, cho nghỉ/triệu hồi và mở kho trang bị. Level farm bắt đầu từ 1,
+nhận XP theo số mạng và hoàn toàn riêng với tier triệu hồi; chỉnh trong
+`armies.yml` tại `progression`. Token phổ thông do boss rơi có tier bằng tier
+boss, có thể dùng để thuê một lớp bất kỳ cùng tier. Tỉ lệ rơi được chỉnh tại `bosses/_settings.yml` trong
 `army-token-drop`; token chỉ rơi khi boss có người chơi đủ ngưỡng nhận thưởng.
 `armies.yml` hỗ trợ skill `RANGED_ATTACK`, `BUFF_ALLIES`, `SHIELD_OWNER` cùng
 cooldown, mục tiêu hỗ trợ, tầm, lượng hồi, sát thương và hiệu ứng riêng theo lớp.

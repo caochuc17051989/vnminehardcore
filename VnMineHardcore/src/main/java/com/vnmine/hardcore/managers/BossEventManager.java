@@ -43,6 +43,7 @@ import java.util.logging.Logger;
 public class BossEventManager implements Listener {
 
     private final VnMineHardcore plugin;
+    private final NamespacedKey armyOwnerKey;
     private final ConfigManager config;
     private final LogManager logManager;
     private final BossLeaderboardManager leaderboardManager;
@@ -108,6 +109,7 @@ public class BossEventManager implements Listener {
 
     public BossEventManager(VnMineHardcore plugin, ConfigManager config) {
         this.plugin = plugin;
+        this.armyOwnerKey = new NamespacedKey(plugin, "army_owner");
         this.config = config;
         this.logManager = plugin.getLogManager();
         this.leaderboardManager = plugin.getBossLeaderboardManager();
@@ -580,10 +582,17 @@ public class BossEventManager implements Listener {
     }
 
     private Player playerAttacker(Entity damager) {
-        if (damager instanceof Player player) return player;
-        if (damager instanceof Projectile projectile
-                && projectile.getShooter() instanceof Player player) return player;
-        return null;
+        Entity source = damager;
+        if (source instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) {
+            source = shooter;
+        }
+        if (source instanceof Player player) return player;
+        String owner = source.getPersistentDataContainer().get(armyOwnerKey, PersistentDataType.STRING);
+        try {
+            return owner == null ? null : Bukkit.getPlayer(UUID.fromString(owner));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 
     private String findSkillKey(ConfigManager.BossConfig bc, String... candidates) {
@@ -2590,8 +2599,8 @@ public class BossEventManager implements Listener {
         if (!config.bossArmyTokenDropEnabled || random.nextDouble() >= config.bossArmyTokenDropChance) return;
         ItemStack token = new ItemStack(Material.PAPER);
         ItemMeta meta = token.getItemMeta();
-        meta.setDisplayName("§6§lLệnh Triệu Hồi §fCấp " + level);
-        meta.setLore(List.of("§7Gọi lính cấp " + level + ".", "§8Dùng /vnarmy hire."));
+        meta.setDisplayName("§6§lLệnh Triệu Hồi §fTier " + level);
+        meta.setLore(List.of("§7Gọi lính tier " + level + ".", "§8Dùng /vnarmy hire."));
         meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "army_token_class"),
             PersistentDataType.STRING, "any");
         meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "army_token_level"),
