@@ -769,9 +769,9 @@ classes:
     display-name: "Druid"
     # [VI] Mô tả chức năng trong GUI.
     # [EN] Role description shown in the GUI.
-    description: "Khống chế quái, hồi máu và thanh tẩy cho cả đội."
-    # [VI] Entity AI; mặc định EVOKER.
-    # [EN] AI entity; default EVOKER.
+    description: "Khống chế quái, hồi máu, buff và triệu hồi đồng minh giúp tấn công."
+    # [VI] Entity AI; mặc định EVOKER, nhưng khả năng triệu hồi tự nhiên bị chặn để tránh Vex địch đồng minh.
+    # [EN] AI entity; default EVOKER, but natural summon logic is blocked to avoid enemy Vexes.
     entity-type: EVOKER
     # [VI] Máu cấp 1; mặc định 28, phải lớn hơn 0.
     # [EN] Level-1 health; default 28, must be positive.
@@ -794,9 +794,9 @@ classes:
     # [VI] Biểu tượng GUI; mặc định OAK_SAPLING.
     # [EN] GUI icon; default OAK_SAPLING.
     menu-icon: OAK_SAPLING
-    # [VI] Skill: bắn xa, trói chậm, hồi/buff và thanh tẩy; tổng 5.
-    # [EN] Ranged control, healing, buff, and cleanse kit; 5 skills total.
-    skills: [RANGED_ATTACK, ROOT_TARGET, HEAL_ALLIES, BUFF_ALLIES, CLEANSE_OWNER]
+    # [VI] Skill: bắn xa, trói, hồi/buff, thanh tẩy và triệu hồi đồng minh; tổng 6.
+    # [EN] Ranged control, healing, buffs, cleanse, and ally summons; 6 skills total.
+    skills: [RANGED_ATTACK, ROOT_TARGET, HEAL_ALLIES, BUFF_ALLIES, CLEANSE_OWNER, SUMMON_VEXES]
     # [VI] Vũ khí mặc định; mặc định STICK.
     # [EN] Default weapon; default STICK.
     starting-weapon: STICK
@@ -866,6 +866,19 @@ classes:
         # [VI] Danh sách hiệu ứng có thể gỡ khỏi chủ.
         # [EN] Potion effects removable from the owner.
         effects: [POISON, WITHER, SLOWNESS, WEAKNESS, BLINDNESS, HUNGER]
+      SUMMON_VEXES:
+        # [VI] Cooldown triệu hồi đồng minh; mặc định 18 giây, hợp lệ 1-3600.
+        # [EN] Summon cooldown; default 18 seconds, valid range 1-3600.
+        cooldown-seconds: 18
+        # [VI] Số minion tối đa cùng lúc; mặc định 2, hợp lệ 1-4.
+        # [EN] Maximum active minions; default 2, valid range 1-4.
+        max-active: 2
+        # [VI] Thời gian sống của minion; mặc định 15 giây, hợp lệ 1-120.
+        # [EN] Minion lifetime; default 15 seconds, valid range 1-120.
+        lifetime-seconds: 15
+        # [VI] Sát thương mỗi con; mặc định 4, hợp lệ 0-100.
+        # [EN] Damage per minion; default 4, valid range 0-100.
+        damage: 4.0
     # [VI] Chi phí nâng bậc; tier đích 2-13, số lượng vật liệu 0-1000000.
     # [EN] Tier-upgrade costs; target tier 2-13, material amount 0-1000000.
     tier-upgrades:
