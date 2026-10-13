@@ -94,6 +94,25 @@ drops:
 #      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
 #      Each item's lore tells the boss-specific legend in at most 4 lines.
 #      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+# [VI] Tạo bộ giáp bốn món cho boss này; vật liệu và enchant tự tăng theo level.
+# [EN] Generate this boss's four-piece armor set; materials and enchants scale by level.
+armor-set:
+  # [VI] Bật/tắt bộ giáp; mặc định true.
+  # [EN] Enable or disable the armor set; default true.
+  enabled: true
+  # [VI] Tên bộ giáp dùng cho mũ, áo, quần và ủng.
+  # [EN] Armor set name prefix used by the helmet, chestplate, leggings, and boots.
+  name: "§8§lGiáp Vạn Cốt"
+  # [VI] ID lore trong story.yml; phải trỏ tới một mục artifacts hợp lệ.
+  # [EN] Lore ID in story.yml; must reference a valid artifacts entry.
+  story-id: skeleton-armor
+  # [VI] Mốc cấp tối thiểu cho vật liệu; từ 1 sắt, 4 kim cương, 7 netherite.
+  # [EN] Minimum level for each material tier; iron at 1, diamond at 4, netherite at 7.
+  material-tiers:
+    1: IRON
+    4: DIAMOND
+    7: NETHERITE
+
 level-drops:
   1:
     - material: BOW
@@ -101,13 +120,13 @@ level-drops:
       story-id: skeleton-relic-common
       min-amount: 1
       max-amount: 1
-      # [VI] Cung level 1 luôn rơi; xác suất 1.0 (100%), hợp lệ 0-1.
-      # [EN] Always drop the level-1 bow; chance 1.0 (100%), valid range 0-1.
-      chance: 1.0
-      # [VI] Sức mạnh I, Lửa I và Vô hạn I; Vô hạn cần mang ít nhất 1 mũi tên.
-      # [EN] Power I, Flame I, and Infinity I; Infinity requires one carried arrow.
+      # [VI] Xác suất rơi cung level 1 là 65%; hợp lệ 0-1.
+      # [EN] Level-1 bow drop chance is 65%; valid range 0-1.
+      chance: 0.65
+      # [VI] Sức mạnh III, Lửa I và Vô hạn I; Vô hạn cần mang ít nhất 1 mũi tên.
+      # [EN] Power III, Flame I, and Infinity I; Infinity requires one carried arrow.
       enchantments:
-        power: 1
+        power: 3
         flame: 1
         infinity: 1
     - material: ENCHANTED_BOOK
@@ -115,9 +134,9 @@ level-drops:
       story-id: skeleton-codex-common
       min-amount: 1
       max-amount: 1
-      chance: 0.104
+      chance: 0.30
       book-enchantments:
-        power: 1
+        power: 3
 
   2:
     - material: BOW
@@ -125,19 +144,19 @@ level-drops:
       story-id: skeleton-relic-common
       min-amount: 1
       max-amount: 1
-      chance: 0.146
+      chance: 0.65
       enchantments:
-        power: 1
-        punch: 1
+        power: 3
+        punch: 2
     - material: ENCHANTED_BOOK
       name: "§8§lSổ Xương · Cấp 2"
       story-id: skeleton-codex-common
       min-amount: 1
       max-amount: 1
-      chance: 0.095
+      chance: 0.30
       book-enchantments:
-        power: 1
-        punch: 1
+        power: 3
+        punch: 2
 
   3:
     - material: BOW
@@ -145,21 +164,21 @@ level-drops:
       story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.132
+      chance: 0.65
       enchantments:
-        power: 2
+        power: 4
         punch: 2
-        flame: 2
+        flame: 1
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 3"
       story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.086
+      chance: 0.30
       book-enchantments:
-        power: 2
+        power: 4
         punch: 2
-        flame: 2
+        flame: 1
 
   4:
     - material: BOW
@@ -167,48 +186,48 @@ level-drops:
       story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.118
+      chance: 0.65
       enchantments:
-        power: 2
+        power: 5
         punch: 2
-        flame: 2
-        infinity: 2
+        flame: 1
+        infinity: 1
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 4"
       story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.077
+      chance: 0.30
       book-enchantments:
-        power: 2
+        power: 5
         punch: 2
-        flame: 2
-        infinity: 2
+        flame: 1
+        infinity: 1
   5:
     - material: BOW
       name: "§8§lCung Vạn Cốt Câm Lặng · Cấp 5"
       story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.104
+      chance: 0.65
       enchantments:
-        power: 2
+        power: 6
         punch: 2
-        flame: 2
-        infinity: 2
-        unbreaking: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 4
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 5"
       story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.068
+      chance: 0.30
       book-enchantments:
-        power: 2
+        power: 6
         punch: 2
-        flame: 2
-        infinity: 2
-        unbreaking: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 4
 
   6:
     - material: BOW
@@ -216,27 +235,27 @@ level-drops:
       story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.090
+      chance: 0.65
       enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 6"
       story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.058
+      chance: 0.30
       book-enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
 
   7:
     - material: BOW
@@ -244,29 +263,29 @@ level-drops:
       story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.076
+      chance: 0.65
       enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
-        vanishing_curse: 3
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
+        vanishing_curse: 1
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 7"
       story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.049
+      chance: 0.30
       book-enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
-        vanishing_curse: 3
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
+        vanishing_curse: 1
 
   8:
     - material: ENCHANTED_BOOK
@@ -274,31 +293,31 @@ level-drops:
       story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.062
+      chance: 0.65
       book-enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
-        vanishing_curse: 3
-        protection: 3
+        power: 8
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 6
+        mending: 1
+        vanishing_curse: 1
+        protection: 7
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 8"
       story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.040
+      chance: 0.30
       book-enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
-        vanishing_curse: 3
-        protection: 3
+        power: 8
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 6
+        mending: 1
+        vanishing_curse: 1
+        protection: 7
 
   9:
     - material: ENCHANTED_BOOK
@@ -306,33 +325,33 @@ level-drops:
       story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.048
+      chance: 0.65
       book-enchantments:
-        power: 4
-        punch: 4
-        flame: 4
-        infinity: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
-        protection: 4
-        thorns: 4
+        power: 9
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 7
+        mending: 1
+        vanishing_curse: 1
+        protection: 8
+        thorns: 7
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 9"
       story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.031
+      chance: 0.30
       book-enchantments:
-        power: 4
-        punch: 4
-        flame: 4
-        infinity: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
-        protection: 4
-        thorns: 4
+        power: 9
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 7
+        mending: 1
+        vanishing_curse: 1
+        protection: 8
+        thorns: 7
 
   10:
     - material: ENCHANTED_BOOK
@@ -340,32 +359,32 @@ level-drops:
       story-id: skeleton-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.034
+      chance: 0.65
       book-enchantments:
-        power: 4
-        punch: 4
-        flame: 4
-        infinity: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
-        protection: 4
-        thorns: 4
-        looting: 4
+        power: 10
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 8
+        mending: 1
+        vanishing_curse: 1
+        protection: 9
+        thorns: 8
+        looting: 8
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Vạn Cốt Câm Lặng · Cấp 10"
       story-id: skeleton-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.022
+      chance: 0.30
       book-enchantments:
-        power: 4
-        punch: 4
-        flame: 4
-        infinity: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
-        protection: 4
-        thorns: 4
-        looting: 4
+        power: 10
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 8
+        mending: 1
+        vanishing_curse: 1
+        protection: 9
+        thorns: 8
+        looting: 8

@@ -1,8 +1,34 @@
 # Changelog
 
-## [Unreleased]
+## [v1.16.0] - 2026-10-13
 
 ### Added
+- Boss có thể rơi lệnh triệu hồi lính cấp trùng với cấp boss; bật/tắt và chỉnh tỉ lệ trong `bosses/_settings.yml`.
+- Thêm `/vnarmy gui` để xem đội quân, đổi mode, nghỉ/triệu hồi từng lính và mở giao diện trang bị.
+- Thêm `/vnarmy give <player> token <level>` và `/vnarmy give <player> army <class> <level>`; lệnh cấp lính trực tiếp vẫn tuân giới hạn quân số.
+- Thêm skill lính `RANGED_ATTACK`, `BUFF_ALLIES`, `SHIELD_OWNER`; cooldown, mục tiêu, tầm và hiệu ứng có thể tùy chỉnh theo lớp trong `armies.yml`.
+
+## [v1.15.0] - 2026-10-13
+
+### Added
+- Thêm nền tảng `/vnarmy`: thuê lính theo token, XP và vật liệu; dữ liệu, chế độ và trang bị được lưu bền vững.
+- Thêm các lệnh recall/rest, attack/defend/protect, danh sách quân và giao diện trang bị.
+- Thêm lớp Xạ Thủ, Vệ Binh, Y Sư; hỗ trợ AI chiến đấu, hồi máu chủ nhân/đồng minh và buff.
+- Thêm `armies.yml` để cấu hình số lượng, chi phí, cấp, lớp lính, AI và kỹ năng.
+
+## [v1.14.0] - 2026-10-13
+
+### Added
+- Đặt xác suất mưa mặc định 40%, thời lượng tối đa 5 phút và chọn ngẫu nhiên để mưa có thể kết thúc sớm.
+- Thêm ngưỡng đóng góp sát thương boss 50%; người vượt ngưỡng được tính điểm/loot dù boss chết bởi nguyên nhân khác, trừ `/vnboss kill`.
+- Thêm bộ giáp bốn món cho cả 13 boss, vật liệu/enchant tăng theo cấp và lore truyện riêng trong `story.yml`.
+- Tăng xác suất rơi vũ khí/sách boss, cân enchant từ cấp dưới chuẩn đến over-enchant ở level cao.
+- Tăng dần xác suất spawn boss theo ngày đến 100% và cân level từ 1 đến 10.
+- Cân đều trọng số thiên tai đang bật và chọn ngẫu nhiên trong nhóm phù hợp điều kiện.
+- Việt hóa tên skill boss trong thông báo, bổ sung broadcast cho toàn bộ người chơi.
+- Làm nổi bật boss bằng viền phát sáng, bật persistence và ghi log khi entity boss mất hiệu lực.
+- Giant có chuyển động đuổi mục tiêu và đi lang thang chậm hơn.
+- Boss chết không có người chơi vượt ngưỡng sát thương sẽ được ghi log và không nhận điểm/drop.
 - Ghi console log và thông báo skill cast riêng cho OP; có thể bật/tắt trong `bosses/_settings.yml`.
 
 ### Fixed

@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.13.1
+version: 1.16.0
 main: com.vnmine.hardcore.VnMineHardcore
 api-version: '1.21'
 author: VnMineTeam
@@ -103,6 +103,10 @@ commands:
     description: Quản lý nhóm và quyền riêng của người chơi
     usage: /vnuser <info|group|permission|reset>
     permission: vnmine.command.users.manage
+  vnarmy:
+    description: Thuê và quản lý lính đánh thuê của người chơi
+    usage: /vnarmy <gui|list|hire|recall|rest|attack|defend|protect|gear|give|token>
+    permission: vnmine.command.army
 
 permissions:
   vnmine.command.stats:
@@ -170,6 +174,12 @@ permissions:
     default: op
   vnmine.command.users.manage:
     description: Cho phép quản lý quyền người chơi bằng /vnuser
+    default: op
+  vnmine.command.army:
+    description: Cho phép thuê và quản lý lính đánh thuê bằng /vnarmy
+    default: true
+  vnmine.command.army.admin:
+    description: Cho phép cấp token và lính đánh thuê bằng /vnarmy give
     default: op
   vnmine.spawnprotection.bypass:
     description: Cho phép người chơi phá hoặc đặt block trong vùng spawn protection

@@ -8,7 +8,7 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.x. Người chơi khô
 - ⚔ **Sát thương nhân hệ số** (quái, ngã, lửa, nổ, PvP...)
 - 🍔 **Hệ thống đói** (hao hụt nhanh, ngộ độc thức ăn sống, nghẹn khi ăn nhanh)
 - 💧 **Hệ thống khát nước** (uống từ nguồn, chai, xô; nước tự nhiên gây độc)
-- 🌍 **Môi trường khắc nghiệt** (nhiệt độ, sương mù, chặn ngủ, chóng mặt, sợ hầm)
+- 🌍 **Môi trường khắc nghiệt** (nhiệt độ, sương mù, chặn ngủ, chóng mặt, sợ hầm, giới hạn mưa)
 - 🌋 **Thiên tai tự động** (Blood Moon, Meteor, Storm, Solar Flare, Plague, Tornado, Earthquake, Eclipse và các thiên tai theo dimension)
 - ☀️🌙 **Điều khiển ngày/đêm** (cấu hình riêng thời lượng ban ngày và ban đêm)
 - ⛏️💥 **Kiểm soát đào quặng** (thay vật phẩm rơi, gãy cúp và nổ theo block/cúp)
@@ -38,6 +38,7 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.x. Người chơi khô
 | `/vnhelp`, `/vn help` | Hiển thị hướng dẫn lệnh | `vnmine.command.help`, `.utility` |
 | `/vngroup ...` | Tạo/xóa nhóm, xem nhóm, cấp/thu hồi quyền nhóm | `vnmine.command.groups.manage` |
 | `/vnuser ...` | Xem/gán nhóm, cấp/thu hồi quyền cá nhân, reset người chơi | `vnmine.command.users.manage` |
+| `/vnarmy ...` | Thuê/quản lý lính, đổi chế độ AI và trang bị | `vnmine.command.army` |
 
 Ví dụ gọi boss Wither level 3, cảnh báo 30 giây, tồn tại 120 giây:
 `/vnboss wither 3 30 120`.
@@ -61,11 +62,49 @@ Các permission node được tách theo chức năng và liệt kê trong `plug
 Ví dụ: `vnmine.command.disasters`, `vnmine.command.spawn.manage`,
 `vnmine.command.users.manage`; node bypass vùng bảo vệ là
 `vnmine.spawnprotection.bypass`. OP và console luôn có toàn quyền.
+`vnmine.command.army` mặc định cấp cho người chơi; quyền
+`vnmine.command.army.admin` mặc định chỉ dành cho OP để cấp token triệu hồi.
 Sau khi chỉnh `permission.yml` thủ công, chạy `/vnreload`.
 Nhóm/quyền không hỗ trợ wildcard, phủ định hoặc kế thừa; quyền nhóm và quyền
 cá nhân được cộng lại, vì vậy xóa quyền cá nhân không thể phủ định quyền được
 cấp bởi nhóm. Nhóm mặc định áp dụng cho người mới và `/vnuser reset`; đổi
 `default-group` không tự chuyển người đã có nhóm được lưu.
+
+### Lính đánh thuê (`armies.yml`)
+
+`plugins/VnMineHardcore/armies.yml` cấu hình giới hạn quân số, khoảng cách theo
+chủ, các lớp, kỹ năng và chi phí XP/vật phẩm theo cấp. Mặc định có Xạ Thủ,
+Vệ Binh và Y Sư; token triệu hồi phải khớp đúng lớp/cấp và bị tiêu thụ khi thuê.
+
+```text
+/vnarmy gui
+/vnarmy list
+/vnarmy hire <loại> <cấp>
+/vnarmy recall
+/vnarmy rest
+/vnarmy attack | defend | protect
+/vnarmy gear <ID>
+/vnarmy give <người chơi> token <cấp>              # OP/admin
+/vnarmy give <người chơi> army <loại> <cấp>       # OP/admin
+/vnarmy token give <người chơi> <loại> <cấp>      # token theo lớp, tương thích cũ
+```
+
+Hồ sơ và trang bị được lưu trong `plugins/VnMineHardcore/mercenaries.yml`.
+Lính đang triển khai được gọi lại khi chủ nhân vào game; khi nghỉ, thoát game
+hoặc server dừng, entity được thu hồi nhưng hồ sơ/trang bị vẫn giữ. `recall`
+đối soát UUID và PersistentData tag trước khi tạo entity thay thế để hạn chế
+nhân bản. `attack` tìm quái thù địch quanh lính; `defend` bảo vệ khu vực quanh
+chủ; `protect` ưu tiên mục tiêu đang tấn công chủ nhân.
+
+GUI cho phép chọn từng lính để đổi chế độ, cho nghỉ/triệu hồi và mở kho trang bị.
+Token phổ thông do boss rơi có cấp bằng cấp boss, có thể dùng để thuê một lớp
+bất kỳ cùng cấp. Tỉ lệ rơi được chỉnh tại `bosses/_settings.yml` trong
+`army-token-drop`; token chỉ rơi khi boss có người chơi đủ ngưỡng nhận thưởng.
+`armies.yml` hỗ trợ skill `RANGED_ATTACK`, `BUFF_ALLIES`, `SHIELD_OWNER` cùng
+cooldown, mục tiêu hỗ trợ, tầm, lượng hồi, sát thương và hiệu ứng riêng theo lớp.
+Skill mặc định gồm Xạ Thủ bắn tên theo cooldown, Vệ Binh giảm sát thương cho chủ,
+Y Sư hồi máu và buff chủ/đồng minh. `give ... army` cấp lính trực tiếp và vẫn
+tôn trọng giới hạn quân số; `give ... token` cấp token chung cấp.
 
 Để tránh xung đột, chỉ dùng một hệ thống làm nguồn cấp quyền cho node
 `vnmine.*`; permission từ plugin khác có thể cộng thêm quyền. Chỉ cấp
@@ -73,6 +112,12 @@ cấp bởi nhóm. Nhóm mặc định áp dụng cho người mới và `/vnuse
 tin cậy. OP luôn có toàn quyền và không thể bị giới hạn bởi group.
 
 ## Cấu hình (config.yml)
+
+Mưa được điều khiển trong `environment.rain-control`: mặc định mỗi lần bắt đầu
+mưa có 40% xác suất được chấp nhận; thời lượng tối đa là 5 phút và plugin chọn
+ngẫu nhiên từ 1 đến 5 phút để mưa có thể tạnh sớm. Có thể chỉnh
+`chance-percent`, `max-duration-minutes`,
+`random-duration.enabled` và `random-duration.minimum-minutes`.
 
 ### Rename - Đổi tên hiển thị sau khi chết
 
@@ -183,7 +228,9 @@ chỉ cho phép thiên tai này ảnh hưởng `world_the_end`.
 
 ### Boss level & skills
 
-`bosses/_settings.yml` configures level ranges by in-game day. The applicable
+`bosses/_settings.yml` configures level ranges and spawn success chance by
+in-game day. The default success chance grows from 15% on day 0 to 100% on day
+400; boss levels progress from 1 to 10 over the same period. The applicable
 threshold is the last `min-day` not greater than the current day, and the boss
 randomly chooses a level inside that threshold's range. In each boss file,
 `hp-by-level` maps levels to explicit maximum HP; missing levels use the nearest
@@ -217,16 +264,21 @@ blocks are restored after their configured duration or when the encounter ends.
 Ravager block breaking uses the `break-blocks`, `max-break-blocks`, and
 `breakable-blocks` allowlist settings.
 
-Boss damage only contributes leaderboard points when the boss is killed before
-its configured lifetime expires. A timeout, despawn, or `/vnboss kill` ends the
-encounter without kill points; `/vnboss kill` also suppresses boss loot.
+`reward-damage-threshold-percent` in `bosses/_settings.yml` defaults to 50.
+Each player's actual damage is accumulated against the boss's maximum HP; only
+players who deal strictly more than the configured percentage qualify for
+leaderboard points. Their contribution remains eligible if the boss dies from
+another cause, but `/vnboss kill` and lifetime expiry always end the encounter
+without points or loot.
 
 Global boss skill cast feedback is configured in `bosses/_settings.yml`:
-`skill-cast-feedback.console-log` logs successful casts to the console and
-`skill-cast-feedback.broadcast-to-ops` sends cast notices only to online OPs.
-Both options default to `true`. Grounded boss mobs use native AI/pathfinding
-for target pursuit and idle wandering; custom movement is reserved for defined
-skills and boundary recovery.
+`skill-cast-feedback.console-log` logs successful casts to the console,
+`skill-cast-feedback.broadcast-to-ops` sends notices only to online OPs, and
+`skill-cast-feedback.broadcast-to-players` broadcasts translated skill names
+to online non-operator players. OP and regular-player broadcasts are separate;
+all options default to `true`. Bosses are persistent and
+glowing for visibility. Grounded mobs use native AI/pathfinding; the Giant
+uses slow custom movement because its vanilla AI does not reliably pursue targets.
 
 ```yaml
 # bosses/_settings.yml
@@ -234,8 +286,9 @@ level-progression:
   enabled: true
   thresholds:
     - {min-day: 0, min-level: 1, max-level: 1}
+    - {min-day: 25, min-level: 1, max-level: 2}
     - {min-day: 50, min-level: 2, max-level: 3}
-    - {min-day: 100, min-level: 3, max-level: 4}
+    - {min-day: 400, min-level: 9, max-level: 10}
 
 # Example in an individual bosses/<boss>.yml
 hp-by-level:
@@ -263,16 +316,20 @@ skills:
 ### Loot boss theo level và bảng xếp hạng
 
 Mỗi file `bosses/<id>.yml` có mục `level-drops` riêng cho boss đó, đầy đủ từ
-level 1 đến level 10. Mỗi cấp có hai di vật hiếm; enchant tăng theo level và
-truyền thuyết được quản lý tập trung trong `plugins/VnMineHardcore/story.yml`.
+level 1 đến level 10. Mỗi cấp có vũ khí và sách di vật; mỗi boss cũng có cấu
+hình `armor-set` tạo mũ, áo giáp, quần và ủng với xác suất mặc định 45% cho
+từng món. Vật liệu chuyển từ sắt ở level 1 sang kim cương ở level 4 và
+netherite ở level 7. Enchant của vũ khí và giáp tăng theo cấp; cấp thấp bắt đầu
+dưới mức tự nhiên, còn cấp cao có thể over-enchant đến cấp 10. Tên/lore theo
+từng boss được quản lý tập trung trong `plugins/VnMineHardcore/story.yml`.
 Mỗi item dùng `story-id` để liên kết tới `artifacts.<story-id>.lore`; có thể
 thêm chương mới bằng cách thêm ID duy nhất và danh sách lore vào file này.
 Các cấp 1–2 dùng hậu tố `-common` với tên và câu chuyện giản dị hơn; từ cấp 3
 trở lên dùng tuyến truyện phát triển theo sức mạnh của di vật.
 Lore hỗ trợ `{level}` để hiển thị cấp vật phẩm; mỗi dòng không quá 30 ký tự,
-tối đa 6 dòng. Cung Skeleton level 1 luôn rơi cung có Flame I và Infinity I;
-Infinity vẫn cần người chơi mang theo ít nhất một mũi tên. Trong file boss,
-có thể tùy chỉnh `material`, `name`,
+tối đa 6 dòng. Cung Skeleton level 1 có thể rơi với Power III, Flame I và
+Infinity I; xác suất rơi 65%, Infinity vẫn cần mang ít nhất một mũi tên;
+trong file boss có thể tùy chỉnh `material`, `name`,
 `min-amount`, `max-amount`, `chance`, `enchantments` (hỗ trợ over-enchant)
 hoặc `book-enchantments` (sách có enchant để áp dụng vào item). Boss tự nhiên
 có thể lên level 10 từ ngày 400 theo `bosses/_settings.yml`; `/vnboss` vẫn cho
@@ -282,12 +339,13 @@ bộ đếm roll boss kế tiếp tạm dừng trong khi cảnh báo hoặc boss
 
 `scoreboard.yml` cấu hình chu kỳ reset (`reset.every-game-days`), sidebar,
 thời gian title top 1, chu kỳ nhắc và quà của từng hạng top 1–10. Top 5 người
-đánh boss nhận tổng cộng `10 × level` điểm, chia theo tỉ lệ damage. Điểm và quà
+đủ ngưỡng damage nhận tổng cộng `10 × level` điểm, chia theo tỉ lệ damage
+trong nhóm đủ điều kiện. Điểm và quà
 đang chờ được lưu trong `scoreboard-data.yml`. Người chơi nhận quà bằng
 `/reward`; nếu inventory không đủ chỗ, quà vẫn chờ và có thể nhận lại sau khi
 dọn túi. Boss không nhận sát thương từ môi trường (bao gồm sát thương rơi) hoặc
 skill/đòn đánh do chính boss tạo ra; mọi loot cấu hình và drop mặc định chỉ rơi
-nếu có ít nhất một người chơi gây sát thương. Chạy `/vnreload` để nạp cấu hình.
+nếu có ít nhất một người chơi vượt ngưỡng đóng góp. Chạy `/vnreload` để nạp cấu hình.
 
 ### Disasters - Thiên tai
 
@@ -301,6 +359,11 @@ world hiển thị được lấy từ `conditions.worlds`, chuyển thành tên
 đang tải; cùng điều kiện đó cũng giới hạn những world mà action của sự kiện
 có thể tác động. Có thể chỉnh cả hai mục trong file riêng của từng thiên tai.
 Các file cũ được bổ sung khóa còn thiếu nhưng giữ nguyên giá trị tùy chỉnh.
+
+Trọng số `chance` của các thiên tai đang bật mặc định bằng nhau (5). Hệ thống
+lọc trước các loại phù hợp với world/giờ hiện tại rồi mới roll trọng số, tránh
+thiên tai bị thiên lệch do điều kiện dimension. `chorus-explosion` vẫn mặc định
+tắt để tránh dịch chuyển người chơi ngoài ý muốn.
 
 ### Time Control - Thời lượng ngày và đêm
 

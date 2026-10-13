@@ -6,7 +6,7 @@
 
 disaster-id: eclipse
 enabled: true
-chance: 1
+chance: 5
 name: "§0§l📉 Nhật Thực"
 # [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
 # [EN] Effect and prevention summary shown in chat; the value below is the default.

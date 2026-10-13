@@ -90,6 +90,25 @@ drops:
 #      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
 #      Each item's lore tells the boss-specific legend in at most 4 lines.
 #      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+# [VI] Tạo bộ giáp bốn món cho boss này; vật liệu và enchant tự tăng theo level.
+# [EN] Generate this boss's four-piece armor set; materials and enchants scale by level.
+armor-set:
+  # [VI] Bật/tắt bộ giáp; mặc định true.
+  # [EN] Enable or disable the armor set; default true.
+  enabled: true
+  # [VI] Tên bộ giáp dùng cho mũ, áo, quần và ủng.
+  # [EN] Armor set name prefix used by the helmet, chestplate, leggings, and boots.
+  name: "§6§lGiáp Địa Mạch"
+  # [VI] ID lore trong story.yml; phải trỏ tới một mục artifacts hợp lệ.
+  # [EN] Lore ID in story.yml; must reference a valid artifacts entry.
+  story-id: giant-armor
+  # [VI] Mốc cấp tối thiểu cho vật liệu; từ 1 sắt, 4 kim cương, 7 netherite.
+  # [EN] Minimum level for each material tier; iron at 1, diamond at 4, netherite at 7.
+  material-tiers:
+    1: IRON
+    4: DIAMOND
+    7: NETHERITE
+
 level-drops:
   1:
     - material: IRON_AXE
@@ -97,17 +116,17 @@ level-drops:
       story-id: giant-relic-common
       min-amount: 1
       max-amount: 1
-      chance: 0.160
+      chance: 0.65
       enchantments:
-        sharpness: 1
+        sharpness: 3
     - material: ENCHANTED_BOOK
       name: "§6§lSổ Địa Mạch · Cấp 1"
       story-id: giant-codex-common
       min-amount: 1
       max-amount: 1
-      chance: 0.104
+      chance: 0.30
       book-enchantments:
-        sharpness: 1
+        sharpness: 3
 
   2:
     - material: IRON_AXE
@@ -115,19 +134,19 @@ level-drops:
       story-id: giant-relic-common
       min-amount: 1
       max-amount: 1
-      chance: 0.146
+      chance: 0.65
       enchantments:
-        sharpness: 1
-        smite: 1
+        sharpness: 3
+        smite: 3
     - material: ENCHANTED_BOOK
       name: "§6§lSổ Địa Mạch · Cấp 2"
       story-id: giant-codex-common
       min-amount: 1
       max-amount: 1
-      chance: 0.095
+      chance: 0.30
       book-enchantments:
-        sharpness: 1
-        smite: 1
+        sharpness: 3
+        smite: 3
 
   3:
     - material: DIAMOND_AXE
@@ -135,21 +154,21 @@ level-drops:
       story-id: giant-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.132
+      chance: 0.65
       enchantments:
-        sharpness: 2
-        smite: 2
-        bane_of_arthropods: 2
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 3"
       story-id: giant-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.086
+      chance: 0.30
       book-enchantments:
-        sharpness: 2
-        smite: 2
-        bane_of_arthropods: 2
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
 
   4:
     - material: DIAMOND_AXE
@@ -157,48 +176,48 @@ level-drops:
       story-id: giant-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.118
+      chance: 0.65
       enchantments:
-        sharpness: 2
-        smite: 2
-        bane_of_arthropods: 2
-        efficiency: 2
+        sharpness: 5
+        smite: 5
+        bane_of_arthropods: 5
+        efficiency: 5
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 4"
       story-id: giant-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.077
+      chance: 0.30
       book-enchantments:
-        sharpness: 2
-        smite: 2
-        bane_of_arthropods: 2
-        efficiency: 2
+        sharpness: 5
+        smite: 5
+        bane_of_arthropods: 5
+        efficiency: 5
   5:
     - material: DIAMOND_AXE
       name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 5"
       story-id: giant-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.104
+      chance: 0.65
       enchantments:
-        sharpness: 2
-        smite: 2
-        bane_of_arthropods: 2
-        efficiency: 2
-        silk_touch: 2
+        sharpness: 6
+        smite: 6
+        bane_of_arthropods: 6
+        efficiency: 6
+        silk_touch: 1
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 5"
       story-id: giant-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.068
+      chance: 0.30
       book-enchantments:
-        sharpness: 2
-        smite: 2
-        bane_of_arthropods: 2
-        efficiency: 2
-        silk_touch: 2
+        sharpness: 6
+        smite: 6
+        bane_of_arthropods: 6
+        efficiency: 6
+        silk_touch: 1
 
   6:
     - material: NETHERITE_AXE
@@ -206,27 +225,27 @@ level-drops:
       story-id: giant-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.090
+      chance: 0.65
       enchantments:
-        sharpness: 3
-        smite: 3
-        bane_of_arthropods: 3
-        efficiency: 3
-        silk_touch: 3
-        fortune: 3
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        efficiency: 7
+        silk_touch: 1
+        fortune: 5
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 6"
       story-id: giant-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.058
+      chance: 0.30
       book-enchantments:
-        sharpness: 3
-        smite: 3
-        bane_of_arthropods: 3
-        efficiency: 3
-        silk_touch: 3
-        fortune: 3
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        efficiency: 7
+        silk_touch: 1
+        fortune: 5
 
   7:
     - material: NETHERITE_AXE
@@ -234,29 +253,29 @@ level-drops:
       story-id: giant-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.076
+      chance: 0.65
       enchantments:
-        sharpness: 3
-        smite: 3
-        bane_of_arthropods: 3
-        efficiency: 3
-        silk_touch: 3
-        fortune: 3
-        unbreaking: 3
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        efficiency: 7
+        silk_touch: 1
+        fortune: 5
+        unbreaking: 5
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 7"
       story-id: giant-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.049
+      chance: 0.30
       book-enchantments:
-        sharpness: 3
-        smite: 3
-        bane_of_arthropods: 3
-        efficiency: 3
-        silk_touch: 3
-        fortune: 3
-        unbreaking: 3
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        efficiency: 7
+        silk_touch: 1
+        fortune: 5
+        unbreaking: 5
 
   8:
     - material: NETHERITE_AXE
@@ -264,31 +283,31 @@ level-drops:
       story-id: giant-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.062
+      chance: 0.65
       enchantments:
-        sharpness: 3
-        smite: 3
-        bane_of_arthropods: 3
-        efficiency: 3
-        silk_touch: 3
-        fortune: 3
-        unbreaking: 3
-        mending: 3
+        sharpness: 8
+        smite: 8
+        bane_of_arthropods: 8
+        efficiency: 8
+        silk_touch: 1
+        fortune: 6
+        unbreaking: 6
+        mending: 1
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 8"
       story-id: giant-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.040
+      chance: 0.30
       book-enchantments:
-        sharpness: 3
-        smite: 3
-        bane_of_arthropods: 3
-        efficiency: 3
-        silk_touch: 3
-        fortune: 3
-        unbreaking: 3
-        mending: 3
+        sharpness: 8
+        smite: 8
+        bane_of_arthropods: 8
+        efficiency: 8
+        silk_touch: 1
+        fortune: 6
+        unbreaking: 6
+        mending: 1
 
   9:
     - material: NETHERITE_AXE
@@ -296,33 +315,33 @@ level-drops:
       story-id: giant-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.048
+      chance: 0.65
       enchantments:
-        sharpness: 4
-        smite: 4
-        bane_of_arthropods: 4
-        efficiency: 4
-        silk_touch: 4
-        fortune: 4
-        unbreaking: 4
-        mending: 4
-        fire_aspect: 4
+        sharpness: 9
+        smite: 9
+        bane_of_arthropods: 9
+        efficiency: 9
+        silk_touch: 1
+        fortune: 7
+        unbreaking: 7
+        mending: 1
+        fire_aspect: 2
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 9"
       story-id: giant-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.031
+      chance: 0.30
       book-enchantments:
-        sharpness: 4
-        smite: 4
-        bane_of_arthropods: 4
-        efficiency: 4
-        silk_touch: 4
-        fortune: 4
-        unbreaking: 4
-        mending: 4
-        fire_aspect: 4
+        sharpness: 9
+        smite: 9
+        bane_of_arthropods: 9
+        efficiency: 9
+        silk_touch: 1
+        fortune: 7
+        unbreaking: 7
+        mending: 1
+        fire_aspect: 2
 
   10:
     - material: NETHERITE_AXE
@@ -330,32 +349,32 @@ level-drops:
       story-id: giant-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.034
+      chance: 0.65
       enchantments:
-        sharpness: 4
-        smite: 4
-        bane_of_arthropods: 4
-        efficiency: 4
-        silk_touch: 4
-        fortune: 4
-        unbreaking: 4
-        mending: 4
-        fire_aspect: 4
-        vanishing_curse: 4
+        sharpness: 10
+        smite: 10
+        bane_of_arthropods: 10
+        efficiency: 10
+        silk_touch: 1
+        fortune: 8
+        unbreaking: 8
+        mending: 1
+        fire_aspect: 2
+        vanishing_curse: 1
     - material: ENCHANTED_BOOK
       name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 10"
       story-id: giant-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.022
+      chance: 0.30
       book-enchantments:
-        sharpness: 4
-        smite: 4
-        bane_of_arthropods: 4
-        efficiency: 4
-        silk_touch: 4
-        fortune: 4
-        unbreaking: 4
-        mending: 4
-        fire_aspect: 4
-        vanishing_curse: 4
+        sharpness: 10
+        smite: 10
+        bane_of_arthropods: 10
+        efficiency: 10
+        silk_touch: 1
+        fortune: 8
+        unbreaking: 8
+        mending: 1
+        fire_aspect: 2
+        vanishing_curse: 1

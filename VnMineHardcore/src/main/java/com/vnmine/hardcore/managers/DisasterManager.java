@@ -534,45 +534,42 @@ public class DisasterManager {
         if (timeSinceLastDisaster < currentInterval) return;
         if (currentDisaster != null) return;
 
-        // Collect enabled disasters from config (dynamic!)
-        List<Map.Entry<String, ConfigManager.DisasterConfig>> enabledDisasters = new ArrayList<>();
+        // Filter for the current online worlds/time before the weighted roll.
+        List<Map.Entry<String, ConfigManager.DisasterConfig>> eligibleDisasters = new ArrayList<>();
         for (Map.Entry<String, ConfigManager.DisasterConfig> entry : config.disasterConfigs.entrySet()) {
             ConfigManager.DisasterConfig dc = entry.getValue();
             if (!dc.enabled) continue;
             if (dc.actions.isEmpty()) continue; // Bỏ qua disaster không có actions
-            enabledDisasters.add(entry);
+            if (dc.chance <= 0 || !canDisasterHappen(entry.getKey(), dc)) continue;
+            eligibleDisasters.add(entry);
         }
 
-        if (enabledDisasters.isEmpty()) return;
+        if (eligibleDisasters.isEmpty()) return;
 
-        // Tính tổng chance
         int totalChance = 0;
-        for (Map.Entry<String, ConfigManager.DisasterConfig> entry : enabledDisasters) {
+        for (Map.Entry<String, ConfigManager.DisasterConfig> entry : eligibleDisasters) {
             totalChance += entry.getValue().chance;
         }
         if (totalChance <= 0) return;
 
-        // Weighted random
         int roll = random.nextInt(totalChance);
         int cumulative = 0;
-        for (Map.Entry<String, ConfigManager.DisasterConfig> entry : enabledDisasters) {
-            String disasterId = entry.getKey();
-            ConfigManager.DisasterConfig dc = entry.getValue();
-            cumulative += dc.chance;
+        Map.Entry<String, ConfigManager.DisasterConfig> selected = null;
+        for (Map.Entry<String, ConfigManager.DisasterConfig> entry : eligibleDisasters) {
+            cumulative += entry.getValue().chance;
             if (roll < cumulative) {
-                // Kiểm tra conditions (world, time)
-                if (!canDisasterHappen(disasterId, dc)) continue;
-
-                if (!rollDisasterSuccessProbability()) {
-                    timeSinceLastDisaster = 0;
-                    return;
-                }
-
-                timeSinceLastDisaster = 0;
-                scheduleDisaster(disasterId, dc);
-                return;
+                selected = entry;
+                break;
             }
         }
+        if (selected == null) return;
+
+        if (!rollDisasterSuccessProbability()) {
+            timeSinceLastDisaster = 0;
+            return;
+        }
+        timeSinceLastDisaster = 0;
+        scheduleDisaster(selected.getKey(), selected.getValue());
     }
 
     private boolean rollDisasterSuccessProbability() {

@@ -33,6 +33,46 @@ skill-cast-feedback:
   # [VI] Gửi thông báo skill chỉ tới người chơi OP đang online; mặc định true.
   # [EN] Send skill-cast notices only to online operators; default true.
   broadcast-to-ops: true
+  # [VI] Phát thông báo skill cho người chơi thường đang online (không gồm OP); mặc định true.
+  # [EN] Broadcast skill-cast notices to online non-operator players; default true.
+  broadcast-to-players: true
+
+# [VI] Tỷ lệ sát thương tối thiểu mỗi người chơi phải gây ra trên HP tối đa boss để đủ thưởng.
+#      Boss chết vì bất kỳ nguyên nhân nào vẫn thưởng người vượt ngưỡng; lệnh /vnboss kill luôn không thưởng.
+#      Giá trị mặc định 50; hợp lệ 0-100 và điều kiện là phải gây sát thương LỚN HƠN ngưỡng.
+# [EN] Minimum damage each player must deal as a percent of the boss's max HP to qualify for rewards.
+#      Qualified contributors are rewarded regardless of death cause; /vnboss kill never grants rewards.
+#      Default 50; valid range 0-100, and contribution must be strictly greater than the threshold.
+reward-damage-threshold-percent: 50
+
+# [VI] Cho phép boss rơi lệnh triệu hồi phổ thông có cấp bằng cấp boss; mặc định bật.
+# [EN] Allow bosses to drop a generic summon token matching the boss level; default true.
+army-token-drop:
+  # [VI] Bật/tắt nguồn token từ boss; mặc định true.
+  # [EN] Enable summon-token boss drops; default true.
+  enabled: true
+  # [VI] Tỉ lệ token rơi khi nhận thưởng; mặc định 35%, hợp lệ 0-1.
+  # [EN] Chance for a token to drop on a rewarded boss kill; default 35%, valid range 0-1.
+  chance: 0.35
+
+# [VI] Cấu hình chung cho bộ giáp boss; có thể ghi đè tỷ lệ trong armor-set của từng boss.
+# [EN] Shared boss armor reward settings; per-boss armor-set may override the drop chance.
+reward-items:
+  # [VI] Tỷ lệ rơi riêng cho mỗi món giáp; mặc định 45%, hợp lệ 0-1.
+  # [EN] Drop chance for each armor piece; default 45%, valid range 0-1.
+  armor-piece-chance: 0.45
+
+  # [VI] Cấp phù phép giáp level 1 thấp hơn mức tự nhiên; mặc định thấp hơn 2 cấp, hợp lệ 0-5.
+  # [EN] Level-1 armor enchants start below vanilla maximum; default gap 2, valid range 0-5.
+  armor-natural-level-gap: 2
+
+  # [VI] Mức tăng enchant mỗi level boss; mặc định 0.8 cấp, hợp lệ 0-5.
+  # [EN] Enchantment growth per boss level; default 0.8, valid range 0-5.
+  enchant-levels-per-boss-level: 0.8
+
+  # [VI] Giới hạn enchant tối đa cho giáp boss; mặc định 10, hợp lệ 1-255.
+  # [EN] Maximum boss armor enchant level; default 10, valid range 1-255.
+  maximum-enchant-level: 10
 
 # [VI] Tiến trình cấp độ boss dựa theo ngày trong game, tăng dần đến level 10.
 #      Ngày 0 là từ lúc bắt đầu thế giới. Mỗi mốc chọn ngẫu nhiên một level
@@ -46,6 +86,7 @@ level-progression:
   enabled: true
   thresholds:
     - {min-day: 0, min-level: 1, max-level: 1}
+    - {min-day: 25, min-level: 1, max-level: 2}
     - {min-day: 50, min-level: 2, max-level: 3}
     - {min-day: 100, min-level: 3, max-level: 4}
     - {min-day: 150, min-level: 4, max-level: 5}
@@ -60,14 +101,22 @@ level-progression:
 #      trong file boss tương ứng. 0% = loại boss đã roll không xuất hiện;
 #      100% = chắc chắn tiếp tục cảnh báo/spawn. Mốc gần nhất <= ngày hiện tại áp dụng.
 #      Nếu chưa đến mốc đầu tiên thì dùng default-percent.
-#      Ví dụ: {min-day: 1, chance-percent: 0}, {min-day: 10, chance-percent: 20},
-#             {min-day: 50, chance-percent: 30}, {min-day: 100, chance-percent: 50}
+#      Mặc định tăng từ 15% ngày 0 đến 100% ngày 400.
 # [EN] Daily success chance, rolled separately AFTER choosing the boss by its per-boss `chance`.
-#      The default is 100% at all times to preserve the existing spawn behavior.
+#      Defaults scale from 15% on day 0 to 100% on day 400.
 spawn-success-progression:
   enabled: true
-  # [VI] Tỉ lệ dự phòng trước mốc đầu tiên; mặc định 100% để giữ hành vi cũ.
-  # [EN] Fallback chance before the first threshold; 100% preserves prior behavior.
-  default-percent: 100
+  # [VI] Tỉ lệ dự phòng trước mốc đầu tiên; mặc định 15%.
+  # [EN] Fallback chance before the first threshold; default is 15%.
+  default-percent: 15
   thresholds:
-    - {min-day: 0, chance-percent: 100}
+    - {min-day: 0, chance-percent: 15}
+    - {min-day: 25, chance-percent: 25}
+    - {min-day: 50, chance-percent: 35}
+    - {min-day: 100, chance-percent: 50}
+    - {min-day: 150, chance-percent: 65}
+    - {min-day: 200, chance-percent: 75}
+    - {min-day: 250, chance-percent: 85}
+    - {min-day: 300, chance-percent: 90}
+    - {min-day: 350, chance-percent: 95}
+    - {min-day: 400, chance-percent: 100}

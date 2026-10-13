@@ -142,6 +142,11 @@ public class ConfigManager {
     public double acidRainDamage;
     public long waterDamageIntervalMs;
     public long acidRainIntervalMs;
+    public boolean rainControlEnabled;
+    public int rainChancePercent;
+    public int maxRainDurationMinutes;
+    public boolean rainRandomDurationEnabled;
+    public int minRainDurationMinutes;
     public boolean fogEnabled;
     public int fogIntervalSeconds;
     public int fogEffectDurationSeconds;
@@ -209,6 +214,10 @@ public class ConfigManager {
     public boolean bossEventsEnabled;
     public boolean bossSkillCastLogsEnabled;
     public boolean bossSkillCastOpBroadcastEnabled;
+    public boolean bossSkillCastPlayerBroadcastEnabled;
+    public double bossRewardDamageThresholdPercent;
+    public boolean bossArmyTokenDropEnabled = true;
+    public double bossArmyTokenDropChance = 0.35;
     public String bossEventMinIntervalRaw;
     public int bossEventSpawnRadius;
     public boolean bossLevelProgressionEnabled;
@@ -216,6 +225,10 @@ public class ConfigManager {
     public boolean bossSpawnSuccessProgressionEnabled;
     public double bossSpawnSuccessDefaultPercent = 100.0;
     public List<BossSpawnSuccessThreshold> bossSpawnSuccessThresholds = new ArrayList<>();
+    public double bossArmorPieceDropChance = 0.45;
+    public int bossArmorNaturalLevelGap = 2;
+    public double bossArmorLevelsPerEnchant = 0.8;
+    public int bossArmorMaximumEnchantLevel = 10;
 
     // Boss config map - each boss is a complete object (loaded from bosses/*.yml)
     public Map<String, BossConfig> bossConfigs = new HashMap<>();
@@ -296,6 +309,15 @@ public class ConfigManager {
         public Map<Integer, Double> hpByLevel = new HashMap<>();
         public Map<String, BossSkillConfig> skills = new HashMap<>();
         public Map<String, Object> traits = new HashMap<>();
+        public BossArmorSetConfig armorSet;
+    }
+
+    public static class BossArmorSetConfig {
+        public boolean enabled = true;
+        public String name = "Di Vật";
+        public String storyId;
+        public double dropChance = 0.45;
+        public Map<Integer, String> materialTiers = new HashMap<>();
     }
 
     public static class BossLevelThreshold {
@@ -475,6 +497,25 @@ public class ConfigManager {
             config.getLong("environment.temperature.water-damage-interval-seconds", 10) * 1000L);
         acidRainIntervalMs = config.getLong("environment.temperature.acid-rain-interval-ms",
             config.getLong("environment.temperature.acid-rain-interval-seconds", 5) * 1000L);
+        rainControlEnabled = config.getBoolean("environment.rain-control.enabled", true);
+        int configuredRainChance = config.getInt("environment.rain-control.chance-percent", 40);
+        if (configuredRainChance < 0 || configuredRainChance > 100) {
+            plugin.getLogger().warning("[Config] environment.rain-control.chance-percent must be 0-100; clamping.");
+        }
+        rainChancePercent = Math.max(0, Math.min(100, configuredRainChance));
+        int configuredMaxRainMinutes = config.getInt("environment.rain-control.max-duration-minutes", 5);
+        if (configuredMaxRainMinutes < 1 || configuredMaxRainMinutes > 120) {
+            plugin.getLogger().warning("[Config] environment.rain-control.max-duration-minutes must be 1-120; clamping.");
+        }
+        maxRainDurationMinutes = Math.max(1, Math.min(120, configuredMaxRainMinutes));
+        rainRandomDurationEnabled = config.getBoolean("environment.rain-control.random-duration.enabled", true);
+        int configuredMinRainMinutes = config.getInt(
+            "environment.rain-control.random-duration.minimum-minutes", 1);
+        if (configuredMinRainMinutes < 1 || configuredMinRainMinutes > maxRainDurationMinutes) {
+            plugin.getLogger().warning("[Config] environment.rain-control.random-duration.minimum-minutes " +
+                "must be between 1 and max-duration-minutes; clamping.");
+        }
+        minRainDurationMinutes = Math.max(1, Math.min(maxRainDurationMinutes, configuredMinRainMinutes));
         fogEnabled = config.getBoolean("environment.fog.enabled", true);
         fogIntervalSeconds = config.getInt("environment.fog.interval-seconds", 60);
         fogEffectDurationSeconds = config.getInt("environment.fog.effect-duration-seconds", 30);
@@ -991,6 +1032,17 @@ public class ConfigManager {
         return Math.max(0, Math.min(100, percent));
     }
 
+    private double readBoundedDouble(ConfigurationSection section, String path,
+                                     double fallback, double minimum, double maximum) {
+        double value = section.getDouble(path, fallback);
+        if (!Double.isFinite(value) || value < minimum || value > maximum) {
+            plugin.getLogger().warning("[Boss] " + path + " must be between " + minimum +
+                " and " + maximum + "; using a clamped value.");
+            return Double.isFinite(value) ? Math.max(minimum, Math.min(maximum, value)) : fallback;
+        }
+        return value;
+    }
+
     /**
      * Load all disaster configurations from disasters/*.yml files
      * Now supports dynamic disaster IDs by scanning all .yml files
@@ -1092,6 +1144,30 @@ public class ConfigManager {
         bossEventsEnabled = bs.getBoolean("enabled", true);
         bossSkillCastLogsEnabled = bs.getBoolean("skill-cast-feedback.console-log", true);
         bossSkillCastOpBroadcastEnabled = bs.getBoolean("skill-cast-feedback.broadcast-to-ops", true);
+        bossSkillCastPlayerBroadcastEnabled = bs.getBoolean("skill-cast-feedback.broadcast-to-players", true);
+        double rewardDamageThreshold = bs.getDouble("reward-damage-threshold-percent", 50.0);
+        if (!Double.isFinite(rewardDamageThreshold) || rewardDamageThreshold < 0.0 ||
+                rewardDamageThreshold > 100.0) {
+            plugin.getLogger().warning("[Boss] reward-damage-threshold-percent must be 0-100; clamping.");
+        }
+        bossRewardDamageThresholdPercent = Double.isFinite(rewardDamageThreshold)
+            ? Math.max(0.0, Math.min(100.0, rewardDamageThreshold)) : 50.0;
+        bossArmyTokenDropEnabled = bs.getBoolean("army-token-drop.enabled", true);
+        bossArmyTokenDropChance = readBoundedDouble(bs, "army-token-drop.chance", 0.35, 0.0, 1.0);
+        bossArmorPieceDropChance = readBoundedDouble(bs, "reward-items.armor-piece-chance",
+            0.45, 0.0, 1.0);
+        int armorLevelGap = bs.getInt("reward-items.armor-natural-level-gap", 2);
+        if (armorLevelGap < 0 || armorLevelGap > 5) {
+            plugin.getLogger().warning("[Boss] reward-items.armor-natural-level-gap must be 0-5; clamping.");
+        }
+        bossArmorNaturalLevelGap = Math.max(0, Math.min(5, armorLevelGap));
+        bossArmorLevelsPerEnchant = readBoundedDouble(bs, "reward-items.enchant-levels-per-boss-level",
+            0.8, 0.0, 5.0);
+        int maximumArmorEnchantLevel = bs.getInt("reward-items.maximum-enchant-level", 10);
+        if (maximumArmorEnchantLevel < 1 || maximumArmorEnchantLevel > 255) {
+            plugin.getLogger().warning("[Boss] reward-items.maximum-enchant-level must be 1-255; clamping.");
+        }
+        bossArmorMaximumEnchantLevel = Math.max(1, Math.min(255, maximumArmorEnchantLevel));
         bossEventMinIntervalRaw = getStringFromConfig(bs.getConfigurationSection(""), "min-interval-seconds", "1200-2400");
         bossEventSpawnRadius = bs.getInt("spawn-radius", 50);
         bossLevelProgressionEnabled = bs.getBoolean("level-progression.enabled", true);
@@ -1284,6 +1360,56 @@ public class ConfigManager {
                 }
             }
 
+            ConfigurationSection armorSetSection = section.getConfigurationSection("armor-set");
+            if (armorSetSection != null) {
+                BossArmorSetConfig armorSet = new BossArmorSetConfig();
+                armorSet.enabled = armorSetSection.getBoolean("enabled", true);
+                armorSet.name = armorSetSection.getString("name", bc.displayName + " Di Vật");
+                armorSet.storyId = armorSetSection.getString("story-id");
+                double dropChance = armorSetSection.getDouble("drop-chance", bossArmorPieceDropChance);
+                if (!Double.isFinite(dropChance) || dropChance < 0.0 || dropChance > 1.0) {
+                    plugin.getLogger().warning("[Boss] Invalid armor-set.drop-chance in " + fileName +
+                        "; using global default.");
+                    dropChance = bossArmorPieceDropChance;
+                }
+                armorSet.dropChance = dropChance;
+                ConfigurationSection materialTiers = armorSetSection.getConfigurationSection("material-tiers");
+                if (materialTiers != null) {
+                    for (String levelKey : materialTiers.getKeys(false)) {
+                        try {
+                            int level = Integer.parseInt(levelKey);
+                            String material = materialTiers.getString(levelKey, "").trim().toUpperCase(Locale.ROOT);
+                            if (level >= 1 && level <= 1000 && !material.isBlank()) {
+                                if (Material.matchMaterial(material + "_HELMET") == null) {
+                                    plugin.getLogger().warning("[Boss] Invalid armor material tier '" +
+                                        material + "' in " + fileName + ".");
+                                } else {
+                                    armorSet.materialTiers.put(level, material);
+                                }
+                            }
+                        } catch (NumberFormatException exception) {
+                            plugin.getLogger().warning("[Boss] Ignoring invalid armor material tier '" +
+                                levelKey + "' in " + fileName + ".");
+                        }
+                    }
+                }
+                if (armorSet.enabled && (armorSet.storyId == null || armorSet.storyId.isBlank())) {
+                    plugin.getLogger().warning("[Boss] armor-set.story-id is missing in " + fileName +
+                        "; armor rewards will be skipped until a story ID is configured.");
+                    armorSet.enabled = false;
+                } else if (armorSet.enabled && !bossItemStories.containsKey(armorSet.storyId)) {
+                    plugin.getLogger().warning("[Boss] Missing story-id '" + armorSet.storyId +
+                        "' in story.yml for armor set in " + fileName + ".");
+                    armorSet.enabled = false;
+                }
+                if (armorSet.enabled && armorSet.materialTiers.isEmpty()) {
+                    plugin.getLogger().warning("[Boss] armor-set has no valid material tiers in " + fileName +
+                        "; armor rewards are disabled.");
+                    armorSet.enabled = false;
+                }
+                bc.armorSet = armorSet;
+            }
+
             ConfigurationSection levelDropsSection = section.getConfigurationSection("level-drops");
             if (levelDropsSection != null) {
                 for (String levelKey : levelDropsSection.getKeys(false)) {
@@ -1369,6 +1495,12 @@ public class ConfigManager {
         }
         plugin.getLogger().info("[Boss] Loaded " + bossItemStories.size() +
             " item stories from story.yml.");
+    }
+
+    public List<String> getBossItemStory(String storyId, int level) {
+        List<String> lore = bossItemStories.get(storyId);
+        if (lore == null) return List.of();
+        return lore.stream().map(line -> line.replace("{level}", Integer.toString(level))).toList();
     }
 
     private void readEnchantments(Object source, Map<String, Integer> destination) {

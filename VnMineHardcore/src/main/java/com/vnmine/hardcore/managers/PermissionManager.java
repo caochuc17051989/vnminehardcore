@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -494,6 +495,18 @@ public final class PermissionManager implements Listener, CommandExecutor, TabCo
         if (!loaded.isConfigurationSection("groups.user")
                 || !loaded.isConfigurationSection("groups.admin")) {
             throw new InvalidConfigurationException("The built-in user and admin groups must exist.");
+        }
+        List<String> adminPermissions = new ArrayList<>(loaded.getStringList("groups.admin.permissions"));
+        if (!adminPermissions.contains("vnmine.command.army.admin")) {
+            adminPermissions.add("vnmine.command.army.admin");
+            loaded.set("groups.admin.permissions", adminPermissions);
+            try {
+                loaded.save(dataFile);
+            } catch (IOException exception) {
+                plugin.getLogger().log(Level.WARNING,
+                    "[Permissions] Added the army admin permission in memory but could not persist permission.yml.",
+                    exception);
+            }
         }
         if (loaded.getConfigurationSection("users") == null) loaded.createSection("users");
         String configuredDefault = loaded.getString("default-group", "user");

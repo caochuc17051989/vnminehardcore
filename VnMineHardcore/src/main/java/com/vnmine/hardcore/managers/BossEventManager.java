@@ -3,6 +3,7 @@ package com.vnmine.hardcore.managers;
 import com.vnmine.hardcore.VnMineHardcore;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
@@ -24,6 +25,8 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.potion.PotionEffect;
@@ -47,7 +50,8 @@ public class BossEventManager implements Listener {
     private final Random random = ThreadLocalRandom.current();
 
     private boolean bossActive = false;
-    private boolean hasPlayerDamagedBoss = false;
+    private double bossRewardThresholdHealth;
+    private final Map<UUID, Double> bossDamageContributions = new HashMap<>();
     private String currentBossName = null;
     private LivingEntity currentBoss = null;
     private ConfigManager.BossConfig activeBossConfig;
@@ -67,8 +71,14 @@ public class BossEventManager implements Listener {
     // AI tracking
     private Location currentBossSpawnLocation = null;
     private int currentBossActivityRadius = 100;
+    private World forcedBossChunkWorld;
+    private int forcedBossChunkX;
+    private int forcedBossChunkZ;
+    private boolean bossChunkWasAlreadyForceLoaded;
     private boolean returningToAnchor;
     private long anchorPathUpdatedAtMs;
+    private Location giantWanderTarget;
+    private long giantWanderUntilMs;
     private BukkitTask aiTask;
     private int currentBossLevel = 1;
     private long nextCreeperExplosionAtMs;
@@ -118,6 +128,26 @@ public class BossEventManager implements Listener {
         logger.info("[BossEvent] Initialized: enabled=" + config.bossEventsEnabled +
             ", interval=" + config.bossEventMinIntervalRaw + "s" +
             ", bosses=" + config.bossConfigs.size());
+    }
+
+    private void keepBossChunkLoaded() {
+        if (currentBoss == null || !currentBoss.isValid()) return;
+        Location location = currentBoss.getLocation();
+        World world = location.getWorld();
+        if (world == null) return;
+        int chunkX = location.getBlockX() >> 4;
+        int chunkZ = location.getBlockZ() >> 4;
+        if (world.equals(forcedBossChunkWorld) && chunkX == forcedBossChunkX
+                && chunkZ == forcedBossChunkZ) return;
+
+        if (forcedBossChunkWorld != null && !bossChunkWasAlreadyForceLoaded) {
+            forcedBossChunkWorld.setChunkForceLoaded(forcedBossChunkX, forcedBossChunkZ, false);
+        }
+        bossChunkWasAlreadyForceLoaded = world.isChunkForceLoaded(chunkX, chunkZ);
+        if (!bossChunkWasAlreadyForceLoaded) world.setChunkForceLoaded(chunkX, chunkZ, true);
+        forcedBossChunkWorld = world;
+        forcedBossChunkX = chunkX;
+        forcedBossChunkZ = chunkZ;
     }
 
     public void start() {
@@ -498,9 +528,10 @@ public class BossEventManager implements Listener {
     public void onBossPlayerDamage(EntityDamageByEntityEvent event) {
         if (currentBoss == null || event.getEntity() != currentBoss
                 || playerAttacker(event.getDamager()) == null) return;
-        double damage = event.getFinalDamage();
+        double damage = Math.min(event.getFinalDamage(), currentBoss.getHealth());
         if (Double.isFinite(damage) && damage > 0.0) {
-            hasPlayerDamagedBoss = true;
+            Player attacker = playerAttacker(event.getDamager());
+            bossDamageContributions.merge(attacker.getUniqueId(), damage, Double::sum);
             if (currentBoss.getType() == EntityType.PHANTOM) revealPhantom(3000L);
             if (currentBoss.getType() == EntityType.PHANTOM
                     && event.getDamager() instanceof Projectile projectile
@@ -533,9 +564,19 @@ public class BossEventManager implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onBossDeathDrops(EntityDeathEvent event) {
-        if (currentBoss == event.getEntity() && !hasPlayerDamagedBoss) {
+        if (currentBoss == event.getEntity() && getRewardEligiblePlayers().isEmpty()) {
             event.getDrops().clear();
         }
+    }
+
+    private Set<UUID> getRewardEligiblePlayers() {
+        if (bossRewardThresholdHealth <= 0.0) return Set.of();
+        double requiredDamage = bossRewardThresholdHealth * config.bossRewardDamageThresholdPercent / 100.0;
+        Set<UUID> eligible = new HashSet<>();
+        for (Map.Entry<UUID, Double> contribution : bossDamageContributions.entrySet()) {
+            if (contribution.getValue() > requiredDamage) eligible.add(contribution.getKey());
+        }
+        return eligible;
     }
 
     private Player playerAttacker(Entity damager) {
@@ -1130,10 +1171,13 @@ public class BossEventManager implements Listener {
         if (originalWeapon != null) equipment.setItemInMainHand(new ItemStack(Material.AIR));
         ArmorStand axe = currentBoss.getWorld().spawn(currentBoss.getLocation().add(0.0, 1.0, 0.0),
             ArmorStand.class);
+        axe.setVisible(false);
         axe.setArms(true);
         axe.setMarker(true);
         axe.setGravity(false);
         axe.setInvulnerable(true);
+        axe.setSilent(true);
+        axe.setCollidable(false);
         axe.getEquipment().setItemInMainHand(new ItemStack(
             Material.matchMaterial(skillString(skill, "axe-material", "IRON_AXE")) == null
                 ? Material.IRON_AXE
@@ -1623,21 +1667,67 @@ public class BossEventManager implements Listener {
     private void announceBossSkillCast(String skillKey, LivingEntity target) {
         if (currentBoss == null) return;
         String bossName = currentBossName == null ? currentBoss.getType().name() : currentBossName;
+        String localizedSkillName = getLocalizedSkillName(currentBoss.getType(), skillKey);
         String targetName = target instanceof Player player ? player.getName() : target.getType().name();
         Location location = currentBoss.getLocation();
-        String details = bossName + " Lv." + currentBossLevel + " cast " + skillKey
+        String details = bossName + " Lv." + currentBossLevel + " cast " + localizedSkillName
+            + " [" + skillKey + "]"
             + " at target=" + targetName + " position="
             + location.getBlockX() + "," + location.getBlockY() + "," + location.getBlockZ()
             + " world=" + location.getWorld().getName();
 
         if (config.bossSkillCastLogsEnabled) logger.info("[BossSkill] " + details);
-        if (config.bossSkillCastOpBroadcastEnabled) {
-            String message = "§5§l[BOSS] §d" + bossName + " §7(Lv." + currentBossLevel
-                + ") dùng skill §e" + skillKey + " §7nhắm tới §f" + targetName + "§7.";
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                if (player.isOp()) player.sendMessage(message);
+        String message = "§5§l[BOSS] §d" + bossName + " §7(Lv." + currentBossLevel
+            + ") dùng kỹ năng §e" + localizedSkillName + "§7 nhắm tới §f" + targetName + "§7.";
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.isOp() ? config.bossSkillCastOpBroadcastEnabled
+                    : config.bossSkillCastPlayerBroadcastEnabled) {
+                player.sendMessage(message);
             }
         }
+    }
+
+    private String getLocalizedSkillName(EntityType bossType, String skillKey) {
+        return switch (bossType) {
+            case CREEPER -> anySkillKey(skillKey, "charged-explosion", "creeper-blast", "blast")
+                ? "Lôi Nộ Tích Điện" : skillKey;
+            case ENDERMAN -> anySkillKey(skillKey, "void-snatch", "shadow-strike", "enderman-teleport", "teleport")
+                ? "Bắt Hư Không" : "end-rift".equalsIgnoreCase(skillKey) ? "Vết Nứt Hư Không" : skillKey;
+            case RAVAGER -> anySkillKey(skillKey, "siege-charge", "charge", "ravager-charge")
+                ? "Cú Tông Địa Chấn" : "roar-weakness".equalsIgnoreCase(skillKey)
+                    ? "Tiếng Gầm Áp Đảo" : skillKey;
+            case PHANTOM -> anySkillKey(skillKey, "dive-bomb", "phantom-dive", "dive")
+                ? "Cú Lao Đêm Mộng" : "phantom-minions".equalsIgnoreCase(skillKey)
+                    ? "Triệu Hồi Bóng Ma" : skillKey;
+            case GHAST -> anySkillKey(skillKey, "fireball-volley", "ghast-fireball", "fireball")
+                ? "Mưa Cầu Lửa" : "fiery-drag".equalsIgnoreCase(skillKey) ? "Kéo Lửa" : skillKey;
+            case SPIDER -> anySkillKey(skillKey, "venom-web", "spider-web", "spider-poison", "web")
+                ? "Tơ Độc" : "cobweb-trap".equalsIgnoreCase(skillKey) ? "Bẫy Tơ Nhện"
+                    : "venom-pounce".equalsIgnoreCase(skillKey) ? "Nhảy Độc" : skillKey;
+            case VINDICATOR -> anySkillKey(skillKey, "axe-spin", "vindicator-shockwave",
+                "vindicator_shockwave", "shockwave") ? "Múa Rìu Xoay"
+                : "axe-throw".equalsIgnoreCase(skillKey) ? "Phóng Rìu" : skillKey;
+            case WITCH -> anySkillKey(skillKey, "potion-rain", "potion-volley", "witch-potion", "potion")
+                ? "Mưa Thuốc Độc" : "disarm-magic".equalsIgnoreCase(skillKey) ? "Tước Vũ Khí" : skillKey;
+            case GIANT -> anySkillKey(skillKey, "ground-slam", "stomp", "giant-stomp")
+                ? "Đập Đất Sóng Xung Kích" : "boulder-toss".equalsIgnoreCase(skillKey)
+                    ? "Ném Đá Khổng Lồ" : skillKey;
+            case SKELETON -> anySkillKey(skillKey, "arrow-barrage", "skeleton-arrow", "arrow-fan", "fire-arrow-fan")
+                ? "Mưa Tên Vạn Cốt" : skillKey;
+            case ENDER_DRAGON -> anySkillKey(skillKey, "fireball-volley", "dragon-fireball",
+                "ender-dragon-fireball", "fireball-fan") ? "Long Viêm Liên Xạ" : skillKey;
+            case WITHER -> anySkillKey(skillKey, "skull-volley", "wither-skull", "skull")
+                ? "Mưa Sọ Hư Vô" : skillKey;
+            case ZOMBIE -> anySkillKey(skillKey, "ground-slam", "zombie-slam", "slam") ? "Đập Đất" : skillKey;
+            default -> skillKey;
+        };
+    }
+
+    private boolean anySkillKey(String actualKey, String... aliases) {
+        for (String alias : aliases) {
+            if (alias.equalsIgnoreCase(actualKey)) return true;
+        }
+        return false;
     }
 
     private void launchArrowBarrage(World world, Location bossLoc, Location targetLoc, int arrowCount,
@@ -1748,7 +1838,7 @@ public class BossEventManager implements Listener {
             + String.format(java.util.Locale.US, "%.0f", health) + "/"
             + String.format(java.util.Locale.US, "%.0f", maximum) + " HP");
         bossBar.progress((float) Math.max(0.0, Math.min(1.0, health / maximum)));
-        bossBar.name(Component.text("§4§l⚠ " + displayName +
+        bossBar.name(LegacyComponentSerializer.legacySection().deserialize("§4§l⚠ " + displayName +
             " §7[Lv." + currentBossLevel + "] §7- §c" + String.format(java.util.Locale.US, "%.0f", health) + "/" +
             String.format(java.util.Locale.US, "%.0f", maximum) + " HP" +
             " §7| §e" + Math.max(0, secondsRemaining) + "s"));
@@ -1927,12 +2017,14 @@ public class BossEventManager implements Listener {
         }
         currentBoss = livingBoss;
         activeBossConfig = bc;
-        hasPlayerDamagedBoss = false;
+        bossDamageContributions.clear();
         spiderBroodReleased = false;
         currentBossSpawnLocation = spawnLoc.clone();
         currentBossActivityRadius = bc.activityRadius;
         returningToAnchor = false;
         anchorPathUpdatedAtMs = 0L;
+        giantWanderTarget = null;
+        giantWanderUntilMs = 0L;
         if (currentBoss instanceof Creeper creeper) {
             ConfigManager.BossSkillConfig skill = getCreeperSkillConfig(bc);
             double explosionPower = skill == null ? 3.0
@@ -1958,13 +2050,18 @@ public class BossEventManager implements Listener {
         }
         effectiveHp = Math.max(1.0, Math.min(MAX_BOSS_HEALTH, Math.min(effectiveHp, currentBoss.getMaxHealth())));
         currentBoss.setHealth(effectiveHp);
+        bossRewardThresholdHealth = effectiveHp;
         currentBoss.setCustomNameVisible(true);
+        currentBoss.setGlowing(true);
         updateBossDisplay(bc.displayName, Math.max(0, bc.durationSeconds));
 
         // Keep native targeting and navigation active; boss skills augment its behavior.
         if (currentBoss instanceof Mob mob) {
             mob.setAI(true);
+            mob.setPersistent(true);
+            mob.setRemoveWhenFarAway(false);
         }
+        keepBossChunkLoaded();
 
         // ===== ÁP DỤNG IMMUNITIES =====
         // Sunlight burn immunity: thêm fire resistance effect vĩnh viễn
@@ -2055,7 +2152,10 @@ public class BossEventManager implements Listener {
                 if (currentBoss == null || currentBoss.isDead() || !currentBoss.isValid()) {
                     // Boss đã chết
                     if (currentBoss != null && currentBoss.isDead()) {
-                        onBossKilled(currentBoss.getKiller(), bc);
+                        onBossKilled(bc);
+                    } else if (currentBoss != null) {
+                        logger.warning("[BossEvent] Boss entity became invalid before timeout: "
+                            + currentBoss.getType() + " uuid=" + currentBoss.getUniqueId());
                     }
                     cleanup();
                     this.cancel();
@@ -2098,6 +2198,7 @@ public class BossEventManager implements Listener {
                 Location bossLoc = currentBoss.getLocation();
                 World bossWorld = bossLoc.getWorld();
                 if (bossWorld == null) return;
+                keepBossChunkLoaded();
                 tickBossTraits(bc);
                 tickSplitFireballs();
 
@@ -2202,7 +2303,9 @@ public class BossEventManager implements Listener {
                     return;
                 }
 
-                if (currentBoss instanceof EnderDragon dragon) {
+                if (currentBoss instanceof Giant) {
+                    wanderGiant(bossLoc);
+                } else if (currentBoss instanceof EnderDragon dragon) {
                     if (dragon.getTarget() != null) dragon.setTarget(null);
                     if (dragon.getPhase() != EnderDragon.Phase.CIRCLING) {
                         dragon.setPhase(EnderDragon.Phase.CIRCLING);
@@ -2211,6 +2314,34 @@ public class BossEventManager implements Listener {
             }
         };
         aiTask = aiRunnable.runTaskTimer(plugin, 0L, 10L);
+    }
+
+    private void wanderGiant(Location bossLoc) {
+        long now = System.currentTimeMillis();
+        if (giantWanderTarget == null || now >= giantWanderUntilMs
+                || bossLoc.distanceSquared(giantWanderTarget) < 2.25) {
+            double angle = random.nextDouble() * Math.PI * 2.0;
+            double distance = 4.0 + random.nextDouble() * 6.0;
+            Location candidate = bossLoc.clone().add(Math.cos(angle) * distance, 0.0,
+                Math.sin(angle) * distance);
+            Block feet = candidate.getBlock();
+            if (!isWithinBossArea(candidate) || !feet.isPassable()
+                    || !feet.getRelative(0, -1, 0).getType().isSolid()) {
+                giantWanderTarget = null;
+                giantWanderUntilMs = now + 1500L;
+                return;
+            }
+            giantWanderTarget = candidate;
+            giantWanderUntilMs = now + 5000L;
+        }
+        if (currentBoss instanceof Giant giant && giantWanderTarget != null) {
+            Vector direction = giantWanderTarget.toVector().subtract(bossLoc.toVector()).setY(0.0);
+            if (direction.lengthSquared() > 0.25) {
+                Vector velocity = direction.normalize().multiply(0.07);
+                velocity.setY(giant.getVelocity().getY());
+                giant.setVelocity(velocity);
+            }
+        }
     }
 
     /**
@@ -2256,15 +2387,26 @@ public class BossEventManager implements Listener {
                 }
             }
             return;
-        } else if (currentBoss instanceof Mob mob) {
-            mob.setAware(true);
-            if (mob.getTarget() != target) mob.setTarget(target);
-            if (currentBoss instanceof Giant && distance <= 3.0) {
+        } else if (currentBoss instanceof Giant giant) {
+            giant.setAware(true);
+            if (giant.getTarget() != target) giant.setTarget(target);
+            if (distance > 3.0) {
+                Vector direction = targetLoc.toVector().subtract(bossLoc.toVector()).setY(0.0);
+                if (direction.lengthSquared() > 0.0001) {
+                    Vector velocity = direction.normalize().multiply(0.12);
+                    velocity.setY(giant.getVelocity().getY());
+                    giant.setVelocity(velocity);
+                }
+            } else {
                 target.damage(12.0 * bc.damageMultiplier, currentBoss);
                 Vector knockback = target.getLocation().toVector().subtract(bossLoc.toVector());
                 if (knockback.lengthSquared() < 0.0001) knockback.setZ(1.0);
                 target.setVelocity(knockback.normalize().setY(0.3).multiply(2.0));
             }
+            return;
+        } else if (currentBoss instanceof Mob mob) {
+            mob.setAware(true);
+            if (mob.getTarget() != target) mob.setTarget(target);
         } else if (currentBoss instanceof Flying flying) {
             // Nếu là flying entity (Ghast)
             if (distance > 4.0) {
@@ -2346,14 +2488,28 @@ public class BossEventManager implements Listener {
                entity instanceof Armadillo;
     }
 
-    private void onBossKilled(Player killer, ConfigManager.BossConfig bc) {
-        if (killer != null) {
-            Bukkit.broadcastMessage("§a§l🎉 " + killer.getName() + " đã tiêu diệt " + bc.displayName + "!");
+    private void onBossKilled(ConfigManager.BossConfig bc) {
+        EntityDamageEvent lastDamage = currentBoss == null ? null : currentBoss.getLastDamageCause();
+        Set<UUID> eligiblePlayers = getRewardEligiblePlayers();
+        boolean playerEarnedRewards = !eligiblePlayers.isEmpty();
+        if (!playerEarnedRewards) {
+            String damageSource = lastDamage == null ? "unknown" : lastDamage.getCause().name();
+            if (lastDamage instanceof EntityDamageByEntityEvent damageByEntity) {
+                damageSource += " from " + damageByEntity.getDamager().getType();
+            }
+            logger.warning("[BossEvent] Boss died without a qualified player contribution: " + bc.displayName
+                + ", cause=" + damageSource
+                + ", requiredDamage=" + bossRewardThresholdHealth * config.bossRewardDamageThresholdPercent / 100.0
+                + ", entity=" + currentBoss.getType() + ", uuid=" + currentBoss.getUniqueId());
+        }
+        if (playerEarnedRewards) {
+            Bukkit.broadcastMessage("§a§l🎉 " + bc.displayName + " đã bị hạ gục; người chơi đủ đóng góp nhận điểm và vật phẩm.");
         } else {
-            Bukkit.broadcastMessage("§a§l🎉 " + bc.displayName + " đã bị tiêu diệt!");
+            Bukkit.broadcastMessage("§c" + bc.displayName + " đã chết nhưng không có người chơi đạt ngưỡng sát thương "
+                + config.bossRewardDamageThresholdPercent + "%.");
         }
 
-        if (hasPlayerDamagedBoss) {
+        if (playerEarnedRewards) {
             // Drop items
             for (Map.Entry<String, ConfigManager.DropConfig> dropEntry : bc.drops.entrySet()) {
                 ConfigManager.DropConfig dc = dropEntry.getValue();
@@ -2409,11 +2565,15 @@ public class BossEventManager implements Listener {
                     }
                     dropItemsNaturally(currentBoss.getLocation(), item, amount);
                 }
+                dropArmySummonToken(currentBoss.getLocation(), currentBossLevel);
+                dropBossArmorSet(bc, currentBossLevel);
             }
         }
-        leaderboardManager.finishBoss(currentBossLevel, true);
-        logManager.logDisaster("BOSS: " + bc.displayName + " killed by " +
-            (killer == null ? "unknown" : killer.getName()));
+        leaderboardManager.finishBoss(currentBossLevel, eligiblePlayers);
+        logManager.logDisaster("BOSS: " + bc.displayName +
+            (playerEarnedRewards ? " defeated; eligible contributors=" + eligiblePlayers
+                : " died without eligible contribution") +
+            "; cause=" + (lastDamage == null ? "unknown" : lastDamage.getCause().name()));
     }
 
     private List<ConfigManager.ConfiguredItem> levelDropsFor(ConfigManager.BossConfig bc, int level) {
@@ -2424,6 +2584,89 @@ public class BossEventManager implements Listener {
             .max()
             .orElse(-1);
         return selectedLevel < 0 ? List.of() : bc.levelDrops.getOrDefault(selectedLevel, List.of());
+    }
+
+    private void dropArmySummonToken(Location location, int level) {
+        if (!config.bossArmyTokenDropEnabled || random.nextDouble() >= config.bossArmyTokenDropChance) return;
+        ItemStack token = new ItemStack(Material.PAPER);
+        ItemMeta meta = token.getItemMeta();
+        meta.setDisplayName("§6§lLệnh Triệu Hồi §fCấp " + level);
+        meta.setLore(List.of("§7Gọi lính cấp " + level + ".", "§8Dùng /vnarmy hire."));
+        meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "army_token_class"),
+            PersistentDataType.STRING, "any");
+        meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "army_token_level"),
+            PersistentDataType.INTEGER, level);
+        token.setItemMeta(meta);
+        dropItemsNaturally(location, token, 1);
+    }
+
+    private void dropBossArmorSet(ConfigManager.BossConfig bossConfig, int level) {
+        ConfigManager.BossArmorSetConfig armorSet = bossConfig.armorSet;
+        if (armorSet == null || !armorSet.enabled || armorSet.materialTiers.isEmpty()) return;
+        int tierLevel = armorSet.materialTiers.keySet().stream()
+            .filter(configuredLevel -> configuredLevel <= level)
+            .mapToInt(Integer::intValue)
+            .max()
+            .orElse(-1);
+        if (tierLevel < 0) return;
+
+        String materialTier = armorSet.materialTiers.get(tierLevel);
+        String[][] pieces = {
+            {"HELMET", "Mũ"},
+            {"CHESTPLATE", "Áo Giáp"},
+            {"LEGGINGS", "Quần Giáp"},
+            {"BOOTS", "Ủng"}
+        };
+        List<String> lore = config.getBossItemStory(armorSet.storyId, level);
+        if (lore.isEmpty()) {
+            logger.warning("[BossEvent] Armor set story is unavailable: " + armorSet.storyId);
+            return;
+        }
+        for (String[] piece : pieces) {
+            if (random.nextDouble() >= armorSet.dropChance) continue;
+            Material material = Material.matchMaterial(materialTier + "_" + piece[0]);
+            if (material == null || material.isAir()) {
+                logger.warning("[BossEvent] Invalid armor material tier '" + materialTier +
+                    "' for " + bossConfig.displayName + ".");
+                continue;
+            }
+            ItemStack item = new ItemStack(material);
+            String itemName = armorSet.name + " " + piece[1] + " · Cấp " + level;
+            BossLeaderboardManager.applyMetadata(item, itemName, lore, null, null);
+            for (String enchantment : armorEnchantments(piece[0])) {
+                int enchantmentLevel = armorEnchantmentLevel(enchantment, level);
+                addConfiguredEnchantment(item, enchantment, enchantmentLevel, false);
+            }
+            dropItemsNaturally(currentBoss.getLocation(), item, 1);
+        }
+    }
+
+    private List<String> armorEnchantments(String armorSlot) {
+        return switch (armorSlot) {
+            case "HELMET" -> List.of("protection", "unbreaking", "respiration", "aqua_affinity");
+            case "CHESTPLATE" -> List.of("protection", "unbreaking", "thorns");
+            case "LEGGINGS" -> List.of("protection", "unbreaking", "swift_sneak");
+            case "BOOTS" -> List.of("protection", "unbreaking", "feather_falling", "depth_strider");
+            default -> List.of();
+        };
+    }
+
+    private int armorEnchantmentLevel(String enchantmentKey, int bossLevel) {
+        Enchantment enchantment;
+        try {
+            enchantment = Enchantment.getByKey(NamespacedKey.minecraft(enchantmentKey));
+        } catch (IllegalArgumentException exception) {
+            enchantment = null;
+        }
+        if (enchantment == null) {
+            logger.warning("[BossEvent] Unknown armor enchantment: " + enchantmentKey);
+            return 0;
+        }
+        int naturalMaximum = enchantment.getMaxLevel();
+        if (naturalMaximum <= 2) return naturalMaximum;
+        int initialLevel = Math.max(1, naturalMaximum - config.bossArmorNaturalLevelGap);
+        int levelBonus = (int) Math.floor((bossLevel - 1) * config.bossArmorLevelsPerEnchant);
+        return Math.min(config.bossArmorMaximumEnchantLevel, initialLevel + levelBonus);
     }
 
     private void broadcastPossibleDrops(ConfigManager.BossConfig bc, int level) {
@@ -2443,6 +2686,10 @@ public class BossEventManager implements Listener {
             String displayName = item.name == null || item.name.isBlank() ? item.material : item.name;
             Bukkit.broadcastMessage("§d• " + displayName + " §7— §e" +
                 String.format(java.util.Locale.US, "%.1f%%", item.chance * 100.0));
+        }
+        if (bc.armorSet != null && bc.armorSet.enabled) {
+            Bukkit.broadcastMessage("§d• " + bc.armorSet.name + " (4 món) §7— §e" +
+                String.format(java.util.Locale.US, "%.1f%% mỗi món", bc.armorSet.dropChance * 100.0));
         }
     }
 
@@ -2532,6 +2779,13 @@ public class BossEventManager implements Listener {
         if (currentBoss != null && !currentBoss.isDead()) {
             currentBoss.remove();
         }
+        if (forcedBossChunkWorld != null && !bossChunkWasAlreadyForceLoaded) {
+            forcedBossChunkWorld.setChunkForceLoaded(forcedBossChunkX, forcedBossChunkZ, false);
+        }
+        forcedBossChunkWorld = null;
+        forcedBossChunkX = 0;
+        forcedBossChunkZ = 0;
+        bossChunkWasAlreadyForceLoaded = false;
         bossActive = false;
         currentBoss = null;
         activeBossConfig = null;
@@ -2539,12 +2793,15 @@ public class BossEventManager implements Listener {
         currentBossActivityRadius = 100;
         returningToAnchor = false;
         anchorPathUpdatedAtMs = 0L;
+        giantWanderTarget = null;
+        giantWanderUntilMs = 0L;
         currentBossName = null;
         pendingBoss = null;
         pendingBossLevel = null;
         warningTimeLeft = 0;
         currentBossLevel = 1;
-        hasPlayerDamagedBoss = false;
+        bossRewardThresholdHealth = 0.0;
+        bossDamageContributions.clear();
         spiderBroodReleased = false;
         bossElapsedSeconds = 0;
         bossDurationSeconds = 0;
