@@ -10,6 +10,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
@@ -360,8 +361,13 @@ public final class BossLeaderboardManager implements Listener {
     }
 
     public void finishBoss(int level, boolean killed) {
-        if (killed && enabled && !bossDamage.isEmpty()) {
+        finishBoss(level, killed ? bossDamage.keySet() : java.util.Set.of());
+    }
+
+    public void finishBoss(int level, java.util.Set<UUID> eligiblePlayers) {
+        if (enabled && !bossDamage.isEmpty() && !eligiblePlayers.isEmpty()) {
             List<Map.Entry<UUID, Double>> contributors = bossDamage.entrySet().stream()
+                .filter(entry -> eligiblePlayers.contains(entry.getKey()))
                 .sorted(Map.Entry.<UUID, Double>comparingByValue().reversed())
                 .limit(MAX_BOSS_CONTRIBUTORS)
                 .toList();
@@ -384,8 +390,9 @@ public final class BossLeaderboardManager implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBossDamage(EntityDamageByEntityEvent event) {
-        double damage = event.getFinalDamage();
-        if (activeBoss == null || event.getEntity() != activeBoss || !Double.isFinite(damage) || damage <= 0.0) return;
+        if (!(activeBoss instanceof LivingEntity livingBoss) || event.getEntity() != activeBoss) return;
+        double damage = Math.min(event.getFinalDamage(), livingBoss.getHealth());
+        if (!Double.isFinite(damage) || damage <= 0.0) return;
         Player attacker = playerAttacker(event.getDamager());
         if (attacker == null) return;
         UUID id = attacker.getUniqueId();

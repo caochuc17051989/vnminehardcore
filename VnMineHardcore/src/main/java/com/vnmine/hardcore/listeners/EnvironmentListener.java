@@ -12,6 +12,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockGrowEvent;
+import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
@@ -39,8 +40,10 @@ public class EnvironmentListener implements Listener {
     private long tempCheckIntervalMs;
     private BukkitRunnable temperatureTask;
     private BukkitRunnable fogTask;
+    private BukkitRunnable rainControlTask;
     private int fogIntervalTicks;
     private int fogEffectDurationTicks;
+    private final Map<UUID, Long> rainEndsAt = new HashMap<>();
 
     // Biomes for temperature system
     private static final Set<String> HOT_BIOMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
@@ -71,6 +74,7 @@ public class EnvironmentListener implements Listener {
         this.fogIntervalTicks = config.fogIntervalSeconds * 20;
         this.fogEffectDurationTicks = config.fogEffectDurationSeconds * 20;
         this.tempCheckIntervalMs = config.tempCheckIntervalSeconds * 1000L;
+        limitRainDurationForActiveWorlds();
         logger.info("[Environment] Initialized: temperature=" + config.temperatureEnabled +
             ", fog=" + config.fogEnabled + " (interval=" + config.fogIntervalSeconds +
             "s, duration=" + config.fogEffectDurationSeconds + "s, amplifier=" + config.fogEffectAmplifier + ")" +
@@ -91,6 +95,71 @@ public class EnvironmentListener implements Listener {
         heatExposureStart.clear();
         coldExposureStart.clear();
         startTasks();
+        limitRainDurationForActiveWorlds();
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onWeatherChange(WeatherChangeEvent event) {
+        if (!config.rainControlEnabled) return;
+        UUID worldId = event.getWorld().getUID();
+        if (!event.toWeatherState()) {
+            rainEndsAt.remove(worldId);
+            return;
+        }
+        if (random.nextInt(100) >= config.rainChancePercent) {
+            event.setCancelled(true);
+            return;
+        }
+        long durationMillis = chooseRainDurationMillis();
+        int durationTicks = (int) Math.max(1L, durationMillis / 50L);
+        event.getWorld().setWeatherDuration(durationTicks);
+        rainEndsAt.put(worldId, System.currentTimeMillis() + durationMillis);
+    }
+
+    private long chooseRainDurationMillis() {
+        int minimum = config.rainRandomDurationEnabled ? config.minRainDurationMinutes
+            : config.maxRainDurationMinutes;
+        int durationMinutes = minimum == config.maxRainDurationMinutes ? minimum
+            : random.nextInt(minimum, config.maxRainDurationMinutes + 1);
+        return durationMinutes * 60_000L;
+    }
+
+    private void limitRainDurationForActiveWorlds() {
+        if (!config.rainControlEnabled) return;
+        long now = System.currentTimeMillis();
+        for (World world : plugin.getServer().getWorlds()) {
+            if (world.hasStorm()) {
+                long durationMillis = chooseRainDurationMillis();
+                int durationTicks = (int) Math.max(1L, durationMillis / 50L);
+                rainEndsAt.put(world.getUID(), now + durationMillis);
+                if (world.getWeatherDuration() > durationTicks) world.setWeatherDuration(durationTicks);
+            }
+        }
+    }
+
+    private void startRainControlTask() {
+        rainControlTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                long now = System.currentTimeMillis();
+                for (World world : plugin.getServer().getWorlds()) {
+                    UUID worldId = world.getUID();
+                    if (!world.hasStorm()) {
+                        rainEndsAt.remove(worldId);
+                        continue;
+                    }
+                    long endsAt = rainEndsAt.computeIfAbsent(worldId,
+                        ignored -> now + chooseRainDurationMillis());
+                    if (now >= endsAt) {
+                        world.setStorm(false);
+                        world.setThundering(false);
+                        world.setWeatherDuration(12_000);
+                        rainEndsAt.remove(worldId);
+                    }
+                }
+            }
+        };
+        rainControlTask.runTaskTimer(plugin, 20L, 20L);
     }
 
     private void stopTasks() {
@@ -102,11 +171,17 @@ public class EnvironmentListener implements Listener {
             fogTask.cancel();
             fogTask = null;
         }
+        if (rainControlTask != null) {
+            rainControlTask.cancel();
+            rainControlTask = null;
+        }
+        rainEndsAt.clear();
     }
 
     private void startTasks() {
         if (config.temperatureEnabled) startTemperatureTask();
         if (config.fogEnabled) startFogTask();
+        if (config.rainControlEnabled) startRainControlTask();
     }
 
     private void startTemperatureTask() {

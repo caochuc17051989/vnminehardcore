@@ -301,6 +301,31 @@ thirst:
 # [ENVIRONMENT] 🌍 MÔI TRƯỜNG / ENVIRONMENT
 # ============================================================
 environment:
+  # ===== KIỂM SOÁT MƯA / RAIN CONTROL =====
+  rain-control:
+    # [VI] Bật giới hạn xác suất bắt đầu mưa và thời lượng mưa.
+    # [EN] Enable limits for rain-start chance and rain duration.
+    enabled: true
+
+    # [VI] Xác suất chấp nhận mỗi lần thời tiết bắt đầu mưa (phần trăm); mặc định 40, hợp lệ 0-100.
+    # [EN] Chance to allow each rain start (percent); default 40, valid range 0-100.
+    chance-percent: 40
+
+    # [VI] Thời gian mưa tối đa liên tục (phút); mặc định 5, hợp lệ 1-120.
+    # [EN] Maximum continuous rain duration (minutes); default 5, valid range 1-120.
+    max-duration-minutes: 5
+
+    # [VI] Chọn ngẫu nhiên thời lượng mưa từ mức tối thiểu đến tối đa để mưa có thể tạnh sớm.
+    # [EN] Randomize each rain duration between the minimum and maximum to allow early clearing.
+    random-duration:
+      # [VI] Bật chọn thời lượng ngẫu nhiên; mặc định true; chỉ true/false.
+      # [EN] Enable randomized rain duration; default true; accepts true/false.
+      enabled: true
+
+      # [VI] Thời lượng mưa tối thiểu (phút); mặc định 1, hợp lệ từ 1 đến max-duration-minutes.
+      # [EN] Minimum rain duration (minutes); default 1, valid from 1 to max-duration-minutes.
+      minimum-minutes: 1
+
   # ===== NHIỆT ĐỘ / TEMPERATURE =====
   temperature:
     # [VI] Bật hệ thống nhiệt độ (nóng ở sa mạc, lạnh ở tuyết)

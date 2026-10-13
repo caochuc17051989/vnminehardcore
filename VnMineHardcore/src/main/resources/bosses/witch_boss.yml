@@ -133,6 +133,25 @@ drops:
 #      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
 #      Each item's lore tells the boss-specific legend in at most 4 lines.
 #      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+# [VI] Tạo bộ giáp bốn món cho boss này; vật liệu và enchant tự tăng theo level.
+# [EN] Generate this boss's four-piece armor set; materials and enchants scale by level.
+armor-set:
+  # [VI] Bật/tắt bộ giáp; mặc định true.
+  # [EN] Enable or disable the armor set; default true.
+  enabled: true
+  # [VI] Tên bộ giáp dùng cho mũ, áo, quần và ủng.
+  # [EN] Armor set name prefix used by the helmet, chestplate, leggings, and boots.
+  name: "§d§lGiáp Trăng Máu"
+  # [VI] ID lore trong story.yml; phải trỏ tới một mục artifacts hợp lệ.
+  # [EN] Lore ID in story.yml; must reference a valid artifacts entry.
+  story-id: witch-armor
+  # [VI] Mốc cấp tối thiểu cho vật liệu; từ 1 sắt, 4 kim cương, 7 netherite.
+  # [EN] Minimum level for each material tier; iron at 1, diamond at 4, netherite at 7.
+  material-tiers:
+    1: IRON
+    4: DIAMOND
+    7: NETHERITE
+
 level-drops:
   1:
     - material: ENCHANTED_BOOK
@@ -140,17 +159,17 @@ level-drops:
       story-id: witch-relic-common
       min-amount: 1
       max-amount: 1
-      chance: 0.160
+      chance: 0.65
       book-enchantments:
-        protection: 1
+        protection: 2
     - material: ENCHANTED_BOOK
       name: "§d§lSổ Dược Thư · Cấp 1"
       story-id: witch-codex-common
       min-amount: 1
       max-amount: 1
-      chance: 0.104
+      chance: 0.30
       book-enchantments:
-        protection: 1
+        protection: 2
 
   2:
     - material: ENCHANTED_BOOK
@@ -158,19 +177,19 @@ level-drops:
       story-id: witch-relic-common
       min-amount: 1
       max-amount: 1
-      chance: 0.146
+      chance: 0.65
       book-enchantments:
-        protection: 1
-        sharpness: 1
+        protection: 2
+        sharpness: 3
     - material: ENCHANTED_BOOK
       name: "§d§lSổ Dược Thư · Cấp 2"
       story-id: witch-codex-common
       min-amount: 1
       max-amount: 1
-      chance: 0.095
+      chance: 0.30
       book-enchantments:
-        protection: 1
-        sharpness: 1
+        protection: 2
+        sharpness: 3
 
   3:
     - material: ENCHANTED_BOOK
@@ -178,20 +197,20 @@ level-drops:
       story-id: witch-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.132
+      chance: 0.65
       book-enchantments:
-        protection: 2
-        sharpness: 2
+        protection: 3
+        sharpness: 4
         fire_aspect: 2
     - material: ENCHANTED_BOOK
       name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 3"
       story-id: witch-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.086
+      chance: 0.30
       book-enchantments:
-        protection: 2
-        sharpness: 2
+        protection: 3
+        sharpness: 4
         fire_aspect: 2
 
   4:
@@ -200,48 +219,48 @@ level-drops:
       story-id: witch-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.118
+      chance: 0.65
       book-enchantments:
-        protection: 2
-        sharpness: 2
+        protection: 4
+        sharpness: 5
         fire_aspect: 2
-        mending: 2
+        mending: 1
     - material: ENCHANTED_BOOK
       name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 4"
       story-id: witch-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.077
+      chance: 0.30
       book-enchantments:
-        protection: 2
-        sharpness: 2
+        protection: 4
+        sharpness: 5
         fire_aspect: 2
-        mending: 2
+        mending: 1
   5:
     - material: ENCHANTED_BOOK
       name: "§d§lDược Thư Trăng Máu · Cấp 5"
       story-id: witch-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.104
+      chance: 0.65
       book-enchantments:
-        protection: 2
-        sharpness: 2
+        protection: 5
+        sharpness: 6
         fire_aspect: 2
-        mending: 2
-        unbreaking: 2
+        mending: 1
+        unbreaking: 4
     - material: ENCHANTED_BOOK
       name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 5"
       story-id: witch-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.068
+      chance: 0.30
       book-enchantments:
-        protection: 2
-        sharpness: 2
+        protection: 5
+        sharpness: 6
         fire_aspect: 2
-        mending: 2
-        unbreaking: 2
+        mending: 1
+        unbreaking: 4
 
   6:
     - material: ENCHANTED_BOOK
@@ -249,27 +268,27 @@ level-drops:
       story-id: witch-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.090
+      chance: 0.65
       book-enchantments:
-        protection: 3
-        sharpness: 3
-        fire_aspect: 3
-        mending: 3
-        unbreaking: 3
-        looting: 3
+        protection: 6
+        sharpness: 7
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 5
+        looting: 5
     - material: ENCHANTED_BOOK
       name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 6"
       story-id: witch-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.058
+      chance: 0.30
       book-enchantments:
-        protection: 3
-        sharpness: 3
-        fire_aspect: 3
-        mending: 3
-        unbreaking: 3
-        looting: 3
+        protection: 6
+        sharpness: 7
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 5
+        looting: 5
 
   7:
     - material: ENCHANTED_BOOK
@@ -277,29 +296,29 @@ level-drops:
       story-id: witch-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.076
+      chance: 0.65
       book-enchantments:
-        protection: 3
-        sharpness: 3
-        fire_aspect: 3
-        mending: 3
-        unbreaking: 3
-        looting: 3
-        fortune: 3
+        protection: 6
+        sharpness: 7
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 5
+        looting: 5
+        fortune: 5
     - material: ENCHANTED_BOOK
       name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 7"
       story-id: witch-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.049
+      chance: 0.30
       book-enchantments:
-        protection: 3
-        sharpness: 3
-        fire_aspect: 3
-        mending: 3
-        unbreaking: 3
-        looting: 3
-        fortune: 3
+        protection: 6
+        sharpness: 7
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 5
+        looting: 5
+        fortune: 5
 
   8:
     - material: ENCHANTED_BOOK
@@ -307,31 +326,31 @@ level-drops:
       story-id: witch-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.062
+      chance: 0.65
       book-enchantments:
-        protection: 3
-        sharpness: 3
-        fire_aspect: 3
-        mending: 3
-        unbreaking: 3
-        looting: 3
-        fortune: 3
-        efficiency: 3
+        protection: 7
+        sharpness: 8
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 6
+        looting: 6
+        fortune: 6
+        efficiency: 8
     - material: ENCHANTED_BOOK
       name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 8"
       story-id: witch-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.040
+      chance: 0.30
       book-enchantments:
-        protection: 3
-        sharpness: 3
-        fire_aspect: 3
-        mending: 3
-        unbreaking: 3
-        looting: 3
-        fortune: 3
-        efficiency: 3
+        protection: 7
+        sharpness: 8
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 6
+        looting: 6
+        fortune: 6
+        efficiency: 8
 
   9:
     - material: ENCHANTED_BOOK
@@ -339,33 +358,33 @@ level-drops:
       story-id: witch-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.048
+      chance: 0.65
       book-enchantments:
-        protection: 4
-        sharpness: 4
-        fire_aspect: 4
-        mending: 4
-        unbreaking: 4
-        looting: 4
-        fortune: 4
-        efficiency: 4
-        feather_falling: 4
+        protection: 8
+        sharpness: 9
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 7
+        looting: 7
+        fortune: 7
+        efficiency: 9
+        feather_falling: 8
     - material: ENCHANTED_BOOK
       name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 9"
       story-id: witch-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.031
+      chance: 0.30
       book-enchantments:
-        protection: 4
-        sharpness: 4
-        fire_aspect: 4
-        mending: 4
-        unbreaking: 4
-        looting: 4
-        fortune: 4
-        efficiency: 4
-        feather_falling: 4
+        protection: 8
+        sharpness: 9
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 7
+        looting: 7
+        fortune: 7
+        efficiency: 9
+        feather_falling: 8
 
   10:
     - material: ENCHANTED_BOOK
@@ -373,32 +392,32 @@ level-drops:
       story-id: witch-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.034
+      chance: 0.65
       book-enchantments:
-        protection: 4
-        sharpness: 4
-        fire_aspect: 4
-        mending: 4
-        unbreaking: 4
-        looting: 4
-        fortune: 4
-        efficiency: 4
-        feather_falling: 4
-        vanishing_curse: 4
+        protection: 9
+        sharpness: 10
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 8
+        looting: 8
+        fortune: 8
+        efficiency: 10
+        feather_falling: 9
+        vanishing_curse: 1
     - material: ENCHANTED_BOOK
       name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 10"
       story-id: witch-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.022
+      chance: 0.30
       book-enchantments:
-        protection: 4
-        sharpness: 4
-        fire_aspect: 4
-        mending: 4
-        unbreaking: 4
-        looting: 4
-        fortune: 4
-        efficiency: 4
-        feather_falling: 4
-        vanishing_curse: 4
+        protection: 9
+        sharpness: 10
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 8
+        looting: 8
+        fortune: 8
+        efficiency: 10
+        feather_falling: 9
+        vanishing_curse: 1

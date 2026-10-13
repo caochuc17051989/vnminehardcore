@@ -75,6 +75,7 @@ Plugin Paper 26.x bổ sung các hệ thống sinh tồn khó hơn. Người ch�
 - **Chóng mặt**: Nausea + Slowness trên y=200 (giảm khi đeo elytra)
 - **Nước lạnh**: Damage khi ở dưới nước lạnh
 - **Mưa axit**: Damage khi ở ngoài trời mưa
+- **Kiểm soát mưa**: Mặc định 40% xác suất bắt đầu mưa, thời lượng ngẫu nhiên 1–5 phút; cấu hình tại `environment.rain-control`
 
 ### 🏘️ Villager Trading System
 - **Quản lý giao dịch dân làng theo biome**

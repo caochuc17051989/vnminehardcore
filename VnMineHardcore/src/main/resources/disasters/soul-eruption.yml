@@ -6,7 +6,7 @@
 
 disaster-id: soul-eruption
 enabled: true
-chance: 2
+chance: 5
 name: "§2§l💀 Thần Hồn Câu Diệt"
 # [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
 # [EN] Effect and prevention summary shown in chat; the value below is the default.

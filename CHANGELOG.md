@@ -1,8 +1,18 @@
 # Changelog
 
-## [Unreleased]
+## [v1.14.0] - 2026-10-13
 
 ### Added
+- Đặt xác suất mưa mặc định 40%, thời lượng tối đa 5 phút và chọn ngẫu nhiên để mưa có thể kết thúc sớm.
+- Thêm ngưỡng đóng góp sát thương boss 50%; người vượt ngưỡng được tính điểm/loot dù boss chết bởi nguyên nhân khác, trừ `/vnboss kill`.
+- Thêm bộ giáp bốn món cho cả 13 boss, vật liệu/enchant tăng theo cấp và lore truyện riêng trong `story.yml`.
+- Tăng xác suất rơi vũ khí/sách boss, cân enchant từ cấp dưới chuẩn đến over-enchant ở level cao.
+- Tăng dần xác suất spawn boss theo ngày đến 100% và cân level từ 1 đến 10.
+- Cân đều trọng số thiên tai đang bật và chọn ngẫu nhiên trong nhóm phù hợp điều kiện.
+- Việt hóa tên skill boss trong thông báo, bổ sung broadcast cho toàn bộ người chơi.
+- Làm nổi bật boss bằng viền phát sáng, bật persistence và ghi log khi entity boss mất hiệu lực.
+- Giant có chuyển động đuổi mục tiêu và đi lang thang chậm hơn.
+- Boss chết không có người chơi vượt ngưỡng sát thương sẽ được ghi log và không nhận điểm/drop.
 - Ghi console log và thông báo skill cast riêng cho OP; có thể bật/tắt trong `bosses/_settings.yml`.
 
 ### Fixed
