@@ -668,23 +668,36 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
             return;
         }
-        if (mob instanceof Villager && event.getTarget() != null && (event.getTarget() instanceof Monster
-                || event.getTarget() instanceof Player)) {
+        LivingEntity target = event.getTarget();
+        if (target == null) return;
+        if (mob instanceof Villager) {
             event.setCancelled(true);
             mob.setTarget(null);
             return;
         }
         UUID ownerId = getOwnerId(mob);
-        boolean ownerCommandedTarget = event.getTarget() != null && ownerId != null
-            && event.getTarget().getUniqueId().equals(ownerAttackTargets.get(ownerId));
-        if (event.getTarget() != null && (isMercenary(event.getTarget())
-                || event.getTarget().getUniqueId().equals(ownerId)
-                || (!ownerCommandedTarget && !(event.getTarget() instanceof Monster)
-                    && !(event.getTarget() instanceof Player)))) {
+        boolean ownerCommandedTarget = ownerId != null
+            && target.getUniqueId().equals(ownerAttackTargets.get(ownerId));
+        if (isMercenary(target) || target.getUniqueId().equals(ownerId)) {
             event.setCancelled(true);
+            mob.setTarget(null);
+            return;
         }
-        if (event.getTarget() != null && (!isValidTarget(event.getTarget())
-                || !mob.hasLineOfSight(event.getTarget()))) event.setCancelled(true);
+        if (target instanceof Player player) {
+            if (!ownerCommandedTarget && !isRetaliationTarget(ownerId, player)) {
+                event.setCancelled(true);
+                mob.setTarget(null);
+                return;
+            }
+        } else if (!isHostileMob(target)) {
+            event.setCancelled(true);
+            mob.setTarget(null);
+            return;
+        }
+        if (!mob.hasLineOfSight(target)) {
+            event.setCancelled(true);
+            mob.setTarget(null);
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -1722,9 +1735,18 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return skills.stream().anyMatch(value -> value.equalsIgnoreCase(skill));
     }
 
+    private boolean isHostileMob(LivingEntity target) {
+        if (target == null || !target.isValid() || target.isDead()) return false;
+        if (target instanceof Player) return false;
+        if (target instanceof Monster) return true;
+        return target instanceof org.bukkit.entity.EnderDragon
+            || target instanceof org.bukkit.entity.Ghast
+            || target instanceof org.bukkit.entity.Phantom
+            || target instanceof org.bukkit.entity.Wither;
+    }
+
     private boolean isValidTarget(LivingEntity target) {
-        return target.isValid() && !target.isDead() && target.isOnGround()
-            && !(target instanceof org.bukkit.entity.Flying);
+        return isHostileMob(target);
     }
 
     private boolean canMinionTarget(Mob minion, LivingEntity target) {
@@ -1869,7 +1891,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         player.setLevel(levelsBefore - xpCost);
         Unit unit = new Unit(UUID.randomUUID(), player.getUniqueId(), classId, tier, Mode.PROTECT, true);
-        Location spawnAt = safeLocation(player.getLocation());
+        Location spawnAt = player.getLocation().clone().add(0.8, 0.0, 0.8);
         Mob mob = spawnUnit(unit, spawnAt);
         if (mob == null) {
             player.getInventory().setContents(inventoryBefore);
@@ -3596,10 +3618,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             return;
         }
         giveItem(player, createToken(classId, 1));
+        giveItem(player, new ItemStack(Material.EMERALD, 8));
         claimedWelcomeGiftPlayers.add(player.getUniqueId());
         saveWelcomeGiftClaims();
         player.closeInventory();
-        player.sendMessage("§aBạn đã nhận §e" + classDisplay(classId) + " §aBậc 1 và túi quà tân thủ đã biến mất.");
+        player.sendMessage("§aBạn đã nhận §e" + classDisplay(classId) + " §aBậc 1, thêm §e8 viên lục bảo §a, và túi quà tân thủ đã biến mất.");
     }
 
     private boolean isGearOpen(Player player, UUID unitId) {
