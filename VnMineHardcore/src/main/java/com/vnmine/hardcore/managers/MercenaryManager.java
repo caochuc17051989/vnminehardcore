@@ -49,6 +49,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
@@ -459,6 +460,19 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 || !plugin.getConfig().getBoolean("menus.main.intercept-f-key", true)) return;
         event.setCancelled(true);
         openMainMenu(event.getPlayer());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onShiftRightClickMercenary(PlayerInteractEntityEvent event) {
+        if (!event.getPlayer().isSneaking()) return;
+        if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) return;
+        if (!(event.getRightClicked() instanceof Mob mob) || !isMercenary(mob)) return;
+        UUID ownerId = getOwnerId(mob);
+        if (ownerId == null || !ownerId.equals(event.getPlayer().getUniqueId())) return;
+        Unit unit = units.get(getUnitId(mob));
+        if (unit == null) return;
+        event.setCancelled(true);
+        openGear(event.getPlayer(), unit);
     }
 
     @EventHandler
@@ -1751,6 +1765,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private UUID getOwnerId(Entity entity) {
         String value = entity.getPersistentDataContainer().get(ownerKey, PersistentDataType.STRING);
+        try {
+            return value == null ? null : UUID.fromString(value);
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private UUID getUnitId(Entity entity) {
+        String value = entity.getPersistentDataContainer().get(unitKey, PersistentDataType.STRING);
         try {
             return value == null ? null : UUID.fromString(value);
         } catch (IllegalArgumentException exception) {
@@ -3369,6 +3392,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             player.sendMessage("§cKhông tìm thấy lính của bạn với ID bắt đầu bằng §e" + args[1] + "§c.");
             return;
         }
+        openGear(player, unit);
+    }
+
+    private void openGear(Player player, Unit unit) {
         Mob active = activeEntities.get(unit.id);
         if (active != null && active.isValid()) captureEquipment(unit, active);
         GearHolder holder = new GearHolder(player.getUniqueId(), unit.id);

@@ -7,6 +7,7 @@ Yêu cầu runtime: Java 25+ và ProtocolLib `5.5.0-SNAPSHOT` dev-build có hỗ
 ## Tính năng chính
 
 - ☠ **Tử vong**: lưu thống kê, broadcast và phát âm thanh; không ban người chơi
+- 🤝 **Lính đánh thuê**: Shift + chuột phải vào lính của bạn để mở kho trang bị ngay lập tức
 - ⚔ **Sát thương nhân hệ số** (quái, ngã, lửa, nổ, PvP...)
 - 🍔 **Hệ thống đói** (hao hụt nhanh, ngộ độc thức ăn sống, nghẹn khi ăn nhanh)
 - 💧 **Hệ thống khát nước** (uống từ nguồn, chai, xô; nước tự nhiên gây độc)

@@ -47,10 +47,21 @@ public final class VnMineHardcore extends JavaPlugin {
     @Override
     public void onEnable() {
         var protocolLib = Bukkit.getPluginManager().getPlugin("ProtocolLib");
-        if (protocolLib == null || !protocolLib.getDescription().getVersion().startsWith("5.5.0-SNAPSHOT")) {
-            getLogger().severe("Paper 26.3 requires the ProtocolLib 5.5.0-SNAPSHOT dev-build.");
+        if (protocolLib == null) {
+            getLogger().severe("ProtocolLib is required for VnMineHardcore.");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
+        }
+        String protocolLibVersion = protocolLib.getDescription().getVersion();
+        if (!protocolLibVersion.startsWith("5.")) {
+            getLogger().severe("Unsupported ProtocolLib version: " + protocolLibVersion
+                + ". VnMineHardcore requires ProtocolLib 5.x.");
+            Bukkit.getPluginManager().disablePlugin(this);
+            return;
+        }
+        if (!protocolLibVersion.startsWith("5.5.0-SNAPSHOT")) {
+            getLogger().warning("Detected ProtocolLib " + protocolLibVersion
+                + ". The plugin is tested against 5.5.0-SNAPSHOT, but continuing with the installed 5.x build.");
         }
         instance = this;
         clearLegacyPluginBans();
