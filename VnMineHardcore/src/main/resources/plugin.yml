@@ -1,6 +1,7 @@
 name: VnMineHardcore
-version: 1.16.0
+version: 1.20.1
 main: com.vnmine.hardcore.VnMineHardcore
+depend: [ProtocolLib]
 api-version: '1.21'
 author: VnMineTeam
 description: Hardcore survival plugin with thirst, disasters, combat tag, and configurable gameplay
@@ -105,8 +106,11 @@ commands:
     permission: vnmine.command.users.manage
   vnarmy:
     description: Thuê và quản lý lính đánh thuê của người chơi
-    usage: /vnarmy <gui|list|hire|recall|rest|attack|defend|protect|gear|give|token>
+    usage: /vnarmy <gui|list|hire|recall [ID]|rest [ID]|rename|attack|defend|protect|gear|mute|remove|clear|give|token>
     permission: vnmine.command.army
+  vnmenu:
+    description: Mở menu chức năng của VnMineHardcore
+    usage: /vnmenu
 
 permissions:
   vnmine.command.stats:
@@ -179,7 +183,7 @@ permissions:
     description: Cho phép thuê và quản lý lính đánh thuê bằng /vnarmy
     default: true
   vnmine.command.army.admin:
-    description: Cho phép cấp token và lính đánh thuê bằng /vnarmy give
+    description: Cho phép cấp và quản lý lính của người chơi bằng /vnarmy
     default: op
   vnmine.spawnprotection.bypass:
     description: Cho phép người chơi phá hoặc đặt block trong vùng spawn protection

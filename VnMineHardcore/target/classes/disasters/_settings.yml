@@ -24,6 +24,25 @@ min-interval-seconds: 2400-4800
 # [EN] Warning time in seconds before a disaster strikes
 warning-seconds: 120
 
+# [VI] Xác suất thiên tai thật sự xảy ra sau khi đã chọn được loại thiên tai.
+#      chance trong từng file disaster chỉ dùng để chọn loại theo trọng số.
+#      Các ngưỡng áp dụng theo ngày trong world đầu tiên được load (ngày 1 bắt đầu từ day 0).
+#      Nếu chưa đạt ngưỡng nào, dùng default-percent.
+# [EN] Probability that a disaster actually starts after its type has been selected.
+#      The per-disaster chance in each disaster file only weights type selection.
+#      Thresholds use the first loaded world's day (day 1 starts at day 0).
+#      default-percent is used until a threshold matches.
+success-probability:
+  default-percent: 100
+  day-thresholds:
+    - min-day: 1
+      percent: 100
+    # Add any number of thresholds; the greatest min-day not above the current day applies.
+    # - min-day: 10
+    #   percent: 75
+    # - min-day: 30
+    #   percent: 50
+
 # ===== SAFE ZONE / KHU VỰC AN TOÀN =====
 # [VI] Cấu hình khu vực an toàn (có mái che) giúp người chơi tránh thiên tai
 # [EN] Safe zone (shelter) configuration to protect players from disasters
@@ -36,8 +55,8 @@ safe-zone:
   # [EN] Check radius around the player (blocks)
   check-radius: 2
 
-  # [VI] Chiều cao tối đa từ đầu người chơi đến trần nhà (khối)
-  # [EN] Maximum height from player's head to ceiling (blocks)
+  # [VI] Thiết lập cũ, giữ để tương thích; hiện kiểm tra toàn bộ cột đến giới hạn world
+  # [EN] Legacy setting retained for compatibility; checks now scan to the world height limit
   roof-height: 5
 
   # [VI] Bật kiểm tra tường xung quanh

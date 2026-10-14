@@ -30,6 +30,7 @@ public final class VnMineHardcore extends JavaPlugin {
     private SpawnProtectionManager spawnProtectionManager;
     private PermissionManager permissionManager;
     private MercenaryManager mercenaryManager;
+    private TooltipManager tooltipManager;
     private VillagerDataManager villagerDataManager;
     private DeathListener deathListener;
     private CombatListener combatListener;
@@ -45,6 +46,12 @@ public final class VnMineHardcore extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        var protocolLib = Bukkit.getPluginManager().getPlugin("ProtocolLib");
+        if (protocolLib == null || !protocolLib.getDescription().getVersion().startsWith("5.5.0-SNAPSHOT")) {
+            getLogger().severe("Paper 26.3 requires the ProtocolLib 5.5.0-SNAPSHOT dev-build.");
+            Bukkit.getPluginManager().disablePlugin(this);
+            return;
+        }
         instance = this;
         clearLegacyPluginBans();
 
@@ -70,6 +77,7 @@ public final class VnMineHardcore extends JavaPlugin {
         this.spawnProtectionManager = new SpawnProtectionManager(this);
         this.permissionManager = new PermissionManager(this);
         this.mercenaryManager = new MercenaryManager(this);
+        this.tooltipManager = new TooltipManager(this);
 
         // Create listeners (pass config)
         this.deathListener = new DeathListener(this, configManager, deathRenameManager, deathPenaltyManager);
@@ -99,7 +107,8 @@ public final class VnMineHardcore extends JavaPlugin {
 
         // Register commands
         for (String commandName : List.of("vnstats", "vnhardcore", "vnreload", "vnhelp",
-                "vnevent", "vnboss", "vn", "reward", "vnrespawn", "vnleave", "fly",
+                "vnevent", "vnboss", "vn", "vnmenu", "reward", "vnrespawn", "vnleave", "fly",
+                                "vnevent", "vnboss", "vn", "reward", "vnrespawn", "vnleave", "fly",
                 "nodame", "spawn", "gm0", "gm1", "gm2", "gm3", "scoreboard",
                 "vntime", "vnday", "vnspawn", "tp")) {
             registerCommand(commandName, this, this);
@@ -107,6 +116,7 @@ public final class VnMineHardcore extends JavaPlugin {
         registerCommand("vngroup", permissionManager, permissionManager);
         registerCommand("vnuser", permissionManager, permissionManager);
         registerCommand("vnarmy", mercenaryManager, mercenaryManager);
+        registerCommand("vnmenu", mercenaryManager, mercenaryManager);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
         getLogger().info("§a  Deaths are recorded; no death bans are applied.");
@@ -135,6 +145,7 @@ public final class VnMineHardcore extends JavaPlugin {
         if (bossLeaderboardManager != null) bossLeaderboardManager.stop();
         if (graveManager != null) graveManager.stop();
         if (mercenaryManager != null) mercenaryManager.stop();
+        if (tooltipManager != null) tooltipManager.stop();
         if (logManager != null) logManager.stop();
         if (timeControlManager != null) timeControlManager.stop();
         getLogger().info("VnMineHardcore disabled.");
@@ -393,7 +404,10 @@ public final class VnMineHardcore extends JavaPlugin {
             sender.sendMessage("§e/vngroup §7- Liệt kê/tạo/xóa nhóm và chỉnh quyền nhóm (admin).");
             sender.sendMessage("§e/vnuser §7- Xem, gán nhóm hoặc chỉnh quyền riêng người chơi (admin).");
             sender.sendMessage("§e/vnarmy §7- Thuê, triệu hồi, nghỉ, chỉnh chế độ và trang bị lính đánh thuê.");
-            sender.sendMessage("§7  /vnarmy list | hire <loại> <cấp> | recall | rest | attack | defend | protect | gear <ID>");
+            sender.sendMessage("§e/vnmenu §7- Mở menu chính; phím F cũng mở menu này.");
+            sender.sendMessage("§7  /vnarmy list [user] | hire <loại> <bậc> | recall [ID] | rest [ID]");
+            sender.sendMessage("§7  /vnarmy rename <ID> <tên mới> | gear <ID> | mute <ID> | remove <ID>");
+            sender.sendMessage("§7  /vnarmy attack | defend | protect | remove <user> <ID> | clear <user>");
             sender.sendMessage("§e/vn help §7- Hướng dẫn lệnh /vn.");
             sender.sendMessage("§e/vnhelp §7- Hiển thị danh sách lệnh này.");
             sender.sendMessage("§6§m========================================");
@@ -422,6 +436,10 @@ public final class VnMineHardcore extends JavaPlugin {
             }
             if (!permissionManager.reload()) {
                 sender.sendMessage("§cCác cấu hình khác đã được tải lại nhưng permission.yml không hợp lệ/không đọc được; quyền cũ vẫn được giữ.");
+                return true;
+            }
+            if (!tooltipManager.reload()) {
+                sender.sendMessage("§cCác cấu hình khác đã tải lại nhưng tooltips.yml không hợp lệ; tooltip đang dùng cấu hình cũ.");
                 return true;
             }
             sender.sendMessage("§a✅ Config và các hệ thống đã được tải lại!");
@@ -920,6 +938,7 @@ public final class VnMineHardcore extends JavaPlugin {
     public GraveManager getGraveManager() { return graveManager; }
     public SpawnProtectionManager getSpawnProtectionManager() { return spawnProtectionManager; }
     public PermissionManager getPermissionManager() { return permissionManager; }
+    public MercenaryManager getMercenaryManager() { return mercenaryManager; }
 
     private void clearLegacyPluginBans() {
         int cleared = 0;

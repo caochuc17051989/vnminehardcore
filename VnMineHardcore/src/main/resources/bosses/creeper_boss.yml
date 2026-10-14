@@ -8,6 +8,9 @@ display-name: "§a§lCreeper Boss"
 hp: 200
 damage-multiplier: 3.0
 chance: 10
+# [VI] EXP thưởng cơ bản level 1; mặc định 350, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
+# [EN] Base XP reward at level 1; default 350, valid range 1-1000000; boss level scaling is in _settings.yml.
+experience: 350
 # [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1200 = 20 phút.
 # [EN] Default boss lifetime after spawning (seconds); 1200 = 20 minutes.
 duration-seconds: 1200

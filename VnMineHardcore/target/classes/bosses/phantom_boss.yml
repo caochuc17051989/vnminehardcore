@@ -7,6 +7,9 @@ entity-type: PHANTOM
 display-name: "§8§lPhantom Boss"
 hp: 100
 damage-multiplier: 1.5
+# [VI] EXP thưởng cơ bản level 1; mặc định 300, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
+# [EN] Base XP reward at level 1; default 300, valid range 1-1000000; boss level scaling is in _settings.yml.
+experience: 300
 chance: 10
 # [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1200 = 20 phút.
 # [EN] Default boss lifetime after spawning (seconds); 1200 = 20 minutes.
@@ -29,6 +32,12 @@ hp-by-level:
   8: 1710
   9: 2565
   10: 3848
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
 skills:
   dive-bomb:
     enabled: true
@@ -38,6 +47,32 @@ skills:
     radius: 4.0
     velocity: 1.6
     spread: 0.0
+    # [VI] Bán kính gây Mù khi chạm đất (block); mặc định 5; hợp lệ 1-12.
+    # [EN] Blindness radius on landing (blocks); default 5; valid range 1-12.
+    blindness-radius: 5.0
+  phantom-minions:
+    enabled: true
+    damage: 0.0
+    multiply: 1
+    cooldown-seconds: 40
+    radius: 8.0
+    velocity: 1.0
+    spread: 0.0
+    # [VI] Số Phantom con tối thiểu; mặc định 3; hợp lệ 1-8.
+    # [EN] Minimum Phantom minions; default 3; valid range 1-8.
+    minions-min: 3
+    # [VI] Số Phantom con tối đa; mặc định 5; hợp lệ minions-min..8.
+    # [EN] Maximum Phantom minions; default 5; valid range minions-min..8.
+    minions-max: 5
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  nocturnal-cloak:
+    enabled: true
+    # [VI] Ngưỡng ánh sáng để tàng hình; mặc định 7; hợp lệ 0-15.
+    # [EN] Light level threshold for invisibility; default 7; valid range 0-15.
+    light-threshold: 7
 
 immunities:
   fall-damage: true
@@ -92,352 +127,291 @@ drops:
 #      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
 #      Each item's lore tells the boss-specific legend in at most 4 lines.
 #      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+# [VI] Tạo bộ giáp bốn món cho boss này; vật liệu và enchant tự tăng theo level.
+# [EN] Generate this boss's four-piece armor set; materials and enchants scale by level.
+armor-set:
+  # [VI] Bật/tắt bộ giáp; mặc định true.
+  # [EN] Enable or disable the armor set; default true.
+  enabled: true
+  # [VI] Tên bộ giáp dùng cho mũ, áo, quần và ủng.
+  # [EN] Armor set name prefix used by the helmet, chestplate, leggings, and boots.
+  name: "§8§lGiáp Mộng Ảnh"
+  # [VI] ID lore trong story.yml; phải trỏ tới một mục artifacts hợp lệ.
+  # [EN] Lore ID in story.yml; must reference a valid artifacts entry.
+  story-id: phantom-armor
+  # [VI] Mốc cấp tối thiểu cho vật liệu; từ 1 sắt, 4 kim cương, 7 netherite.
+  # [EN] Minimum level for each material tier; iron at 1, diamond at 4, netherite at 7.
+  material-tiers:
+    1: IRON
+    4: DIAMOND
+    7: NETHERITE
+
 level-drops:
   1:
     - material: BOW
-      name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 1"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 1 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      name: "§8§lCung Đêm · Cấp 1"
+      story-id: phantom-relic-common
       min-amount: 1
       max-amount: 1
-      chance: 0.160
+      chance: 0.65
       enchantments:
-        power: 1
+        power: 3
     - material: ENCHANTED_BOOK
-      name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 1"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      name: "§8§lSổ Đêm · Cấp 1"
+      story-id: phantom-codex-common
       min-amount: 1
       max-amount: 1
-      chance: 0.104
+      chance: 0.30
       book-enchantments:
-        power: 1
+        power: 3
 
   2:
     - material: BOW
-      name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 2"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 2 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      name: "§8§lCung Đêm · Cấp 2"
+      story-id: phantom-relic-common
       min-amount: 1
       max-amount: 1
-      chance: 0.146
+      chance: 0.65
       enchantments:
-        power: 1
-        punch: 1
+        power: 3
+        punch: 2
     - material: ENCHANTED_BOOK
-      name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 2"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      name: "§8§lSổ Đêm · Cấp 2"
+      story-id: phantom-codex-common
       min-amount: 1
       max-amount: 1
-      chance: 0.095
+      chance: 0.30
       book-enchantments:
-        power: 1
-        punch: 1
+        power: 3
+        punch: 2
 
   3:
     - material: BOW
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 3"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 3 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.132
+      chance: 0.65
       enchantments:
-        power: 2
+        power: 4
         punch: 2
-        flame: 2
+        flame: 1
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 3"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.086
+      chance: 0.30
       book-enchantments:
-        power: 2
+        power: 4
         punch: 2
-        flame: 2
+        flame: 1
 
   4:
     - material: BOW
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 4"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 4 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.118
+      chance: 0.65
       enchantments:
-        power: 2
+        power: 5
         punch: 2
-        flame: 2
-        infinity: 2
+        flame: 1
+        infinity: 1
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 4"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.077
+      chance: 0.30
       book-enchantments:
-        power: 2
+        power: 5
         punch: 2
-        flame: 2
-        infinity: 2
+        flame: 1
+        infinity: 1
   5:
     - material: BOW
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 5"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 5 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.104
+      chance: 0.65
       enchantments:
-        power: 2
+        power: 6
         punch: 2
-        flame: 2
-        infinity: 2
-        unbreaking: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 4
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 5"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.068
+      chance: 0.30
       book-enchantments:
-        power: 2
+        power: 6
         punch: 2
-        flame: 2
-        infinity: 2
-        unbreaking: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 4
 
   6:
     - material: BOW
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 6"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 6 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.090
+      chance: 0.65
       enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 6"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.058
+      chance: 0.30
       book-enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
 
   7:
     - material: BOW
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 7"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 7 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.076
+      chance: 0.65
       enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
-        vanishing_curse: 3
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
+        vanishing_curse: 1
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 7"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.049
+      chance: 0.30
       book-enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
-        vanishing_curse: 3
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
+        vanishing_curse: 1
 
   8:
     - material: ENCHANTED_BOOK
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 8"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 8 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.062
+      chance: 0.65
       book-enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
-        vanishing_curse: 3
-        protection: 3
+        power: 8
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 6
+        mending: 1
+        vanishing_curse: 1
+        protection: 7
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 8"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.040
+      chance: 0.30
       book-enchantments:
-        power: 3
-        punch: 3
-        flame: 3
-        infinity: 3
-        unbreaking: 3
-        mending: 3
-        vanishing_curse: 3
-        protection: 3
+        power: 8
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 6
+        mending: 1
+        vanishing_curse: 1
+        protection: 7
 
   9:
     - material: ENCHANTED_BOOK
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 9"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 9 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.048
+      chance: 0.65
       book-enchantments:
-        power: 4
-        punch: 4
-        flame: 4
-        infinity: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
-        protection: 4
-        feather_falling: 4
+        power: 9
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 7
+        mending: 1
+        vanishing_curse: 1
+        protection: 8
+        feather_falling: 8
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 9"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.031
+      chance: 0.30
       book-enchantments:
-        power: 4
-        punch: 4
-        flame: 4
-        infinity: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
-        protection: 4
-        feather_falling: 4
+        power: 9
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 7
+        mending: 1
+        vanishing_curse: 1
+        protection: 8
+        feather_falling: 8
 
   10:
     - material: ENCHANTED_BOOK
       name: "§8§lCung Mộng Ảnh Vĩnh Dạ · Cấp 10"
-      lore:
-        - "§7Tương truyền, mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Khi tiếng chuông thứ 10 vang lên, người gác mộng đã bay qua mọi giấc ngủ của thế giới."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.034
+      chance: 0.65
       book-enchantments:
-        power: 4
-        punch: 4
-        flame: 4
-        infinity: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
-        protection: 4
-        feather_falling: 4
-        thorns: 4
+        power: 10
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 8
+        mending: 1
+        vanishing_curse: 1
+        protection: 9
+        feather_falling: 9
+        thorns: 8
     - material: ENCHANTED_BOOK
       name: "§8§lMật Lục Cung Mộng Ảnh Vĩnh Dạ · Cấp 10"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: mảnh trăng xanh mắc lại trong tấm màn đêm."
-        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy một bóng cánh lướt qua dù không có ánh trăng."
-        - "§dCổ tự khắc trên nó: “giấc mơ cuối cùng của kẻ không bao giờ tỉnh dậy”."
+      story-id: phantom-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.022
+      chance: 0.30
       book-enchantments:
-        power: 4
-        punch: 4
-        flame: 4
-        infinity: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
-        protection: 4
-        feather_falling: 4
-        thorns: 4
+        power: 10
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 8
+        mending: 1
+        vanishing_curse: 1
+        protection: 9
+        feather_falling: 9
+        thorns: 8

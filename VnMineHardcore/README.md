@@ -1,6 +1,8 @@
 # VnMineHardcore
 
-Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.x. Người chơi không bị ban khi chết.
+Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.3. Người chơi không bị ban khi chết.
+
+Yêu cầu runtime: Java 25+ và ProtocolLib `5.5.0-SNAPSHOT` dev-build có hỗ trợ Minecraft 26.3 ([official builds](https://github.com/dmulloy2/ProtocolLib/releases/tag/dev-build)). Plugin không tải hoặc đóng gói ProtocolLib thay server.
 
 ## Tính năng chính
 
@@ -36,6 +38,7 @@ Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.x. Người chơi khô
 | `/gm0`, `/gm1`, `/gm2`, `/gm3` | Chuyển game mode (chỉ người chơi) | `vnmine.command.gamemode` |
 | `/vnreload` | Tải lại config và các hệ thống | `vnmine.command.reload` |
 | `/vnhelp`, `/vn help` | Hiển thị hướng dẫn lệnh | `vnmine.command.help`, `.utility` |
+| `/vnmenu` hoặc phím `F` | Mở menu chức năng; phím F thay thao tác đổi tay phụ | Không yêu cầu quyền riêng |
 | `/vngroup ...` | Tạo/xóa nhóm, xem nhóm, cấp/thu hồi quyền nhóm | `vnmine.command.groups.manage` |
 | `/vnuser ...` | Xem/gán nhóm, cấp/thu hồi quyền cá nhân, reset người chơi | `vnmine.command.users.manage` |
 | `/vnarmy ...` | Thuê/quản lý lính, đổi chế độ AI và trang bị | `vnmine.command.army` |
@@ -63,7 +66,12 @@ Ví dụ: `vnmine.command.disasters`, `vnmine.command.spawn.manage`,
 `vnmine.command.users.manage`; node bypass vùng bảo vệ là
 `vnmine.spawnprotection.bypass`. OP và console luôn có toàn quyền.
 `vnmine.command.army` mặc định cấp cho người chơi; quyền
-`vnmine.command.army.admin` mặc định chỉ dành cho OP để cấp token triệu hồi.
+`vnmine.command.army.admin` mặc định chỉ dành cho OP để cấp/xóa và xem quân đội
+của người khác. `F` mở menu chính thay thao tác đổi tay phụ; cấu hình tại
+`menus.main` và `menus.admin` trong `config.yml`.
+Menu admin có các thao tác trực tiếp cho quân đội, thiên tai/boss, thời gian/ngày,
+spawn protection, teleport, tiện ích người chơi và nhóm/quyền; các thao tác reset
+có bước xác nhận.
 Sau khi chỉnh `permission.yml` thủ công, chạy `/vnreload`.
 Nhóm/quyền không hỗ trợ wildcard, phủ định hoặc kế thừa; quyền nhóm và quyền
 cá nhân được cộng lại, vì vậy xóa quyền cá nhân không thể phủ định quyền được
@@ -72,39 +80,92 @@ cấp bởi nhóm. Nhóm mặc định áp dụng cho người mới và `/vnuse
 
 ### Lính đánh thuê (`armies.yml`)
 
-`plugins/VnMineHardcore/armies.yml` cấu hình giới hạn quân số, khoảng cách theo
-chủ, các lớp, kỹ năng và chi phí XP/vật phẩm theo cấp. Mặc định có Xạ Thủ,
-Vệ Binh và Y Sư; token triệu hồi phải khớp đúng lớp/cấp và bị tiêu thụ khi thuê.
+`plugins/VnMineHardcore/armies.yml` là file tinh chỉnh AI và cấu hình lính: giới
+hạn đội quân (mặc định 10), tầm tìm mục tiêu, chu kỳ AI, chỉ số, kỹ năng, EXP,
+thời gian hồi phục, vũ khí ban đầu và vật phẩm nâng bậc. Mười class mặc định:
+Xạ Thủ (`archer`), Vệ Binh (`guardian`), Y Sư (`medic`), Cuồng Chiến
+(`berserker`), Trinh Sát (`ranger`), Thánh Kỵ (`paladin`), Pháp Sư Lửa
+(`pyromancer`), Druid (`druid`), Sát Thủ (`assassin`) và Pháp Sư Băng
+(`frost_mage`); mỗi class có 4–5
+skill được cấu hình riêng. Lính nhận vũ khí
+đúng class vào kho trang bị ngay khi triệu hồi; thay đổi gear của chủ nhân được
+bảo toàn. Skill cast thành công phát hạt, âm thanh và action bar cho chủ nhân.
+Xạ Thủ có `VOLLEY` (số tên, tốc độ, độ tỏa, sát thương); Vệ Binh có
+`POWER_STRIKE` (sát thương cộng thêm) và `TAUNT` (bán kính kéo quái khỏi chủ);
+Y Sư có `CLEANSE_OWNER` (cooldown và danh sách hiệu ứng được gỡ). Tất cả thông
+số nằm trong `classes.<class>.skill-settings.<SKILL>` và có thể chỉnh riêng.
+Cuồng Chiến thiên về áp sát/khiêu khích; Trinh Sát bắn loạt và hỗ trợ chủ;
+Thánh Kỵ đỡ đòn; Pháp Sư Lửa gây sát thương/đốt và làm chậm; Druid khống chế,
+hồi máu, thanh tẩy; Sát Thủ hút máu và cuồng nộ khi nguy cấp; Pháp Sư Băng
+bắn loạt và làm chậm mục tiêu. Dùng ID class trong lệnh
+`/vnarmy hire <loại> <bậc>` hoặc menu GUI.
+Token phải khớp
+đúng bậc (boss rơi token phổ thông dùng được cho mọi class) và bị tiêu thụ khi thuê.
 
 ```text
 /vnarmy gui
-/vnarmy list
-/vnarmy hire <loại> <cấp>
-/vnarmy recall
-/vnarmy rest
+/vnarmy list [user]                             # user khác cần quyền admin
+/vnarmy hire <loại> <bậc>
+/vnarmy recall [ID]
+/vnarmy rest [ID]
+/vnarmy rename <ID> <Tên mới>
 /vnarmy attack | defend | protect
 /vnarmy gear <ID>
-/vnarmy give <người chơi> token <cấp>              # OP/admin
-/vnarmy give <người chơi> army <loại> <cấp>       # OP/admin
-/vnarmy token give <người chơi> <loại> <cấp>      # token theo lớp, tương thích cũ
+/vnarmy mute <ID>
+/vnarmy remove <ID>
+/vnarmy remove <user> <ID>                     # admin
+/vnarmy clear <user>                           # admin
+/vnarmy give <người chơi> token <bậc>              # admin
+/vnarmy give <người chơi> army <loại> <bậc>        # admin
+/vnarmy token give <người chơi> <loại> <bậc>       # token theo lớp, tương thích cũ
 ```
 
 Hồ sơ và trang bị được lưu trong `plugins/VnMineHardcore/mercenaries.yml`.
 Lính đang triển khai được gọi lại khi chủ nhân vào game; khi nghỉ, thoát game
 hoặc server dừng, entity được thu hồi nhưng hồ sơ/trang bị vẫn giữ. `recall`
 đối soát UUID và PersistentData tag trước khi tạo entity thay thế để hạn chế
-nhân bản. `attack` tìm quái thù địch quanh lính; `defend` bảo vệ khu vực quanh
-chủ; `protect` ưu tiên mục tiêu đang tấn công chủ nhân.
+nhân bản. Lính ưu tiên mục tiêu chủ nhân vừa đánh; `attack` tìm thêm quái thù
+địch quanh lính; `defend` bảo vệ khu vực quanh chủ; `protect` ưu tiên mục tiêu
+đang tấn công chủ nhân.
 
-GUI cho phép chọn từng lính để đổi chế độ, cho nghỉ/triệu hồi và mở kho trang bị.
-Token phổ thông do boss rơi có cấp bằng cấp boss, có thể dùng để thuê một lớp
-bất kỳ cùng cấp. Tỉ lệ rơi được chỉnh tại `bosses/_settings.yml` trong
-`army-token-drop`; token chỉ rơi khi boss có người chơi đủ ngưỡng nhận thưởng.
-`armies.yml` hỗ trợ skill `RANGED_ATTACK`, `BUFF_ALLIES`, `SHIELD_OWNER` cùng
-cooldown, mục tiêu hỗ trợ, tầm, lượng hồi, sát thương và hiệu ứng riêng theo lớp.
-Skill mặc định gồm Xạ Thủ bắn tên theo cooldown, Vệ Binh giảm sát thương cho chủ,
-Y Sư hồi máu và buff chủ/đồng minh. `give ... army` cấp lính trực tiếp và vẫn
-tôn trọng giới hạn quân số; `give ... token` cấp token chung cấp.
+GUI cho phép chọn lớp và bậc trước khi thuê; tooltip nêu skill, yêu cầu XP/vật
+liệu và chỉ số HP/giáp/sát thương. Menu đội quân mở chi tiết từng lính, đổi chế
+độ, mute, xóa, cho nghỉ/triệu hồi và mở kho 36 ô cùng trang bị. Vũ khí và giáp
+được tự nhận diện; vũ khí/giáp của lính không mất độ bền, cung dùng vô hạn loại
+mũi tên đặt trong kho và thức ăn được tiêu thụ để hồi máu. Lính lên cấp nhờ hạ
+quái hoặc tham gia hạ mục tiêu cùng chủ/đồng đội; chỉ số và sức mạnh skill tăng
+theo cấu hình. Level tối đa là 30. Đạt cấp 30 có thể nhấn **Nâng bậc** trong GUI
+chi tiết; mỗi bậc nâng tiêu thụ vật phẩm khai báo ở
+`classes.<class>.tier-upgrades.<bậc-đích>.materials`, tối đa thêm 3 bậc so với
+bậc gốc khi thuê.
+
+Lính bị hạ sẽ không mất hồ sơ/trang bị mà chuyển sang **Hồi phục** (mặc định
+300 giây); `/vnarmy list` hiển thị Xuất chiến/Nghỉ ngơi/Hồi phục cùng bậc, cấp,
+EXP hiện tại/yêu cầu và tên riêng. `/vnarmy rename <ID> <Tên mới>` đổi tên.
+`recall` và `rest` tác động cả đội; thêm ID để chỉ gọi/nghỉ một lính. Lệnh thuê
+liệt kê rõ token, cấp kinh nghiệm và từng vật phẩm đang thiếu.
+
+Token boss phổ thông có bậc bằng level boss, rơi với xác suất mặc định 30%
+(`bosses/_settings.yml`, khóa `army-token-drop.chance`) khi có người chơi gây sát
+thương boss. Mỗi file boss có `experience` riêng cho EXP cơ bản; EXP tăng theo
+level bằng `experience-per-level-multiplier` trong `_settings.yml`. Mọi người
+chơi gây sát thương nhận EXP boss; lính đang xuất chiến của họ nhận cùng lượng
+EXP. Quy tắc vật phẩm/điểm boss hiện hành vẫn dùng ngưỡng đóng góp riêng.
+`give ... army` cấp lính trực tiếp và vẫn tôn trọng giới hạn quân số;
+`give ... token` cấp token chung bậc.
+
+Tên hiển thị trên entity dùng tiền tố `[Tên chủ]` xanh lá sáng, đậm với chủ;
+người chơi khác thấy tiền tố xanh da trời sáng, đậm. ProtocolLib cung cấp metadata
+riêng theo người xem. Dữ liệu
+đội quân/kho đồ lưu tại `plugins/VnMineHardcore/mercenaries.yml`. AI không chọn
+mục tiêu bị che khuất khỏi tầm nhìn. Các tham số tinh chỉnh AI sẵn có ở
+`armies.yml` gồm `ai-interval-ticks`, `target-radius-blocks`, khoảng cách theo
+chủ và khoảng cách dịch chuyển.
+
+`plugins/VnMineHardcore/tooltips.yml` định nghĩa nhắc nhở chức năng định kỳ:
+`settings.interval-seconds` đặt khoảng thời gian và `settings.mode` chọn
+`random` hoặc `sequential`; các dòng tooltip nằm ở cuối file. Dùng `/vnreload`
+sau khi chỉnh cấu hình.
 
 Để tránh xung đột, chỉ dùng một hệ thống làm nguồn cấp quyền cho node
 `vnmine.*`; permission từ plugin khác có thể cộng thêm quyền. Chỉ cấp
@@ -344,8 +405,9 @@ trong nhóm đủ điều kiện. Điểm và quà
 đang chờ được lưu trong `scoreboard-data.yml`. Người chơi nhận quà bằng
 `/reward`; nếu inventory không đủ chỗ, quà vẫn chờ và có thể nhận lại sau khi
 dọn túi. Boss không nhận sát thương từ môi trường (bao gồm sát thương rơi) hoặc
-skill/đòn đánh do chính boss tạo ra; mọi loot cấu hình và drop mặc định chỉ rơi
-nếu có ít nhất một người chơi vượt ngưỡng đóng góp. Chạy `/vnreload` để nạp cấu hình.
+skill/đòn đánh do chính boss tạo ra; loot và điểm thông thường vẫn theo ngưỡng
+đóng góp, còn token triệu hồi có thể rơi khi có người chơi gây sát thương.
+Chạy `/vnreload` để nạp cấu hình.
 
 ### Disasters - Thiên tai
 
@@ -353,12 +415,11 @@ Thiên tai không nằm trong `config.yml`. Cấu hình chung ở
 `plugins/VnMineHardcore/disasters/_settings.yml`; mỗi loại thiên tai có file
 riêng `plugins/VnMineHardcore/disasters/<id>.yml`.
 
-Trong từng file thiên tai, `chat-description` là nội dung tác động/gợi ý
-phòng tránh được hiển thị trong chat lúc cảnh báo và lúc bắt đầu. Danh sách
-world hiển thị được lấy từ `conditions.worlds`, chuyển thành tên các world
-đang tải; cùng điều kiện đó cũng giới hạn những world mà action của sự kiện
-có thể tác động. Có thể chỉnh cả hai mục trong file riêng của từng thiên tai.
-Các file cũ được bổ sung khóa còn thiếu nhưng giữ nguyên giá trị tùy chỉnh.
+`chat-description` có thể tiếp tục tồn tại trong file thiên tai để ghi chú cấu
+hình, nhưng không còn được phát trong chat. Thông báo chỉ hiển thị world bị
+ảnh hưởng, lấy từ `conditions.worlds` và chuyển thành tên các world đang tải;
+cùng điều kiện đó cũng giới hạn những world mà action của sự kiện có thể tác
+động. Các file cũ được bổ sung khóa còn thiếu nhưng giữ nguyên giá trị tùy chỉnh.
 
 Trọng số `chance` của các thiên tai đang bật mặc định bằng nhau (5). Hệ thống
 lọc trước các loại phù hợp với world/giờ hiện tại rồi mới roll trọng số, tránh

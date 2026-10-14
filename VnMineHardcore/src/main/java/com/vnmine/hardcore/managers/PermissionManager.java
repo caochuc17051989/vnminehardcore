@@ -404,7 +404,7 @@ public final class PermissionManager implements Listener, CommandExecutor, TabCo
         return data.isConfigurationSection("groups." + group);
     }
 
-    private List<String> getGroupNames() {
+    public List<String> getGroupNames() {
         ConfigurationSection groups = data.getConfigurationSection("groups");
         if (groups == null) return List.of();
         return groups.getKeys(false).stream().sorted().toList();

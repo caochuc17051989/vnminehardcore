@@ -1812,10 +1812,6 @@ public class DisasterManager {
     }
 
     private void broadcastDisasterDetails(ConfigManager.DisasterConfig dc) {
-        String description = dc.chatDescription == null || dc.chatDescription.isBlank()
-            ? "Xem cấu hình thiên tai để biết chi tiết tác động và cách phòng tránh."
-            : dc.chatDescription;
-        broadcast("§6§lTác động/cách phòng: §f" + description);
         broadcast("§6§lWorld bị ảnh hưởng: §f" + getAffectedWorldNames(dc));
     }
 

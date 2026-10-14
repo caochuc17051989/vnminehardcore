@@ -10,8 +10,11 @@
 
 disaster-id: tornado
 enabled: true
-chance: 2
+chance: 5
 name: "§8§l🌪️ Lốc Xoáy"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Gió lốc hất người chơi và sinh vật, nhấc block/cây lên và gây sát thương ngoài trời. Trú trong công trình kín."
 duration-seconds: 30
 effect-interval-seconds: 2
 warning-seconds: 120

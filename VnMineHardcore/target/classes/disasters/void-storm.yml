@@ -6,8 +6,11 @@
 
 disaster-id: void-storm
 enabled: true
-chance: 2
+chance: 5
 name: "§8§l🌌 Bão Hư Không"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Người trong world The End bị Blindness; người ngoài trời còn chịu sát thương. Rời The End để tránh hoàn toàn."
 duration-seconds: 180
 effect-interval-seconds: 4
 warning-seconds: 120
@@ -43,6 +46,7 @@ actions:
     targets:
       all_players:
         weight: 100
+        worlds: ["world_the_end"]
     effects:
       - type: BLINDNESS
         duration-ticks: 60
@@ -55,6 +59,7 @@ actions:
     targets:
       all_players:
         weight: 100
+        worlds: ["world_the_end"]
     message: "§8§l🌌 Bão Hư Không! Bóng tối vạn kiếp!"
 
 on-end:

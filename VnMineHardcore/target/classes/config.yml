@@ -1,5 +1,5 @@
 # ============================================================
-# ================== VnMineHardcore v1.7.0 ==================
+# ================== VnMineHardcore v1.8.0 ==================
 # ==================   CẤU HÌNH / CONFIG   ==================
 # ============================================================
 # [VI] File cấu hình chính của plugin VnMineHardcore.
@@ -8,6 +8,27 @@
 #      All parameters can be changed and have default values.
 # ============================================================
 config-version: 2
+
+# [VI] Menu tổng hợp và phím mở menu; mặc định bật, F sẽ mở menu thay vì đổi tay phụ.
+# [EN] Main menu and its hotkey; enabled by default, F opens the menu instead of swapping hands.
+menus:
+  # [VI] Menu chính; mặc định bật.
+  # [EN] Main menu; default enabled.
+  main:
+    enabled: true
+    # [VI] Chặn sự kiện đổi tay bằng phím F để mở menu; mặc định bật.
+    # [EN] Cancel the F-key hand-swap event to open the menu; default enabled.
+    intercept-f-key: true
+  # [VI] Hiển thị mục menu admin cho người có quyền; mặc định bật.
+  # [EN] Show admin menu to players with permission; default enabled.
+  admin:
+    enabled: true
+    # [VI] Thời gian cảnh báo trước khi gọi thiên tai/boss; mặc định 30 giây, hợp lệ 1-3600.
+    # [EN] Warning time before a disaster/boss is summoned; default 30 seconds, valid range 1-3600.
+    warning-seconds: 30
+    # [VI] Thời gian thiên tai/boss hoạt động; mặc định 120 giây, hợp lệ 1-86400.
+    # [EN] Disaster/boss active duration; default 120 seconds, valid range 1-86400.
+    duration-seconds: 120
 
 # ============================================================
 # [DEATH] ☠ TỬ THẦN / DEATH
@@ -301,6 +322,31 @@ thirst:
 # [ENVIRONMENT] 🌍 MÔI TRƯỜNG / ENVIRONMENT
 # ============================================================
 environment:
+  # ===== KIỂM SOÁT MƯA / RAIN CONTROL =====
+  rain-control:
+    # [VI] Bật giới hạn xác suất bắt đầu mưa và thời lượng mưa.
+    # [EN] Enable limits for rain-start chance and rain duration.
+    enabled: true
+
+    # [VI] Xác suất chấp nhận mỗi lần thời tiết bắt đầu mưa (phần trăm); mặc định 40, hợp lệ 0-100.
+    # [EN] Chance to allow each rain start (percent); default 40, valid range 0-100.
+    chance-percent: 40
+
+    # [VI] Thời gian mưa tối đa liên tục (phút); mặc định 5, hợp lệ 1-120.
+    # [EN] Maximum continuous rain duration (minutes); default 5, valid range 1-120.
+    max-duration-minutes: 5
+
+    # [VI] Chọn ngẫu nhiên thời lượng mưa từ mức tối thiểu đến tối đa để mưa có thể tạnh sớm.
+    # [EN] Randomize each rain duration between the minimum and maximum to allow early clearing.
+    random-duration:
+      # [VI] Bật chọn thời lượng ngẫu nhiên; mặc định true; chỉ true/false.
+      # [EN] Enable randomized rain duration; default true; accepts true/false.
+      enabled: true
+
+      # [VI] Thời lượng mưa tối thiểu (phút); mặc định 1, hợp lệ từ 1 đến max-duration-minutes.
+      # [EN] Minimum rain duration (minutes); default 1, valid from 1 to max-duration-minutes.
+      minimum-minutes: 1
+
   # ===== NHIỆT ĐỘ / TEMPERATURE =====
   temperature:
     # [VI] Bật hệ thống nhiệt độ (nóng ở sa mạc, lạnh ở tuyết)

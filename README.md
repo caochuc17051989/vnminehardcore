@@ -173,16 +173,17 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 
 | Requirement | Version |
 |-------------|---------|
-| **Server** | Paper 26.x |
+| **Server** | Paper 26.3 |
 | **Java runtime** | 25+ |
 | **Compile API** | Paper API 1.21.4 (tương thích với Paper 26.x theo build guide của dự án) |
+| **Required plugin** | ProtocolLib `5.5.0-SNAPSHOT` dev-build with Minecraft 26.3 support ([official builds](https://github.com/dmulloy2/ProtocolLib/releases/tag/dev-build)) |
 
 ---
 
 ## 📥 Installation
 
 1. Download `VnMineHardcore.jar` from the [releases page](#)
-2. Place the JAR file in your server's `plugins/` directory
+2. Install the required ProtocolLib dev-build, then place both JAR files in `plugins/`
 3. Restart your server (or use `/plugman load VnMineHardcore`)
 4. Edit `plugins/VnMineHardcore/config.yml` to your liking
 5. Use `/vnreload` to reload config without restarting
@@ -212,7 +213,7 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 | `/vnhelp`, `/vn help` | Show command help | `vnmine.command.help`, `.utility` |
 | `/vngroup ...` | Create/delete groups and grant/revoke group permissions | `vnmine.command.groups.manage` |
 | `/vnuser ...` | Inspect users, assign groups, manage personal permission grants | `vnmine.command.users.manage` |
-| `/vnarmy ...` | Hire, manage mercenaries in a GUI, recall/rest, and set army behavior | `vnmine.command.army` |
+| `/vnarmy ...` | Hire/manage mercenaries; rename with `/vnarmy rename <ID> <Tên mới>` | `vnmine.command.army` |
 
 ### `/vnevent` Usage
 

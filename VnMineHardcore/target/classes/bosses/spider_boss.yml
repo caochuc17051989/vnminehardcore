@@ -7,6 +7,9 @@ entity-type: SPIDER
 display-name: "§0§lSpider Boss"
 hp: 130
 damage-multiplier: 1.8
+# [VI] EXP thưởng cơ bản level 1; mặc định 250, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
+# [EN] Base XP reward at level 1; default 250, valid range 1-1000000; boss level scaling is in _settings.yml.
+experience: 250
 chance: 20
 # [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1200 = 20 phút.
 # [EN] Default boss lifetime after spawning (seconds); 1200 = 20 minutes.
@@ -29,6 +32,12 @@ hp-by-level:
   8: 2228
   9: 3342
   10: 5013
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
 skills:
   venom-web:
     enabled: true
@@ -38,6 +47,46 @@ skills:
     radius: 5.0
     velocity: 1.0
     spread: 0.0
+  cobweb-trap:
+    enabled: true
+    damage: 0.0
+    multiply: 1
+    cooldown-seconds: 14
+    radius: 4.0
+    velocity: 1.2
+    spread: 0.0
+    # [VI] Bán kính bẫy (1 tạo vùng 3x3); mặc định 1; hợp lệ 1-2.
+    # [EN] Trap radius (1 creates a 3x3 area); default 1; valid range 1-2.
+    trap-radius: 1
+    # [VI] Thời gian tơ tồn tại (giây); mặc định 6; hợp lệ 1-30.
+    # [EN] Cobweb lifetime (seconds); default 6; valid range 1-30.
+    trap-duration-seconds: 6
+  venom-pounce:
+    enabled: true
+    damage: 7.0
+    multiply: 1
+    cooldown-seconds: 12
+    radius: 2.5
+    velocity: 1.2
+    spread: 0.0
+    # [VI] Vận tốc nhảy dọc; mặc định 0.75; hợp lệ 0.3-1.5.
+    # [EN] Vertical jump velocity; default 0.75; valid range 0.3-1.5.
+    jump-y: 0.75
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  brood-release:
+    enabled: true
+    # [VI] Ngưỡng máu triệu hồi; mặc định 0.5 (50%); hợp lệ 0.1-0.9.
+    # [EN] Health threshold for summoning; default 0.5 (50%); valid range 0.1-0.9.
+    health-threshold: 0.5
+    # [VI] Số nhện con ít nhất; mặc định 4; hợp lệ 1-8.
+    # [EN] Minimum Cave Spider minions; default 4; valid range 1-8.
+    minions-min: 4
+    # [VI] Số nhện con nhiều nhất; mặc định 6; hợp lệ minions-min..8.
+    # [EN] Maximum Cave Spider minions; default 6; valid range minions-min..8.
+    minions-max: 6
 
 immunities:
   potion-effects:
@@ -89,352 +138,291 @@ drops:
 #      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
 #      Each item's lore tells the boss-specific legend in at most 4 lines.
 #      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+# [VI] Tạo bộ giáp bốn món cho boss này; vật liệu và enchant tự tăng theo level.
+# [EN] Generate this boss's four-piece armor set; materials and enchants scale by level.
+armor-set:
+  # [VI] Bật/tắt bộ giáp; mặc định true.
+  # [EN] Enable or disable the armor set; default true.
+  enabled: true
+  # [VI] Tên bộ giáp dùng cho mũ, áo, quần và ủng.
+  # [EN] Armor set name prefix used by the helmet, chestplate, leggings, and boots.
+  name: "§0§lGiáp Tơ Hoàng Hôn"
+  # [VI] ID lore trong story.yml; phải trỏ tới một mục artifacts hợp lệ.
+  # [EN] Lore ID in story.yml; must reference a valid artifacts entry.
+  story-id: spider-armor
+  # [VI] Mốc cấp tối thiểu cho vật liệu; từ 1 sắt, 4 kim cương, 7 netherite.
+  # [EN] Minimum level for each material tier; iron at 1, diamond at 4, netherite at 7.
+  material-tiers:
+    1: IRON
+    4: DIAMOND
+    7: NETHERITE
+
 level-drops:
   1:
     - material: IRON_BOOTS
-      name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 1"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 1 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      name: "§0§lỦng Tơ Nhện · Cấp 1"
+      story-id: spider-relic-common
       min-amount: 1
       max-amount: 1
-      chance: 0.160
+      chance: 0.65
       enchantments:
-        protection: 1
+        protection: 2
     - material: ENCHANTED_BOOK
-      name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 1"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 1 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      name: "§0§lSổ Tơ Nhện · Cấp 1"
+      story-id: spider-codex-common
       min-amount: 1
       max-amount: 1
-      chance: 0.104
+      chance: 0.30
       book-enchantments:
-        protection: 1
+        protection: 2
 
   2:
     - material: IRON_BOOTS
-      name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 2"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 2 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      name: "§0§lỦng Tơ Nhện · Cấp 2"
+      story-id: spider-relic-common
       min-amount: 1
       max-amount: 1
-      chance: 0.146
+      chance: 0.65
       enchantments:
-        protection: 1
-        feather_falling: 1
+        protection: 2
+        feather_falling: 2
     - material: ENCHANTED_BOOK
-      name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 2"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 2 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      name: "§0§lSổ Tơ Nhện · Cấp 2"
+      story-id: spider-codex-common
       min-amount: 1
       max-amount: 1
-      chance: 0.095
+      chance: 0.30
       book-enchantments:
-        protection: 1
-        feather_falling: 1
+        protection: 2
+        feather_falling: 2
 
   3:
     - material: DIAMOND_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 3"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 3 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.132
+      chance: 0.65
       enchantments:
-        protection: 2
-        feather_falling: 2
+        protection: 3
+        feather_falling: 3
         depth_strider: 2
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 3"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 3 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.086
+      chance: 0.30
       book-enchantments:
-        protection: 2
-        feather_falling: 2
+        protection: 3
+        feather_falling: 3
         depth_strider: 2
 
   4:
     - material: DIAMOND_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 4"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 4 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.118
+      chance: 0.65
       enchantments:
-        protection: 2
-        feather_falling: 2
-        depth_strider: 2
+        protection: 4
+        feather_falling: 4
+        depth_strider: 3
         frost_walker: 2
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 4"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 4 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.077
+      chance: 0.30
       book-enchantments:
-        protection: 2
-        feather_falling: 2
-        depth_strider: 2
+        protection: 4
+        feather_falling: 4
+        depth_strider: 3
         frost_walker: 2
   5:
     - material: DIAMOND_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 5"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 5 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.104
+      chance: 0.65
       enchantments:
-        protection: 2
-        feather_falling: 2
-        depth_strider: 2
+        protection: 5
+        feather_falling: 5
+        depth_strider: 4
         frost_walker: 2
-        soul_speed: 2
+        soul_speed: 4
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 5"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 5 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.068
+      chance: 0.30
       book-enchantments:
-        protection: 2
-        feather_falling: 2
-        depth_strider: 2
+        protection: 5
+        feather_falling: 5
+        depth_strider: 4
         frost_walker: 2
-        soul_speed: 2
+        soul_speed: 4
 
   6:
     - material: NETHERITE_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 6"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 6 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.090
+      chance: 0.65
       enchantments:
-        protection: 3
-        feather_falling: 3
-        depth_strider: 3
-        frost_walker: 3
-        soul_speed: 3
-        thorns: 3
+        protection: 6
+        feather_falling: 6
+        depth_strider: 5
+        frost_walker: 2
+        soul_speed: 5
+        thorns: 5
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 6"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 6 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.058
+      chance: 0.30
       book-enchantments:
-        protection: 3
-        feather_falling: 3
-        depth_strider: 3
-        frost_walker: 3
-        soul_speed: 3
-        thorns: 3
+        protection: 6
+        feather_falling: 6
+        depth_strider: 5
+        frost_walker: 2
+        soul_speed: 5
+        thorns: 5
 
   7:
     - material: NETHERITE_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 7"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 7 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.076
+      chance: 0.65
       enchantments:
-        protection: 3
-        feather_falling: 3
-        depth_strider: 3
-        frost_walker: 3
-        soul_speed: 3
-        thorns: 3
-        unbreaking: 3
+        protection: 6
+        feather_falling: 6
+        depth_strider: 5
+        frost_walker: 2
+        soul_speed: 5
+        thorns: 5
+        unbreaking: 5
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 7"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 7 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.049
+      chance: 0.30
       book-enchantments:
-        protection: 3
-        feather_falling: 3
-        depth_strider: 3
-        frost_walker: 3
-        soul_speed: 3
-        thorns: 3
-        unbreaking: 3
+        protection: 6
+        feather_falling: 6
+        depth_strider: 5
+        frost_walker: 2
+        soul_speed: 5
+        thorns: 5
+        unbreaking: 5
 
   8:
     - material: NETHERITE_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 8"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 8 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.062
+      chance: 0.65
       enchantments:
-        protection: 3
-        feather_falling: 3
-        depth_strider: 3
-        frost_walker: 3
-        soul_speed: 3
-        thorns: 3
-        unbreaking: 3
-        mending: 3
+        protection: 7
+        feather_falling: 7
+        depth_strider: 6
+        frost_walker: 2
+        soul_speed: 6
+        thorns: 6
+        unbreaking: 6
+        mending: 1
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 8"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 8 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.040
+      chance: 0.30
       book-enchantments:
-        protection: 3
-        feather_falling: 3
-        depth_strider: 3
-        frost_walker: 3
-        soul_speed: 3
-        thorns: 3
-        unbreaking: 3
-        mending: 3
+        protection: 7
+        feather_falling: 7
+        depth_strider: 6
+        frost_walker: 2
+        soul_speed: 6
+        thorns: 6
+        unbreaking: 6
+        mending: 1
 
   9:
     - material: NETHERITE_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 9"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 9 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.048
+      chance: 0.65
       enchantments:
-        protection: 4
-        feather_falling: 4
-        depth_strider: 4
-        frost_walker: 4
-        soul_speed: 4
-        thorns: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
+        protection: 8
+        feather_falling: 8
+        depth_strider: 7
+        frost_walker: 2
+        soul_speed: 7
+        thorns: 7
+        unbreaking: 7
+        mending: 1
+        vanishing_curse: 1
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 9"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 9 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.031
+      chance: 0.30
       book-enchantments:
-        protection: 4
-        feather_falling: 4
-        depth_strider: 4
-        frost_walker: 4
-        soul_speed: 4
-        thorns: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
+        protection: 8
+        feather_falling: 8
+        depth_strider: 7
+        frost_walker: 2
+        soul_speed: 7
+        thorns: 7
+        unbreaking: 7
+        mending: 1
+        vanishing_curse: 1
 
   10:
     - material: NETHERITE_BOOTS
       name: "§0§lỦng Tơ Độc Hoàng Hôn · Cấp 10"
-      lore:
-        - "§7Tương truyền, sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Khi tiếng chuông thứ 10 vang lên, nữ hoàng nhện đã giăng lưới qua cả một vương triều."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-relic
       min-amount: 1
       max-amount: 1
-      chance: 0.034
+      chance: 0.65
       enchantments:
-        protection: 4
-        feather_falling: 4
-        depth_strider: 4
-        frost_walker: 4
-        soul_speed: 4
-        thorns: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
-        binding_curse: 4
+        protection: 9
+        feather_falling: 9
+        depth_strider: 8
+        frost_walker: 2
+        soul_speed: 8
+        thorns: 8
+        unbreaking: 8
+        mending: 1
+        vanishing_curse: 1
+        binding_curse: 1
     - material: ENCHANTED_BOOK
       name: "§0§lMật Lục Ủng Tơ Độc Hoàng Hôn · Cấp 10"
-      lore:
-        - "§7Tương truyền, tàn thư ghi lại bí mật: sợi tơ bạc dệt quanh chiếc vương miện bị mất."
-        - "§8Trang thứ 10 được khâu bằng sợi ký ức của kẻ bại trận."
-        - "§8Kẻ chạm vào di vật nghe thấy mỗi nút thắt giữ lại một bí mật của kẻ lạc đường."
-        - "§dCổ tự khắc trên nó: “mạng tơ cuối cùng nối đến vực thẳm không đáy”."
+      story-id: spider-codex
       min-amount: 1
       max-amount: 1
-      chance: 0.022
+      chance: 0.30
       book-enchantments:
-        protection: 4
-        feather_falling: 4
-        depth_strider: 4
-        frost_walker: 4
-        soul_speed: 4
-        thorns: 4
-        unbreaking: 4
-        mending: 4
-        vanishing_curse: 4
-        binding_curse: 4
+        protection: 9
+        feather_falling: 9
+        depth_strider: 8
+        frost_walker: 2
+        soul_speed: 8
+        thorns: 8
+        unbreaking: 8
+        mending: 1
+        vanishing_curse: 1
+        binding_curse: 1
