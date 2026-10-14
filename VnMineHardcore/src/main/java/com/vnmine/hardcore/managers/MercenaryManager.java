@@ -1276,23 +1276,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (hasSkill(unit, "RANGED_ATTACK") && target != null && mob != null
                 && ready(unit, "ranged-attack")) {
             try {
-                ItemStack ammunition = findStoredArrow(unit);
-                AbstractArrow arrow;
-                if (ammunition != null && ammunition.getType() == Material.SPECTRAL_ARROW) {
-                    arrow = mob.launchProjectile(SpectralArrow.class);
-                } else if (ammunition != null && ammunition.getType() == Material.TIPPED_ARROW) {
-                    TippedArrow tippedArrow = mob.launchProjectile(TippedArrow.class);
-                    if (ammunition.getItemMeta() instanceof PotionMeta potionMeta) {
-                        PotionType potionType = potionMeta.getBasePotionType();
-                        if (potionType != null) tippedArrow.setBasePotionType(potionType);
-                        for (PotionEffect effect : potionMeta.getCustomEffects()) {
-                            tippedArrow.addCustomEffect(effect, true);
-                        }
-                    }
-                    arrow = tippedArrow;
-                } else {
-                    arrow = mob.launchProjectile(Arrow.class);
-                }
+                AbstractArrow arrow = launchConfiguredArrow(mob, unit);
                 arrow.setDamage(Math.min(100.0, skillOptionDouble(unit, "RANGED_ATTACK",
                     "damage", 4.0, 0.0, 100.0) * skillPowerMultiplier(unit)));
                 arrow.setPickupStatus(Arrow.PickupStatus.DISALLOWED);
@@ -1314,7 +1298,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             if (direction.lengthSquared() > 0.0) {
                 for (int index = 0; index < arrowCount; index++) {
                     double offset = index - (arrowCount - 1) / 2.0;
-                    Arrow arrow = mob.launchProjectile(Arrow.class);
+                    AbstractArrow arrow = launchConfiguredArrow(mob, unit);
                     arrow.setVelocity(direction.clone().normalize()
                         .rotateAroundY(Math.toRadians(offset * spread)).multiply(speed));
                     arrow.setDamage(damage);
@@ -1503,6 +1487,25 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     .contains(item.getType())) return item;
         }
         return null;
+    }
+
+    private AbstractArrow launchConfiguredArrow(Mob mob, Unit unit) {
+        ItemStack ammunition = findStoredArrow(unit);
+        if (ammunition != null && ammunition.getType() == Material.SPECTRAL_ARROW) {
+            return mob.launchProjectile(SpectralArrow.class);
+        }
+        if (ammunition != null && ammunition.getType() == Material.TIPPED_ARROW) {
+            TippedArrow arrow = mob.launchProjectile(TippedArrow.class);
+            if (ammunition.getItemMeta() instanceof PotionMeta potionMeta) {
+                PotionType potionType = potionMeta.getBasePotionType();
+                if (potionType != null) arrow.setBasePotionType(potionType);
+                for (PotionEffect effect : potionMeta.getCustomEffects()) {
+                    arrow.addCustomEffect(effect, true);
+                }
+            }
+            return arrow;
+        }
+        return mob.launchProjectile(Arrow.class);
     }
 
     private void announceSkillCast(Unit unit, Player owner, String skill, Particle particle) {

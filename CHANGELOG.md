@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.20.1] - 2026-10-14
+
+### Fixed
+- Kỹ năng `VOLLEY` dùng đúng loại mũi tên trong kho lính, bao gồm tên phổ và tên tẩm hiệu ứng; mũi tên vẫn không bị tiêu hao.
+
 ## [v1.20.0] - 2026-10-14
 
 ### Added

@@ -40,6 +40,7 @@ com/vnmine/hardcore/managers/DisasterManager$WorldState.class
 com/vnmine/hardcore/listeners/WaterListener.class
 com/vnmine/hardcore/managers/LogManager$1.class
 com/vnmine/hardcore/managers/DisasterManager.class
+com/vnmine/hardcore/managers/MercenaryNamePacketListener$NameEntry.class
 com/vnmine/hardcore/managers/GraveManager$1.class
 com/vnmine/hardcore/managers/DeathPenaltyManager$1.class
 com/vnmine/hardcore/listeners/HungerListener$1.class
@@ -74,6 +75,7 @@ com/vnmine/hardcore/managers/DisasterManager$3.class
 com/vnmine/hardcore/listeners/EnvironmentListener$2.class
 com/vnmine/hardcore/managers/BossEventManager$BossProjectileConfig.class
 com/vnmine/hardcore/managers/BossLeaderboardManager.class
+com/vnmine/hardcore/managers/MercenaryNamePacketListener$1.class
 com/vnmine/hardcore/managers/DisasterManager$LivingEntityState.class
 com/vnmine/hardcore/managers/VillagerDataManager$TradeEntry.class
 com/vnmine/hardcore/managers/BossEventManager$10.class
@@ -99,6 +101,7 @@ com/vnmine/hardcore/managers/BossEventManager$9.class
 com/vnmine/hardcore/listeners/DeathListener$1.class
 com/vnmine/hardcore/managers/DisasterManager$8.class
 com/vnmine/hardcore/managers/BossEventManager$BlockPosition.class
+com/vnmine/hardcore/managers/MercenaryNamePacketListener.class
 com/vnmine/hardcore/managers/DisasterManager$2.class
 com/vnmine/hardcore/managers/BossEventManager$2.class
 com/vnmine/hardcore/listeners/EnvironmentListener$1.class
