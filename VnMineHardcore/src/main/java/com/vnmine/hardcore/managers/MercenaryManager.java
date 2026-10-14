@@ -2767,15 +2767,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             : settings.getDouble("classes." + unit.unitClass + ".base-armor", 0.0)
                 + Math.max(0, statRank(unit) - 1)
                     * settings.getDouble("classes." + unit.unitClass + ".armor-per-level", 0.0);
-        ItemStack mainHand = mob != null && mob.isValid() && mob.getEquipment() != null
-            ? mob.getEquipment().getItemInMainHand()
-            : unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HAND);
-        String weaponName = mainHand == null || mainHand.getType().isAir()
-            ? "Không có" : mainHand.getType().name().replace('_', ' ');
+        String configuredWeapon = settings.getString("classes." + unit.unitClass + ".starting-weapon", "");
+        Material recommendedWeapon = Material.matchMaterial(configuredWeapon);
+        if (recommendedWeapon == null && "IRON_SPEAR".equalsIgnoreCase(configuredWeapon)) {
+            recommendedWeapon = Material.TRIDENT;
+        }
+        String weaponName = recommendedWeapon == null || recommendedWeapon.isAir()
+            ? "Chưa cấu hình" : recommendedWeapon.name().replace('_', ' ');
         details.add("§7Bậc: §f" + unit.tier + " (gốc " + unit.originalTier + ") §8| §7Cấp: §f" + unit.level
             + " §8| §7XP: §f" + unit.experience + "/" + nextLevelExperience(unit));
         details.add("§7Trạng thái: " + unitStatus(unit));
-        details.add("§7Vũ khí tay chính: §f" + weaponName);
+        details.add("§7Vũ khí phù hợp nhất: §f" + weaponName);
         details.add("§cHP: §f" + formatStat(health) + "/" + formatStat(maxHealth)
             + " §7| Giáp: §f" + formatStat(armor));
         details.add("§6Sát thương: §f" + formatStat(damage));

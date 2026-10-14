@@ -34,6 +34,12 @@ import java.util.concurrent.ConcurrentMap;
 
 final class MercenaryNamePacketListener implements Listener, AutoCloseable {
     private static final int CUSTOM_NAME_INDEX = 2;
+    private static final Set<Sound> EVOKER_SPELL_SOUNDS = Set.of(
+        Sound.ENTITY_EVOKER_CAST_SPELL,
+        Sound.ENTITY_EVOKER_PREPARE_ATTACK,
+        Sound.ENTITY_EVOKER_PREPARE_SUMMON,
+        Sound.ENTITY_EVOKER_PREPARE_WOLOLO
+    );
     private static final WrappedDataWatcher.Serializer CHAT_COMPONENT_SERIALIZER =
         WrappedDataWatcher.Registry.getChatComponentSerializer(true);
 
@@ -57,7 +63,7 @@ final class MercenaryNamePacketListener implements Listener, AutoCloseable {
                 if (event.getPacketType() == PacketType.Play.Server.ENTITY_METADATA) {
                     updateViewerName(event);
                 } else {
-                    muteEvokerPrepareAttack(event);
+                    muteEvokerSpellSounds(event);
                 }
             }
         };
@@ -111,10 +117,11 @@ final class MercenaryNamePacketListener implements Listener, AutoCloseable {
         event.getPacket().getDataValueCollectionModifier().write(0, dataValues);
     }
 
-    private void muteEvokerPrepareAttack(PacketEvent event) {
+    private void muteEvokerSpellSounds(PacketEvent event) {
         int entityId = event.getPacket().getIntegers().read(0);
         if (!evokerEntityIds.contains(entityId)) return;
-        if (event.getPacket().getSoundEffects().read(0) == Sound.ENTITY_EVOKER_PREPARE_ATTACK) {
+        Sound sound = event.getPacket().getSoundEffects().read(0);
+        if (sound != null && EVOKER_SPELL_SOUNDS.contains(sound)) {
             event.setCancelled(true);
         }
     }
