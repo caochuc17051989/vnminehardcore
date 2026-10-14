@@ -111,6 +111,9 @@ commands:
   vnmenu:
     description: Mở menu chức năng của VnMineHardcore
     usage: /vnmenu
+  quatanthu:
+    description: Nhận túi quà tân thủ và chọn token triệu hồi bậc 1
+    usage: /quatanthu
 
 permissions:
   vnmine.command.stats:

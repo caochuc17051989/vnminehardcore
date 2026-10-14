@@ -214,6 +214,7 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 | `/vngroup ...` | Create/delete groups and grant/revoke group permissions | `vnmine.command.groups.manage` |
 | `/vnuser ...` | Inspect users, assign groups, manage personal permission grants | `vnmine.command.users.manage` |
 | `/vnarmy ...` | Hire/manage mercenaries; rename with `/vnarmy rename <ID> <Tên mới>` | `vnmine.command.army` |
+| `/quatanthu` | Nhận túi quà tân thủ và chọn 1 token triệu hồi lính đánh thuê bậc 1 | — |
 
 ### `/vnevent` Usage
 

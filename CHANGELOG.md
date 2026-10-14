@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.27.0] - 2026-10-14
+
+### Added
+- Thêm túi quà tân thủ `BLACK_BUNDLE`, `/quatanthu` để nhận túi lần đầu, menu chọn token triệu hồi lính đánh thuê bậc 1 và lưu trạng thái chỉ nhận một lần duy nhất theo người chơi.
+
 ## [v1.24.2] - 2026-10-14
 
 ### Fixed

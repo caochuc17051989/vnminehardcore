@@ -128,6 +128,7 @@ public final class VnMineHardcore extends JavaPlugin {
         registerCommand("vnuser", permissionManager, permissionManager);
         registerCommand("vnarmy", mercenaryManager, mercenaryManager);
         registerCommand("vnmenu", mercenaryManager, mercenaryManager);
+        registerCommand("quatanthu", mercenaryManager, mercenaryManager);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
         getLogger().info("§a  Deaths are recorded; no death bans are applied.");

@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.26.2
+version: 1.27.0
 main: com.vnmine.hardcore.VnMineHardcore
 depend: [ProtocolLib]
 api-version: '1.21'
@@ -111,6 +111,9 @@ commands:
   vnmenu:
     description: Mở menu chức năng của VnMineHardcore
     usage: /vnmenu
+  quatanthu:
+    description: Nhận túi quà tân thủ và chọn token triệu hồi bậc 1
+    usage: /quatanthu
 
 permissions:
   vnmine.command.stats:

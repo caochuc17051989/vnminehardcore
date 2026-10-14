@@ -36,6 +36,7 @@ import io.papermc.paper.event.entity.EntityDamageItemEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -50,6 +51,8 @@ import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
@@ -106,6 +109,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final NamespacedKey summonedMinionKey;
     private final NamespacedKey tokenClassKey;
     private final NamespacedKey tokenLevelKey;
+    private final NamespacedKey welcomeGiftKey;
+    private final File welcomeGiftFile;
+    private final Set<UUID> claimedWelcomeGiftPlayers = new HashSet<>();
     private final MercenaryNamePacketListener namePacketListener;
     private final Map<UUID, Unit> units = new HashMap<>();
     private final Map<UUID, Mob> activeEntities = new HashMap<>();
@@ -236,7 +242,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private enum MenuType {
-        MAIN, ADMIN, ADMIN_PLAYERS, GIVE_TYPE, CLASS_SELECT, TIER_SELECT,
+        MAIN, ADMIN, ADMIN_PLAYERS, GIVE_TYPE, CLASS_SELECT, TIER_SELECT, WELCOME_GIFT,
         DISASTER_SELECT, BOSS_SELECT, BOSS_LEVEL_SELECT, ADMIN_TIME, TIME_DURATION,
         ADMIN_DAY, ADMIN_PROTECT, PROTECTION_REMOVE, TELEPORT_PLAYERS, TELEPORT_WORLDS,
         ADMIN_USER_PLAYERS, ADMIN_USER_ACTION, ADMIN_GROUPS, ADMIN_GROUP_SELECT,
@@ -275,14 +281,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         this.plugin = plugin;
         configFile = new File(plugin.getDataFolder(), "armies.yml");
         dataFile = new File(plugin.getDataFolder(), "mercenaries.yml");
+        welcomeGiftFile = new File(plugin.getDataFolder(), "new-player-gifts.yml");
         unitKey = new NamespacedKey(plugin, "army_unit");
         ownerKey = new NamespacedKey(plugin, "army_owner");
         summonedMinionKey = new NamespacedKey(plugin, "army_summoned_minion");
         tokenClassKey = new NamespacedKey(plugin, "army_token_class");
         tokenLevelKey = new NamespacedKey(plugin, "army_token_level");
+        welcomeGiftKey = new NamespacedKey(plugin, "welcome_gift");
         namePacketListener = new MercenaryNamePacketListener(plugin);
         loadSettings();
         loadData();
+        loadWelcomeGiftClaims();
         Bukkit.getPluginManager().registerEvents(this, plugin);
         startAiTask();
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -328,6 +337,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             if (sender instanceof Player player) openMainMenu(player);
             else sender.sendMessage("§cMenu chỉ dành cho người chơi.");
             return true;
+        }
+        if (command.getName().equalsIgnoreCase("quatanthu")) {
+            return handleWelcomeGiftCommand(sender, args);
         }
         if (!sender.hasPermission(COMMAND_PERMISSION)) {
             sender.sendMessage("§cBạn không có quyền dùng /vnarmy.");
@@ -452,6 +464,34 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Bukkit.getScheduler().runTaskLater(plugin, () -> restoreDeployedUnits(event.getPlayer()), 1L);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onWelcomeGiftHold(PlayerItemHeldEvent event) {
+        Player player = event.getPlayer();
+        if (isWelcomeGiftClaimed(player.getUniqueId())) return;
+        ItemStack newItem = player.getInventory().getItem(event.getNewSlot());
+        if (!isWelcomeGiftBag(newItem)) return;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline() || isWelcomeGiftClaimed(player.getUniqueId())) return;
+            if (isWelcomeGiftBag(player.getInventory().getItemInMainHand())) {
+                openWelcomeGiftMenu(player);
+            }
+        });
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onWelcomeGiftRightClick(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        ItemStack item = event.getItem();
+        if (!isWelcomeGiftBag(item)) return;
+        event.setCancelled(true);
+        Player player = event.getPlayer();
+        if (isWelcomeGiftClaimed(player.getUniqueId())) {
+            player.sendMessage("§cBạn đã nhận quà tân thủ rồi.");
+            return;
+        }
+        openWelcomeGiftMenu(player);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -2864,6 +2904,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         int slot = event.getRawSlot();
         String choice = holder.choices.get(slot);
         switch (holder.type) {
+            case WELCOME_GIFT -> {
+                if (slot == 49) player.closeInventory();
+                else if (choice != null) selectWelcomeGift(player, choice);
+            }
             case MAIN -> {
                 if (slot == 10) player.performCommand("vnstats");
                 else if (slot == 12) player.performCommand("vnhardcore");
@@ -3419,6 +3463,143 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         for (int slot = 51; slot < 54; slot++) inventory.setItem(slot, divider.clone());
         player.openInventory(inventory);
         player.sendMessage("§7Kho lính: 36 ô đầu để chứa đồ; hàng cuối là tay chính, mũ, áo, quần, giày, tay phụ. Vũ khí/giáp tự nhận diện.");
+    }
+
+    private void loadWelcomeGiftClaims() {
+        if (!plugin.getDataFolder().exists() && !plugin.getDataFolder().mkdirs()) {
+            plugin.getLogger().warning("[Gift] Could not create data folder for welcome-gift claims.");
+            return;
+        }
+        YamlConfiguration loaded = new YamlConfiguration();
+        if (!welcomeGiftFile.isFile()) {
+            saveWelcomeGiftClaims();
+            return;
+        }
+        try {
+            loaded.load(welcomeGiftFile);
+            for (String entry : loaded.getStringList("claimed")) {
+                try {
+                    claimedWelcomeGiftPlayers.add(UUID.fromString(entry));
+                } catch (IllegalArgumentException ignored) {
+                    plugin.getLogger().warning("[Gift] Ignoring invalid UUID in new-player-gifts.yml: " + entry);
+                }
+            }
+        } catch (Exception exception) {
+            plugin.getLogger().log(Level.SEVERE, "[Gift] Could not load new-player-gifts.yml; resetting claim state.", exception);
+            claimedWelcomeGiftPlayers.clear();
+        }
+    }
+
+    private void saveWelcomeGiftClaims() {
+        YamlConfiguration data = new YamlConfiguration();
+        data.set("claimed", claimedWelcomeGiftPlayers.stream().map(UUID::toString).sorted().toList());
+        try {
+            data.save(welcomeGiftFile);
+        } catch (IOException exception) {
+            plugin.getLogger().log(Level.SEVERE, "[Gift] Could not save new-player-gifts.yml.", exception);
+        }
+    }
+
+    private boolean isWelcomeGiftClaimed(UUID playerId) {
+        return claimedWelcomeGiftPlayers.contains(playerId);
+    }
+
+    private boolean hasWelcomeGiftBag(Player player) {
+        for (ItemStack stack : player.getInventory().getContents()) {
+            if (isWelcomeGiftBag(stack)) return true;
+        }
+        return false;
+    }
+
+    private boolean consumeWelcomeGiftBag(Player player) {
+        for (int slot = 0; slot < player.getInventory().getSize(); slot++) {
+            ItemStack stack = player.getInventory().getItem(slot);
+            if (isWelcomeGiftBag(stack)) {
+                player.getInventory().setItem(slot, null);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private ItemStack createWelcomeGiftBag() {
+        ItemStack bag = new ItemStack(Material.BLACK_BUNDLE);
+        ItemMeta meta = bag.getItemMeta();
+        meta.setDisplayName("§5§lTúi Quà Tân Thủ");
+        meta.setLore(List.of("§7Nhận token triệu hồi lính đánh thuê bậc 1.", "§8Cầm hoặc nhấn chuột phải để mở."));
+        meta.getPersistentDataContainer().set(welcomeGiftKey, PersistentDataType.BYTE, (byte) 1);
+        bag.setItemMeta(meta);
+        return bag;
+    }
+
+    private boolean isWelcomeGiftBag(ItemStack stack) {
+        if (stack == null || stack.getType() != Material.BLACK_BUNDLE || !stack.hasItemMeta()) return false;
+        return stack.getItemMeta().getPersistentDataContainer().has(welcomeGiftKey, PersistentDataType.BYTE);
+    }
+
+    private boolean handleWelcomeGiftCommand(CommandSender sender, String[] args) {
+        if (args.length != 0) {
+            sender.sendMessage("§eSử dụng: /quatanthu");
+            return true;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("§cLệnh chỉ dành cho người chơi.");
+            return true;
+        }
+        if (isWelcomeGiftClaimed(player.getUniqueId())) {
+            sender.sendMessage("§cBạn đã nhận quà tân thủ rồi.");
+            return true;
+        }
+        if (hasWelcomeGiftBag(player)) {
+            sender.sendMessage("§eBạn đã có túi quà tân thủ trong túi đồ.");
+            return true;
+        }
+        giveItem(player, createWelcomeGiftBag());
+        sender.sendMessage("§aBạn nhận được §5Túi Quà Tân Thủ§a. Cầm lên hoặc nhấn chuột phải để mở.");
+        return true;
+    }
+
+    private void openWelcomeGiftMenu(Player player) {
+        if (isWelcomeGiftClaimed(player.getUniqueId())) {
+            player.sendMessage("§cBạn đã nhận quà tân thủ rồi.");
+            return;
+        }
+        ServiceMenuHolder holder = createServiceMenu(player, MenuType.WELCOME_GIFT, null, null, null,
+            0, 54, "Quà Tân Thủ");
+        List<String> classIds = getClassIds();
+        for (int index = 0; index < classIds.size() && index < 45; index++) {
+            String classId = classIds.get(index);
+            Material icon = Material.matchMaterial(settings.getString("classes." + classId + ".menu-icon", "IRON_SWORD"));
+            if (icon == null || icon.isAir()) icon = Material.IRON_SWORD;
+            holder.choices.put(index + 1, classId);
+            holder.inventory.setItem(index + 1, menuItem(icon, "§e" + classDisplay(classId),
+                List.of("§7Nhận token triệu hồi lính Bậc 1.", "§8Nhấn để chọn.")));
+        }
+        holder.inventory.setItem(49, menuItem(Material.ARROW, "§7Đóng", List.of("§8Quay lại chơi.")));
+        player.openInventory(holder.inventory);
+    }
+
+    private void selectWelcomeGift(Player player, String classId) {
+        if (isWelcomeGiftClaimed(player.getUniqueId())) {
+            player.sendMessage("§cBạn đã nhận quà tân thủ rồi.");
+            player.closeInventory();
+            return;
+        }
+        if (classId == null || normalizeClass(classId) == null) {
+            player.sendMessage("§cLoại token không hợp lệ.");
+            player.closeInventory();
+            return;
+        }
+        if (!consumeWelcomeGiftBag(player)) {
+            player.sendMessage("§cKhông tìm thấy túi quà tân thủ trong túi đồ của bạn.");
+            player.closeInventory();
+            return;
+        }
+        giveItem(player, createToken(classId, 1));
+        claimedWelcomeGiftPlayers.add(player.getUniqueId());
+        saveWelcomeGiftClaims();
+        player.closeInventory();
+        player.sendMessage("§aBạn đã nhận §e" + classDisplay(classId) + " §aBậc 1 và túi quà tân thủ đã biến mất.");
     }
 
     private boolean isGearOpen(Player player, UUID unitId) {
