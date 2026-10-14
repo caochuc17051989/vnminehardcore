@@ -2241,17 +2241,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         Inventory inventory = holder.inventory;
         if (player.hasPermission("vnmine.command.stats")) inventory.setItem(10,
             menuItem(Material.BOOK, "§eThống kê", List.of("§7Xem thống kê sinh tồn của bạn.")));
-        if (player.hasPermission("vnmine.command.status")) inventory.setItem(11,
+        if (player.hasPermission("vnmine.command.status")) inventory.setItem(12,
             menuItem(Material.COMPASS, "§bTrạng thái server", List.of("§7Xem tình trạng VnMineHardcore.")));
         if (player.hasPermission(COMMAND_PERMISSION) && enabled) {
-            inventory.setItem(13, menuItem(Material.IRON_SWORD, "§6Quản lý quân đội", List.of("§7Xem và điều khiển lính.")));
+            inventory.setItem(14, menuItem(Material.IRON_SWORD, "§6Quản lý quân đội", List.of("§7Xem và điều khiển lính.")));
         }
-        if (player.hasPermission("vnmine.command.reward")) inventory.setItem(14,
+        if (player.hasPermission("vnmine.command.reward")) inventory.setItem(16,
             menuItem(Material.CHEST, "§6Phần thưởng", List.of("§7Nhận phần thưởng boss đang chờ.")));
         inventory.setItem(22, menuItem(Material.WRITABLE_BOOK, "§bTrợ giúp", List.of("§7Mở hướng dẫn lệnh máy chủ.")));
         if (hasAdminMenuAccess(player)
                 && plugin.getConfig().getBoolean("menus.admin.enabled", true)) {
-            inventory.setItem(26, menuItem(Material.COMMAND_BLOCK, "§cAdmin", List.of("§7Mở công cụ quản trị.")));
+            inventory.setItem(24, menuItem(Material.COMMAND_BLOCK, "§cAdmin", List.of("§7Mở công cụ quản trị.")));
         }
         player.openInventory(inventory);
     }
@@ -2717,9 +2717,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         ArmyMenuHolder holder = new ArmyMenuHolder(player.getUniqueId(), safePage, pageIds);
         Inventory inventory = Bukkit.createInventory(holder, 54, "Đội quân • " + (safePage + 1) + "/" + pages);
         holder.inventory = inventory;
-        inventory.setItem(2, menuItem(Material.EMERALD, "§aRa tất cả", List.of("§7Gọi tất cả lính ra chiến.")));
+        inventory.setItem(2, menuItem(Material.WOODEN_SWORD, "§aTriệu hồi tất cả", List.of("§7Gọi tất cả lính ra chiến.")));
         inventory.setItem(4, menuItem(Material.EMERALD, "§aThuê lính", List.of("§7Chọn lớp và Bậc.")));
-        inventory.setItem(6, menuItem(Material.GRAY_DYE, "§7Nghỉ tất cả", List.of("§7Cho tất cả lính nghỉ ngơi.")));
+        inventory.setItem(6, menuItem(Material.RED_BED, "§7Nghỉ tất cả", List.of("§7Cho tất cả lính nghỉ ngơi.")));
         for (int index = 0; index < pageIds.size(); index++) {
             Unit unit = units.get(pageIds.get(index));
             if (unit == null) continue;
@@ -2866,11 +2866,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         switch (holder.type) {
             case MAIN -> {
                 if (slot == 10) player.performCommand("vnstats");
-                else if (slot == 11) player.performCommand("vnhardcore");
-                else if (slot == 13 && enabled) openArmyMenu(player, 0);
-                else if (slot == 14) player.performCommand("reward");
+                else if (slot == 12) player.performCommand("vnhardcore");
+                else if (slot == 14 && enabled) openArmyMenu(player, 0);
+                else if (slot == 16) player.performCommand("reward");
                 else if (slot == 22) player.performCommand("vnhelp");
-                else if (slot == 26 && hasAdminMenuAccess(player)) openAdminMenu(player);
+                else if (slot == 24 && hasAdminMenuAccess(player)) openAdminMenu(player);
             }
             case ADMIN -> {
                 if (slot == 11 && player.hasPermission(ADMIN_PERMISSION)) openAdminArmyPlayers(player, 0);
