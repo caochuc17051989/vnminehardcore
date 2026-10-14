@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.22.0] - 2026-10-14
+
+### Fixed
+- Chặn hành vi panic/flee của mercenary dùng model Villager để giữ custom AI chiến đấu.
+- Chặn biến thể zombification cho mercenary Piglin/Piglin Brute và loại bỏ Vex do Evoker sinh ra khỏi quân lính.
+- Chuyển class Kỵ sĩ sang model Zombie cưỡi ngựa, đổi tên hiển thị thành "Kỵ sĩ" và bổ sung skill lao giáo khi đang cưỡi.
+
 ## [v1.21.0] - 2026-10-14
 
 ### Changed

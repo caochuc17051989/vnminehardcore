@@ -18,11 +18,16 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Evoker;
+import org.bukkit.entity.Horse;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Monster;
+import org.bukkit.entity.Piglin;
+import org.bukkit.entity.PiglinBrute;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Vex;
+import org.bukkit.entity.Villager;
+import org.bukkit.entity.Zombie;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.SpectralArrow;
@@ -35,6 +40,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntitySpellCastEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
+import org.bukkit.event.entity.EntityTransformEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -103,6 +109,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final Map<UUID, Map<String, Long>> skillCooldowns = new HashMap<>();
     private final Map<UUID, Set<UUID>> summonedMinions = new HashMap<>();
     private final Map<UUID, UUID> ownerAttackTargets = new HashMap<>();
+    private final Map<UUID, UUID> mountByUnit = new HashMap<>();
     private final Set<UUID> awaitingGroupName = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private YamlConfiguration settings;
     private YamlConfiguration data;
@@ -492,7 +499,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         skillCooldowns.remove(id);
         cleanupSummonedMinions(id);
         if (unit != null) {
-            captureEquipment(unit, (Mob) event.getEntity());
+            UUID mountId = mountByUnit.remove(id);
+            if (mountId != null) {
+                Entity mount = Bukkit.getEntity(mountId);
+                if (mount != null && mount.isValid()) mount.remove();
+            }
             event.getDrops().clear();
             event.setDroppedExp(0);
             unit.deployed = false;
@@ -592,6 +603,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
             return;
         }
+        if (mob instanceof Villager && event.getTarget() != null && (event.getTarget() instanceof Monster
+                || event.getTarget() instanceof Player)) {
+            event.setCancelled(true);
+            mob.setTarget(null);
+            return;
+        }
         UUID ownerId = getOwnerId(mob);
         boolean ownerCommandedTarget = event.getTarget() != null && ownerId != null
             && event.getTarget().getUniqueId().equals(ownerAttackTargets.get(ownerId));
@@ -609,6 +626,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     public void onMercenarySpellCast(EntitySpellCastEvent event) {
         if (event.getEntity() instanceof Evoker evoker && isMercenary(evoker)
                 && event.getSpell() == Spellcaster.Spell.SUMMON_VEX) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onMercenaryTransform(EntityTransformEvent event) {
+        Entity entity = event.getEntity();
+        if (!(entity instanceof Mob mob) || !isMercenary(mob)) return;
+        if (mob instanceof Piglin || mob instanceof PiglinBrute || mob instanceof Villager) {
             event.setCancelled(true);
         }
     }
@@ -801,7 +827,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 if (!Set.of("ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES",
                             "BUFF_OWNER", "BUFF_ALLIES", "SHIELD_OWNER", "VOLLEY",
                             "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
-                            "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES")
+                            "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE")
                         .contains(skill.toUpperCase(Locale.ROOT))) {
                     throw new InvalidConfigurationException(
                         "Unknown skill '" + skill + "' in class '" + classId + "'.");
@@ -814,7 +840,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     if (!Set.of("ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES",
                                 "BUFF_OWNER", "BUFF_ALLIES", "SHIELD_OWNER", "VOLLEY",
                                 "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
-                                "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES")
+                                "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE")
                             .contains(skill.toUpperCase(Locale.ROOT))) {
                         throw new InvalidConfigurationException(
                             "Unknown skill-settings entry '" + skill + "' in class '" + classId + "'.");
@@ -1273,6 +1299,33 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 announceSkillCast(unit, owner, "SUMMON_VEXES", Particle.SOUL);
             }
         }
+        if (hasSkill(unit, "LANCE_CHARGE") && mob != null && target != null && ready(unit, "lance-charge")
+                && "paladin".equals(unit.unitClass) && mob instanceof Zombie zombie) {
+            UUID mountId = mountByUnit.get(unit.id);
+            Entity mount = mountId == null ? null : Bukkit.getEntity(mountId);
+            if (mount == null || !mount.isValid() || !zombie.isInsideVehicle()) return;
+            double damage = Math.min(100.0, skillOptionDouble(unit, "LANCE_CHARGE", "damage", 12.0, 0.0, 100.0)
+                * skillPowerMultiplier(unit));
+            double radius = skillOptionDouble(unit, "LANCE_CHARGE", "radius-blocks", 4.0, 1.0, 12.0);
+            Vector chargeDir = target.getLocation().toVector().subtract(zombie.getLocation().toVector());
+            if (chargeDir.lengthSquared() <= 0.0001) {
+                chargeDir = new Vector(0.0, 0.0, 1.0);
+            } else {
+                chargeDir.normalize();
+            }
+            zombie.setVelocity(chargeDir.multiply(0.95));
+            zombie.getWorld().spawnParticle(Particle.CRIT, zombie.getLocation().add(0, 1, 0), 18, 0.6, 0.7, 0.6, 0.05);
+            for (Entity nearby : zombie.getWorld().getNearbyEntities(zombie.getLocation(), radius, radius, radius)) {
+                if (!(nearby instanceof LivingEntity living) || living == zombie || living == owner || isMercenary(living)) continue;
+                if (!(living instanceof Monster hostile) || !isValidTarget(hostile)) continue;
+                if (living.getLocation().distanceSquared(zombie.getLocation()) <= radius * radius) {
+                    hostile.damage(damage, zombie);
+                    hostile.setVelocity(hostile.getVelocity().add(chargeDir.clone().multiply(0.35)));
+                }
+            }
+            markUsed(unit, "lance-charge", skillCooldownSeconds(unit, "LANCE_CHARGE"));
+            announceSkillCast(unit, owner, "LANCE_CHARGE", Particle.CRIT);
+        }
         if (hasSkill(unit, "RANGED_ATTACK") && target != null && mob != null
                 && ready(unit, "ranged-attack")) {
             try {
@@ -1600,6 +1653,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean isValidTarget(LivingEntity target) {
         return target.isValid() && !target.isDead() && target.isOnGround()
             && !(target instanceof org.bukkit.entity.Flying);
+    }
+
+    private void sanitizeMobAi(Mob mob) {
+        if (mob instanceof Villager) {
+            mob.setAware(true);
+            mob.setTarget(null);
+        }
     }
 
     private boolean addExperience(Unit unit, int amount) {
@@ -3421,9 +3481,23 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             plugin.getLogger().warning("[Army] Configured entity type is not a Mob: " + type.name());
             return null;
         }
+        if (mob instanceof Villager) {
+            mob.setAware(true);
+            mob.setTarget(null);
+        }
         PersistentDataContainer pdc = mob.getPersistentDataContainer();
         pdc.set(unitKey, PersistentDataType.STRING, unit.id.toString());
         pdc.set(ownerKey, PersistentDataType.STRING, unit.owner.toString());
+        if ("paladin".equals(unit.unitClass)) {
+            Entity mountEntity = location.getWorld().spawnEntity(location.clone().add(1.2, 0.0, 0.0), EntityType.HORSE);
+            if (mountEntity instanceof Horse horse) {
+                horse.setPersistent(false);
+                horse.setRemoveWhenFarAway(false);
+                horse.setTamed(true);
+                horse.addPassenger(mob);
+                mountByUnit.put(unit.id, horse.getUniqueId());
+            }
+        }
         mob.setPersistent(true);
         mob.setRemoveWhenFarAway(false);
         mob.setCanPickupItems(false);
