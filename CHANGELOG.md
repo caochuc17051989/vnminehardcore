@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.24.1] - 2026-10-14
+
+### Fixed
+- Thông tin menu lính hiển thị vũ khí phù hợp theo cấu hình class thay vì vũ khí hiện đang cầm.
+
 ## [v1.24.0] - 2026-10-14
 
 ### Added
