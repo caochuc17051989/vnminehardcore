@@ -34,6 +34,7 @@ import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.TippedArrow;
 import io.papermc.paper.event.entity.EntityDamageItemEvent;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -500,11 +501,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         skillCooldowns.remove(id);
         cleanupSummonedMinions(id);
         if (unit != null) {
-            UUID mountId = mountByUnit.remove(id);
-            if (mountId != null) {
-                Entity mount = Bukkit.getEntity(mountId);
-                if (mount != null && mount.isValid()) mount.remove();
-            }
+            removeMount(id, event.getEntity() instanceof Mob deadMob ? deadMob : null);
             event.getDrops().clear();
             event.setDroppedExp(0);
             unit.deployed = false;
@@ -597,32 +594,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     public void onMercenaryTarget(EntityTargetLivingEntityEvent event) {
         if (!(event.getEntity() instanceof Mob mob) || !isMercenary(mob)) return;
         if (isSummonedMinion(mob)) {
-            LivingEntity target = event.getTarget();
-            if (target == null) {
+            if (!canMinionTarget(mob, event.getTarget())) {
                 event.setCancelled(true);
-                return;
-            }
-            UUID ownerId = getOwnerId(mob);
-            if (ownerId != null && target.getUniqueId().equals(ownerId)) {
-                event.setCancelled(true);
-                return;
-            }
-            if (isMercenary(target) && ownerId != null && ownerId.equals(getOwnerId(target))) {
-                event.setCancelled(true);
-                return;
-            }
-            if ((target instanceof Player || isMercenary(target))
-                    && ownerId != null && !isRetaliationTarget(ownerId, target)) {
-                event.setCancelled(true);
-                return;
-            }
-            if (!(target instanceof Monster) && !(target instanceof Player)
-                    && !isMercenary(target)) {
-                event.setCancelled(true);
-                return;
-            }
-            if (!isValidTarget(target) || !mob.hasLineOfSight(target)) {
-                event.setCancelled(true);
+                mob.setTarget(null);
             }
             return;
         }
@@ -665,55 +639,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     @EventHandler(ignoreCancelled = true)
     public void onSummonedMinionTarget(EntityTargetLivingEntityEvent event) {
         if (!(event.getEntity() instanceof Mob mob) || !isSummonedMinion(mob)) return;
-        LivingEntity target = event.getTarget();
-        UUID ownerId = getOwnerId(mob);
-        if (target == null) {
+        if (!canMinionTarget(mob, event.getTarget())) {
             event.setCancelled(true);
-            return;
-        }
-        if (ownerId != null && target.getUniqueId().equals(ownerId)) {
-            event.setCancelled(true);
-            return;
-        }
-        if (isMercenary(target) && ownerId != null && ownerId.equals(getOwnerId(target))) {
-            event.setCancelled(true);
-            return;
-        }
-        if ((target instanceof Player || isMercenary(target))
-                && ownerId != null && !isRetaliationTarget(ownerId, target)) {
-            event.setCancelled(true);
-            return;
-        }
-        if (target instanceof Player player && player.getUniqueId().equals(ownerId)) {
-            event.setCancelled(true);
-            return;
-        }
-        if (!(target instanceof Monster) && !(target instanceof Player) && !isMercenary(target)) {
-            event.setCancelled(true);
-            return;
-        }
-        if (!mob.hasLineOfSight(target) || !isValidTarget(target)) {
-            event.setCancelled(true);
+            mob.setTarget(null);
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onSummonedMinionFriendlyFire(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Mob mob) || !isSummonedMinion(mob)) return;
         if (!(event.getEntity() instanceof LivingEntity target)) return;
-        UUID ownerId = getOwnerId(mob);
-        if (ownerId != null && target.getUniqueId().equals(ownerId)) {
-            event.setCancelled(true);
-            return;
-        }
-        if (isMercenary(target) && ownerId != null && ownerId.equals(getOwnerId(target))) {
-            event.setCancelled(true);
-            return;
-        }
-        if ((target instanceof Player || isMercenary(target))
-                && ownerId != null && !isRetaliationTarget(ownerId, target)) {
-            event.setCancelled(true);
-        }
+        if (!isAllowedMinionVictim(mob, target)) event.setCancelled(true);
     }
 
     @EventHandler
@@ -1155,9 +1091,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                         if (mob != null) {
                             captureEquipment(unit, mob);
                             updateLocation(unit, mob.getLocation());
+                            removeMount(unit.id, mob);
                             mob.remove();
                             activeEntities.remove(unit.id);
                             unit.entityId = null;
+                        } else {
+                            removeMount(unit.id, null);
                         }
                         continue;
                     }
@@ -1350,30 +1289,31 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         if (hasSkill(unit, "LANCE_CHARGE") && mob != null && target != null && ready(unit, "lance-charge")
                 && "paladin".equals(unit.unitClass) && mob instanceof Zombie zombie) {
-            UUID mountId = mountByUnit.get(unit.id);
-            Entity mount = mountId == null ? null : Bukkit.getEntity(mountId);
-            if (mount == null || !mount.isValid() || !zombie.isInsideVehicle()) return;
-            double damage = Math.min(100.0, skillOptionDouble(unit, "LANCE_CHARGE", "damage", 12.0, 0.0, 100.0)
-                * skillPowerMultiplier(unit));
-            double radius = skillOptionDouble(unit, "LANCE_CHARGE", "radius-blocks", 4.0, 1.0, 12.0);
-            Vector chargeDir = target.getLocation().toVector().subtract(zombie.getLocation().toVector());
-            if (chargeDir.lengthSquared() <= 0.0001) {
-                chargeDir = new Vector(0.0, 0.0, 1.0);
-            } else {
-                chargeDir.normalize();
-            }
-            zombie.setVelocity(chargeDir.multiply(0.95));
-            zombie.getWorld().spawnParticle(Particle.CRIT, zombie.getLocation().add(0, 1, 0), 18, 0.6, 0.7, 0.6, 0.05);
-            for (Entity nearby : zombie.getWorld().getNearbyEntities(zombie.getLocation(), radius, radius, radius)) {
-                if (!(nearby instanceof LivingEntity living) || living == zombie || living == owner || isMercenary(living)) continue;
-                if (!(living instanceof Monster hostile) || !isValidTarget(hostile)) continue;
-                if (living.getLocation().distanceSquared(zombie.getLocation()) <= radius * radius) {
-                    hostile.damage(damage, zombie);
-                    hostile.setVelocity(hostile.getVelocity().add(chargeDir.clone().multiply(0.35)));
+            Horse horse = getMountedHorse(unit, zombie);
+            if (horse != null && target instanceof Monster hostile && !isMercenary(hostile)) {
+                double damage = Math.min(100.0,
+                    skillOptionDouble(unit, "LANCE_CHARGE", "damage", 12.0, 0.0, 100.0)
+                        * skillPowerMultiplier(unit));
+                double radius = skillOptionDouble(unit, "LANCE_CHARGE", "radius-blocks", 4.0, 1.0, 12.0);
+                Vector chargeDir = hostile.getLocation().toVector().subtract(horse.getLocation().toVector());
+                if (chargeDir.lengthSquared() <= 0.0001) chargeDir = new Vector(0.0, 0.0, 1.0);
+                else chargeDir.normalize();
+                horse.setVelocity(chargeDir.clone().multiply(1.2));
+                zombie.swingMainHand();
+                horse.getWorld().spawnParticle(Particle.CRIT, horse.getLocation().add(0, 1, 0),
+                    18, 0.6, 0.7, 0.6, 0.05);
+                hostile.getWorld().spawnParticle(Particle.CRIT, hostile.getLocation().add(0, 1, 0),
+                    12, 0.35, 0.5, 0.35, 0.04);
+                for (Entity nearby : hostile.getWorld().getNearbyEntities(hostile.getLocation(), radius, radius, radius)) {
+                    if (!(nearby instanceof Monster victim) || !isValidTarget(victim) || isMercenary(victim)) continue;
+                    if (victim.getLocation().distanceSquared(hostile.getLocation()) <= radius * radius) {
+                        victim.damage(damage, zombie);
+                        victim.setVelocity(victim.getVelocity().add(chargeDir.clone().multiply(0.35)));
+                    }
                 }
+                markUsed(unit, "lance-charge", skillCooldownSeconds(unit, "LANCE_CHARGE"));
+                announceSkillCast(unit, owner, "LANCE_CHARGE", Particle.CRIT);
             }
-            markUsed(unit, "lance-charge", skillCooldownSeconds(unit, "LANCE_CHARGE"));
-            announceSkillCast(unit, owner, "LANCE_CHARGE", Particle.CRIT);
         }
         if (hasSkill(unit, "RANGED_ATTACK") && target != null && mob != null
                 && ready(unit, "ranged-attack")) {
@@ -1704,6 +1644,24 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             && !(target instanceof org.bukkit.entity.Flying);
     }
 
+    private boolean canMinionTarget(Mob minion, LivingEntity target) {
+        return target != null && isAllowedMinionVictim(minion, target)
+            && isValidTarget(target) && minion.hasLineOfSight(target);
+    }
+
+    private boolean isAllowedMinionVictim(Mob minion, LivingEntity target) {
+        UUID ownerId = getOwnerId(minion);
+        if (ownerId != null && target.getUniqueId().equals(ownerId)) return false;
+        if (isMercenary(target)) {
+            UUID targetOwner = getOwnerId(target);
+            if (ownerId == null || ownerId.equals(targetOwner) || !isRetaliationTarget(ownerId, target)) {
+                return false;
+            }
+        }
+        if (target instanceof Player) return ownerId != null && isRetaliationTarget(ownerId, target);
+        return target instanceof Monster || isMercenary(target);
+    }
+
     private void registerOwnerThreat(UUID ownerId, Entity source) {
         if (ownerId == null || source == null) return;
         UUID threatId = source instanceof Player player ? player.getUniqueId() : getOwnerId(source);
@@ -1931,13 +1889,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                         + "§c; lính vẫn được giữ nguyên.");
                     continue;
                 }
+                removeMount(unit.id, mob);
                 mob.remove();
                 activeEntities.remove(unit.id);
                 rested++;
             } else if (unit.deployed) {
                 unit.deployed = false;
                 unit.entityId = null;
-                if (saveData()) rested++;
+                if (saveData()) {
+                    removeMount(unit.id, null);
+                    rested++;
+                }
                 else player.sendMessage("§cKhông thể lưu trạng thái nghỉ của lính §e#" + shortId(unit.id) + "§c.");
             }
         }
@@ -1969,6 +1931,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             captureEquipment(unit, mob);
             updateLocation(unit, mob.getLocation());
             unit.entityId = null;
+            removeMount(unit.id, mob);
             mob.remove();
             activeEntities.remove(unit.id);
             changed = true;
@@ -1976,6 +1939,30 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (changed && !saveData()) {
             plugin.getLogger().severe("[Army] Could not persist mercenary state on player logout for " + ownerId + ".");
         }
+    }
+
+    private void removeMount(UUID unitId, Mob rider) {
+        UUID mountId = mountByUnit.remove(unitId);
+        Entity mount = mountId == null ? null : Bukkit.getEntity(mountId);
+        if (mount == null && rider != null && rider.getVehicle() instanceof Horse) {
+            mount = rider.getVehicle();
+        }
+        if (mount instanceof Horse horse && horse.isValid()) horse.remove();
+    }
+
+    private Horse getMountedHorse(Unit unit, Zombie rider) {
+        UUID mountId = mountByUnit.get(unit.id);
+        Entity mount = mountId == null ? null : Bukkit.getEntity(mountId);
+        Horse horse;
+        if (mount instanceof Horse existing && existing.isValid()) {
+            horse = existing;
+        } else {
+            mountByUnit.remove(unit.id);
+            if (!(rider.getVehicle() instanceof Horse attached) || !attached.isValid()) return null;
+            horse = attached;
+            mountByUnit.put(unit.id, horse.getUniqueId());
+        }
+        return rider.getVehicle() == horse ? horse : null;
     }
 
     private void setMode(Player player, Mode mode) {
@@ -3578,7 +3565,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         applyStats(unit, mob);
         org.bukkit.inventory.EquipmentSlot handSlot = org.bukkit.inventory.EquipmentSlot.HAND;
         ItemStack savedWeapon = unit.equipment.get(handSlot);
-        if (!unit.gearCustomized && (savedWeapon == null || savedWeapon.getType().isAir())) {
+        if ("paladin".equals(unit.unitClass) || (!unit.gearCustomized
+                && (savedWeapon == null || savedWeapon.getType().isAir()))) {
             Material defaultWeapon = Material.matchMaterial(
                 settings.getString("classes." + unit.unitClass + ".starting-weapon", ""));
             if (defaultWeapon != null && !defaultWeapon.isAir()) {

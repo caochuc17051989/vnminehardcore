@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.22.1] - 2026-10-14
+
+### Fixed
+- Chặn VEX tiếp tục đánh mục tiêu bị cấm và chặn sát thương lên chủ nhân/lính đồng minh.
+- Sửa trang bị TRIDENT cho Kỵ sĩ, skill lao giáo khi cưỡi ngựa và dọn ngựa cùng Kỵ sĩ khi nghỉ/thoát game/chết.
+
 ## [v1.22.0] - 2026-10-14
 
 ### Fixed
