@@ -468,11 +468,11 @@ public final class VnMineHardcore extends JavaPlugin {
                 sender.sendMessage("§6§m=======================================");
                 sender.sendMessage("§6§l  /vnevent - Gọi thiên tai thủ công");
                 sender.sendMessage("§6§m=======================================");
-                sender.sendMessage("§eUsage: §7/vnevent <id> <warning(s)> <duration(s)> | /vnevent stop");
+                sender.sendMessage("§eCách dùng: §7/vnevent <id> <giây cảnh báo> <giây kéo dài> | /vnevent stop");
                 sender.sendMessage("§e  /vnevent §7- Hiển thị danh sách này");
                 sender.sendMessage("§e  /vnevent stop §7- Dừng thiên tai đang cảnh báo hoặc hoạt động ngay lập tức");
                 sender.sendMessage("");
-                sender.sendMessage("§eDanh sách EVENT_ID có thể dùng:");
+                sender.sendMessage("§eDanh sách ID thiên tai có thể dùng:");
                 for (String id : disasterManager.getDisasterIds()) {
                     String name = disasterManager.getDisasterName(id);
                     sender.sendMessage("§c  " + id + "  §7- " + name);
@@ -492,7 +492,7 @@ public final class VnMineHardcore extends JavaPlugin {
                 return true;
             }
             if (args.length < 3) {
-                sender.sendMessage("§cSử dụng: /vnevent <id> <warning(s)> <duration(s)> hoặc /vnevent stop");
+                sender.sendMessage("§cSử dụng: /vnevent <id> <giây cảnh báo> <giây kéo dài> hoặc /vnevent stop");
                 return true;
             }
             String eventId = args[0].toLowerCase();
@@ -530,11 +530,11 @@ public final class VnMineHardcore extends JavaPlugin {
                 sender.sendMessage("§6§m=======================================");
                 sender.sendMessage("§6§l  /vnboss - Quản lý boss");
                 sender.sendMessage("§6§m=======================================");
-                sender.sendMessage("§eSử dụng: §7/vnboss <id> <level> <warning(s)> <duration(s)>");
+                sender.sendMessage("§eCách dùng: §7/vnboss <id> <level> <giây cảnh báo> <giây kéo dài>");
                 sender.sendMessage("§e  /vnboss kill §7- Kết thúc boss đang xuất hiện (không điểm/loot)");
                 sender.sendMessage("§e  /vnboss §7- Hiển thị danh sách này");
                 sender.sendMessage("");
-                sender.sendMessage("§eDanh sách BOSS_ID có thể dùng:");
+                sender.sendMessage("§eDanh sách ID boss có thể dùng:");
                 for (String id : bossEventManager.getBossIds()) {
                     sender.sendMessage("§c  " + id + "  §7- " + bossEventManager.getBossName(id));
                 }
@@ -553,7 +553,7 @@ public final class VnMineHardcore extends JavaPlugin {
                 return true;
             }
             if (args.length != 4) {
-                sender.sendMessage("§cSử dụng: /vnboss <id> <level> <warning(s)> <duration(s)> hoặc /vnboss kill");
+                sender.sendMessage("§cSử dụng: /vnboss <id> <level> <giây cảnh báo> <giây kéo dài> hoặc /vnboss kill");
                 return true;
             }
             String bossId = args[0].toLowerCase(Locale.ROOT);
@@ -586,35 +586,35 @@ public final class VnMineHardcore extends JavaPlugin {
 
         if (command.getName().equalsIgnoreCase("vnstats")) {
             if (sender instanceof Player player) {
-                sender.sendMessage("§6=== VnMineHardcore Stats ===");
-                sender.sendMessage("§eDeaths: §c" + logManager.getDeathCount(player));
-                sender.sendMessage("§eSurvival Time: §a" + logManager.getSurvivalTime(player));
-                sender.sendMessage("§eMob Kills: §b" + logManager.getMobKills(player));
+                sender.sendMessage("§6=== Thống kê VnMineHardcore ===");
+                sender.sendMessage("§eSố lần chết: §c" + logManager.getDeathCount(player));
+                sender.sendMessage("§eThời gian sinh tồn: §a" + logManager.getSurvivalTime(player));
+                sender.sendMessage("§eQuái đã giết: §b" + logManager.getMobKills(player));
             }
             return true;
         }
 
         if (command.getName().equalsIgnoreCase("vnhardcore")) {
             sender.sendMessage("§6§m========================================");
-            sender.sendMessage("§6§l  VnMineHardcore - Admin Status");
+            sender.sendMessage("§6§l  VnMineHardcore - Trạng thái quản trị");
             sender.sendMessage("§6§m========================================");
-            sender.sendMessage("§c☠ DEATH: §aTracked | Tag=§aON (" +
+            sender.sendMessage("§c☠ TỬ VONG: §aTheo dõi | Tag=§aBẬT (" +
                 (configManager.combatTagDurationMs / 1000) + "s)");
-            sender.sendMessage("§e🍔 HUNGER: " + (configManager.hungerEnabled ? "§aON" : "§cOFF"));
-            sender.sendMessage("§b💧 THIRST: " + (configManager.thirstEnabled ? "§aON" : "§cOFF") +
-                " | Source=" + (configManager.drinkFromSource ? "§aON" : "§cOFF"));
-            sender.sendMessage("§c⚔ COMBAT: Mob=x" + configManager.mobDamageMultiplier +
-                " Fall=x" + configManager.fallDamageMultiplier +
-                " Regen=" + (!configManager.disableNaturalRegen ? "§aON" : "§cOFF"));
-            sender.sendMessage("§a🌍 ENV: Temp=" + (configManager.temperatureEnabled ? "§aON" : "§cOFF") +
-                " Fog=" + (configManager.fogEnabled ? "§aON" : "§cOFF") +
-                " Fly=" + (configManager.flightBlock ? "§cBLOCK" : "§aOK"));
-            sender.sendMessage("§4🌋 DISASTERS: " + (configManager.disastersEnabled ? "§aON" : "§cOFF") +
-                (disasterManager.isDisasterActive() ? " §c⚠ ACTIVE: " + disasterManager.getCurrentDisaster() : ""));
-            sender.sendMessage("§c👹 BOSS: " + (configManager.bossEventsEnabled ? "§aON" : "§cOFF") +
-                (bossEventManager.isBossActive() ? " §c⚠ ACTIVE: " + bossEventManager.getCurrentBossName() : ""));
-            sender.sendMessage("§e🏷 RENAME: " + (configManager.renameEnabled ? "§aON" : "§cOFF"));
-            sender.sendMessage("§eCommands: §7/vnhelp | /vnreload | /vnevent | /vn death reset <player>");
+            sender.sendMessage("§e🍔 ĐÓI: " + (configManager.hungerEnabled ? "§aBẬT" : "§cTẮT"));
+            sender.sendMessage("§b💧 KHÁT: " + (configManager.thirstEnabled ? "§aBẬT" : "§cTẮT") +
+                " | Nguồn=" + (configManager.drinkFromSource ? "§aBẬT" : "§cTẮT"));
+            sender.sendMessage("§c⚔ TẤN CÔNG: Quái=x" + configManager.mobDamageMultiplier +
+                " Rơi=x" + configManager.fallDamageMultiplier +
+                " Hồi phục=" + (!configManager.disableNaturalRegen ? "§aBẬT" : "§cTẮT"));
+            sender.sendMessage("§a🌍 MÔI TRƯỜNG: Nhiệt=" + (configManager.temperatureEnabled ? "§aBẬT" : "§cTẮT") +
+                " Sương=" + (configManager.fogEnabled ? "§aBẬT" : "§cTẮT") +
+                " Bay=" + (configManager.flightBlock ? "§cCHẶN" : "§aOK"));
+            sender.sendMessage("§4🌋 THIÊN TAI: " + (configManager.disastersEnabled ? "§aBẬT" : "§cTẮT") +
+                (disasterManager.isDisasterActive() ? " §c⚠ ĐANG CHẠY: " + disasterManager.getCurrentDisaster() : ""));
+            sender.sendMessage("§c👹 SỰ KIỆN BOSS: " + (configManager.bossEventsEnabled ? "§aBẬT" : "§cTẮT") +
+                (bossEventManager.isBossActive() ? " §c⚠ ĐANG CHẠY: " + bossEventManager.getCurrentBossName() : ""));
+            sender.sendMessage("§e🏷 ĐỔI TÊN: " + (configManager.renameEnabled ? "§aBẬT" : "§cTẮT"));
+            sender.sendMessage("§eLệnh: §7/vnhelp | /vnreload | /vnevent | /vn death reset <player>");
             sender.sendMessage("§6§m========================================");
             return true;
         }
@@ -669,7 +669,7 @@ public final class VnMineHardcore extends JavaPlugin {
             return true;
         }
         if (args.length != 2) {
-            sender.sendMessage("§eSử dụng: /tp <user> <world>");
+            sender.sendMessage("§eCách dùng: /tp <user> <world>");
             return true;
         }
 

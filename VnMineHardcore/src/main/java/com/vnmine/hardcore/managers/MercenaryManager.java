@@ -678,18 +678,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         UUID ownerId = getOwnerId(mob);
         boolean ownerCommandedTarget = ownerId != null
             && target.getUniqueId().equals(ownerAttackTargets.get(ownerId));
-        if (isMercenary(target) || target.getUniqueId().equals(ownerId)) {
-            event.setCancelled(true);
-            mob.setTarget(null);
-            return;
-        }
-        if (target instanceof Player player) {
-            if (!ownerCommandedTarget && !isRetaliationTarget(ownerId, player)) {
-                event.setCancelled(true);
-                mob.setTarget(null);
-                return;
-            }
-        } else if (!isHostileMob(target)) {
+        if (target.getUniqueId().equals(ownerId)
+                || !isAllowedMercenaryTarget(ownerId, target, ownerCommandedTarget)) {
             event.setCancelled(true);
             mob.setTarget(null);
             return;
@@ -712,9 +702,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     public void onMercenaryTransform(EntityTransformEvent event) {
         Entity entity = event.getEntity();
         if (!(entity instanceof Mob mob) || !isMercenary(mob)) return;
-        if (mob instanceof Piglin || mob instanceof PiglinBrute || mob instanceof Villager) {
-            event.setCancelled(true);
-        }
+        event.setCancelled(true);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -773,11 +761,14 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
         }
         if (!(source instanceof Player owner) || !(event.getEntity() instanceof LivingEntity target)
-                || isMercenary(target) || target.getUniqueId().equals(owner.getUniqueId())) return;
+                || target.getUniqueId().equals(owner.getUniqueId())) return;
+        UUID targetOwner = getOwnerId(target);
+        if (targetOwner != null && targetOwner.equals(owner.getUniqueId())) return;
         ownerAttackTargets.put(owner.getUniqueId(), target.getUniqueId());
         for (Unit unit : getOwnerUnits(owner.getUniqueId())) {
             Mob mob = activeEntities.get(unit.id);
-            if (unit.deployed && mob != null && mob.isValid() && isValidTarget(target)
+            if (unit.deployed && mob != null && mob.isValid()
+                    && ((isValidTarget(target) && !isMercenary(target)) || isMercenary(target))
                     && mob.hasLineOfSight(target)) mob.setTarget(target);
         }
     }
@@ -1013,7 +1004,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         this.maxUnits = readBoundedInt(loaded, "max-units-per-player", 10, 1, 100);
         this.followDistance = readBoundedDouble(loaded, "follow-distance-blocks", 8.0, 2.0, 64.0);
         this.teleportDistance = readBoundedDouble(loaded, "teleport-distance-blocks", 40.0, 8.0, 256.0);
-        this.targetRadius = readBoundedDouble(loaded, "target-radius-blocks", 20.0, 4.0, 64.0);
+        this.targetRadius = readBoundedDouble(loaded, "target-radius-blocks", 50.0, 4.0, 50.0);
         this.aiIntervalTicks = readBoundedInt(loaded, "ai-interval-ticks", 20, 10, 100);
         this.healAmount = readBoundedDouble(loaded, "skills.heal-amount", 4.0, 0.0, 100.0);
         this.healRadius = readBoundedDouble(loaded, "skills.heal-radius-blocks", 8.0, 1.0, 32.0);
@@ -1294,15 +1285,35 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (!hasSkill(unit, "ATTACK") && !hasSkill(unit, "RANGED_ATTACK")
             && !hasSkill(unit, "FIRE_BOLT") && !hasSkill(unit, "ROOT_TARGET")) return null;
         double radius = readBoundedDouble(settings, "classes." + unit.unitClass + ".target-radius-blocks",
-            targetRadius, 4.0, 64.0);
+            targetRadius, 4.0, 50.0);
+        radius = Math.max(radius, 50.0);
         Location center = unit.mode == Mode.ATTACK ? mob.getLocation() : owner.getLocation();
         if (unit.mode == Mode.PROTECT) {
             LivingEntity attacker = mob.getWorld().getNearbyEntities(owner.getLocation(), radius, radius, radius)
                 .stream()
-                .filter(entity -> entity instanceof Monster)
-                .map(entity -> (Monster) entity)
-                .filter(monster -> monster.getTarget() != null &&
-                    monster.getTarget().getUniqueId().equals(owner.getUniqueId()))
+                .filter(entity -> entity instanceof LivingEntity)
+                .map(entity -> (LivingEntity) entity)
+                .filter(entity -> entity instanceof Monster || entity instanceof org.bukkit.entity.Ghast
+                    || entity instanceof org.bukkit.entity.Phantom || entity instanceof org.bukkit.entity.EnderDragon
+                    || entity instanceof org.bukkit.entity.Wither)
+                .filter(entity -> {
+                    if (entity instanceof Monster monster) {
+                        return monster.getTarget() != null && monster.getTarget().getUniqueId().equals(owner.getUniqueId());
+                    }
+                    if (entity instanceof org.bukkit.entity.Ghast ghast) {
+                        return ghast.getTarget() != null && ghast.getTarget().getUniqueId().equals(owner.getUniqueId());
+                    }
+                    if (entity instanceof org.bukkit.entity.Phantom phantom) {
+                        return phantom.getTarget() != null && phantom.getTarget().getUniqueId().equals(owner.getUniqueId());
+                    }
+                    if (entity instanceof org.bukkit.entity.EnderDragon dragon) {
+                        return dragon.getTarget() != null && dragon.getTarget().getUniqueId().equals(owner.getUniqueId());
+                    }
+                    if (entity instanceof org.bukkit.entity.Wither wither) {
+                        return wither.getTarget() != null && wither.getTarget().getUniqueId().equals(owner.getUniqueId());
+                    }
+                    return false;
+                })
                 .filter(mob::hasLineOfSight)
                 .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(owner.getLocation())))
                 .orElse(null);
@@ -1312,7 +1323,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         Location searchCenter = center;
         UUID ownerTargetId = ownerAttackTargets.get(owner.getUniqueId());
         Entity ownerTargetEntity = ownerTargetId == null ? null : Bukkit.getEntity(ownerTargetId);
-        if (ownerTargetEntity instanceof LivingEntity ownerTarget && isValidTarget(ownerTarget)
+        if (ownerTargetEntity instanceof LivingEntity ownerTarget
+            && isAllowedMercenaryTarget(getOwnerId(mob), ownerTarget, true)
             && mob.hasLineOfSight(ownerTarget) && mob.getWorld().equals(ownerTarget.getWorld())) {
             return ownerTarget;
         }
@@ -1320,11 +1332,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             ownerAttackTargets.remove(owner.getUniqueId());
         }
         return mob.getWorld().getNearbyEntities(searchCenter, radius, radius, radius).stream()
-            .filter(entity -> entity instanceof Monster)
-            .map(entity -> (Monster) entity)
-            .filter(monster -> isValidTarget(monster) && mob.hasLineOfSight(monster)
-                && !isMercenary(monster))
-            .filter(monster -> !monster.isGlowing())
+            .filter(entity -> entity instanceof LivingEntity)
+            .map(entity -> (LivingEntity) entity)
+            .filter(living -> !living.equals(mob))
+            .filter(living -> isAllowedMercenaryTarget(getOwnerId(mob), living, false))
+            .filter(living -> !living.isGlowing())
+            .filter(mob::hasLineOfSight)
             .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(searchCenter)))
             .orElse(null);
     }
@@ -1737,15 +1750,31 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private boolean isHostileMob(LivingEntity target) {
         if (target == null || !target.isValid() || target.isDead()) return false;
-        if (target instanceof Player) return false;
+        if (target instanceof Player || isMercenary(target)) return false;
         if (target instanceof Monster) return true;
         return target instanceof org.bukkit.entity.EnderDragon
             || target instanceof org.bukkit.entity.Ghast
             || target instanceof org.bukkit.entity.Phantom
-            || target instanceof org.bukkit.entity.Wither;
+            || target instanceof org.bukkit.entity.Wither
+            || target instanceof org.bukkit.entity.Slime
+            || target instanceof org.bukkit.entity.MagmaCube;
     }
 
     private boolean isValidTarget(LivingEntity target) {
+        return isHostileMob(target);
+    }
+
+    private boolean isAllowedMercenaryTarget(UUID ownerId, LivingEntity target, boolean ownerCommandedTarget) {
+        if (target == null || !target.isValid() || target.isDead()) return false;
+        if (target.getUniqueId().equals(ownerId)) return false;
+        if (isMercenary(target)) {
+            UUID targetOwner = getOwnerId(target);
+            if (targetOwner != null && targetOwner.equals(ownerId)) return false;
+            return ownerCommandedTarget || isRetaliationTarget(ownerId, target);
+        }
+        if (target instanceof Player player) {
+            return ownerCommandedTarget || isRetaliationTarget(ownerId, player);
+        }
         return isHostileMob(target);
     }
 
@@ -2675,7 +2704,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             int slot = 9 + level;
             holder.choices.put(slot, Integer.toString(level));
             holder.inventory.setItem(slot, menuItem(Material.NETHER_STAR, "§cLevel " + level,
-                List.of("§7Boss: §f" + plugin.getBossEventManager().getBossName(bossId),
+                List.of("§7Sự kiện boss: §f" + plugin.getBossEventManager().getBossName(bossId),
                     "§eNhấn để gọi boss.")));
         }
         holder.inventory.setItem(22, menuItem(Material.ARROW, "§7Quay lại", List.of("§7Chọn boss")));

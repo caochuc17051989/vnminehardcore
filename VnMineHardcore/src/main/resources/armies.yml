@@ -17,9 +17,9 @@ follow-distance-blocks: 8.0
 # [EN] Teleport-to-owner threshold; default 40 blocks, valid range 8-256.
 teleport-distance-blocks: 40.0
 
-# [VI] Bán kính tìm mục tiêu; mặc định 20 block, hợp lệ 4-64.
-# [EN] Target search radius; default 20 blocks, valid range 4-64.
-target-radius-blocks: 20.0
+# [VI] Bán kính tìm mục tiêu; mặc định 50 block, hợp lệ 4-50.
+# [EN] Target search radius; default 50 blocks, valid range 4-50.
+target-radius-blocks: 50.0
 
 # [VI] Chu kỳ cập nhật AI; mặc định 20 tick, hợp lệ 10-100.
 # [EN] AI update interval; default 20 ticks, valid range 10-100.
@@ -403,9 +403,9 @@ classes:
     # [VI] Vũ khí mặc định khi triệu hồi; mặc định IRON_AXE.
     # [EN] Default weapon on summon; default IRON_AXE.
     starting-weapon: IRON_AXE
-    # [VI] Bán kính tìm mục tiêu; mặc định 20 block, hợp lệ 4-64.
-    # [EN] Target acquisition radius; default 20 blocks, valid range 4-64.
-    target-radius-blocks: 20.0
+    # [VI] Bán kính tìm mục tiêu; mặc định 50 block, hợp lệ 4-50.
+    # [EN] Target acquisition radius; default 50 blocks, valid range 4-50.
+    target-radius-blocks: 50.0
     # [VI] Cooldown skill tính bằng giây; sát thương 0-100, bán kính 1-32 block.
     # [EN] Skill cooldowns are in seconds; damage 0-100, radius 1-32 blocks.
     skill-settings:

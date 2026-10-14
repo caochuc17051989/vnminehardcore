@@ -1,5 +1,18 @@
 # Changelog
 
+## [v1.28.0] - 2026-10-14
+
+### Fixed
+- Chặn biến hình của mercenary để giữ nguyên item trên người và bảo toàn gear khi entity đổi form.
+- Cập nhật AI lính đánh thuê: chủ động tiêu diệt hostile mob trong 50 block, không tấn công đồng minh/người chơi khác ngoài trường hợp chủ nhân đã tấn công trước, và giữ dải tấn công an toàn với đội cùng chủ.
+- Đồng bộ và việt hóa giao diện thông báo cho người dùng sang tiếng Việt.
+
+## [v1.27.1] - 2026-10-14
+
+### Fixed
+- Chặn biến hình của mercenary để giữ nguyên item trên người và bảo toàn gear khi entity đổi form.
+- Cập nhật AI lính đánh thuê: chủ động tiêu diệt hostile mob trong 50 block, không tấn công đồng minh/người chơi khác ngoài trường hợp chủ nhân đã tấn công trước, và giữ dải tấn công an toàn với đội cùng chủ.
+
 ## [v1.27.0] - 2026-10-14
 
 ### Added

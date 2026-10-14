@@ -2133,7 +2133,7 @@ public class BossEventManager implements Listener {
         bossDurationSeconds = bc.durationSeconds;
 
         // Thông báo cho tất cả player
-        String msg = "§4§l⚠ BOSS: §c" + bc.displayName + " §4§lđã xuất hiện tại §e" +
+        String msg = "§4§l⚠ SỰ KIỆN BOSS: §c" + bc.displayName + " §4§lđã xuất hiện tại §e" +
             x + ", " + y + ", " + z + " §4§l(" + world.getName() + ")";
         Bukkit.broadcastMessage("§4§m========================================");
         Bukkit.broadcastMessage(msg);
