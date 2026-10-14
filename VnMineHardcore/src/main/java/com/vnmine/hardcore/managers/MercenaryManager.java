@@ -2717,9 +2717,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         ArmyMenuHolder holder = new ArmyMenuHolder(player.getUniqueId(), safePage, pageIds);
         Inventory inventory = Bukkit.createInventory(holder, 54, "Đội quân • " + (safePage + 1) + "/" + pages);
         holder.inventory = inventory;
-        inventory.setItem(2, menuItem(Material.EMERALD, "§aTriệu hồi tất cả", List.of("§7Gọi tất cả lính ra chiến.")));
+        inventory.setItem(2, menuItem(Material.EMERALD, "§aRa tất cả", List.of("§7Gọi tất cả lính ra chiến.")));
         inventory.setItem(4, menuItem(Material.EMERALD, "§aThuê lính", List.of("§7Chọn lớp và Bậc.")));
-        inventory.setItem(6, menuItem(Material.GRAY_DYE, "§7Giải tán tất cả", List.of("§7Cho tất cả lính nghỉ ngơi.")));
+        inventory.setItem(6, menuItem(Material.GRAY_DYE, "§7Nghỉ tất cả", List.of("§7Cho tất cả lính nghỉ ngơi.")));
         for (int index = 0; index < pageIds.size(); index++) {
             Unit unit = units.get(pageIds.get(index));
             if (unit == null) continue;

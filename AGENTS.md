@@ -25,7 +25,7 @@
 ## Báo cáo hoàn thành
 Khi người dùng yêu cầu build file jar,chạy build, báo cáo bằng tiếng Việt, ngắn gọn và đủ thông tin:
 - Trạng thái build: SUCCESS hoặc FAILED.
-- Build nếu file có tính năng mới hãy tăng số hiệu phiên bản lên. ví dụ: phiên bản X.Y.Z trong đó X là phiên bản lớn nhất, tôi sẽ tự quyết định, Y là khi có thêm chức năng mới, Z là khi sửa lỗi các tính năng có sẵn.
+- Luôn tăng số hiệu phiên bản khi build chứa tính năng mới theo dạng X.Y.Z: X là phiên bản lớn nhất, Y là khi có thêm chức năng mới, Z là khi sửa lỗi các tính năng có sẵn; nếu không có tính năng mới thì chỉ cập nhật Z khi cần sửa lỗi.
 - Thời điểm build thành công; đường dẫn và dung lượng file JAR; SHA256.
 - Các file đã sửa và tóm tắt thay đổi.
 - không build file jar khi người dùng chưa yêu cầu
