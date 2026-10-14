@@ -581,15 +581,15 @@ classes:
     # [VI] Sát thương tăng mỗi cấp; mặc định 0.6, không âm.
     # [EN] Damage per level; default 0.6, must be nonnegative.
     damage-per-level: 0.6
-    # [VI] Biểu tượng GUI; mặc định TRIDENT.
-    # [EN] GUI icon; default TRIDENT.
+    # [VI] Biểu tượng GUI; mặc định TRIDENT nếu server không hỗ trợ giáo.
+    # [EN] GUI icon; defaults to TRIDENT if the server does not support spears.
     menu-icon: TRIDENT
     # [VI] Bộ skill đỡ đòn, tấn công, hỗ trợ và lao giáo khi cưỡi ngựa.
     # [EN] Tank, attack, support, and mounted lance charge.
     skills: [ATTACK, SHIELD_OWNER, HEAL_ALLIES, BUFF_ALLIES, POWER_STRIKE, LANCE_CHARGE]
-    # [VI] Vũ khí mặc định khi triệu hồi; mặc định TRIDENT.
-    # [EN] Default weapon on summon; default TRIDENT.
-    starting-weapon: TRIDENT
+    # [VI] Vũ khí mặc định khi triệu hồi; dùng IRON_SPEAR nếu server hỗ trợ, nếu không tự dùng TRIDENT.
+    # [EN] Default weapon on summon; uses IRON_SPEAR when supported, otherwise falls back to TRIDENT.
+    starting-weapon: IRON_SPEAR
     # [VI] Tầm tìm mục tiêu; mặc định 18 block, hợp lệ 4-64.
     # [EN] Target acquisition radius; default 18 blocks, valid range 4-64.
     target-radius-blocks: 18.0

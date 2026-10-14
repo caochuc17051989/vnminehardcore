@@ -11,8 +11,10 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.vnmine.hardcore.VnMineHardcore;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Evoker;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.Sound;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -25,6 +27,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -39,6 +42,7 @@ final class MercenaryNamePacketListener implements Listener, AutoCloseable {
 
     private final Map<Player, UUID> viewerIds = Collections.synchronizedMap(new IdentityHashMap<>());
     private final ConcurrentMap<Integer, NameEntry> namesByEntityId = new ConcurrentHashMap<>();
+    private final Set<Integer> evokerEntityIds = ConcurrentHashMap.newKeySet();
     private final PacketAdapter packetListener;
 
     MercenaryNamePacketListener(VnMineHardcore plugin) {
@@ -46,10 +50,15 @@ final class MercenaryNamePacketListener implements Listener, AutoCloseable {
             viewerIds.put(player, player.getUniqueId());
         }
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        packetListener = new PacketAdapter(plugin, ListenerPriority.NORMAL, PacketType.Play.Server.ENTITY_METADATA) {
+        packetListener = new PacketAdapter(plugin, ListenerPriority.NORMAL,
+                PacketType.Play.Server.ENTITY_METADATA, PacketType.Play.Server.ENTITY_SOUND) {
             @Override
             public void onPacketSending(PacketEvent event) {
-                updateViewerName(event);
+                if (event.getPacketType() == PacketType.Play.Server.ENTITY_METADATA) {
+                    updateViewerName(event);
+                } else {
+                    muteEvokerPrepareAttack(event);
+                }
             }
         };
         ProtocolLibrary.getProtocolManager().addPacketListener(packetListener);
@@ -61,10 +70,13 @@ final class MercenaryNamePacketListener implements Listener, AutoCloseable {
         namesByEntityId.put(mob.getEntityId(), new NameEntry(ownerId,
             WrappedChatComponent.fromLegacyText(ownerLabel).getHandle(),
             WrappedChatComponent.fromLegacyText(viewerLabel).getHandle()));
+        if (mob instanceof Evoker) evokerEntityIds.add(mob.getEntityId());
+        else evokerEntityIds.remove(mob.getEntityId());
     }
 
     void remove(Entity entity) {
         namesByEntityId.remove(entity.getEntityId());
+        evokerEntityIds.remove(entity.getEntityId());
     }
 
     @EventHandler
@@ -99,11 +111,20 @@ final class MercenaryNamePacketListener implements Listener, AutoCloseable {
         event.getPacket().getDataValueCollectionModifier().write(0, dataValues);
     }
 
+    private void muteEvokerPrepareAttack(PacketEvent event) {
+        int entityId = event.getPacket().getIntegers().read(0);
+        if (!evokerEntityIds.contains(entityId)) return;
+        if (event.getPacket().getSoundEffects().read(0) == Sound.ENTITY_EVOKER_PREPARE_ATTACK) {
+            event.setCancelled(true);
+        }
+    }
+
     @Override
     public void close() {
         ProtocolLibrary.getProtocolManager().removePacketListener(packetListener);
         HandlerList.unregisterAll(this);
         namesByEntityId.clear();
+        evokerEntityIds.clear();
         viewerIds.clear();
     }
 }

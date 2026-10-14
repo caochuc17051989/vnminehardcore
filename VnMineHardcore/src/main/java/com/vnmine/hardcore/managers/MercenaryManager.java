@@ -37,6 +37,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntitySpellCastEvent;
@@ -548,6 +549,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     public void onMercenaryEnvironmentDamage(EntityDamageEvent event) {
+        if (event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
+                && isMercenaryMount(event.getEntity())) {
+            event.setCancelled(true);
+            return;
+        }
         if (!isMercenary(event.getEntity())) return;
         if (!(event instanceof EntityDamageByEntityEvent byEntity)) {
             event.setCancelled(true);
@@ -557,6 +563,14 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (attacker instanceof org.bukkit.entity.Projectile projectile
                 && projectile.getShooter() instanceof Entity shooter) attacker = shooter;
         if (!(attacker instanceof LivingEntity) || isMercenary(attacker)) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onMercenarySunCombust(EntityCombustEvent event) {
+        if (event.getClass() != EntityCombustEvent.class) return;
+        if (isMercenary(event.getEntity()) || isMercenaryMount(event.getEntity())) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
@@ -736,8 +750,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     @EventHandler
     public void onGearInventoryClick(InventoryClickEvent event) {
-        if (!(event.getView().getTopInventory().getHolder() instanceof GearHolder)
-                || event.getClickedInventory() != event.getView().getTopInventory()) return;
+        if (!(event.getView().getTopInventory().getHolder() instanceof GearHolder)) return;
+        if (event.isShiftClick()) {
+            event.setCancelled(true);
+            return;
+        }
+        if (event.getClickedInventory() != event.getView().getTopInventory()) return;
         int slot = event.getRawSlot();
         if ((slot >= 36 && slot < 45) || slot > 50) event.setCancelled(true);
     }
@@ -792,7 +810,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
             Material startingWeapon = Material.matchMaterial(
                 loaded.getString("classes." + classId + ".starting-weapon", "IRON_SWORD"));
-            if (startingWeapon == null || startingWeapon.isAir()) {
+            String startingWeaponName = loaded.getString("classes." + classId + ".starting-weapon", "IRON_SWORD");
+            boolean deferredSpear = "paladin".equals(classId)
+                && "IRON_SPEAR".equalsIgnoreCase(startingWeaponName);
+            if ((startingWeapon == null || startingWeapon.isAir()) && !deferredSpear) {
                 throw new InvalidConfigurationException("Invalid starting-weapon for class '" + classId + "'.");
             }
             String skillsPath = "classes." + classId + ".skills";
@@ -957,6 +978,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         if (loaded.getInt("progression.max-level", 30) > 30) {
             loaded.set("progression.max-level", 30);
+            changed = true;
+        }
+        if ("TRIDENT".equalsIgnoreCase(loaded.getString("classes.paladin.starting-weapon", ""))) {
+            String weaponPath = "classes.paladin.starting-weapon";
+            loaded.set(weaponPath, "IRON_SPEAR");
+            loaded.setComments(weaponPath, defaults.getComments(weaponPath));
             changed = true;
         }
         if (loaded.getStringList("classes.archer.skills").equals(List.of("RANGED_ATTACK"))) {
@@ -1300,8 +1327,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 else chargeDir.normalize();
                 horse.setVelocity(chargeDir.clone().multiply(1.2));
                 zombie.swingMainHand();
+                zombie.getWorld().playSound(zombie.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.9f, 0.8f);
                 horse.getWorld().spawnParticle(Particle.CRIT, horse.getLocation().add(0, 1, 0),
                     18, 0.6, 0.7, 0.6, 0.05);
+                horse.getWorld().spawnParticle(Particle.SWEEP_ATTACK, zombie.getLocation().add(0, 1, 0),
+                    1, 0.15, 0.15, 0.15, 0.0);
                 hostile.getWorld().spawnParticle(Particle.CRIT, hostile.getLocation().add(0, 1, 0),
                     12, 0.35, 0.5, 0.35, 0.04);
                 for (Entity nearby : hostile.getWorld().getNearbyEntities(hostile.getLocation(), radius, radius, radius)) {
@@ -2737,9 +2767,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             : settings.getDouble("classes." + unit.unitClass + ".base-armor", 0.0)
                 + Math.max(0, statRank(unit) - 1)
                     * settings.getDouble("classes." + unit.unitClass + ".armor-per-level", 0.0);
+        ItemStack mainHand = mob != null && mob.isValid() && mob.getEquipment() != null
+            ? mob.getEquipment().getItemInMainHand()
+            : unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HAND);
+        String weaponName = mainHand == null || mainHand.getType().isAir()
+            ? "Không có" : mainHand.getType().name().replace('_', ' ');
         details.add("§7Bậc: §f" + unit.tier + " (gốc " + unit.originalTier + ") §8| §7Cấp: §f" + unit.level
             + " §8| §7XP: §f" + unit.experience + "/" + nextLevelExperience(unit));
         details.add("§7Trạng thái: " + unitStatus(unit));
+        details.add("§7Vũ khí tay chính: §f" + weaponName);
         details.add("§cHP: §f" + formatStat(health) + "/" + formatStat(maxHealth)
             + " §7| Giáp: §f" + formatStat(armor));
         details.add("§6Sát thương: §f" + formatStat(damage));
@@ -3362,8 +3398,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         EnumMap<org.bukkit.inventory.EquipmentSlot, ItemStack> equipment =
             new EnumMap<>(org.bukkit.inventory.EquipmentSlot.class);
         List<ItemStack> stored = new ArrayList<>();
-        for (int slot = 0; slot < 36; slot++) addGearItem(stored, equipment, inventory.getItem(slot));
-        for (int slot = 45; slot <= 50; slot++) addGearItem(stored, equipment, inventory.getItem(slot));
+        for (int slot = 0; slot < inventory.getSize(); slot++) {
+            ItemStack item = inventory.getItem(slot);
+            if (isGearDecorationSlot(slot) && isGearDecoration(item)) continue;
+            addGearItem(stored, equipment, item);
+        }
         for (org.bukkit.inventory.EquipmentSlot slot : List.of(
                 org.bukkit.inventory.EquipmentSlot.HAND, org.bukkit.inventory.EquipmentSlot.HEAD,
                 org.bukkit.inventory.EquipmentSlot.CHEST, org.bukkit.inventory.EquipmentSlot.LEGS,
@@ -3379,6 +3418,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             overflow.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
             player.sendMessage("§eKho lính đầy; vật phẩm vượt giới hạn đã trả lại cho bạn.");
         }
+    }
+
+    private boolean isGearDecorationSlot(int slot) {
+        return (slot >= 36 && slot < 45) || slot >= 51;
+    }
+
+    private boolean isGearDecoration(ItemStack item) {
+        return item != null && item.getType() == Material.GRAY_STAINED_GLASS_PANE
+            && item.hasItemMeta() && " ".equals(item.getItemMeta().getDisplayName());
     }
 
     private void addGearItem(List<ItemStack> stored,
@@ -3399,7 +3447,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (name.endsWith("_BOOTS")) return org.bukkit.inventory.EquipmentSlot.FEET;
         if (material == Material.SHIELD) return org.bukkit.inventory.EquipmentSlot.OFF_HAND;
         if (name.endsWith("_SWORD") || name.endsWith("_AXE") || name.equals("BOW")
-                || name.equals("CROSSBOW") || name.equals("TRIDENT") || name.equals("MACE")) {
+                || name.equals("CROSSBOW") || name.equals("TRIDENT") || name.endsWith("_SPEAR")
+                || name.equals("MACE")) {
             return org.bukkit.inventory.EquipmentSlot.HAND;
         }
         return null;
@@ -3567,8 +3616,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         ItemStack savedWeapon = unit.equipment.get(handSlot);
         if ("paladin".equals(unit.unitClass) || (!unit.gearCustomized
                 && (savedWeapon == null || savedWeapon.getType().isAir()))) {
-            Material defaultWeapon = Material.matchMaterial(
-                settings.getString("classes." + unit.unitClass + ".starting-weapon", ""));
+            String configuredWeapon = settings.getString("classes." + unit.unitClass + ".starting-weapon", "");
+            Material defaultWeapon = Material.matchMaterial(configuredWeapon);
+            if (defaultWeapon == null && "paladin".equals(unit.unitClass)
+                    && "IRON_SPEAR".equalsIgnoreCase(configuredWeapon)) {
+                defaultWeapon = Material.TRIDENT;
+            }
             if (defaultWeapon != null && !defaultWeapon.isAir()) {
                 unit.equipment.put(handSlot, new ItemStack(defaultWeapon));
             }
@@ -3716,6 +3769,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean isMercenary(Entity entity) {
         return entity.getPersistentDataContainer().has(unitKey, PersistentDataType.STRING)
             || isSummonedMinion(entity);
+    }
+
+    private boolean isMercenaryMount(Entity entity) {
+        if (!(entity instanceof Horse)) return false;
+        UUID entityId = entity.getUniqueId();
+        return mountByUnit.containsValue(entityId) || activeEntities.values().stream()
+            .anyMatch(rider -> rider.isValid() && isMercenary(rider) && rider.getVehicle() == entity);
     }
 
     private boolean isSummonedMinion(Entity entity) {

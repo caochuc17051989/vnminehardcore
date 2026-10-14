@@ -1,5 +1,20 @@
 # Changelog
 
+## [v1.24.0] - 2026-10-14
+
+### Added
+- Hiển thị loại vũ khí tay chính trong thông tin chi tiết lính đánh thuê.
+
+### Fixed
+- Bảo toàn vật phẩm trong kho lính khi đóng giao diện, kể cả thao tác chuyển nhanh hoặc vật phẩm nằm ở ô giao diện.
+- Chặn cháy nắng trên toàn bộ lính đánh thuê và ngựa đang chở Kỵ sĩ.
+
+## [v1.23.0] - 2026-10-14
+
+### Changed
+- Kỵ sĩ dùng `IRON_SPEAR` khi runtime hỗ trợ, tự dự phòng sang TRIDENT khi không có Material tương ứng; hiệu ứng lao giáo có thêm hoạt ảnh/âm thanh dễ nhận biết.
+- Tắt riêng âm thanh `ENTITY_EVOKER_PREPARE_ATTACK` của Evoker lính đánh thuê; các âm thanh Evoker khác vẫn theo trạng thái mute hiện tại.
+
 ## [v1.22.1] - 2026-10-14
 
 ### Fixed
