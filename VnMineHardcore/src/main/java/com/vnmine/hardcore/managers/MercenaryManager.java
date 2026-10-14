@@ -109,6 +109,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final Map<UUID, Map<String, Long>> skillCooldowns = new HashMap<>();
     private final Map<UUID, Set<UUID>> summonedMinions = new HashMap<>();
     private final Map<UUID, UUID> ownerAttackTargets = new HashMap<>();
+    private final Map<UUID, Map<UUID, Long>> ownerThreats = new HashMap<>();
     private final Map<UUID, UUID> mountByUnit = new HashMap<>();
     private final Set<UUID> awaitingGroupName = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private YamlConfiguration settings;
@@ -597,8 +598,30 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (!(event.getEntity() instanceof Mob mob) || !isMercenary(mob)) return;
         if (isSummonedMinion(mob)) {
             LivingEntity target = event.getTarget();
-            if (target != null && (!(target instanceof Monster) || isMercenary(target)
-                    || !isValidTarget(target) || !mob.hasLineOfSight(target))) {
+            if (target == null) {
+                event.setCancelled(true);
+                return;
+            }
+            UUID ownerId = getOwnerId(mob);
+            if (ownerId != null && target.getUniqueId().equals(ownerId)) {
+                event.setCancelled(true);
+                return;
+            }
+            if (isMercenary(target) && ownerId != null && ownerId.equals(getOwnerId(target))) {
+                event.setCancelled(true);
+                return;
+            }
+            if ((target instanceof Player || isMercenary(target))
+                    && ownerId != null && !isRetaliationTarget(ownerId, target)) {
+                event.setCancelled(true);
+                return;
+            }
+            if (!(target instanceof Monster) && !(target instanceof Player)
+                    && !isMercenary(target)) {
+                event.setCancelled(true);
+                return;
+            }
+            if (!isValidTarget(target) || !mob.hasLineOfSight(target)) {
                 event.setCancelled(true);
             }
             return;
@@ -644,7 +667,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (!(event.getEntity() instanceof Mob mob) || !isSummonedMinion(mob)) return;
         LivingEntity target = event.getTarget();
         UUID ownerId = getOwnerId(mob);
-        if (target == null || !(target instanceof Monster hostile)) {
+        if (target == null) {
             event.setCancelled(true);
             return;
         }
@@ -652,11 +675,24 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             event.setCancelled(true);
             return;
         }
-        if (isMercenary(hostile) || (ownerId != null && ownerId.equals(getOwnerId(hostile)))) {
+        if (isMercenary(target) && ownerId != null && ownerId.equals(getOwnerId(target))) {
             event.setCancelled(true);
             return;
         }
-        if (!mob.hasLineOfSight(hostile) || !isValidTarget(hostile)) {
+        if ((target instanceof Player || isMercenary(target))
+                && ownerId != null && !isRetaliationTarget(ownerId, target)) {
+            event.setCancelled(true);
+            return;
+        }
+        if (target instanceof Player player && player.getUniqueId().equals(ownerId)) {
+            event.setCancelled(true);
+            return;
+        }
+        if (!(target instanceof Monster) && !(target instanceof Player) && !isMercenary(target)) {
+            event.setCancelled(true);
+            return;
+        }
+        if (!mob.hasLineOfSight(target) || !isValidTarget(target)) {
             event.setCancelled(true);
         }
     }
@@ -670,8 +706,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             event.setCancelled(true);
             return;
         }
-        if (!(target instanceof Monster) || isMercenary(target)
-                || (ownerId != null && ownerId.equals(getOwnerId(target)))) {
+        if (isMercenary(target) && ownerId != null && ownerId.equals(getOwnerId(target))) {
+            event.setCancelled(true);
+            return;
+        }
+        if ((target instanceof Player || isMercenary(target))
+                && ownerId != null && !isRetaliationTarget(ownerId, target)) {
             event.setCancelled(true);
         }
     }
@@ -686,6 +726,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         Entity source = event.getDamager();
         if (source instanceof org.bukkit.entity.Projectile projectile
                 && projectile.getShooter() instanceof Entity shooter) source = shooter;
+        if (event.getEntity() instanceof Player player) {
+            registerOwnerThreat(player.getUniqueId(), source);
+        }
+        if (event.getEntity() instanceof LivingEntity victim && !(victim instanceof Player)) {
+            UUID victimOwner = getOwnerId(victim);
+            if (victimOwner != null) {
+                registerOwnerThreat(victimOwner, source);
+            }
+        }
         UUID attackingOwner = source instanceof LivingEntity living ? getOwnerId(living) : null;
         if (attackingOwner != null && event.getEntity() instanceof LivingEntity victim) {
             Player owner = Bukkit.getPlayer(attackingOwner);
@@ -1653,6 +1702,28 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean isValidTarget(LivingEntity target) {
         return target.isValid() && !target.isDead() && target.isOnGround()
             && !(target instanceof org.bukkit.entity.Flying);
+    }
+
+    private void registerOwnerThreat(UUID ownerId, Entity source) {
+        if (ownerId == null || source == null) return;
+        UUID threatId = source instanceof Player player ? player.getUniqueId() : getOwnerId(source);
+        if (threatId == null) return;
+        ownerThreats.computeIfAbsent(ownerId, ignored -> new HashMap<>())
+            .put(threatId, System.currentTimeMillis());
+    }
+
+    private boolean isRetaliationTarget(UUID ownerId, LivingEntity target) {
+        if (ownerId == null || target == null) return false;
+        Map<UUID, Long> threats = ownerThreats.get(ownerId);
+        long now = System.currentTimeMillis();
+        if (threats != null) {
+            threats.entrySet().removeIf(entry -> now - entry.getValue() > 15000L);
+            if (threats.containsKey(target.getUniqueId())) return true;
+            UUID targetOwner = getOwnerId(target);
+            if (targetOwner != null && threats.containsKey(targetOwner)) return true;
+        }
+        UUID ownerTarget = ownerAttackTargets.get(ownerId);
+        return ownerTarget != null && ownerTarget.equals(target.getUniqueId());
     }
 
     private void sanitizeMobAi(Mob mob) {
