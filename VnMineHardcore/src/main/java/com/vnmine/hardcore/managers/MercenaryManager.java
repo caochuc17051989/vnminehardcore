@@ -38,9 +38,12 @@ import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.world.EntitiesLoadEvent;
+import org.bukkit.event.world.EntitiesUnloadEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.Inventory;
@@ -94,6 +97,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final NamespacedKey summonedMinionKey;
     private final NamespacedKey tokenClassKey;
     private final NamespacedKey tokenLevelKey;
+    private final MercenaryNamePacketListener namePacketListener;
     private final Map<UUID, Unit> units = new HashMap<>();
     private final Map<UUID, Mob> activeEntities = new HashMap<>();
     private final Map<UUID, Map<String, Long>> skillCooldowns = new HashMap<>();
@@ -265,6 +269,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         summonedMinionKey = new NamespacedKey(plugin, "army_summoned_minion");
         tokenClassKey = new NamespacedKey(plugin, "army_token_class");
         tokenLevelKey = new NamespacedKey(plugin, "army_token_level");
+        namePacketListener = new MercenaryNamePacketListener(plugin);
         loadSettings();
         loadData();
         Bukkit.getPluginManager().registerEvents(this, plugin);
@@ -474,6 +479,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     public void onMercenaryDeath(EntityDeathEvent event) {
         String idValue = event.getEntity().getPersistentDataContainer().get(unitKey, PersistentDataType.STRING);
         if (idValue == null) return;
+        namePacketListener.remove(event.getEntity());
         UUID id;
         try {
             id = UUID.fromString(idValue);
@@ -497,6 +503,36 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 + " §cđã bị hạ và đang hồi phục trong §e" + recoverySeconds + " giây§c. Trang bị được bảo toàn.");
             if (!saveData()) {
                 plugin.getLogger().severe("[Army] Could not persist recovery state for mercenary " + id + ".");
+            }
+        }
+    }
+
+    @EventHandler
+    public void onMercenaryEntityRemove(EntityRemoveEvent event) {
+        if (isMercenary(event.getEntity())) namePacketListener.remove(event.getEntity());
+    }
+
+    @EventHandler
+    public void onMercenaryEntitiesUnload(EntitiesUnloadEvent event) {
+        for (Entity entity : event.getEntities()) {
+            if (isMercenary(entity)) namePacketListener.remove(entity);
+        }
+    }
+
+    @EventHandler
+    public void onMercenaryEntitiesLoad(EntitiesLoadEvent event) {
+        for (Entity entity : event.getEntities()) {
+            if (!(entity instanceof Mob mob) || !isMercenary(mob)) continue;
+            String idValue = mob.getPersistentDataContainer().get(unitKey, PersistentDataType.STRING);
+            try {
+                Unit unit = idValue == null ? null : units.get(UUID.fromString(idValue));
+                if (unit != null && unit.deployed) {
+                    activeEntities.put(unit.id, mob);
+                    unit.entityId = mob.getUniqueId();
+                    updateEntityName(unit, mob);
+                }
+            } catch (IllegalArgumentException exception) {
+                plugin.getLogger().warning("[Army] Ignoring invalid unit UUID on entity " + mob.getUniqueId());
             }
         }
     }
@@ -1871,7 +1907,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private String unitLabel(Unit unit, boolean ownerView) {
         String ownerName = Bukkit.getOfflinePlayer(unit.owner).getName();
         if (ownerName == null || ownerName.isBlank()) ownerName = "Người chơi";
-        return (ownerView ? "§a§l[" : "§b§l[") + ownerName + "] §f" + displayName(unit);
+        return (ownerView ? "§a§l[" : "§b§l[") + ownerName + "]§r §f" + displayName(unit);
     }
 
     private void rename(Player player, String[] args) {
@@ -3455,9 +3491,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private void updateEntityName(Unit unit, Mob mob) {
         String ownerName = Bukkit.getOfflinePlayer(unit.owner).getName();
         if (ownerName == null || ownerName.isBlank()) ownerName = "Người chơi";
-        mob.setCustomName("§b§l[" + ownerName + "] §f" + displayName(unit)
+        mob.setCustomName("§b§l[" + ownerName + "]§r §f" + displayName(unit)
             + " §eBậc " + unit.tier + " §fCấp " + unit.level);
         mob.setCustomNameVisible(true);
+        namePacketListener.update(mob, unit.owner, ownerName, displayName(unit), unit.tier, unit.level);
     }
 
     private void captureEquipment(Unit unit, Mob mob) {
@@ -3476,6 +3513,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             Entity entity = Bukkit.getEntity(unit.entityId);
             if (entity instanceof Mob mob && isUnit(mob, unit.id)) {
                 activeEntities.put(unit.id, mob);
+                updateEntityName(unit, mob);
                 return mob;
             }
         }
@@ -3508,6 +3546,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (found != null) {
             unit.entityId = found.getUniqueId();
             activeEntities.put(unit.id, found);
+            updateEntityName(unit, found);
             captureEquipment(unit, found);
             return found;
         }
@@ -3891,5 +3930,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
         }
         if (!saveData()) plugin.getLogger().severe("[Army] Could not persist mercenaries on plugin shutdown.");
+        namePacketListener.close();
     }
 }

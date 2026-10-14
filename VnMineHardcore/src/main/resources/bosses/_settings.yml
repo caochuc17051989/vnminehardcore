@@ -51,8 +51,8 @@ army-token-drop:
   # [VI] Bật/tắt nguồn token từ boss; mặc định true.
   # [EN] Enable summon-token boss drops; default true.
   enabled: true
-  # [VI] Tỉ lệ token rơi khi nhận thưởng; mặc định 30%, hợp lệ 0-1.
-  # [EN] Chance for a token to drop on a rewarded boss kill; default 30%, valid range 0-1.
+  # [VI] Tỉ lệ rơi 1 token khi boss bị người chơi gây sát thương; mặc định 30%, hợp lệ 0-1.
+  # [EN] Chance to drop 1 token when a player damages the boss; default 30%, valid range 0-1.
   chance: 0.30
 
 # [VI] Hệ số tăng EXP boss theo level: EXP = exp-boss * (1 + (level - 1) * hệ số); mặc định 1, hợp lệ 0-10.

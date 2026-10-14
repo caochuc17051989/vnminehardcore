@@ -1,6 +1,8 @@
 # VnMineHardcore
 
-Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.x. Người chơi không bị ban khi chết.
+Plugin tăng độ khó sinh tồn cho Minecraft Paper 26.3. Người chơi không bị ban khi chết.
+
+Yêu cầu runtime: Java 25+ và ProtocolLib `5.5.0-SNAPSHOT` dev-build có hỗ trợ Minecraft 26.3 ([official builds](https://github.com/dmulloy2/ProtocolLib/releases/tag/dev-build)). Plugin không tải hoặc đóng gói ProtocolLib thay server.
 
 ## Tính năng chính
 
@@ -152,8 +154,9 @@ EXP. Quy tắc vật phẩm/điểm boss hiện hành vẫn dùng ngưỡng đó
 `give ... army` cấp lính trực tiếp và vẫn tôn trọng giới hạn quân số;
 `give ... token` cấp token chung bậc.
 
-Tên hiển thị trên entity dùng tiền tố chủ nhân màu xanh da trời sáng, đậm;
-trong danh sách và GUI của chính chủ, tiền tố hiển thị xanh lá sáng, đậm. Dữ liệu
+Tên hiển thị trên entity dùng tiền tố `[Tên chủ]` xanh lá sáng, đậm với chủ;
+người chơi khác thấy tiền tố xanh da trời sáng, đậm. ProtocolLib cung cấp metadata
+riêng theo người xem. Dữ liệu
 đội quân/kho đồ lưu tại `plugins/VnMineHardcore/mercenaries.yml`. AI không chọn
 mục tiêu bị che khuất khỏi tầm nhìn. Các tham số tinh chỉnh AI sẵn có ở
 `armies.yml` gồm `ai-interval-ticks`, `target-radius-blocks`, khoảng cách theo

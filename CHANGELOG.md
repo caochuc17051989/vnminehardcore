@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.20.0] - 2026-10-14
+
+### Added
+- Hiển thị tiền tố chủ lính xanh lá sáng, đậm với chủ và xanh da trời sáng, đậm với người xem khác; yêu cầu ProtocolLib 5.5.0-SNAPSHOT dev-build hỗ trợ Paper 26.3.
+
+### Changed
+- Mô tả đúng điều kiện rơi token boss: roll 30% khi có người chơi gây sát thương boss.
+
 ## [v1.19.0] - 2026-10-13
 
 ### Added

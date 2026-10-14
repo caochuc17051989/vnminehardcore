@@ -1146,8 +1146,8 @@ public class ConfigManager {
         if (Math.abs(bs.getDouble("army-token-drop.chance", 0.30) - 0.35) < 0.000001) {
             bs.set("army-token-drop.chance", 0.30);
             bs.setComments("army-token-drop.chance", List.of(
-                "[VI] Tỉ lệ token rơi khi nhận thưởng; mặc định 30%, hợp lệ 0-1.",
-                "[EN] Chance for a token to drop on a rewarded boss kill; default 30%, valid range 0-1."));
+                "[VI] Tỉ lệ rơi 1 token khi boss bị người chơi gây sát thương; mặc định 30%, hợp lệ 0-1.",
+                "[EN] Chance to drop 1 token when a player damages the boss; default 30%, valid range 0-1."));
             migrateBossSettings = true;
         }
         if (!bs.contains("experience-per-level-multiplier")) {
