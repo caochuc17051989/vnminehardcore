@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.29.0] - 2026-10-14
+
+### Changed
+- Giảm sát thương của các boss xuống mức tối đa 10 damage và giới hạn phạm vi skill trong khoảng 3-5 block để cân bằng combat.
+- Nâng cấp build mới cho phiên bản 1.29.0.
+
 ## [v1.28.0] - 2026-10-14
 
 ### Fixed

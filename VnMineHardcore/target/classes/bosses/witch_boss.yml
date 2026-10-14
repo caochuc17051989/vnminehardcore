@@ -75,7 +75,7 @@ traits:
     heal-percent: 0.5
     # [VI] Bán kính kích hoạt hút máu (block); mặc định 16; hợp lệ 1-64.
     # [EN] Healing trigger radius (blocks); default 16; valid range 1-64.
-    radius: 16.0
+    radius: 5.0
 
 immunities:
   poison: true

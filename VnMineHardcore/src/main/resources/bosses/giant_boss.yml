@@ -44,15 +44,15 @@ skills:
     damage: 10.0
     multiply: 1
     cooldown-seconds: 12
-    radius: 6.0
+    radius: 4.0
     velocity: 1.0
     spread: 0.0
     # [VI] Độ dài đường xung kích (block); mặc định 15; hợp lệ 4-24.
     # [EN] Shockwave line length (blocks); default 15; valid range 4-24.
-    line-length: 15
+    line-length: 5
   boulder-toss:
     enabled: true
-    damage: 12.0
+    damage: 10.0
     multiply: 1
     cooldown-seconds: 20
     radius: 3.0

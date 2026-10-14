@@ -55,12 +55,12 @@ skills:
     damage: 0.0
     multiply: 1
     cooldown-seconds: 20
-    radius: 6.0
+    radius: 4.0
     velocity: 1.0
     spread: 0.0
     # [VI] Nửa chiều dài chữ thập (block); mặc định 6; hợp lệ 2-12.
     # [EN] Cross half-length (blocks); default 6; valid range 2-12.
-    length: 6
+    length: 5
     # [VI] Nửa bề rộng dải particle (block); mặc định 1; hợp lệ 0-2.
     # [EN] Hazard half-width (blocks); default 1; valid range 0-2.
     half-width: 1
@@ -75,7 +75,7 @@ traits:
     enabled: true
     # [VI] Bán kính aura khi ở nước/mưa (block); mặc định 5; hợp lệ 1-12.
     # [EN] Aura radius while touching water/rain (blocks); default 5; valid range 1-12.
-    radius: 5.0
+    radius: 4.0
     # [VI] Độ bền giáp bị ăn mòn mỗi lần; mặc định 1; hợp lệ 0-5.
     # [EN] Armor durability consumed per pulse; default 1; valid range 0-5.
     armor-damage: 1

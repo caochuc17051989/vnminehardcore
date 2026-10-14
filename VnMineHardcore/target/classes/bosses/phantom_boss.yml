@@ -55,7 +55,7 @@ skills:
     damage: 0.0
     multiply: 1
     cooldown-seconds: 40
-    radius: 8.0
+    radius: 5.0
     velocity: 1.0
     spread: 0.0
     # [VI] Số Phantom con tối thiểu; mặc định 3; hợp lệ 1-8.

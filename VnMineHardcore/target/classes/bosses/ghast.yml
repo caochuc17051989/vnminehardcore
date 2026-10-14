@@ -61,7 +61,7 @@ skills:
     damage: 0.0
     multiply: 1
     cooldown-seconds: 20
-    radius: 10.0
+    radius: 5.0
     velocity: 0.8
     spread: 0.0
     # [VI] Lực kéo về Ghast; mặc định 0.8; hợp lệ 0.2-1.5.

@@ -39,7 +39,7 @@ skills:
     enabled: true
     # [VI] Sát thương sinh vật gần đó, nhân theo level; boss miễn sát thương; mặc định 12; hợp lệ 0-1024.
     # [EN] Damage to nearby entities, scaled by level; boss is immune; default 12; valid range 0-1024.
-    damage: 12.0
+    damage: 10.0
     # [VI] Hệ số số lần tung skill; mặc định 1; hợp lệ 1-40.
     # [EN] Skill cast multiplier; default 1; valid range 1-40.
     multiply: 1
@@ -48,7 +48,7 @@ skills:
     cooldown-seconds: 20
     # [VI] Bán kính gây sát thương khi gọi sét (block); mặc định 6; hợp lệ 1-64.
     # [EN] Damage radius of the lightning skill (blocks); default 6; valid range 1-64.
-    radius: 6.0
+    radius: 4.0
     # [VI] Thời gian giữ trạng thái charged (giây); mặc định 5; hợp lệ 1-600.
     # [EN] Duration of the charged state (seconds); default 5; valid range 1-600.
     duration-seconds: 5

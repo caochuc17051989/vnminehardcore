@@ -38,7 +38,7 @@ skills:
     damage: 6.0
     multiply: 5
     cooldown-seconds: 12
-    radius: 7.0
+    radius: 5.0
     velocity: 1.5
     spread: 1.4
 

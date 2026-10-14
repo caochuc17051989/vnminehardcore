@@ -76,7 +76,7 @@ skills:
     damage: 0.0
     multiply: 1
     cooldown-seconds: 18
-    radius: 8.0
+    radius: 5.0
     velocity: 1.2
     spread: 0.0
     # [VI] Lực đẩy lùi; mặc định 1.2; hợp lệ 0.3-2.5.
