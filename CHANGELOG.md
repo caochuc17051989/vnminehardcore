@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.24.2] - 2026-10-14
+
+### Fixed
+- Bỏ âm thanh ting phát cùng thông báo lính đánh thuê sử dụng kỹ năng; giữ particle và action bar.
+
 ## [v1.24.1] - 2026-10-14
 
 ### Fixed

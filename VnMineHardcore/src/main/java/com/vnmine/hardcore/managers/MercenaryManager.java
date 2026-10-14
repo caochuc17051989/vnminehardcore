@@ -1585,7 +1585,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (mob != null && mob.isValid()) {
             Location effectLocation = mob.getLocation().add(0, 1, 0);
             mob.getWorld().spawnParticle(particle, effectLocation, 14, 0.35, 0.45, 0.35, 0.05);
-            mob.getWorld().playSound(effectLocation, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.7f, 1.4f);
         }
         owner.sendActionBar("§a" + displayName(unit) + " §eđã dùng kỹ năng §b" + skill);
     }
