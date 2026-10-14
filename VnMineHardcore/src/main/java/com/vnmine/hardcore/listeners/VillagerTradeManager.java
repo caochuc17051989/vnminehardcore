@@ -4,6 +4,7 @@ import com.vnmine.hardcore.VnMineHardcore;
 import com.vnmine.hardcore.managers.ConfigManager;
 import com.vnmine.hardcore.managers.VillagerDataManager;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
@@ -15,6 +16,7 @@ import org.bukkit.event.entity.VillagerCareerChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.MerchantRecipe;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
 import java.util.logging.Logger;
@@ -108,6 +110,14 @@ public class VillagerTradeManager implements Listener {
     public void onPlayerInteractVillager(PlayerInteractEntityEvent event) {
         if (!config.villagerTradingEnabled) return;
         if (!(event.getRightClicked() instanceof Villager villager)) return;
+
+        NamespacedKey armyUnitKey = new NamespacedKey(plugin, "army_unit");
+        if (villager.getPersistentDataContainer().has(armyUnitKey, PersistentDataType.STRING)) {
+            if (event.getPlayer().isSneaking()) {
+                event.setCancelled(true);
+            }
+            return;
+        }
 
         Villager.Profession prof = villager.getProfession();
         if (prof == Villager.Profession.NONE || prof == Villager.Profession.NITWIT) return;
