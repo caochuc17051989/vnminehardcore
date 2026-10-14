@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.21.0] - 2026-10-14
+
+### Changed
+- Menu gọi boss của admin hiển thị skull đúng loại boss hoặc spawn egg tương ứng; dùng barrier khi Minecraft không cung cấp cả skull lẫn spawn egg (hiện gồm Wither và Giant).
+
 ## [v1.20.1] - 2026-10-14
 
 ### Fixed

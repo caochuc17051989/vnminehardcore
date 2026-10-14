@@ -2415,12 +2415,31 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             String id = ids.get(index);
             int slot = 10 + index / 7 * 9 + index % 7;
             holder.choices.put(slot, id);
-            holder.inventory.setItem(slot, menuItem(Material.DRAGON_HEAD,
+            holder.inventory.setItem(slot, menuItem(bossMenuIcon(id),
                 "§c" + plugin.getBossEventManager().getBossName(id), List.of("§7ID: §f" + id,
                     "§eNhấn để chọn level boss.")));
         }
         holder.inventory.setItem(49, menuItem(Material.ARROW, "§7Quay lại admin", List.of()));
         player.openInventory(holder.inventory);
+    }
+
+    private Material bossMenuIcon(String bossId) {
+        String configuredType = plugin.getBossEventManager().getBossEntityType(bossId);
+        if (configuredType == null || configuredType.isBlank()) return Material.BARRIER;
+        String entityType = configuredType.toUpperCase(Locale.ROOT);
+        Material head = switch (entityType) {
+            case "CREEPER" -> Material.CREEPER_HEAD;
+            case "ENDER_DRAGON" -> Material.DRAGON_HEAD;
+            case "PIGLIN", "PIGLIN_BRUTE" -> Material.PIGLIN_HEAD;
+            case "PLAYER" -> Material.PLAYER_HEAD;
+            case "SKELETON" -> Material.SKELETON_SKULL;
+            case "WITHER_SKELETON" -> Material.WITHER_SKELETON_SKULL;
+            case "ZOMBIE" -> Material.ZOMBIE_HEAD;
+            default -> null;
+        };
+        if (head != null) return head;
+        Material spawnEgg = Material.matchMaterial(entityType + "_SPAWN_EGG");
+        return spawnEgg == null ? Material.BARRIER : spawnEgg;
     }
 
     private void openBossLevelMenu(Player player, String bossId) {

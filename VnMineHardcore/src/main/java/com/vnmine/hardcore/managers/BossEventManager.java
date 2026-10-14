@@ -2895,6 +2895,11 @@ public class BossEventManager implements Listener {
         return bc.displayName;
     }
 
+    public String getBossEntityType(String id) {
+        ConfigManager.BossConfig bc = config.bossConfigs.get(id.toLowerCase());
+        return bc == null ? null : bc.entityType;
+    }
+
     public boolean triggerBoss(String bossId, int warningTimeSeconds, int durationSeconds) {
         return triggerBoss(bossId, 1, warningTimeSeconds, durationSeconds);
     }
