@@ -556,13 +556,13 @@ classes:
   paladin:
     # [VI] Tên hiển thị của class.
     # [EN] Display name for this class.
-    display-name: "Thánh Kỵ"
+    display-name: "Kỵ sĩ"
     # [VI] Mô tả chức năng hiện trong GUI.
     # [EN] Short role description shown in the GUI.
-    description: "Đỡ đòn, hồi máu và tăng kháng cự cho cả đội."
-    # [VI] Entity phải là mob có AI; mặc định IRON_GOLEM.
-    # [EN] Entity must be an AI mob; default IRON_GOLEM.
-    entity-type: IRON_GOLEM
+    description: "Đỡ đòn, hồi máu, tăng kháng cự và lao giáo khi đang cưỡi ngựa."
+    # [VI] Entity phải là quái vật có AI và cưỡi ngựa; mặc định ZOMBIE.
+    # [EN] Entity should be an AI mob and ride a horse; default ZOMBIE.
+    entity-type: ZOMBIE
     # [VI] Máu cấp 1; mặc định 40, phải lớn hơn 0.
     # [EN] Level-1 health; default 40, must be positive.
     base-health: 40
@@ -581,15 +581,15 @@ classes:
     # [VI] Sát thương tăng mỗi cấp; mặc định 0.6, không âm.
     # [EN] Damage per level; default 0.6, must be nonnegative.
     damage-per-level: 0.6
-    # [VI] Biểu tượng GUI; mặc định IRON_SWORD.
-    # [EN] GUI icon; default IRON_SWORD.
-    menu-icon: IRON_SWORD
-    # [VI] Bộ skill đỡ đòn, tấn công và hỗ trợ; class có 5 skill.
-    # [EN] Tank, attack, and support kit; this class has 5 skills.
-    skills: [ATTACK, SHIELD_OWNER, HEAL_ALLIES, BUFF_ALLIES, POWER_STRIKE]
-    # [VI] Vũ khí mặc định khi triệu hồi; mặc định IRON_SWORD.
-    # [EN] Default weapon on summon; default IRON_SWORD.
-    starting-weapon: IRON_SWORD
+    # [VI] Biểu tượng GUI; mặc định TRIDENT nếu server không hỗ trợ giáo.
+    # [EN] GUI icon; defaults to TRIDENT if the server does not support spears.
+    menu-icon: TRIDENT
+    # [VI] Bộ skill đỡ đòn, tấn công, hỗ trợ và lao giáo khi cưỡi ngựa.
+    # [EN] Tank, attack, support, and mounted lance charge.
+    skills: [ATTACK, SHIELD_OWNER, HEAL_ALLIES, BUFF_ALLIES, POWER_STRIKE, LANCE_CHARGE]
+    # [VI] Vũ khí mặc định khi triệu hồi; dùng IRON_SPEAR nếu server hỗ trợ, nếu không tự dùng TRIDENT.
+    # [EN] Default weapon on summon; uses IRON_SPEAR when supported, otherwise falls back to TRIDENT.
+    starting-weapon: IRON_SPEAR
     # [VI] Tầm tìm mục tiêu; mặc định 18 block, hợp lệ 4-64.
     # [EN] Target acquisition radius; default 18 blocks, valid range 4-64.
     target-radius-blocks: 18.0
@@ -647,6 +647,16 @@ classes:
         # [VI] Sát thương cộng thêm; mặc định 5, hợp lệ 0-100.
         # [EN] Bonus strike damage; default 5, valid range 0-100.
         damage: 5.0
+      LANCE_CHARGE:
+        # [VI] Cooldown lao giáo; mặc định 14 giây, hợp lệ 1-3600.
+        # [EN] Mounted charge cooldown; default 14 seconds, valid range 1-3600.
+        cooldown-seconds: 14
+        # [VI] Sát thương khi lao; mặc định 14, hợp lệ 0-100.
+        # [EN] Charge damage; default 14, valid range 0-100.
+        damage: 14.0
+        # [VI] Bán kính va chạm; mặc định 4 block, hợp lệ 1-12.
+        # [EN] Charge hit radius; default 4 blocks, valid range 1-12.
+        radius-blocks: 4.0
     # [VI] Chi phí nâng bậc; tier đích 2-13, mỗi vật liệu hợp lệ 0-1000000.
     # [EN] Tier-upgrade costs; target tier 2-13, each material amount 0-1000000.
     tier-upgrades:

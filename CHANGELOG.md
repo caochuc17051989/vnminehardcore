@@ -1,5 +1,48 @@
 # Changelog
 
+## [v1.24.2] - 2026-10-14
+
+### Fixed
+- Bỏ âm thanh ting phát cùng thông báo lính đánh thuê sử dụng kỹ năng; giữ particle và action bar.
+
+## [v1.24.1] - 2026-10-14
+
+### Fixed
+- Thông tin menu lính hiển thị vũ khí phù hợp theo cấu hình class thay vì vũ khí hiện đang cầm.
+
+## [v1.24.0] - 2026-10-14
+
+### Added
+- Hiển thị loại vũ khí tay chính trong thông tin chi tiết lính đánh thuê.
+
+### Fixed
+- Bảo toàn vật phẩm trong kho lính khi đóng giao diện, kể cả thao tác chuyển nhanh hoặc vật phẩm nằm ở ô giao diện.
+- Chặn cháy nắng trên toàn bộ lính đánh thuê và ngựa đang chở Kỵ sĩ.
+
+## [v1.23.0] - 2026-10-14
+
+### Changed
+- Kỵ sĩ dùng `IRON_SPEAR` khi runtime hỗ trợ, tự dự phòng sang TRIDENT khi không có Material tương ứng; hiệu ứng lao giáo có thêm hoạt ảnh/âm thanh dễ nhận biết.
+- Tắt riêng âm thanh `ENTITY_EVOKER_PREPARE_ATTACK` của Evoker lính đánh thuê; các âm thanh Evoker khác vẫn theo trạng thái mute hiện tại.
+
+## [v1.22.1] - 2026-10-14
+
+### Fixed
+- Chặn VEX tiếp tục đánh mục tiêu bị cấm và chặn sát thương lên chủ nhân/lính đồng minh.
+- Sửa trang bị TRIDENT cho Kỵ sĩ, skill lao giáo khi cưỡi ngựa và dọn ngựa cùng Kỵ sĩ khi nghỉ/thoát game/chết.
+
+## [v1.22.0] - 2026-10-14
+
+### Fixed
+- Chặn hành vi panic/flee của mercenary dùng model Villager để giữ custom AI chiến đấu.
+- Chặn biến thể zombification cho mercenary Piglin/Piglin Brute và loại bỏ Vex do Evoker sinh ra khỏi quân lính.
+- Chuyển class Kỵ sĩ sang model Zombie cưỡi ngựa, đổi tên hiển thị thành "Kỵ sĩ" và bổ sung skill lao giáo khi đang cưỡi.
+
+## [v1.21.0] - 2026-10-14
+
+### Changed
+- Menu gọi boss của admin hiển thị skull đúng loại boss hoặc spawn egg tương ứng; dùng barrier khi Minecraft không cung cấp cả skull lẫn spawn egg (hiện gồm Wither và Giant).
+
 ## [v1.20.1] - 2026-10-14
 
 ### Fixed
