@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.37.0] - 2026-10-16
+
+### Fixed
+- Chặn lính đánh thuê và VEX gây sát thương lên người chơi/lính của chủ khác, trừ khi chủ nhân trực tiếp đánh đúng mục tiêu trong thời hạn 15 giây; thêm cấu hình để tắt hoàn toàn ngoại lệ PvP.
+- Khi ngựa Kỵ sĩ chết, lưu trạng thái qua khởi động lại và không tự tạo ngựa thay thế; nghỉ Kỵ sĩ sẽ xóa ngựa còn sống và cho phép tạo ngựa mới ở lần xuất chiến tiếp theo.
+
 ## [v1.36.0] - 2026-10-16
 
 ### Fixed

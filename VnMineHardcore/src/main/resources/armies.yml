@@ -5,6 +5,11 @@
 # [EN] Enable the system; default true, accepts true/false.
 enabled: true
 
+# [VI] Cho phép lính/VEX đánh người chơi hoặc lính chủ khác sau khi chủ nhân trực tiếp đánh mục tiêu; mặc định true. false sẽ chặn mọi PvP từ lính.
+# [EN] Allow mercenaries/Vexes to attack another player's units after their owner directly hits that target; default true. false blocks all mercenary PvP.
+pvp:
+  allow-owner-commanded-targets: true
+
 # [VI] Số lính tối đa mỗi chủ; mặc định 10, hợp lệ 1-100.
 # [EN] Maximum units per owner; default 10, valid range 1-100.
 max-units-per-player: 10

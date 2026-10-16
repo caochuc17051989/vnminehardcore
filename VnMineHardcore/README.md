@@ -95,6 +95,11 @@ Xạ Thủ có `VOLLEY` (số tên, tốc độ, độ tỏa, sát thương); V�
 `POWER_STRIKE` (sát thương cộng thêm) và `TAUNT` (bán kính kéo quái khỏi chủ);
 Y Sư có `CLEANSE_OWNER` (cooldown và danh sách hiệu ứng được gỡ). Tất cả thông
 số nằm trong `classes.<class>.skill-settings.<SKILL>` và có thể chỉnh riêng.
+Mặc định lính và VEX không gây sát thương lên người chơi hoặc quân của người
+chơi khác chỉ vì phát hiện họ hay bị họ tấn công. Ngoại lệ: sau khi chủ nhân
+trực tiếp đánh đúng mục tiêu, lính có thể tấn công mục tiêu đó trong 15 giây.
+Đặt `pvp.allow-owner-commanded-targets: false` trong `armies.yml` để chặn hoàn
+toàn sát thương PvP từ lính và VEX.
 Scaling skill chỉnh tại `progression.skill-power-per-level`,
 `progression.max-skill-power-multiplier` và
 `progression.skill-cooldown-reduction-at-max-level-seconds`.
@@ -115,7 +120,9 @@ bộ VEX do lính đó triệu hồi cũng bị xóa. Màu và biểu tượng t
 `status-display.vex-action-icons` trong `armies.yml`. Kỵ sĩ tự lên ngựa plugin quản lý;
 slot gear riêng lưu giáp ngựa tốt nhất và
 `classes.paladin.horse-health`/`classes.paladin.horse-speed` cấu hình máu/tốc độ
-ngựa (tốc độ mặc định bằng mức phi nước đại tối đa). Lính sẽ chủ động truy đuổi
+ngựa (tốc độ mặc định bằng mức phi nước đại tối đa). Khi ngựa chết, Kỵ sĩ tiếp
+tục đi bộ, ngựa không tự hồi sinh kể cả sau khi khởi động lại; cho Kỵ sĩ nghỉ
+rồi xuất chiến lại để tạo ngựa thay thế. Lính sẽ chủ động truy đuổi
 mục tiêu mà chủ nhân vừa đánh, kể cả khi mục tiêu ở ngoài tầm nhìn trực tiếp của lính;
 lệnh tấn công trực tiếp hết hiệu lực sau 15 giây nếu không được làm mới.
 Token phải khớp class và bậc, rồi bị tiêu thụ khi thuê. Token boss có class riêng
@@ -190,9 +197,10 @@ người chơi khác thấy tiền tố xanh da trời sáng, đậm. ProtocolLi
 riêng theo người xem. Dữ liệu
 đội quân/kho đồ lưu tại `plugins/VnMineHardcore/mercenaries.yml`. AI không chọn
 mục tiêu bị che khuất khỏi tầm nhìn. `ai.priorities` và `ai.wander-radius-blocks`
-chỉnh thứ tự hành động/phạm vi tuần tra. Kỵ sĩ tự lên lại ngựa do plugin quản lý,
-không chiếm mount của người chơi/lính khác; ô gear riêng lưu giáp ngựa tốt nhất
-và `classes.paladin.horse-health` chỉnh HP mount.
+chỉnh thứ tự hành động/phạm vi tuần tra. Kỵ sĩ sử dụng ngựa do plugin quản lý,
+không chiếm mount của người chơi/lính khác; ô gear riêng lưu giáp ngựa tốt nhất.
+`classes.paladin.horse-health`/`classes.paladin.horse-speed` chỉnh HP/tốc độ
+ngựa. Khi ngựa chết, Kỵ sĩ đi bộ cho đến khi nghỉ và được xuất chiến lại.
 
 `plugins/VnMineHardcore/tooltips.yml` định nghĩa nhắc nhở chức năng định kỳ:
 `settings.interval-seconds` đặt khoảng thời gian và `settings.mode` chọn
