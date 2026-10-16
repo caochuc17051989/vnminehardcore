@@ -2,6 +2,7 @@ package com.vnmine.hardcore.managers;
 
 import com.vnmine.hardcore.VnMineHardcore;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -130,6 +131,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final Map<UUID, Set<UUID>> summonedMinions = new HashMap<>();
     private final Map<UUID, UUID> ownerAttackTargets = new HashMap<>();
     private final Map<UUID, Map<UUID, Long>> ownerThreats = new HashMap<>();
+    private final Map<UUID, Map<UUID, Long>> ownerAttackers = new HashMap<>();
+    private final Map<UUID, Map<UUID, Long>> unitThreats = new HashMap<>();
     private final Map<UUID, UUID> mountByUnit = new HashMap<>();
     private final Map<UUID, Location> wanderTargets = new HashMap<>();
     private final Map<UUID, Long> wanderTargetExpiries = new HashMap<>();
@@ -161,6 +164,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean statusDisplayEnabled;
     private boolean statusDisplaySeeThrough;
     private int statusDisplayBarLength;
+    private ChatColor vexHealthColor;
+    private String vexAttackIcon;
+    private String vexFollowIcon;
+    private String vexIdleIcon;
     private BukkitRunnable aiTask;
 
     private enum Mode {
@@ -852,12 +859,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 && projectile.getShooter() instanceof Entity shooter) source = shooter;
         if (event.getEntity() instanceof Player player) {
             registerOwnerThreat(player.getUniqueId(), source);
+            registerThreat(ownerAttackers, player.getUniqueId(), source);
         }
         if (event.getEntity() instanceof LivingEntity victim && !(victim instanceof Player)) {
             UUID victimOwner = getOwnerId(victim);
             if (victimOwner != null) {
                 registerOwnerThreat(victimOwner, source);
             }
+            UUID victimUnitId = getUnitId(victim);
+            if (victimUnitId != null) registerThreat(unitThreats, victimUnitId, source);
         }
         UUID attackingOwner = source instanceof LivingEntity living ? getOwnerId(living) : null;
         if (attackingOwner != null && event.getEntity() instanceof LivingEntity victim) {
@@ -1162,6 +1172,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         this.statusDisplayEnabled = loaded.getBoolean("status-display.enabled", true);
         this.statusDisplaySeeThrough = loaded.getBoolean("status-display.see-through", true);
         this.statusDisplayBarLength = readBoundedInt(loaded, "status-display.bar-length", 10, 5, 20);
+        this.vexHealthColor = readVexHealthColor(loaded);
+        this.vexAttackIcon = readVexActionIcon(loaded, "attack", "⚔");
+        this.vexFollowIcon = readVexActionIcon(loaded, "follow", "🐾");
+        this.vexIdleIcon = readVexActionIcon(loaded, "idle", "•");
         this.maxLevel = configuredMaxLevel;
         plugin.getLogger().info("[Army] Loaded " + getClassIds().size() + " class(es), enabled=" + enabled + ".");
     }
@@ -1221,8 +1235,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             changed = true;
         }
         String vexMaximumPath = "classes.druid.skill-settings.SUMMON_VEXES.max-active";
-        if (loaded.getInt(vexMaximumPath, 4) == 2) {
-            loaded.set(vexMaximumPath, 4);
+        int oldVexMaximum = loaded.getInt(vexMaximumPath, 7);
+        if (oldVexMaximum == 2 || oldVexMaximum == 4) {
+            loaded.set(vexMaximumPath, 7);
             loaded.setComments(vexMaximumPath, defaults.getComments(vexMaximumPath));
             changed = true;
         }
@@ -1420,6 +1435,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             mob.teleport(spawn);
             wanderTargets.remove(unit.id);
             wanderTargetExpiries.remove(unit.id);
+            updateSummonedMinions(unit, null);
             return;
         }
         double distanceSquared = owner.getLocation().distanceSquared(mob.getLocation());
@@ -1428,6 +1444,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             mob.setTarget(null);
             wanderTargets.remove(unit.id);
             wanderTargetExpiries.remove(unit.id);
+            updateSummonedMinions(unit, null);
             return;
         }
         if (unit.mode == Mode.PROTECT && hasAiPriority(unit, "FOLLOW_OWNER")
@@ -1639,12 +1656,133 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private void updateSummonedMinions(Unit unit, LivingEntity target) {
         Set<UUID> minionIds = summonedMinions.get(unit.id);
         if (minionIds == null) return;
+        Mob druid = activeEntities.get(unit.id);
+        Player owner = Bukkit.getPlayer(unit.owner);
         for (UUID minionId : minionIds) {
             Entity entity = Bukkit.getEntity(minionId);
-            if (!(entity instanceof Mob minion) || !minion.isValid() || minion.isDead()) continue;
-            LivingEntity allowedTarget = target != null && canMinionTarget(minion, target) ? target : null;
-            if (minion.getTarget() != allowedTarget) minion.setTarget(allowedTarget);
+            if (!(entity instanceof Vex vex) || !vex.isValid() || vex.isDead()) {
+                removeStatusDisplay(minionId);
+                continue;
+            }
+            if (druid != null && druid.isValid() && owner != null && owner.isOnline()) {
+                LivingEntity selectedTarget = selectVexTarget(unit, druid, owner, vex, target);
+                if (selectedTarget != null) {
+                    if (vex.getTarget() != selectedTarget) vex.setTarget(selectedTarget);
+                } else {
+                    if (vex.getTarget() != null) vex.setTarget(null);
+                    if (!vex.getWorld().equals(druid.getWorld())) {
+                        vex.teleport(druid.getLocation().clone().add(0.0, 2.0, 0.0));
+                        vex.setVelocity(new Vector());
+                        vex.getPathfinder().stopPathfinding();
+                    } else if (vex.getLocation().distanceSquared(druid.getLocation()) > 25.0) {
+                        Location returnLocation = vexReturnLocation(vex, druid);
+                        vex.teleport(returnLocation);
+                        vex.setVelocity(new Vector());
+                        vex.getPathfinder().stopPathfinding();
+                    } else if (vex.getLocation().distanceSquared(druid.getLocation()) > 16.0) {
+                        vex.getPathfinder().moveTo(druid.getLocation(), 1.1);
+                    } else {
+                        vex.getPathfinder().stopPathfinding();
+                    }
+                }
+            }
+            updateVexStatusDisplay(vex, unit.owner, vexActionIcon(vex, druid));
         }
+    }
+
+    private Location vexReturnLocation(Vex vex, Mob druid) {
+        Vector offset = vex.getLocation().toVector().subtract(druid.getLocation().toVector());
+        if (offset.lengthSquared() < 0.0001) offset = new Vector(1.0, 0.0, 0.0);
+        return druid.getLocation().clone().add(offset.normalize().multiply(3.5));
+    }
+
+    private LivingEntity selectVexTarget(Unit unit, Mob druid, Player owner, Vex vex,
+                                         LivingEntity druidTarget) {
+        List<String> priorities = settings.getStringList(
+            "classes.druid.skill-settings.SUMMON_VEXES.ai-priorities").stream()
+            .map(value -> value.toUpperCase(Locale.ROOT)).toList();
+        if (priorities.isEmpty()) {
+            priorities = List.of("DRUID_TARGET", "DRUID_ATTACKER", "OWNER_ATTACKER", "FOLLOW_DRUID");
+        }
+        for (String priority : priorities) {
+            if ("FOLLOW_DRUID".equals(priority)) return null;
+            LivingEntity candidate = switch (priority) {
+                case "DRUID_TARGET" -> druidTarget != null ? druidTarget : druid.getTarget();
+                case "DRUID_ATTACKER" -> findRecentThreatTarget(vex, unitThreats.get(unit.id));
+                case "OWNER_ATTACKER" -> {
+                    LivingEntity recentAttacker = findRecentThreatTarget(vex, ownerAttackers.get(unit.owner));
+                    yield recentAttacker != null ? recentAttacker : findOwnerAttacker(vex, owner);
+                }
+                default -> null;
+            };
+            if (candidate != null && canMinionTarget(vex, candidate)) return candidate;
+        }
+        return null;
+    }
+
+    private LivingEntity findRecentThreatTarget(Mob mob, Map<UUID, Long> threats) {
+        if (threats == null) return null;
+        long now = System.currentTimeMillis();
+        threats.entrySet().removeIf(entry -> now - entry.getValue() > 15_000L);
+        for (Map.Entry<UUID, Long> threat : threats.entrySet().stream()
+                .sorted(Map.Entry.<UUID, Long>comparingByValue().reversed()).toList()) {
+            Entity entity = Bukkit.getEntity(threat.getKey());
+            if (entity instanceof LivingEntity target && !target.isDead()
+                    && canMinionTarget(mob, target)) return target;
+        }
+        return null;
+    }
+
+    private String vexActionIcon(Vex vex, Mob druid) {
+        LivingEntity target = vex.getTarget();
+        if (target != null && canMinionTarget(vex, target)) return vexAttackIcon;
+        if (druid != null && druid.isValid()
+                && (!vex.getWorld().equals(druid.getWorld())
+                    || vex.getLocation().distanceSquared(druid.getLocation()) > 16.0)) {
+            return vexFollowIcon;
+        }
+        return vexIdleIcon;
+    }
+
+    private void updateVexStatusDisplay(Vex vex, UUID ownerId, String actionIcon) {
+        if (!statusDisplayEnabled) {
+            removeStatusDisplay(vex.getUniqueId());
+            return;
+        }
+        double maximumHealth = vex.getAttribute(Attribute.MAX_HEALTH) == null
+            ? vex.getHealth() : vex.getAttribute(Attribute.MAX_HEALTH).getValue();
+        int filledBars = statusBarFilled(vex.getHealth(), maximumHealth);
+        String healthBar = "§e" + actionIcon + " " + vexHealthColor
+            + "■".repeat(filledBars)
+            + "§7" + "□".repeat(statusDisplayBarLength - filledBars);
+        statusPacketListener.update(vex.getUniqueId(), vex, ownerId, healthBar, statusDisplaySeeThrough);
+    }
+
+    private ChatColor readVexHealthColor(YamlConfiguration loaded) throws InvalidConfigurationException {
+        String configuredColor = loaded.getString("status-display.vex-health-color", "GREEN");
+        if (configuredColor == null || configuredColor.isBlank()) {
+            throw new InvalidConfigurationException(
+                "status-display.vex-health-color must be a valid ChatColor color name.");
+        }
+        try {
+            ChatColor color = ChatColor.valueOf(configuredColor.toUpperCase(Locale.ROOT));
+            if (!color.isColor()) throw new IllegalArgumentException("Formatting colors are not allowed.");
+            return color;
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidConfigurationException(
+                "Unknown status-display.vex-health-color '" + configuredColor + "'. Use a ChatColor color name.");
+        }
+    }
+
+    private String readVexActionIcon(YamlConfiguration loaded, String action, String defaultIcon)
+            throws InvalidConfigurationException {
+        String path = "status-display.vex-action-icons." + action;
+        String icon = loaded.getString(path, defaultIcon);
+        if (icon == null || icon.isBlank() || icon.codePointCount(0, icon.length()) > 4) {
+            throw new InvalidConfigurationException(
+                "Invalid " + path + "; use a non-empty symbol of at most 4 Unicode code points.");
+        }
+        return icon;
     }
 
     private void useSkills(Unit unit, Player owner, LivingEntity target) {
@@ -2094,9 +2232,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private int maxSummonedMinions(Unit unit) {
-        int configuredMaximum = (int) skillOptionDouble(unit, "SUMMON_VEXES", "max-active", 4.0, 1.0, 10.0);
-        double levelProgress = maxLevel <= 1 ? 1.0 : (double) (unit.level - 1) / (maxLevel - 1);
-        return Math.min(configuredMaximum, 1 + (int) Math.floor(levelProgress * (configuredMaximum - 1)));
+        int configuredMaximum = (int) skillOptionDouble(unit, "SUMMON_VEXES", "max-active", 7.0, 1.0, 10.0);
+        return Math.min(configuredMaximum, 1 + unit.level / 5);
     }
 
     private boolean isAllowedMinionVictim(Mob minion, LivingEntity target) {
@@ -2109,16 +2246,22 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
         }
         if (target instanceof Player) return ownerId != null && isRetaliationTarget(ownerId, target);
-        return target instanceof Monster || isMercenary(target);
+        return isHostileMob(target) || isMercenary(target);
     }
 
     private void registerOwnerThreat(UUID ownerId, Entity source) {
         if (ownerId == null || source == null) return;
-        Map<UUID, Long> threats = ownerThreats.computeIfAbsent(ownerId, ignored -> new HashMap<>());
-        long now = System.currentTimeMillis();
-        threats.put(source.getUniqueId(), now);
+        registerThreat(ownerThreats, ownerId, source);
         UUID sourceOwner = getOwnerId(source);
-        if (sourceOwner != null && !sourceOwner.equals(ownerId)) threats.put(sourceOwner, now);
+        if (sourceOwner != null && !sourceOwner.equals(ownerId)) {
+            ownerThreats.get(ownerId).put(sourceOwner, System.currentTimeMillis());
+        }
+    }
+
+    private void registerThreat(Map<UUID, Map<UUID, Long>> threatMap, UUID subjectId, Entity source) {
+        if (subjectId == null || source == null) return;
+        Map<UUID, Long> threats = threatMap.computeIfAbsent(subjectId, ignored -> new HashMap<>());
+        threats.put(source.getUniqueId(), System.currentTimeMillis());
     }
 
     private boolean isRetaliationTarget(UUID ownerId, LivingEntity target) {
@@ -4428,6 +4571,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         Set<UUID> minionIds = summonedMinions.remove(unitId);
         if (minionIds == null) return;
         for (UUID minionId : minionIds) {
+            removeStatusDisplay(minionId);
             Entity minion = Bukkit.getEntity(minionId);
             if (minion != null && minion.isValid()) minion.remove();
         }

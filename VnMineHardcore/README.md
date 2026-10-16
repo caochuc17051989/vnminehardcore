@@ -103,9 +103,16 @@ Thánh Kỵ đỡ đòn; Pháp Sư Lửa gây sát thương/đốt và làm ch�
 hồi máu, thanh tẩy; Sát Thủ hút máu và cuồng nộ khi nguy cấp; Pháp Sư Băng
 bắn loạt và làm chậm mục tiêu. Dùng ID class trong lệnh
 `/vnarmy hire <loại> <bậc>` hoặc menu GUI.
-Tu sĩ rừng gọi tối đa một VEX mỗi lần cast; giới hạn tăng theo cấp đến
-`classes.druid.skill-settings.SUMMON_VEXES.max-active` ở level 30. Kỵ sĩ tự lên
-ngựa plugin quản lý; slot gear riêng lưu giáp ngựa tốt nhất và
+Tu sĩ rừng gọi tối đa một VEX mỗi lần cast; cứ mỗi 5 level tăng sức chứa thêm
+1 VEX, bắt đầu từ 1 ở level 1 (mặc định tối đa 7 ở level 30). Tùy chỉnh giới
+hạn và thứ tự ưu tiên AI tại `classes.druid.skill-settings.SUMMON_VEXES` trong
+`armies.yml`. VEX ưu tiên mục tiêu Tu sĩ rừng đang đánh, kẻ tấn công Tu sĩ rừng,
+kẻ tấn công chủ nhân, rồi đi theo Tu sĩ rừng. Chủ nhân thấy thanh HP riêng của từng VEX dạng ô đầy/rỗng, không kèm số HP;
+thanh màu xanh lá có biểu tượng đổi theo trạng thái tấn công, theo Tu sĩ hoặc
+đứng yên. Khi không có mục tiêu để đánh, VEX quay về và được giữ trong phạm vi
+5 block quanh Tu sĩ rừng. Màu và biểu tượng tùy chỉnh tại `status-display.vex-health-color` và
+`status-display.vex-action-icons` trong `armies.yml`. Kỵ sĩ tự lên ngựa plugin quản lý;
+slot gear riêng lưu giáp ngựa tốt nhất và
 `classes.paladin.horse-health` cấu hình máu ngựa.
 Token phải khớp class và bậc, rồi bị tiêu thụ khi thuê. Token boss có class riêng
 qua `army-token-class` trong từng `bosses/<id>.yml`; bậc token bằng level boss.

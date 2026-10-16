@@ -92,6 +92,15 @@ status-display:
   # [VI] Số ô trên vạch HP; mặc định 10, hợp lệ 5-20.
   # [EN] Segments in the HP bar; default 10, valid range 5-20.
   bar-length: 10
+  # [VI] Màu phần HP của VEX; mặc định GREEN, chỉ nhận tên màu ChatColor hợp lệ.
+  # [EN] Vex health bar color; default GREEN, accepts valid ChatColor color names only.
+  vex-health-color: GREEN
+  # [VI] Biểu tượng trạng thái AI VEX; mặc định kiếm khi đánh, dấu chân khi theo, chấm khi nghỉ; mỗi giá trị 1-4 ký tự Unicode.
+  # [EN] Vex AI status icons; defaults to sword when attacking, paw when following, dot when idle; each value is 1-4 Unicode code points.
+  vex-action-icons:
+    attack: "⚔"
+    follow: "🐾"
+    idle: "•"
 
 # [VI] Giá trị mặc định cho kỹ năng hỗ trợ; giới hạn được ghi tại từng khóa.
 # [EN] Support skill defaults; limits are documented for each key.
@@ -923,9 +932,12 @@ classes:
         # [VI] Cooldown triệu hồi đồng minh; mặc định 18 giây, hợp lệ 1-3600.
         # [EN] Summon cooldown; default 18 seconds, valid range 1-3600.
         cooldown-seconds: 18
-        # [VI] Số VEX tối đa ở level 30; tăng tuyến tính từ 1 ở level 1; mặc định 4, hợp lệ 1-10.
-        # [EN] Maximum Vexes at level 30; scales linearly from 1 at level 1; default 4, valid range 1-10.
-        max-active: 4
+        # [VI] Giới hạn VEX tối đa; bắt đầu 1 ở level 1, thêm 1 mỗi 5 level; mặc định 7, hợp lệ 1-10.
+        # [EN] Maximum Vex cap; starts at 1 at level 1 and adds 1 every 5 levels; default 7, valid range 1-10.
+        max-active: 7
+        # [VI] Thứ tự AI VEX: DRUID_TARGET, DRUID_ATTACKER, OWNER_ATTACKER, FOLLOW_DRUID; mặc định theo thứ tự này.
+        # [EN] Vex AI priority order: DRUID_TARGET, DRUID_ATTACKER, OWNER_ATTACKER, FOLLOW_DRUID; defaults to this order.
+        ai-priorities: [DRUID_TARGET, DRUID_ATTACKER, OWNER_ATTACKER, FOLLOW_DRUID]
         # [VI] Thời gian sống của minion; mặc định 15 giây, hợp lệ 1-120.
         # [EN] Minion lifetime; default 15 seconds, valid range 1-120.
         lifetime-seconds: 15

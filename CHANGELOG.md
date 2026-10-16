@@ -1,5 +1,17 @@
 # Changelog
 
+## [v1.35.0] - 2026-10-16
+
+### Changed
+- Đổi thanh HP VEX sang màu xanh lá và thêm biểu tượng hành động AI cập nhật theo trạng thái tấn công, theo Tu sĩ hoặc đứng yên; màu và biểu tượng có thể tùy chỉnh trong `armies.yml`.
+- Khi nghỉ, VEX quay về gần Tu sĩ rừng và được giữ trong bán kính tối đa 5 block.
+
+## [v1.34.0] - 2026-10-16
+
+### Added
+- Thêm thanh HP riêng dạng ô đầy/rỗng cho từng VEX của Tu sĩ rừng và AI ưu tiên mục tiêu Tu sĩ đang đánh, kẻ tấn công Tu sĩ, kẻ tấn công chủ nhân, rồi theo Tu sĩ.
+- VEX của Tu sĩ rừng tăng sức chứa thêm một con mỗi 5 level, bắt đầu từ một con ở level 1; thêm cấu hình giới hạn và thứ tự ưu tiên AI.
+
 ## [Unreleased]
 
 ## [v1.33.4] - 2026-10-16
