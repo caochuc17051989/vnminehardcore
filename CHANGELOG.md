@@ -1,5 +1,18 @@
 # Changelog
 
+## [v1.38.4] - 2026-10-16
+
+### Fixed
+- Bảo vệ đuốc của skill ILLUMINATION khỏi phá block, nước, piston và vụ nổ cho đến khi hết thời hạn.
+- Chỉ cho Trinh Sát dùng ILLUMINATION khi trời tối hoặc ánh sáng tại vị trí của nó thấp theo ngưỡng cấu hình.
+- AI mặc định bỏ qua mục tiêu bị che khuất nằm dưới mặt địa hình, đồng thời vẫn cho phép tìm đường quanh vật cản trên mặt đất.
+
+## [v1.38.3] - 2026-10-16
+
+### Changed
+- Điều chỉnh Trinh Sát: sát thương cơ bản, tăng theo cấp và sát thương tên còn 70% Xạ Thủ; giữ tầm phát hiện 48 block và tầm bắn thường 32 block; tầm VOLLEY/Soi Sáng là 20.8 block (30% xa hơn tầm Xạ Thủ 16 block).
+- Tự cập nhật các giá trị mặc định Ranger cũ một lần trong `armies.yml`, không ghi đè các giá trị đã tùy chỉnh khác mặc định cũ.
+
 ## [v1.38.2] - 2026-10-16
 
 ### Fixed

@@ -34,6 +34,9 @@ ai-interval-ticks: 20
 # [EN] Idle wander radius when no target is found; default 6 blocks, valid range 1-32.
 ai:
   wander-radius-blocks: 6.0
+  # [VI] Bỏ qua mục tiêu bị che khuất khi đang dưới mặt địa hình; mặc định true.
+  # [EN] Ignore obscured targets below terrain; default true.
+  ignore-hidden-underground-targets: true
   priorities:
     # [VI] Thứ tự hành động của từng chế độ; chỉ dùng các ID đã khai báo trong danh sách mặc định.
     # [EN] Action order for each mode; use only IDs listed in the defaults.
@@ -523,18 +526,18 @@ classes:
     # [VI] Máu thêm mỗi cấp; mặc định 2.5, không âm.
     # [EN] Health per level; default 2.5, must be nonnegative.
     health-per-level: 2.5
-    # [VI] Sát thương cơ bản; mặc định 4, không âm.
-    # [EN] Base damage; default 4, must be nonnegative.
-    base-damage: 4
+    # [VI] Sát thương cơ bản; mặc định 2.8, bằng 70% Xạ Thủ, không âm.
+    # [EN] Base damage; default 2.8, 70% of Archer, must be nonnegative.
+    base-damage: 2.8
     # [VI] Giáp ban đầu; mặc định 0.5, hợp lệ 0-100.
     # [EN] Starting armor; default 0.5, valid range 0-100.
     base-armor: 0.5
     # [VI] Giáp tăng mỗi cấp; mặc định 0.1, không âm.
     # [EN] Armor per level; default 0.1, must be nonnegative.
     armor-per-level: 0.1
-    # [VI] Sát thương tăng mỗi cấp; mặc định 0.45, không âm.
-    # [EN] Damage per level; default 0.45, must be nonnegative.
-    damage-per-level: 0.45
+    # [VI] Sát thương tăng mỗi cấp; mặc định 0.35, bằng 70% Xạ Thủ, không âm.
+    # [EN] Damage per level; default 0.35, 70% of Archer, must be nonnegative.
+    damage-per-level: 0.35
     # [VI] Biểu tượng GUI; mặc định CROSSBOW.
     # [EN] GUI icon; default CROSSBOW.
     menu-icon: CROSSBOW
@@ -552,9 +555,9 @@ classes:
         # [VI] Cooldown bắn thường; mặc định 3 giây, hợp lệ 1-3600.
         # [EN] Ranged attack cooldown; default 3 seconds, valid range 1-3600.
         cooldown-seconds: 3
-        # [VI] Sát thương tên; mặc định 4.5, thấp hơn Xạ Thủ (6.0), hợp lệ 0-100.
-        # [EN] Arrow damage; default 4.5, below Archer (6.0), valid range 0-100.
-        damage: 4.5
+        # [VI] Sát thương tên; mặc định 4.2, bằng 70% Xạ Thủ (6.0), hợp lệ 0-100.
+        # [EN] Arrow damage; default 4.2, 70% of Archer (6.0), valid range 0-100.
+        damage: 4.2
         # [VI] Tầm giữ vị trí bắn; mặc định 32 block, gấp đôi Xạ Thủ, hợp lệ 4-64.
         # [EN] Preferred firing distance; default 32 blocks, twice the Archer, valid range 4-64.
         range-blocks: 32.0
@@ -571,9 +574,12 @@ classes:
         # [VI] Góc tỏa mỗi tên; mặc định 6 độ, hợp lệ 0-30.
         # [EN] Spread angle per arrow; default 6 degrees, valid range 0-30.
         spread-degrees: 6.0
-        # [VI] Sát thương mỗi tên; mặc định 2.5, hợp lệ 0-100.
-        # [EN] Damage per arrow; default 2.5, valid range 0-100.
-        damage: 2.5
+        # [VI] Tầm dùng skill; mặc định 20.8 block, xa hơn 30% so với Xạ Thủ (16), hợp lệ 4-64.
+        # [EN] Skill range; default 20.8 blocks, 30% farther than Archer (16), valid range 4-64.
+        range-blocks: 20.8
+        # [VI] Sát thương mỗi tên; mặc định 2.1, bằng 70% Xạ Thủ (3.0), hợp lệ 0-100.
+        # [EN] Damage per arrow; default 2.1, 70% of Archer (3.0), valid range 0-100.
+        damage: 2.1
       BUFF_OWNER:
         # [VI] Cooldown tăng tốc chủ; mặc định 35 giây, hợp lệ 1-3600.
         # [EN] Owner speed buff cooldown; default 35 seconds, valid range 1-3600.
@@ -598,6 +604,15 @@ classes:
         # [VI] Số giây giảm hồi chiêu mỗi cấp; mặc định 0.2, hợp lệ 0-30.
         # [EN] Cooldown reduction per level; default 0.2 seconds, valid range 0-30.
         cooldown-reduction-per-level-seconds: 0.2
+        # [VI] Tầm sử dụng skill; mặc định 20.8 block, xa hơn 30% so với tầm Xạ Thủ 16, hợp lệ 4-64.
+        # [EN] Skill range; default 20.8 blocks, 30% farther than Archer's 16-block range, valid range 4-64.
+        range-blocks: 20.8
+        # [VI] Chỉ dùng khi trời tối hoặc ánh sáng yếu; mặc định true.
+        # [EN] Use only at night or in low light; default true.
+        darkness-only: true
+        # [VI] Mức sáng tối đa để xem là ánh sáng yếu; mặc định 7, hợp lệ 0-15.
+        # [EN] Maximum light level considered low light; default 7, valid range 0-15.
+        low-light-threshold: 7
         # [VI] Số tên ở cấp 1; mặc định 1, hợp lệ 1-20.
         # [EN] Number of arrows at level 1; default 1, valid range 1-20.
         base-arrow-count: 1

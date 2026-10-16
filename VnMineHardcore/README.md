@@ -94,12 +94,19 @@ skill được cấu hình riêng. Lính chọn vũ khí tốt nhất giữa tay
 kho; chỉ dùng vũ khí mặc định nếu kho không có món dùng được. Gear được giữ qua
 nghỉ, chết và triệu hồi lại. Mô tả skill và action bar dùng tên tiếng Việt.
 AI dùng danh sách ưu tiên theo từng chế độ trong `ai.priorities`; lính có thể
-chọn mục tiêu khuất tầm nhìn rồi tự tìm đường đến mục tiêu.
+tìm đường quanh vật cản trên mặt đất nhưng bỏ qua mục tiêu bị che khuất nằm
+dưới địa hình (`ai.ignore-hidden-underground-targets`).
 Xạ Thủ có `VOLLEY` (số tên, tốc độ, độ tỏa, sát thương); Trinh Sát dùng nỏ,
-phát hiện mục tiêu trong 48 block và bắn xa 32 block theo mặc định (gấp đôi
-Xạ Thủ), tiêu thụ đạn trong kho nếu có và dùng Spectral Arrow miễn phí khi hết
-đạn. Skill `ILLUMINATION` bắn loạt tên lửa lên trời, tạo đuốc tạm quanh mục tiêu
-trong 30 giây; số tên tăng thêm mỗi 5 level. Các thông số nằm trong
+phát hiện mục tiêu trong 48 block và bắn thường xa 32 block theo mặc định
+(gấp đôi Xạ Thủ), tiêu thụ đạn trong kho nếu có và dùng Spectral Arrow miễn phí
+khi hết đạn. Skill `VOLLEY` và `ILLUMINATION` có tầm 20.8 block (hơn 30% so với
+tầm bắn 16 block của Xạ Thủ). Sát thương cơ bản và sát thương tên của Trinh Sát
+bằng 70% Xạ Thủ theo cấu hình mặc định. Skill `ILLUMINATION` bắn loạt tên lửa
+lên trời, tạo đuốc không thể phá trong thời hạn quanh mục tiêu (mặc định 30
+giây); chỉ dùng khi trời tối hoặc ánh sáng tại Trinh Sát không vượt quá mức
+thấp cấu hình (mặc định 7). Số tên tăng thêm mỗi 5 level. Có thể chỉnh điều
+kiện qua `classes.ranger.skill-settings.ILLUMINATION.darkness-only` và
+`low-light-threshold`. Các thông số nằm trong
 `classes.ranger` và `classes.ranger.skill-settings.ILLUMINATION`. Vệ Binh có
 `POWER_STRIKE` (sát thương cộng thêm) và `TAUNT` (bán kính kéo quái khỏi chủ);
 Y Sư có `CLEANSE_OWNER` (cooldown và danh sách hiệu ứng được gỡ). Tất cả thông

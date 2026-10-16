@@ -40,7 +40,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -796,7 +802,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         boolean ownerCommandedTarget = ownerId != null
             && isActiveOwnerAttackTarget(ownerId, target.getUniqueId());
         if (target.getUniqueId().equals(ownerId)
-                || !isAllowedMercenaryTarget(ownerId, target, ownerCommandedTarget)) {
+                || !isAllowedMercenaryTarget(ownerId, target, ownerCommandedTarget)
+                || (!ownerCommandedTarget && isHiddenUndergroundTarget(mob, target))) {
             event.setCancelled(true);
             mob.setTarget(null);
             return;
@@ -1259,6 +1266,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             throws IOException, InvalidConfigurationException {
         boolean rangerIlluminationMigrationComplete =
             loaded.getBoolean("_migrations.ranger-illumination-skill", false);
+        boolean rangerRangeTuningMigrationComplete =
+            loaded.getBoolean("_migrations.ranger-range-and-damage-tuning", false);
         InputStream resource = plugin.getResource("armies.yml");
         if (resource == null) throw new IOException("Bundled armies.yml is missing.");
         YamlConfiguration defaults = new YamlConfiguration();
@@ -1281,6 +1290,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             if (addedIllumination) {
                 plugin.getLogger().info("[Army] Enabled the new ILLUMINATION skill for the Ranger in armies.yml.");
             }
+        }
+        if (!rangerRangeTuningMigrationComplete) {
+            migrateRangerDefault(loaded, defaults, "classes.ranger.base-damage", 4.0, 2.8);
+            migrateRangerDefault(loaded, defaults, "classes.ranger.damage-per-level", 0.45, 0.35);
+            migrateRangerDefault(loaded, defaults,
+                "classes.ranger.skill-settings.RANGED_ATTACK.damage", 4.5, 4.2);
+            migrateRangerDefault(loaded, defaults,
+                "classes.ranger.skill-settings.VOLLEY.damage", 2.5, 2.1);
+            loaded.set("_migrations.ranger-range-and-damage-tuning", true);
+            changed = true;
         }
         if (loaded.getInt("max-units-per-player", 10) == 4) {
             loaded.set("max-units-per-player", 10);
@@ -1346,6 +1365,14 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             changed = true;
         }
         if (changed) loaded.save(configFile);
+    }
+
+    private void migrateRangerDefault(YamlConfiguration loaded, YamlConfiguration defaults, String path,
+                                     double previous, double updated) {
+        if (loaded.contains(path) && Double.compare(loaded.getDouble(path), previous) == 0) {
+            loaded.set(path, updated);
+            loaded.setComments(path, defaults.getComments(path));
+        }
     }
 
     private boolean mergeSettingsSection(YamlConfiguration target, ConfigurationSection defaults, String prefix)
@@ -1557,7 +1584,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             mob.setSilent(unit.muted);
             if (hasSkill(unit, "RANGED_ATTACK") && !hasSkill(unit, "ATTACK")) {
                 mob.setTarget(null);
-                double range = skillOptionDouble(unit, "RANGED_ATTACK", "range-blocks", 16.0, 4.0, 64.0);
+                double range = preferredRangedPositionRange(unit, mob);
                 if (mob.getLocation().distanceSquared(target.getLocation()) > range * range
                         || !mob.hasLineOfSight(target)) {
                     mob.getPathfinder().moveTo(target, 1.0);
@@ -1586,6 +1613,20 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         useSkills(unit, owner, target);
         updateSummonedMinions(unit, target);
         feedMercenary(unit, mob, owner);
+    }
+
+    private double preferredRangedPositionRange(Unit unit, Mob mob) {
+        double range = skillOptionDouble(unit, "RANGED_ATTACK", "range-blocks", 16.0, 4.0, 64.0);
+        if (!"ranger".equals(unit.unitClass)) return range;
+        if (hasSkill(unit, "VOLLEY") && ready(unit, "volley")) {
+            range = Math.min(range, skillOptionDouble(unit, "VOLLEY", "range-blocks", range, 4.0, 64.0));
+        }
+        if (hasSkill(unit, "ILLUMINATION") && ready(unit, "illumination")
+                && canUseIlluminationInCurrentLight(mob)) {
+            range = Math.min(range,
+                skillOptionDouble(unit, "ILLUMINATION", "range-blocks", range, 4.0, 64.0));
+        }
+        return range;
     }
 
     private void feedMercenary(Unit unit, Mob mob, Player owner) {
@@ -1661,7 +1702,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     "ranger".equals(unit.unitClass) ? classRadius : targetRadius);
                 default -> null;
             };
-            if (target != null) return target;
+            if (target != null && ("OWNER_ATTACK_TARGET".equals(action)
+                    || !isHiddenUndergroundTarget(mob, target))) return target;
         }
         return null;
     }
@@ -1729,8 +1771,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             .filter(living -> !living.equals(mob))
             .filter(living -> living.getLocation().distanceSquared(center) <= radius * radius)
             .filter(living -> isAllowedMercenaryTarget(unit.owner, living, false))
+            .filter(living -> !isHiddenUndergroundTarget(mob, living))
             .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(center)))
             .orElse(null);
+    }
+
+    private boolean isHiddenUndergroundTarget(Mob mob, LivingEntity target) {
+        if (!settings.getBoolean("ai.ignore-hidden-underground-targets", true)
+                || mob.hasLineOfSight(target) || !mob.getWorld().equals(target.getWorld())) return false;
+        Location targetLocation = target.getLocation();
+        int terrainHeight = target.getWorld().getHighestBlockYAt(targetLocation);
+        return targetLocation.getBlockY() <= terrainHeight;
     }
 
     private List<String> aiPriorities(Unit unit) {
@@ -1963,11 +2014,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
         }
         if (hasSkill(unit, "ILLUMINATION") && mob != null && target != null
+                && isWithinConfiguredSkillRange(unit, mob, target, "ILLUMINATION")
+                && canUseIlluminationInCurrentLight(mob)
                 && ready(unit, "illumination")) {
             fireIlluminationVolley(unit, mob, target, owner);
         }
         if (hasSkill(unit, "RANGED_ATTACK") && target != null && mob != null
-                && isWithinConfiguredRangedSkillRange(unit, mob, target)
+                && isWithinConfiguredSkillRange(unit, mob, target, "RANGED_ATTACK")
                 && ready(unit, "ranged-attack")) {
             try {
                 int ammoBefore = countStoredArrows(unit);
@@ -1989,7 +2042,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
 
         if (hasSkill(unit, "VOLLEY") && target != null && mob != null
-                && isWithinConfiguredRangedSkillRange(unit, mob, target) && ready(unit, "volley")) {
+                && isWithinConfiguredSkillRange(unit, mob, target, "VOLLEY") && ready(unit, "volley")) {
             int arrowCount = (int) skillOptionDouble(unit, "VOLLEY", "arrow-count", 3.0, 2.0, 5.0);
             double speed = skillOptionDouble(unit, "VOLLEY", "arrow-speed", 2.0, 0.5, 4.0);
             double spread = skillOptionDouble(unit, "VOLLEY", "spread-degrees", 8.0, 0.0, 30.0);
@@ -2190,9 +2243,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return null;
     }
 
-    private boolean isWithinConfiguredRangedSkillRange(Unit unit, Mob mob, LivingEntity target) {
+    private boolean isWithinConfiguredSkillRange(Unit unit, Mob mob, LivingEntity target, String skill) {
         if (!"ranger".equals(unit.unitClass)) return true;
-        double range = skillOptionDouble(unit, "RANGED_ATTACK", "range-blocks", 16.0, 4.0, 64.0);
+        double defaultRange = skillOptionDouble(unit, "RANGED_ATTACK", "range-blocks", 16.0, 4.0, 64.0);
+        double range = skillOptionDouble(unit, skill, "range-blocks", defaultRange, 4.0, 64.0);
         return mob.getWorld().equals(target.getWorld())
             && mob.getLocation().distanceSquared(target.getLocation()) <= range * range;
     }
@@ -2313,6 +2367,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return Math.max(1.0, cooldown - reduction);
     }
 
+    private boolean canUseIlluminationInCurrentLight(Mob mob) {
+        if (!settings.getBoolean("classes.ranger.skill-settings.ILLUMINATION.darkness-only", true)) return true;
+        long time = mob.getWorld().getTime();
+        if (time >= 13_000L && time <= 23_000L) return true;
+        int threshold = (int) readBoundedDouble(settings,
+            "classes.ranger.skill-settings.ILLUMINATION.low-light-threshold", 7.0, 0.0, 15.0);
+        return mob.getLocation().getBlock().getLightLevel() <= threshold;
+    }
+
     @EventHandler
     public void onIlluminationArrowHit(ProjectileHitEvent event) {
         if (!(event.getEntity() instanceof Arrow arrow)
@@ -2333,20 +2396,52 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         scheduleTorchRemoval(temporaryTorch);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryTorchBreak(BlockBreakEvent event) {
-        Block broken = event.getBlock();
-        List<UUID> removed = temporaryTorches.values().stream()
-            .filter(torch -> torch.worldName.equals(broken.getWorld().getName())
-                && torch.x == broken.getX() && torch.y == broken.getY() && torch.z == broken.getZ())
-            .map(torch -> torch.id).toList();
-        if (removed.isEmpty()) return;
-        for (UUID torchId : removed) {
-            temporaryTorches.remove(torchId);
-            BukkitTask task = torchRemovalTasks.remove(torchId);
-            if (task != null) task.cancel();
-        }
-        saveTemporaryTorches();
+        if (isTemporaryTorchOrSupport(event.getBlock())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTemporaryTorchPhysics(BlockPhysicsEvent event) {
+        if (isTemporaryTorch(event.getBlock())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTemporaryTorchWaterFlow(BlockFromToEvent event) {
+        if (isTemporaryTorch(event.getToBlock())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryTorchEntityExplosion(EntityExplodeEvent event) {
+        event.blockList().removeIf(this::isTemporaryTorchOrSupport);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryTorchBlockExplosion(BlockExplodeEvent event) {
+        event.blockList().removeIf(this::isTemporaryTorchOrSupport);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryTorchPistonExtend(BlockPistonExtendEvent event) {
+        if (event.getBlocks().stream().anyMatch(this::isTemporaryTorchOrSupport)) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryTorchPistonRetract(BlockPistonRetractEvent event) {
+        if (event.getBlocks().stream().anyMatch(this::isTemporaryTorchOrSupport)) event.setCancelled(true);
+    }
+
+    private boolean isTemporaryTorch(Block block) {
+        return temporaryTorches.values().stream().anyMatch(torch ->
+            torch.worldName.equals(block.getWorld().getName())
+                && torch.x == block.getX() && torch.y == block.getY() && torch.z == block.getZ());
+    }
+
+    private boolean isTemporaryTorchOrSupport(Block block) {
+        return temporaryTorches.values().stream().anyMatch(torch ->
+            torch.worldName.equals(block.getWorld().getName())
+                && torch.x == block.getX() && torch.z == block.getZ()
+                && (torch.y == block.getY() || torch.y - 1 == block.getY()));
     }
 
     private double skillOptionDoubleForRanger(String skill, String key, double fallback,
@@ -3880,7 +3975,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 + formatStat(skillOptionDouble(unit, skill, "radius-blocks", healRadius, 1.0, 32.0)) + " block";
             case "VOLLEY" -> "Bắn " + (int) skillOptionDouble(unit, skill, "arrow-count", 3.0, 2.0, 5.0)
                 + " mũi tên, mỗi mũi gây " + formatStat(skillOptionDouble(unit, skill, "damage", 3.0,
-                0.0, 100.0) * power) + " sát thương";
+                0.0, 100.0) * power) + " sát thương"
+                + ("ranger".equals(unit.unitClass) ? ", tầm " + formatStat(skillOptionDouble(unit, skill,
+                "range-blocks", 20.8, 4.0, 64.0)) + " block" : "");
             case "POWER_STRIKE" -> "Cộng " + formatStat(skillOptionDouble(unit, skill, "damage", 8.0,
                 0.0, 100.0) * power) + " sát thương cho đòn đánh mạnh";
             case "TAUNT" -> "Khiêu khích quái trong bán kính "
@@ -3910,7 +4007,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 "levels-per-extra-arrow", 5.0, 1.0, 30.0))
                 + " tên lửa rơi quanh mục tiêu, cắm đuốc "
                 + (int) skillOptionDouble(unit, skill, "torch-duration-seconds", 30.0, 1.0, 600.0)
-                + " giây";
+                + " giây, tầm " + formatStat(skillOptionDouble(unit, skill,
+                    "range-blocks", 20.8, 4.0, 64.0)) + " block";
             default -> "Chiến đấu với mục tiêu";
         };
     }
