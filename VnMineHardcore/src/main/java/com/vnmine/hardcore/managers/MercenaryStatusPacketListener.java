@@ -36,7 +36,7 @@ import java.util.logging.Level;
 final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
     private static final AtomicInteger NEXT_VIRTUAL_ENTITY_ID = new AtomicInteger(-2_000_000);
     private static final WrappedDataWatcher.Serializer CHAT_COMPONENT_SERIALIZER =
-        WrappedDataWatcher.Registry.getChatComponentSerializer(true);
+        WrappedDataWatcher.Registry.getChatComponentSerializer(false);
     private static final WrappedDataWatcher.Serializer INTEGER_SERIALIZER =
         WrappedDataWatcher.Registry.get(Integer.class);
     private static final WrappedDataWatcher.Serializer BYTE_SERIALIZER =
@@ -130,7 +130,7 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
     }
 
     private void onMobDestroyPacket(PacketEvent event) {
-        int[] destroyedEntityIds = event.getPacket().getIntegerArrays().read(0);
+        List<Integer> destroyedEntityIds = event.getPacket().getIntLists().read(0);
         Player viewer = event.getPlayer();
         UUID viewerId = viewer.getUniqueId();
         for (int mobEntityId : destroyedEntityIds) {
@@ -199,10 +199,11 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
         PacketContainer metadata = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);
         metadata.getIntegers().write(0, entry.virtualEntityId);
         metadata.getDataValueCollectionModifier().write(0, List.of(
+            new WrappedDataValue(15, BYTE_SERIALIZER, (byte) 3),
             new WrappedDataValue(23, CHAT_COMPONENT_SERIALIZER,
-                Optional.of(WrappedChatComponent.fromLegacyText(entry.text).getHandle())),
+                WrappedChatComponent.fromLegacyText(entry.text).getHandle()),
             new WrappedDataValue(25, INTEGER_SERIALIZER, 0),
-            new WrappedDataValue(26, BYTE_SERIALIZER, (byte) 3)
+            new WrappedDataValue(26, BYTE_SERIALIZER, (byte) -1)
         ));
         return sendPacket(viewer, metadata);
     }
@@ -227,7 +228,7 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
 
     private void destroyVirtualEntity(Player viewer, StatusEntry entry) {
         PacketContainer destroy = protocolManager.createPacket(PacketType.Play.Server.ENTITY_DESTROY);
-        destroy.getIntegerArrays().write(0, new int[] {entry.virtualEntityId});
+        destroy.getIntLists().write(0, List.of(entry.virtualEntityId));
         sendPacket(viewer, destroy);
     }
 

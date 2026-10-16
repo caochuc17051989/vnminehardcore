@@ -2,7 +2,15 @@
 
 ## [Unreleased]
 
+## [v1.30.3] - 2026-10-16
+
 ### Fixed
+- Dùng `IntList` cho packet `ENTITY_DESTROY` theo đúng kiểu `entityIds` trên Paper 26.3; giữ `int[]` cho packet `MOUNT`.
+
+## [v1.30.2] - 2026-10-16
+
+### Fixed
+- Sửa metadata `TEXT_DISPLAY`: dùng `Component` không bọc Optional, billboard đúng index 15 và opacity đầy đủ tại index 26.
 - Sửa modifier entity ID của packet `MOUNT`/`ENTITY_DESTROY` cho schema 26.3 dùng `int[]`, tránh lỗi `FieldAccessException` khi gọi lính.
 
 ## [v1.30.0] - 2026-10-16
