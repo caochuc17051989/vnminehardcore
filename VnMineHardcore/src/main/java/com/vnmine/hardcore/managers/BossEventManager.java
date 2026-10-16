@@ -2581,7 +2581,7 @@ public class BossEventManager implements Listener {
             }
         }
         if (currentBoss != null && bossDamageContributions.values().stream().anyMatch(damage -> damage > 0.0)) {
-            dropArmySummonToken(currentBoss.getLocation(), currentBossLevel);
+            dropArmySummonToken(currentBoss.getLocation(), currentBossLevel, bc.armyTokenClass);
         }
         leaderboardManager.finishBoss(currentBossLevel, eligiblePlayers);
         logManager.logDisaster("BOSS: " + bc.displayName +
@@ -2624,17 +2624,14 @@ public class BossEventManager implements Listener {
         return selectedLevel < 0 ? List.of() : bc.levelDrops.getOrDefault(selectedLevel, List.of());
     }
 
-    private void dropArmySummonToken(Location location, int level) {
+    private void dropArmySummonToken(Location location, int level, String classId) {
         if (!config.bossArmyTokenDropEnabled || random.nextDouble() >= config.bossArmyTokenDropChance) return;
-        ItemStack token = new ItemStack(Material.PAPER);
-        ItemMeta meta = token.getItemMeta();
-        meta.setDisplayName("§6§lLệnh Triệu Hồi §fBậc " + level);
-        meta.setLore(List.of("§7Gọi lính Bậc " + level + ".", "§8Dùng /vnarmy hire."));
-        meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "army_token_class"),
-            PersistentDataType.STRING, "any");
-        meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "army_token_level"),
-            PersistentDataType.INTEGER, level);
-        token.setItemMeta(meta);
+        if (plugin.getMercenaryManager() == null) return;
+        ItemStack token = plugin.getMercenaryManager().createBossSummonToken(classId, level);
+        if (token == null) {
+            logger.warning("[BossEvent] Invalid army-token-class '" + classId + "'; no token dropped.");
+            return;
+        }
         dropItemsNaturally(location, token, 1);
     }
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Thêm token triệu hồi theo class cấu hình riêng từng boss; bậc token khớp level boss.
+- Thêm thanh HP/EXP phía trên lính, tự thu EXP orb cho chủ online, cấu hình ưu tiên AI theo mode và bán kính tuần tra.
+- Thêm cơ chế Kỵ sĩ tự tìm mount do plugin quản lý, lưu/chọn giáp ngựa tốt nhất và cấu hình HP riêng cho ngựa.
+- VEX của Tu sĩ rừng tăng giới hạn theo level, mỗi lần cast chỉ gọi thêm một con; summon dùng chung bộ lọc mục tiêu của lính.
+
+### Changed
+- Việt hóa tên class/skill và hiển thị mô tả, thông số, cooldown thực tế theo level; sức mạnh tăng tuyến tính, cooldown giảm tối đa vài giây.
+- Lính chọn vũ khí tốt nhất giữa tay chính và kho; chỉ cấp vũ khí mặc định khi không có vũ khí phù hợp hơn.
+- AI phân thứ tự trả đũa, tìm mục tiêu, theo chủ và tuần tra; không chủ động tấn công lính/đệ của người chơi khác.
+
+### Fixed
+- Chặn biến hình ở ưu tiên sự kiện cao và lưu gear trước khi hủy transform.
+
 ## [v1.29.0] - 2026-10-14
 
 ### Changed

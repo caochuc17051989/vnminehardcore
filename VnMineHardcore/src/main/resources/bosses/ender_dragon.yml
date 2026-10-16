@@ -5,6 +5,9 @@ boss-id: ender_dragon
 enabled: false
 entity-type: ENDER_DRAGON
 display-name: "§5§lRồng Tử Thần"
+# [VI] Class lính của token boss; bậc token theo level boss.
+# [EN] Mercenary class for this boss token; token tier follows the boss level.
+army-token-class: paladin
 hp: 1000
 damage-multiplier: 3.0
 # [VI] EXP thưởng cơ bản level 1; mặc định 2000, hợp lệ 1-1000000; level boss nhân theo _settings.yml.

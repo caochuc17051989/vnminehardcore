@@ -5,6 +5,9 @@ boss-id: creeper_boss
 enabled: true
 entity-type: CREEPER
 display-name: "§a§lCreeper Boss"
+# [VI] Class lính của token boss; bậc token theo level boss.
+# [EN] Mercenary class for this boss token; token tier follows the boss level.
+army-token-class: berserker
 hp: 200
 damage-multiplier: 3.0
 chance: 10

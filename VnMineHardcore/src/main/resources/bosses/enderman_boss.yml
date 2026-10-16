@@ -5,6 +5,9 @@ boss-id: enderman_boss
 enabled: true
 entity-type: ENDERMAN
 display-name: "§5§lEnderman Boss"
+# [VI] Class lính của token boss; bậc token theo level boss.
+# [EN] Mercenary class for this boss token; token tier follows the boss level.
+army-token-class: ranger
 hp: 180
 damage-multiplier: 2.2
 # [VI] EXP thưởng cơ bản level 1; mặc định 300, hợp lệ 1-1000000; level boss nhân theo _settings.yml.

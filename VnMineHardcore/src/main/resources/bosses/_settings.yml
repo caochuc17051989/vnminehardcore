@@ -45,8 +45,8 @@ skill-cast-feedback:
 #      Default 50; valid range 0-100, and contribution must be strictly greater than the threshold.
 reward-damage-threshold-percent: 50
 
-# [VI] Cho phép boss rơi lệnh triệu hồi phổ thông có cấp bằng cấp boss; mặc định bật.
-# [EN] Allow bosses to drop a generic summon token matching the boss level; default true.
+# [VI] Cho phép boss rơi token class đã cấu hình trong file boss, bậc bằng level boss; mặc định bật.
+# [EN] Allow bosses to drop the class token configured in their boss file, at the boss level; default true.
 army-token-drop:
   # [VI] Bật/tắt nguồn token từ boss; mặc định true.
   # [EN] Enable summon-token boss drops; default true.

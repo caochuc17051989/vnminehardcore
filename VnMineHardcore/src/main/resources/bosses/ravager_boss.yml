@@ -5,6 +5,9 @@ boss-id: ravager_boss
 enabled: true
 entity-type: RAVAGER
 display-name: "§4§lRavager Boss"
+# [VI] Class lính của token boss; bậc token theo level boss.
+# [EN] Mercenary class for this boss token; token tier follows the boss level.
+army-token-class: paladin
 hp: 250
 damage-multiplier: 2.5
 # [VI] EXP thưởng cơ bản level 1; mặc định 600, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
