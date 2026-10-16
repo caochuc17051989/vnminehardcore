@@ -23,6 +23,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Piglin;
+import org.bukkit.entity.PiglinAbstract;
 import org.bukkit.entity.PiglinBrute;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Vex;
@@ -98,6 +99,13 @@ import java.util.logging.Level;
 public final class MercenaryManager implements CommandExecutor, TabCompleter, Listener {
     private static final String COMMAND_PERMISSION = "vnmine.command.army";
     private static final String ADMIN_PERMISSION = "vnmine.command.army.admin";
+    private static final List<org.bukkit.inventory.EquipmentSlot> EQUIPMENT_SLOTS = List.of(
+        org.bukkit.inventory.EquipmentSlot.HAND,
+        org.bukkit.inventory.EquipmentSlot.HEAD,
+        org.bukkit.inventory.EquipmentSlot.CHEST,
+        org.bukkit.inventory.EquipmentSlot.LEGS,
+        org.bukkit.inventory.EquipmentSlot.FEET,
+        org.bukkit.inventory.EquipmentSlot.OFF_HAND);
     private static final String[] COMMANDS = {
         "list", "gui", "hire", "recall", "rest", "attack", "defend", "protect", "gear", "give", "token",
         "remove", "clear", "mute", "rename"
@@ -628,8 +636,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             try {
                 Unit unit = idValue == null ? null : units.get(UUID.fromString(idValue));
                 if (unit != null && unit.deployed) {
+                    preventZombification(mob);
                     activeEntities.put(unit.id, mob);
                     unit.entityId = mob.getUniqueId();
+                    repairEquipmentFromSaved(unit, mob);
                     updateEntityName(unit, mob);
                 }
             } catch (IllegalArgumentException exception) {
@@ -739,15 +749,79 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     public void onMercenaryTransform(EntityTransformEvent event) {
         Entity entity = event.getEntity();
         if (!(entity instanceof Mob mob) || !isMercenary(mob)) return;
+        boolean converting = false;
+        String conversionTime = "n/a";
+        boolean immune = false;
+        if (mob instanceof PiglinAbstract piglin) {
+            immune = piglin.isImmuneToZombification();
+            if (piglin.isConverting()) {
+                converting = true;
+                conversionTime = Integer.toString(piglin.getConversionTime());
+            }
+        }
+        List<String> equipmentBefore = occupiedEquipmentSlots(mob);
+        event.setCancelled(true);
+        preventZombification(mob);
+        plugin.getLogger().warning("[Army] Cancelled transform for mercenary " + mob.getUniqueId()
+            + " (reason=" + event.getTransformReason() + ", converting=" + converting
+            + ", conversionTicks=" + conversionTime + ", immuneBefore=" + immune
+            + ", equipmentBefore=" + equipmentBefore + ").");
+
         UUID unitId = getUnitId(mob);
         Unit unit = unitId == null ? null : units.get(unitId);
         if (unit != null) {
-            captureEquipment(unit, mob);
+            reconcileEquipment(unit, mob, false);
             if (!saveData()) {
-                plugin.getLogger().warning("[Army] Could not save gear before cancelling transform for " + unit.id);
+                plugin.getLogger().warning("[Army] Could not save gear after cancelling transform for " + unit.id);
+            }
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (!mob.isValid() || !isUnit(mob, unit.id)) return;
+                preventZombification(mob);
+                repairEquipmentFromSaved(unit, mob);
+                if (!saveData()) {
+                    plugin.getLogger().warning("[Army] Could not save restored gear for mercenary " + unit.id + ".");
+                }
+            });
+        }
+    }
+
+    private void repairEquipmentFromSaved(Unit unit, Mob mob) {
+        List<String> restored = reconcileEquipment(unit, mob, true);
+        if (!restored.isEmpty()) {
+            plugin.getLogger().warning("[Army] Restored missing equipment slots " + restored
+                + " for mercenary " + unit.id + ".");
+        }
+    }
+
+    private List<String> reconcileEquipment(Unit unit, Mob mob, boolean restoreMissing) {
+        EntityEquipment equipment = mob.getEquipment();
+        if (equipment == null) return List.of();
+        List<String> restored = new ArrayList<>();
+        for (org.bukkit.inventory.EquipmentSlot slot : EQUIPMENT_SLOTS) {
+            ItemStack item = equipment.getItem(slot);
+            ItemStack saved = unit.equipment.get(slot);
+            if (restoreMissing && (item == null || item.getType().isAir())
+                    && saved != null && !saved.getType().isAir()) {
+                equipment.setItem(slot, saved.clone());
+                restored.add(slot.name());
+                item = equipment.getItem(slot);
+            }
+            if (item != null && !item.getType().isAir()) {
+                unit.equipment.put(slot, item.clone());
             }
         }
-        event.setCancelled(true);
+        return restored;
+    }
+
+    private List<String> occupiedEquipmentSlots(Mob mob) {
+        EntityEquipment equipment = mob.getEquipment();
+        if (equipment == null) return List.of();
+        List<String> slots = new ArrayList<>();
+        for (org.bukkit.inventory.EquipmentSlot slot : EQUIPMENT_SLOTS) {
+            ItemStack item = equipment.getItem(slot);
+            if (item != null && !item.getType().isAir()) slots.add(slot.name());
+        }
+        return slots;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -1116,6 +1190,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             loaded.setComments(weaponPath, defaults.getComments(weaponPath));
             changed = true;
         }
+        String berserkerEntityPath = "classes.berserker.entity-type";
+        if ("PIGLIN_BRUTE".equalsIgnoreCase(loaded.getString(berserkerEntityPath, ""))) {
+            loaded.set(berserkerEntityPath, defaults.getString(berserkerEntityPath, "ZOMBIFIED_PIGLIN"));
+            loaded.setComments(berserkerEntityPath, defaults.getComments(berserkerEntityPath));
+            changed = true;
+            plugin.getLogger().info("[Army] Migrated berserker entity to ZOMBIFIED_PIGLIN to prevent transformation.");
+        }
         if (loaded.getStringList("classes.archer.skills").equals(List.of("RANGED_ATTACK"))) {
             loaded.set("classes.archer.skills", defaults.getStringList("classes.archer.skills"));
             changed = true;
@@ -1263,6 +1344,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     if (!unit.deployed) continue;
                     Player owner = Bukkit.getPlayer(unit.owner);
                     Mob mob = activeEntities.get(unit.id);
+                    if (mob != null && mob.isValid()) preventZombification(mob);
                     if (owner == null || !owner.isOnline()) {
                         cleanupSummonedMinions(unit.id);
                         if (mob != null) {
@@ -1286,6 +1368,26 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                             unit.deployed = false;
                             continue;
                         }
+                        activeEntities.put(unit.id, mob);
+                    }
+                    EntityType configuredType = configuredEntityType(unit);
+                    if (configuredType != null && mob.getType() != configuredType) {
+                        captureEquipment(unit, mob);
+                        updateLocation(unit, mob.getLocation());
+                        if (!saveData()) {
+                            plugin.getLogger().severe("[Army] Could not save gear before replacing entity "
+                                + "for mercenary " + unit.id + "; keeping the current entity.");
+                            continue;
+                        }
+                        Mob replacement = spawnUnit(unit, mob.getLocation());
+                        if (replacement == null) {
+                            plugin.getLogger().severe("[Army] Could not replace outdated entity for mercenary "
+                                + unit.id + "; keeping the current entity.");
+                            unit.entityId = mob.getUniqueId();
+                            continue;
+                        }
+                        mob.remove();
+                        mob = replacement;
                         activeEntities.put(unit.id, mob);
                     }
                     mob.setSilent(unit.muted);
@@ -4255,8 +4357,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private Mob spawnUnit(Unit unit, Location location) {
-        EntityType type = EntityType.fromName(settings.getString("classes." + unit.unitClass + ".entity-type", ""));
+        EntityType type = configuredEntityType(unit);
         if (type == null || !type.isAlive()) return null;
+        String configuredType = settings.getString("classes." + unit.unitClass + ".entity-type", "");
+        if ("berserker".equals(unit.unitClass) && "PIGLIN_BRUTE".equalsIgnoreCase(configuredType)) {
+            plugin.getLogger().warning("[Army] Refusing to spawn PIGLIN_BRUTE for berserker; "
+                + "using ZOMBIFIED_PIGLIN.");
+        }
         Entity entity;
         try {
             entity = location.getWorld().spawnEntity(location, type);
@@ -4276,6 +4383,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         PersistentDataContainer pdc = mob.getPersistentDataContainer();
         pdc.set(unitKey, PersistentDataType.STRING, unit.id.toString());
         pdc.set(ownerKey, PersistentDataType.STRING, unit.owner.toString());
+        preventZombification(mob);
         if ("paladin".equals(unit.unitClass)) {
             Horse horse = getOrCreateUnitHorse(unit, location);
             if (horse != null) {
@@ -4296,6 +4404,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         unit.entityId = mob.getUniqueId();
         updateLocation(unit, mob.getLocation());
         return mob;
+    }
+
+    private EntityType configuredEntityType(Unit unit) {
+        EntityType configured = EntityType.fromName(
+            settings.getString("classes." + unit.unitClass + ".entity-type", ""));
+        if ("berserker".equals(unit.unitClass) && configured == EntityType.PIGLIN_BRUTE) {
+            return EntityType.ZOMBIFIED_PIGLIN;
+        }
+        return configured;
     }
 
     private void removeUnskilledVexes(Mob mob) {
@@ -4479,12 +4596,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private void captureEquipment(Unit unit, Mob mob) {
         EntityEquipment equipment = mob.getEquipment();
         if (equipment == null) return;
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HAND, cloneOrNull(equipment.getItemInMainHand()));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HEAD, cloneOrNull(equipment.getHelmet()));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.CHEST, cloneOrNull(equipment.getChestplate()));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.LEGS, cloneOrNull(equipment.getLeggings()));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.FEET, cloneOrNull(equipment.getBoots()));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.OFF_HAND, cloneOrNull(equipment.getItemInOffHand()));
+        if (mob instanceof PiglinAbstract) {
+            reconcileEquipment(unit, mob, false);
+        } else {
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HAND, cloneOrNull(equipment.getItemInMainHand()));
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HEAD, cloneOrNull(equipment.getHelmet()));
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.CHEST, cloneOrNull(equipment.getChestplate()));
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.LEGS, cloneOrNull(equipment.getLeggings()));
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.FEET, cloneOrNull(equipment.getBoots()));
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.OFF_HAND, cloneOrNull(equipment.getItemInOffHand()));
+        }
         Entity mount = mountByUnit.containsKey(unit.id) ? Bukkit.getEntity(mountByUnit.get(unit.id)) : null;
         if (mount instanceof Horse horse && horse.isValid()) captureHorseArmor(unit.id, horse);
     }
@@ -4493,7 +4614,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (unit.entityId != null) {
             Entity entity = Bukkit.getEntity(unit.entityId);
             if (entity instanceof Mob mob && isUnit(mob, unit.id)) {
+                preventZombification(mob);
                 activeEntities.put(unit.id, mob);
+                repairEquipmentFromSaved(unit, mob);
                 updateEntityName(unit, mob);
                 return mob;
             }
@@ -4527,8 +4650,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (found != null) {
             unit.entityId = found.getUniqueId();
             activeEntities.put(unit.id, found);
+            preventZombification(found);
             updateEntityName(unit, found);
-            captureEquipment(unit, found);
+            repairEquipmentFromSaved(unit, found);
             return found;
         }
         return null;
@@ -4542,6 +4666,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean isMercenary(Entity entity) {
         return entity.getPersistentDataContainer().has(unitKey, PersistentDataType.STRING)
             || isSummonedMinion(entity);
+    }
+
+    private void preventZombification(Mob mob) {
+        if (mob instanceof PiglinAbstract piglin) piglin.setImmuneToZombification(true);
     }
 
     private boolean isMercenaryMount(Entity entity) {

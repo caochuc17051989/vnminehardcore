@@ -413,9 +413,9 @@ classes:
     # [VI] Mô tả chức năng hiện trong GUI.
     # [EN] Short role description shown in the GUI.
     description: "Áp sát, gây sát thương lớn và kéo quái khỏi chủ nhân."
-    # [VI] Entity phải là mob có AI; mặc định PIGLIN_BRUTE.
-    # [EN] Entity must be an AI mob; default PIGLIN_BRUTE.
-    entity-type: PIGLIN_BRUTE
+    # [VI] Entity phải là mob có AI; dùng ZOMBIFIED_PIGLIN để không bị biến hình ở Overworld.
+    # [EN] Entity must be an AI mob; use ZOMBIFIED_PIGLIN to avoid Overworld transformation.
+    entity-type: ZOMBIFIED_PIGLIN
     # [VI] Máu cấp 1; mặc định 36, phải lớn hơn 0.
     # [EN] Level-1 health; default 36, must be positive.
     base-health: 36

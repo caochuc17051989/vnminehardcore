@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [v1.33.4] - 2026-10-16
+
+### Fixed
+- Buộc mọi lính Cuồng Chiến có cấu hình cũ `PIGLIN_BRUTE` được tạo và khôi phục dưới dạng `ZOMBIFIED_PIGLIN`; ghi log cảnh báo khi gặp cấu hình cũ.
+
+## [v1.33.3] - 2026-10-16
+
+### Fixed
+- Chuyển Cuồng Chiến sang ZOMBIFIED_PIGLIN để loại bỏ nguyên nhân biến hình ở Overworld; tự cập nhật cấu hình mặc định cũ và thay entity đang chạy sau khi lưu trang bị.
+
+## [v1.33.2] - 2026-10-16
+
+### Fixed
+- Bảo toàn vật phẩm lính đang mang khi chặn sự kiện biến hình; khôi phục ô bị trống từ dữ liệu đã lưu ở tick kế tiếp và tái áp dụng miễn nhiễm zombification định kỳ.
+
+## [v1.33.1] - 2026-10-16
+
+### Fixed
+- Ngăn lính đánh thuê thuộc nhóm Piglin, bao gồm Cuồng Chiến, biến thành Zombified Piglin ở Overworld; áp dụng cả khi lính được tải lại từ chunk.
+
 ## [v1.33.0] - 2026-10-16
 
 ### Changed
