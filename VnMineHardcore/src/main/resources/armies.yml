@@ -25,6 +25,17 @@ target-radius-blocks: 50.0
 # [EN] AI update interval; default 20 ticks, valid range 10-100.
 ai-interval-ticks: 20
 
+# [VI] Bán kính đi tuần tra khi không có mục tiêu; mặc định 6 block, hợp lệ 1-32.
+# [EN] Idle wander radius when no target is found; default 6 blocks, valid range 1-32.
+ai:
+  wander-radius-blocks: 6.0
+  priorities:
+    # [VI] Thứ tự hành động của từng chế độ; chỉ dùng các ID đã khai báo trong danh sách mặc định.
+    # [EN] Action order for each mode; use only IDs listed in the defaults.
+    attack: [OWNER_ATTACK_TARGET, OWNER_THREAT, NEAREST_HOSTILE, SEARCH, RETURN_TO_OWNER, WANDER]
+    defend: [NEAREST_HOSTILE, SEARCH, WANDER]
+    protect: [FOLLOW_OWNER, OWNER_ATTACKER, OWNER_THREAT, NEAREST_HOSTILE, WANDER]
+
 # [VI] Tiến trình cấp lính; mặc định 5 XP mỗi mạng, 100 XP mỗi cấp, tối đa cấp 30.
 # [EN] Mercenary progression; defaults to 5 XP per kill, 100 XP per level, maximum level 30.
 progression:
@@ -37,9 +48,15 @@ progression:
   # [VI] Cấp tối đa; mặc định 30, hợp lệ 1-30.
   # [EN] Maximum level; default 30, valid range 1-30.
   max-level: 30
-  # [VI] Tăng sức mạnh kỹ năng theo mỗi cấp; mặc định 2%, hợp lệ 0-100%.
-  # [EN] Skill power increase per level; default 2%, valid range 0-100%.
-  skill-power-per-level: 0.02
+  # [VI] Tăng sức mạnh kỹ năng theo mỗi cấp; mặc định 5%, hợp lệ 0-100%.
+  # [EN] Skill power increase per level; default 5%, valid range 0-100%.
+  skill-power-per-level: 0.05
+  # [VI] Giới hạn hệ số sức mạnh skill; mặc định 2.5 lần, hợp lệ 1-5.
+  # [EN] Maximum skill power multiplier; default 2.5x, valid range 1-5.
+  max-skill-power-multiplier: 2.5
+  # [VI] Tổng số giây giảm cooldown ở cấp tối đa; mặc định 3 giây, hợp lệ 0-10.
+  # [EN] Total cooldown reduction at max level; default 3 seconds, valid range 0-10.
+  skill-cooldown-reduction-at-max-level-seconds: 3.0
 
 # [VI] Thời gian hồi phục sau khi bị hạ; mặc định 300 giây, hợp lệ 1-86400.
 # [EN] Recovery time after being defeated; default 300 seconds, valid range 1-86400.
@@ -52,6 +69,26 @@ gear:
   # [VI] Máu hồi mỗi lần dùng một món ăn; mặc định 6 HP, hợp lệ 0-100.
   # [EN] Health restored per consumed food item; default 6 HP, valid range 0-100.
   food-heal-amount: 6.0
+
+# [VI] Cho phép lính nhặt EXP orb gần đó cho chủ nhân đang online.
+# [EN] Allow nearby mercenaries to collect experience orbs for their online owner.
+experience-orb-pickup:
+  # [VI] Bật/tắt nhặt EXP; mặc định true.
+  # [EN] Enable experience pickup; default true.
+  enabled: true
+  # [VI] Bán kính nhặt EXP quanh lính; mặc định 4 block, hợp lệ 1-16.
+  # [EN] Pickup radius around a mercenary; default 4 blocks, valid range 1-16.
+  radius-blocks: 4.0
+
+# [VI] Thanh trạng thái HP/EXP hiển thị phía trên lính.
+# [EN] Health/experience bars displayed above mercenaries.
+status-display:
+  # [VI] Bật/tắt hai thanh trạng thái; mặc định true.
+  # [EN] Enable/disable the two status bars; default true.
+  enabled: true
+  # [VI] Số ô mỗi thanh; mặc định 10, hợp lệ 5-20.
+  # [EN] Segments per bar; default 10, valid range 5-20.
+  bar-length: 10
 
 # [VI] Giá trị mặc định cho kỹ năng hỗ trợ; giới hạn được ghi tại từng khóa.
 # [EN] Support skill defaults; limits are documented for each key.
@@ -566,6 +603,9 @@ classes:
     # [VI] Máu cấp 1; mặc định 40, phải lớn hơn 0.
     # [EN] Level-1 health; default 40, must be positive.
     base-health: 40
+    # [VI] Máu tối đa của ngựa Kỵ sĩ; mặc định 50 HP, hợp lệ 1-1024.
+    # [EN] Maximum health of the Paladin's horse; default 50 HP, valid range 1-1024.
+    horse-health: 50.0
     # [VI] Máu thêm mỗi cấp; mặc định 5, không âm.
     # [EN] Health per level; default 5, must be nonnegative.
     health-per-level: 5
@@ -776,7 +816,7 @@ classes:
   druid:
     # [VI] Tên hiển thị của class.
     # [EN] Display name for this class.
-    display-name: "Druid"
+    display-name: "Tu sĩ rừng"
     # [VI] Mô tả chức năng trong GUI.
     # [EN] Role description shown in the GUI.
     description: "Khống chế quái, hồi máu, buff và triệu hồi đồng minh giúp tấn công."
@@ -880,9 +920,9 @@ classes:
         # [VI] Cooldown triệu hồi đồng minh; mặc định 18 giây, hợp lệ 1-3600.
         # [EN] Summon cooldown; default 18 seconds, valid range 1-3600.
         cooldown-seconds: 18
-        # [VI] Số minion tối đa cùng lúc; mặc định 2, hợp lệ 1-4.
-        # [EN] Maximum active minions; default 2, valid range 1-4.
-        max-active: 2
+        # [VI] Số VEX tối đa ở level 30; tăng tuyến tính từ 1 ở level 1; mặc định 4, hợp lệ 1-10.
+        # [EN] Maximum Vexes at level 30; scales linearly from 1 at level 1; default 4, valid range 1-10.
+        max-active: 4
         # [VI] Thời gian sống của minion; mặc định 15 giây, hợp lệ 1-120.
         # [EN] Minion lifetime; default 15 seconds, valid range 1-120.
         lifetime-seconds: 15

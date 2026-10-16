@@ -297,6 +297,7 @@ public class ConfigManager {
         public boolean enabled = true;
         public String entityType = "WITHER";
         public String displayName = "§c§lBoss";
+        public String armyTokenClass = "guardian";
         public double hp = 100.0;
         public double damageMultiplier = 1.0;
         public int chance = 10;
@@ -1281,6 +1282,12 @@ public class ConfigManager {
             bc.enabled = section.getBoolean("enabled", true);
             bc.entityType = section.getString("entity-type", "WITHER");
             bc.displayName = section.getString("display-name", "§c§lBoss");
+            bc.armyTokenClass = section.getString("army-token-class", "guardian");
+            if (bc.armyTokenClass == null || !bc.armyTokenClass.matches("[a-z0-9_]+")) {
+                plugin.getLogger().warning("[Boss] Invalid army-token-class in " + fileName
+                    + "; using guardian.");
+                bc.armyTokenClass = "guardian";
+            }
             bc.hp = section.getDouble("hp", 100.0);
             bc.damageMultiplier = section.getDouble("damage-multiplier", 1.0);
             bc.chance = section.getInt("chance", 10);

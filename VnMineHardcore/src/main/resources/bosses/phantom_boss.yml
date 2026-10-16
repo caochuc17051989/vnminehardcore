@@ -5,6 +5,9 @@ boss-id: phantom_boss
 enabled: true
 entity-type: PHANTOM
 display-name: "§8§lPhantom Boss"
+# [VI] Class lính của token boss; bậc token theo level boss.
+# [EN] Mercenary class for this boss token; token tier follows the boss level.
+army-token-class: frost_mage
 hp: 100
 damage-multiplier: 1.5
 # [VI] EXP thưởng cơ bản level 1; mặc định 300, hợp lệ 1-1000000; level boss nhân theo _settings.yml.

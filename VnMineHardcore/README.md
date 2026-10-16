@@ -86,22 +86,30 @@ hạn đội quân (mặc định 10), tầm tìm mục tiêu, chu kỳ AI, ch�
 thời gian hồi phục, vũ khí ban đầu và vật phẩm nâng bậc. Mười class mặc định:
 Xạ Thủ (`archer`), Vệ Binh (`guardian`), Y Sư (`medic`), Cuồng Chiến
 (`berserker`), Trinh Sát (`ranger`), Thánh Kỵ (`paladin`), Pháp Sư Lửa
-(`pyromancer`), Druid (`druid`), Sát Thủ (`assassin`) và Pháp Sư Băng
-(`frost_mage`); mỗi class có 4–5
-skill được cấu hình riêng. Lính nhận vũ khí
-đúng class vào kho trang bị ngay khi triệu hồi; thay đổi gear của chủ nhân được
-bảo toàn. Skill cast thành công phát hạt, âm thanh và action bar cho chủ nhân.
+(`pyromancer`), Tu sĩ rừng (`druid`), Sát Thủ (`assassin`) và Pháp Sư Băng
+(`frost_mage`); mỗi class có 4–6
+skill được cấu hình riêng. Lính chọn vũ khí tốt nhất giữa tay chính và 36 ô
+kho; chỉ dùng vũ khí mặc định nếu kho không có món dùng được. Gear được giữ qua
+nghỉ, chết và triệu hồi lại. Mô tả skill và action bar dùng tên tiếng Việt.
 Xạ Thủ có `VOLLEY` (số tên, tốc độ, độ tỏa, sát thương); Vệ Binh có
 `POWER_STRIKE` (sát thương cộng thêm) và `TAUNT` (bán kính kéo quái khỏi chủ);
 Y Sư có `CLEANSE_OWNER` (cooldown và danh sách hiệu ứng được gỡ). Tất cả thông
 số nằm trong `classes.<class>.skill-settings.<SKILL>` và có thể chỉnh riêng.
+Scaling skill chỉnh tại `progression.skill-power-per-level`,
+`progression.max-skill-power-multiplier` và
+`progression.skill-cooldown-reduction-at-max-level-seconds`.
 Cuồng Chiến thiên về áp sát/khiêu khích; Trinh Sát bắn loạt và hỗ trợ chủ;
-Thánh Kỵ đỡ đòn; Pháp Sư Lửa gây sát thương/đốt và làm chậm; Druid khống chế,
+Thánh Kỵ đỡ đòn; Pháp Sư Lửa gây sát thương/đốt và làm chậm; Tu sĩ rừng khống chế,
 hồi máu, thanh tẩy; Sát Thủ hút máu và cuồng nộ khi nguy cấp; Pháp Sư Băng
 bắn loạt và làm chậm mục tiêu. Dùng ID class trong lệnh
 `/vnarmy hire <loại> <bậc>` hoặc menu GUI.
-Token phải khớp
-đúng bậc (boss rơi token phổ thông dùng được cho mọi class) và bị tiêu thụ khi thuê.
+Tu sĩ rừng gọi tối đa một VEX mỗi lần cast; giới hạn tăng theo cấp đến
+`classes.druid.skill-settings.SUMMON_VEXES.max-active` ở level 30. Kỵ sĩ tự lên
+ngựa plugin quản lý; slot gear riêng lưu giáp ngựa tốt nhất và
+`classes.paladin.horse-health` cấu hình máu ngựa.
+Token phải khớp class và bậc, rồi bị tiêu thụ khi thuê. Token boss có class riêng
+qua `army-token-class` trong từng `bosses/<id>.yml`; bậc token bằng level boss.
+Token chung từ lệnh admin vẫn dùng được cho mọi class.
 
 ```text
 /vnarmy gui
@@ -125,17 +133,25 @@ Hồ sơ và trang bị được lưu trong `plugins/VnMineHardcore/mercenaries.
 Lính đang triển khai được gọi lại khi chủ nhân vào game; khi nghỉ, thoát game
 hoặc server dừng, entity được thu hồi nhưng hồ sơ/trang bị vẫn giữ. `recall`
 đối soát UUID và PersistentData tag trước khi tạo entity thay thế để hạn chế
-nhân bản. Lính ưu tiên mục tiêu chủ nhân vừa đánh; `attack` tìm thêm quái thù
-địch quanh lính; `defend` bảo vệ khu vực quanh chủ; `protect` ưu tiên mục tiêu
-đang tấn công chủ nhân.
+nhân bản. AI ưu tiên hành động theo `ai.priorities` trong `armies.yml`: ATTACK
+ưu tiên mục tiêu chủ đã đánh, mối đe dọa lên chủ, hostile gần, tìm kiếm, quay về
+chủ và tuần tra; DEFEND ưu tiên hostile gần, tìm kiếm và tuần tra; PROTECT ưu
+tiên áp sát chủ, đánh mob đang nhắm chủ, trả đũa và tìm hostile gần. Thứ tự có
+thể chỉnh; AI không chủ động chọn người chơi, lính hoặc đệ của chủ khác.
 
-GUI cho phép chọn lớp và bậc trước khi thuê; tooltip nêu skill, yêu cầu XP/vật
-liệu và chỉ số HP/giáp/sát thương. Menu đội quân mở chi tiết từng lính, đổi chế
+GUI cho phép chọn lớp và bậc trước khi thuê; tooltip nêu mô tả skill tiếng Việt,
+thông số/cooldown, yêu cầu XP/vật liệu và chỉ số HP/giáp/sát thương. Hai thanh
+HP/EXP hiển thị phía trên lính; bật/tắt tại `status-display.enabled`, độ dài
+chỉnh tại `status-display.bar-length`. `experience-orb-pickup.enabled` và
+`experience-orb-pickup.radius-blocks` điều khiển việc thu EXP cho chủ.
+Menu đội quân mở chi tiết từng lính, đổi chế
 độ, mute, xóa, cho nghỉ/triệu hồi và mở kho 36 ô cùng trang bị. Vũ khí và giáp
 được tự nhận diện; vũ khí/giáp của lính không mất độ bền, cung dùng vô hạn loại
 mũi tên đặt trong kho và thức ăn được tiêu thụ để hồi máu. Lính lên cấp nhờ hạ
 quái hoặc tham gia hạ mục tiêu cùng chủ/đồng đội; chỉ số và sức mạnh skill tăng
-theo cấu hình. Level tối đa là 30. Đạt cấp 30 có thể nhấn **Nâng bậc** trong GUI
+theo cấu hình. Sức mạnh skill tăng tuyến tính (mặc định tối đa 2.5 lần), cooldown
+giảm đều tối đa 3 giây ở cấp 30. Lính nhặt EXP orb gần nhất cho chủ online; orb
+không đủ điều kiện vẫn tồn tại bình thường. Level tối đa là 30. Đạt cấp 30 có thể nhấn **Nâng bậc** trong GUI
 chi tiết; mỗi bậc nâng tiêu thụ vật phẩm khai báo ở
 `classes.<class>.tier-upgrades.<bậc-đích>.materials`, tối đa thêm 3 bậc so với
 bậc gốc khi thuê.
@@ -146,9 +162,10 @@ EXP hiện tại/yêu cầu và tên riêng. `/vnarmy rename <ID> <Tên mới>` 
 `recall` và `rest` tác động cả đội; thêm ID để chỉ gọi/nghỉ một lính. Lệnh thuê
 liệt kê rõ token, cấp kinh nghiệm và từng vật phẩm đang thiếu.
 
-Token boss phổ thông có bậc bằng level boss, rơi với xác suất mặc định 30%
-(`bosses/_settings.yml`, khóa `army-token-drop.chance`) khi có người chơi gây sát
-thương boss. Mỗi file boss có `experience` riêng cho EXP cơ bản; EXP tăng theo
+Token boss có class theo `army-token-class` trong file boss và bậc bằng level
+boss, rơi với xác suất mặc định 30% (`bosses/_settings.yml`, khóa
+`army-token-drop.chance`) khi có người chơi gây sát thương boss. Mỗi file boss
+có `experience` riêng cho EXP cơ bản; EXP tăng theo
 level bằng `experience-per-level-multiplier` trong `_settings.yml`. Mọi người
 chơi gây sát thương nhận EXP boss; lính đang xuất chiến của họ nhận cùng lượng
 EXP. Quy tắc vật phẩm/điểm boss hiện hành vẫn dùng ngưỡng đóng góp riêng.
@@ -159,9 +176,10 @@ Tên hiển thị trên entity dùng tiền tố `[Tên chủ]` xanh lá sáng, 
 người chơi khác thấy tiền tố xanh da trời sáng, đậm. ProtocolLib cung cấp metadata
 riêng theo người xem. Dữ liệu
 đội quân/kho đồ lưu tại `plugins/VnMineHardcore/mercenaries.yml`. AI không chọn
-mục tiêu bị che khuất khỏi tầm nhìn. Các tham số tinh chỉnh AI sẵn có ở
-`armies.yml` gồm `ai-interval-ticks`, `target-radius-blocks`, khoảng cách theo
-chủ và khoảng cách dịch chuyển.
+mục tiêu bị che khuất khỏi tầm nhìn. `ai.priorities` và `ai.wander-radius-blocks`
+chỉnh thứ tự hành động/phạm vi tuần tra. Kỵ sĩ tự lên lại ngựa do plugin quản lý,
+không chiếm mount của người chơi/lính khác; ô gear riêng lưu giáp ngựa tốt nhất
+và `classes.paladin.horse-health` chỉnh HP mount.
 
 `plugins/VnMineHardcore/tooltips.yml` định nghĩa nhắc nhở chức năng định kỳ:
 `settings.interval-seconds` đặt khoảng thời gian và `settings.mode` chọn
