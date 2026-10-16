@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+- Sửa modifier entity ID của packet `MOUNT`/`ENTITY_DESTROY` cho schema 26.3 dùng `int[]`, tránh lỗi `FieldAccessException` khi gọi lính.
+
+## [v1.30.0] - 2026-10-16
+
 ### Added
 - Chuyển thanh HP/EXP lính đánh thuê sang `TextDisplay` ảo qua ProtocolLib; chỉ chủ nhân nhìn thấy, người khác chỉ thấy tên lính.
 - Thêm token triệu hồi theo class cấu hình riêng từng boss; bậc token khớp level boss.

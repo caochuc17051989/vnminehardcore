@@ -24,6 +24,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -129,7 +130,7 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
     }
 
     private void onMobDestroyPacket(PacketEvent event) {
-        List<Integer> destroyedEntityIds = event.getPacket().getIntLists().read(0);
+        int[] destroyedEntityIds = event.getPacket().getIntegerArrays().read(0);
         Player viewer = event.getPlayer();
         UUID viewerId = viewer.getUniqueId();
         for (int mobEntityId : destroyedEntityIds) {
@@ -146,10 +147,11 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
         StatusEntry entry = entriesByMobEntityId.get(vehicleEntityId);
         if (entry == null || !entry.spawned
                 || !entry.ownerId.equals(event.getPlayer().getUniqueId())) return;
-        List<Integer> passengerIds = new ArrayList<>(event.getPacket().getIntLists().read(0));
-        if (passengerIds.contains(entry.virtualEntityId)) return;
-        passengerIds.add(entry.virtualEntityId);
-        event.getPacket().getIntLists().write(0, passengerIds);
+        int[] passengerIds = event.getPacket().getIntegerArrays().read(0);
+        if (Arrays.stream(passengerIds).anyMatch(id -> id == entry.virtualEntityId)) return;
+        int[] updatedPassengerIds = Arrays.copyOf(passengerIds, passengerIds.length + 1);
+        updatedPassengerIds[passengerIds.length] = entry.virtualEntityId;
+        event.getPacket().getIntegerArrays().write(0, updatedPassengerIds);
     }
 
     private void scheduleReconcile(StatusEntry entry) {
@@ -211,7 +213,8 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
         List<Integer> passengerIds = new ArrayList<>();
         for (Entity passenger : mob.getPassengers()) passengerIds.add(passenger.getEntityId());
         passengerIds.add(entry.virtualEntityId);
-        passengers.getIntLists().write(0, passengerIds);
+        passengers.getIntegerArrays().write(0,
+            passengerIds.stream().mapToInt(Integer::intValue).toArray());
         sendPacket(viewer, passengers);
     }
 
@@ -224,7 +227,7 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
 
     private void destroyVirtualEntity(Player viewer, StatusEntry entry) {
         PacketContainer destroy = protocolManager.createPacket(PacketType.Play.Server.ENTITY_DESTROY);
-        destroy.getIntLists().write(0, List.of(entry.virtualEntityId));
+        destroy.getIntegerArrays().write(0, new int[] {entry.virtualEntityId});
         sendPacket(viewer, destroy);
     }
 
