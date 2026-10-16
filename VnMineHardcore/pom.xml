@@ -13,8 +13,8 @@
     <description>Ultimate hardcore plugin for Paper</description>
 
     <properties>
-        <maven.compiler.release>21</maven.compiler.release>
-        <paper.api.version>1.21.4-R0.1-SNAPSHOT</paper.api.version>
+        <maven.compiler.release>25</maven.compiler.release>
+        <paper.api.version>26.3.build.175-stable</paper.api.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -39,6 +39,7 @@
         <dependency>
             <groupId>net.dmulloy2</groupId>
             <artifactId>ProtocolLib</artifactId>
+            <!-- The 5.5.0-SNAPSHOT dev-build is distributed as a server JAR, not a Maven artifact. -->
             <version>5.4.0</version>
             <scope>provided</scope>
         </dependency>
@@ -52,7 +53,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <release>21</release>
+                    <release>25</release>
                     <fork>true</fork>
                 </configuration>
             </plugin>

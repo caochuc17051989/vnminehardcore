@@ -25,8 +25,6 @@ import org.bukkit.entity.Monster;
 import org.bukkit.entity.Piglin;
 import org.bukkit.entity.PiglinBrute;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.TextDisplay;
-import org.bukkit.entity.Display;
 import org.bukkit.entity.Vex;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Zombie;
@@ -114,10 +112,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final NamespacedKey tokenClassKey;
     private final NamespacedKey tokenLevelKey;
     private final NamespacedKey welcomeGiftKey;
-    private final NamespacedKey statusDisplayKey;
     private final File welcomeGiftFile;
     private final Set<UUID> claimedWelcomeGiftPlayers = new HashSet<>();
     private final MercenaryNamePacketListener namePacketListener;
+    private final MercenaryStatusPacketListener statusPacketListener;
     private final Map<UUID, Unit> units = new HashMap<>();
     private final Map<UUID, Mob> activeEntities = new HashMap<>();
     private final Map<UUID, Map<String, Long>> skillCooldowns = new HashMap<>();
@@ -125,7 +123,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final Map<UUID, UUID> ownerAttackTargets = new HashMap<>();
     private final Map<UUID, Map<UUID, Long>> ownerThreats = new HashMap<>();
     private final Map<UUID, UUID> mountByUnit = new HashMap<>();
-    private final Map<UUID, UUID> statusDisplayByUnit = new HashMap<>();
     private final Map<UUID, Location> wanderTargets = new HashMap<>();
     private final Map<UUID, Long> wanderTargetExpiries = new HashMap<>();
     private final Set<UUID> awaitingGroupName = java.util.concurrent.ConcurrentHashMap.newKeySet();
@@ -321,8 +318,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         tokenClassKey = new NamespacedKey(plugin, "army_token_class");
         tokenLevelKey = new NamespacedKey(plugin, "army_token_level");
         welcomeGiftKey = new NamespacedKey(plugin, "welcome_gift");
-        statusDisplayKey = new NamespacedKey(plugin, "army_status_display");
         namePacketListener = new MercenaryNamePacketListener(plugin);
+        statusPacketListener = new MercenaryStatusPacketListener(plugin);
         loadSettings();
         loadData();
         loadWelcomeGiftClaims();
@@ -4449,54 +4446,27 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private void updateStatusDisplay(Unit unit, Mob mob) {
         if (!statusDisplayEnabled) {
-            removeStatusDisplay(unit.id);
+            statusPacketListener.remove(unit.id);
             return;
         }
-        Entity entity = statusDisplayByUnit.containsKey(unit.id)
-            ? Bukkit.getEntity(statusDisplayByUnit.get(unit.id)) : null;
-        Location location = mob.getLocation().add(0.0, mob.getHeight() + 0.75, 0.0);
-        TextDisplay display;
-        if (entity instanceof TextDisplay existing && existing.isValid()
-                && existing.getWorld().equals(mob.getWorld())) {
-            display = existing;
-        } else {
-            if (entity != null && entity.isValid()) entity.remove();
-            display = mob.getWorld().spawn(location, TextDisplay.class);
-            display.setPersistent(false);
-            display.setInvulnerable(true);
-            display.setGravity(false);
-            display.setSilent(true);
-            display.setBillboard(Display.Billboard.CENTER);
-            display.setAlignment(TextDisplay.TextAlignment.CENTER);
-            display.setDefaultBackground(false);
-            display.setSeeThrough(true);
-            display.setShadowed(true);
-            display.setLineWidth(240);
-            display.getPersistentDataContainer().set(statusDisplayKey,
-                PersistentDataType.STRING, unit.id.toString());
-            statusDisplayByUnit.put(unit.id, display.getUniqueId());
-        }
-        display.teleport(location);
         double maximumHealth = maxHealth(mob);
         double requiredExperience = nextLevelExperience(unit);
-        String health = "§cHP " + formatStat(mob.getHealth()) + "/" + formatStat(maximumHealth)
-            + " " + statusBar(mob.getHealth(), maximumHealth, "§c");
-        String experience = unit.level >= maxLevel ? "§bEXP TỐI ĐA " + statusBar(1.0, 1.0, "§b")
-            : "§bEXP " + unit.experience + "/" + (int) requiredExperience + " "
-                + statusBar(unit.experience, requiredExperience, "§b");
-        display.setText(health + "\n" + experience);
+        int filledHealthBars = statusBarFilled(mob.getHealth(), maximumHealth);
+        String health = "§cHP: " + "■".repeat(filledHealthBars)
+            + "§f" + formatStat(mob.getHealth()) + "/" + formatStat(maximumHealth)
+            + "§7" + "■".repeat(statusDisplayBarLength - filledHealthBars);
+        String experience = unit.level >= maxLevel ? "§b EXP: MAX/MAX"
+            : "§b EXP: " + unit.experience + "/" + (int) requiredExperience;
+        statusPacketListener.update(unit.id, mob, unit.owner, health + experience);
     }
 
-    private String statusBar(double value, double maximum, String color) {
+    private int statusBarFilled(double value, double maximum) {
         double progress = maximum <= 0.0 ? 0.0 : Math.max(0.0, Math.min(1.0, value / maximum));
-        int filled = (int) Math.round(progress * statusDisplayBarLength);
-        return color + "■".repeat(filled) + "§7□".repeat(statusDisplayBarLength - filled);
+        return (int) Math.round(progress * statusDisplayBarLength);
     }
 
     private void removeStatusDisplay(UUID unitId) {
-        UUID displayId = statusDisplayByUnit.remove(unitId);
-        Entity display = displayId == null ? null : Bukkit.getEntity(displayId);
-        if (display != null && display.isValid()) display.remove();
+        statusPacketListener.remove(unitId);
     }
 
     private void captureEquipment(Unit unit, Mob mob) {
@@ -4945,5 +4915,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         if (!saveData()) plugin.getLogger().severe("[Army] Could not persist mercenaries on plugin shutdown.");
         namePacketListener.close();
+        statusPacketListener.close();
     }
 }

@@ -141,8 +141,9 @@ thể chỉnh; AI không chủ động chọn người chơi, lính hoặc đệ
 
 GUI cho phép chọn lớp và bậc trước khi thuê; tooltip nêu mô tả skill tiếng Việt,
 thông số/cooldown, yêu cầu XP/vật liệu và chỉ số HP/giáp/sát thương. Hai thanh
-HP/EXP hiển thị phía trên lính; bật/tắt tại `status-display.enabled`, độ dài
-chỉnh tại `status-display.bar-length`. `experience-orb-pickup.enabled` và
+Thanh HP/EXP dạng một dòng chỉ hiển thị với chủ nhân lính; người chơi khác vẫn
+chỉ thấy tên lính. Bật/tắt tại `status-display.enabled`, độ dài vạch chỉnh tại
+`status-display.bar-length`. `experience-orb-pickup.enabled` và
 `experience-orb-pickup.radius-blocks` điều khiển việc thu EXP cho chủ.
 Menu đội quân mở chi tiết từng lính, đổi chế
 độ, mute, xóa, cho nghỉ/triệu hồi và mở kho 36 ô cùng trang bị. Vũ khí và giáp
@@ -481,9 +482,8 @@ sẽ được bỏ qua và ghi cảnh báo.
 
 ### Phiên bản tương thích
 
-Dự án nhắm tới Paper 26.x và Java 25+ cho server. Mã nguồn hiện biên dịch với
-Paper API 1.21.4 để giữ tương thích API như mô tả trong `BUILD_GUIDE.md`.
-`api-version` trong `plugin.yml` hiện vẫn là `1.21`.
+Dự án nhắm tới Paper 26.3 và Java 25+ cho server. Mã nguồn biên dịch với
+Paper API `26.3.build.175-stable`; `api-version` trong `plugin.yml` là `26.3`.
 
 `config.yml` và các file boss/disaster giữ nguyên giá trị tùy chỉnh khi plugin
 cập nhật. Vì vậy, nếu máy chủ đã có file
@@ -502,9 +502,9 @@ sát thương người chơi, thông báo và tỷ lệ. Chạy `/vnreload` sau 
 
 ## Yêu cầu
 
-- Paper 26.x
+- Paper 26.3
 - Java 25+ (runtime server)
-- Paper API 1.21.4 dùng làm compile baseline
+- Paper API `26.3.build.175-stable` dùng làm compile baseline
 
 ## Cài đặt
 

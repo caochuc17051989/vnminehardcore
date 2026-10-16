@@ -2,7 +2,7 @@ name: VnMineHardcore
 version: ${project.version}
 main: com.vnmine.hardcore.VnMineHardcore
 depend: [ProtocolLib]
-api-version: '1.21'
+api-version: '26.3'
 author: VnMineTeam
 description: Hardcore survival plugin with thirst, disasters, combat tag, and configurable gameplay
 

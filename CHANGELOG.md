@@ -3,12 +3,14 @@
 ## [Unreleased]
 
 ### Added
+- Chuyển thanh HP/EXP lính đánh thuê sang `TextDisplay` ảo qua ProtocolLib; chỉ chủ nhân nhìn thấy, người khác chỉ thấy tên lính.
 - Thêm token triệu hồi theo class cấu hình riêng từng boss; bậc token khớp level boss.
 - Thêm thanh HP/EXP phía trên lính, tự thu EXP orb cho chủ online, cấu hình ưu tiên AI theo mode và bán kính tuần tra.
 - Thêm cơ chế Kỵ sĩ tự tìm mount do plugin quản lý, lưu/chọn giáp ngựa tốt nhất và cấu hình HP riêng cho ngựa.
 - VEX của Tu sĩ rừng tăng giới hạn theo level, mỗi lần cast chỉ gọi thêm một con; summon dùng chung bộ lọc mục tiêu của lính.
 
 ### Changed
+- Đồng bộ compile target với Paper `26.3.build.175-stable` và Java 25; yêu cầu ProtocolLib runtime `5.5.0-SNAPSHOT`.
 - Việt hóa tên class/skill và hiển thị mô tả, thông số, cooldown thực tế theo level; sức mạnh tăng tuyến tính, cooldown giảm tối đa vài giây.
 - Lính chọn vũ khí tốt nhất giữa tay chính và kho; chỉ cấp vũ khí mặc định khi không có vũ khí phù hợp hơn.
 - AI phân thứ tự trả đũa, tìm mục tiêu, theo chủ và tuần tra; không chủ động tấn công lính/đệ của người chơi khác.

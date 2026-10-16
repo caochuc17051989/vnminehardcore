@@ -1,45 +1,30 @@
-## Kế hoạch dự phòng: Hoàn thiện lính đánh thuê
+## Plan: Thanh HP/EXP ảo cho lính đánh thuê
 
-Sửa và mở rộng hệ thống lính trong MercenaryManager cùng BossEventManager: bảo toàn gear, token đúng class+tier, chọn vũ khí tốt nhất, hiển thị HP/EXP, AI ưu tiên cho lính và summon, mô tả/skill Việt hóa có scaling level, mount Kỵ sĩ cùng giáp riêng, và thu XP orb cho chủ. Tái sử dụng Paper/Bukkit và ProtocolLib; không thêm phụ thuộc MythicMobs.
+Thay `TextDisplay` entity thật bằng `TEXT_DISPLAY` ảo gửi riêng cho từng người chơi qua ProtocolLib; giữ cấu hình đang có và bám vòng đời theo dõi entity của server. Đồng bộ build với Paper `26.3.build.175-stable`, Java 25 và ProtocolLib `5.5.0-SNAPSHOT`.
 
 ## Công việc
-1. Tái hiện lỗi gear khi biến hình. Handler onMercenaryTransform hiện đã hủy EntityTransformEvent; xác định các TransformReason còn lọt, kiểm tra captureEquipment/applyEquipment, rồi sửa nguyên nhân để gear không mất hoặc nhân đôi qua event, tick AI, lưu/đọc và triệu hồi.
-2. Token boss: cấu hình class theo từng boss, tier token theo level boss. Boss token phải có PDC class+tier chính xác; token không hợp lệ không bị tiêu thụ. Duy trì token phổ thông do admin cấp để tương thích.
-3. Chọn vũ khí tốt nhất: giữ vũ khí hiện có nếu tốt hơn hoặc ngang vũ khí mặc định; chỉ tạo mặc định khi ô tay trống hoặc không có vũ khí dùng được. Giữ metadata và xử lý fallback IRON_SPEAR của Paladin.
-4. Hiển thị HP/EXP trên entity: ưu tiên HP bar overhead; thử thanh EXP thứ hai qua ProtocolLib. Nếu client/scoreboard không hỗ trợ ổn định thì dùng HP bar và hiển thị tiến trình EXP trong nhãn. Có cấu hình bật/tắt và định dạng.
-5. Xây AI ưu tiên cấu hình theo mode. ATTACK: trả đũa mục tiêu đã đánh chủ > hostile gần nhất > tìm kiếm/tuần tra > quay về chủ > đi ngẫu nhiên. DEFEND: hostile gần nhất > tìm kiếm > đi ngẫu nhiên. PROTECT: áp sát chủ > hostile đang nhắm chủ > hostile gần nhất > đi ngẫu nhiên. Giữ line-of-sight, lọc mục tiêu hợp lệ và cho admin đổi thứ tự trong armies.yml.
-6. Việt hóa tên, thông tin, giao diện và thông báo skill. Hiển thị mô tả cụ thể, mục tiêu/phạm vi, sức mạnh và cooldown hiện tại, không hiện ID kỹ thuật. Skill tăng tuyến tính nhẹ theo level; ví dụ hồi 4 HP ở cấp 1 đến khoảng 10 HP ở cấp 30. Cooldown giảm đều vài giây tổng cộng và có mức tối thiểu. Đổi Druid thành tên tiếng Việt (đề xuất: Tu sĩ rừng).
-7. Kỵ sĩ tự lên lại ngựa do plugin quản lý khi bị rơi; không chiếm ngựa người chơi/lính khác. Nếu không còn ngựa thì tạo ngựa thay thế. Lưu giáp ngựa riêng trong hồ sơ Unit, thêm ô gear chuyên dụng, chọn loại tốt nhất và giữ giáp sau khi ngựa chết/thay. Tăng HP ngựa bằng cấu hình.
-8. EXP orb: lính đang triển khai nhặt orb trong bán kính cấu hình, chuyển EXP cho chủ online. Mỗi orb chỉ trao một lần. Nếu chủ offline/không có lính hợp lệ gần đó thì để orb tự hết hạn. XP orb không tăng level lính.
-9. Chuẩn hóa AI cho mercenary và mọi summon do lính tạo. Không chủ động tấn công người chơi/lính/đệ thuộc chủ khác; chỉ trả đũa mục tiêu hợp lệ khi chủ gây sát thương hoặc bị tấn công. VEX của Druid: mỗi cast thêm tối đa một con, số VEX tối đa tăng theo level, giải phóng slot khi chết/hết hạn; tag owner/unit, áp dụng target/friendly-fire và cleanup khi lính nghỉ/chết.
-10. Cấu hình mới có mặc định hợp lý và chú thích VI/EN; cập nhật README và CHANGELOG. Chạy Maven test/compile, không build JAR trừ khi được yêu cầu, sau đó kiểm thử trên server Paper.
+1. Đồng bộ POM và tài liệu: Paper API `26.3.build.175-stable`, compiler release 25, `api-version` 26.3; dùng API ProtocolLib Maven `5.4.0` để compile và bắt buộc runtime `5.5.0-SNAPSHOT` vì dev-build chỉ được phát hành dạng JAR.
+2. Bỏ spawn/teleport/remove `TextDisplay` Bukkit trong `MercenaryManager`; giữ `status-display.enabled` và `status-display.bar-length`. Hiển thị một dòng: `HP: <vạch đầy><HP hiện tại/tối đa><vạch rỗng> EXP: <EXP hiện tại/yêu cầu>`.
+3. Tạo listener packet riêng. Cấp virtual entity ID âm bắt đầu từ `-2000000`, map UUID mob → ID ảo, chỉ gửi cho chủ nhân. Gửi `SPAWN_ENTITY` loại `TEXT_DISPLAY` tại vị trí mob với Y + 0.5; metadata qua `List<WrappedDataValue>` ở index 23 (chat component), 25 (integer nền 0), 26 (byte billboard 3); sau đó gửi `SET_PASSENGERS` và cập nhật HP/EXP qua `ENTITY_METADATA`.
+4. Theo dõi packet spawn/despawn mob để chủ nhân vào/ra tầm tracking thì spawn/xóa entity ảo. Xử lý chunk load/unload, mob chết/despawn, nghỉ/triệu hồi lại, reload và plugin shutdown; không làm ảnh hưởng passenger thật.
+5. Cập nhật README và changelog mô tả định dạng, quyền hiển thị theo chủ nhân và yêu cầu phiên bản.
 
-## File/chức năng liên quan
-- VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/MercenaryManager.java: biến hình, gear, AI, skill, hiển thị, XP orb, mount, summon, token.
-- VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/MercenaryNamePacketListener.java: tên entity/ProtocolLib.
-- VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/BossEventManager.java: tạo token boss.
-- VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/ConfigManager.java: parse/xác thực cấu hình boss.
-- VnMineHardcore/src/main/resources/armies.yml: AI, HP/EXP, scaling skill, ngựa, radius orb, VEX cap.
-- VnMineHardcore/src/main/resources/bosses/_settings.yml và bosses/<id>.yml: thiết lập token boss.
-- VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/BossLeaderboardManager.java: bảo đảm không phá scoreboard.
-- VnMineHardcore/README.md và CHANGELOG.md: hướng dẫn và lịch sử thay đổi.
+## File liên quan
+- `VnMineHardcore/pom.xml`: Java, Paper API, ProtocolLib và repository.
+- `VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/MercenaryManager.java`: vòng đời và dữ liệu thanh.
+- `VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/MercenaryNamePacketListener.java`: tham khảo ProtocolLib; giữ nguyên chức năng tên/âm thanh.
+- `VnMineHardcore/src/main/resources/plugin.yml`: `api-version`.
+- `VnMineHardcore/README.md`, `README.md`, `CHANGELOG.md`: tài liệu.
 
 ## Kiểm thử
-- Gear qua biến hình, lưu/đọc, chunk unload/load và triệu hồi.
-- Token đúng/sai class-tier và token admin phổ thông.
-- Vũ khí mặc định/nâng cấp, metadata và item không hợp lệ.
-- Skill cấp 1/giữa/30, mô tả tiếng Việt, chỉ số và cooldown thực tế.
-- HP/EXP overhead, scoreboard sidebar và góc nhìn chủ/người khác.
-- Ba mode AI; không chủ động chọn lính/đệ chủ khác, retaliation hợp lệ vẫn hoạt động.
-- Kỵ sĩ rơi yên, không cướp ngựa, ngựa thay thế nhận giáp tốt nhất/HP cấu hình; gear còn sau khi ngựa chết, nghỉ hoặc logout.
-- Orb gần nhiều lính chỉ trao một lần cho đúng chủ; offline/không lính gần thì orb tự hết hạn.
-- VEX thêm một con mỗi cast, cap tăng theo level, AI/friendly-fire/cleanup đúng.
-- Maven test/compile; thiếu khóa cấu hình dùng mặc định, giá trị sai được validate; README/CHANGELOG đúng hành vi.
+- Maven compile trên Java 25; xác nhận Paper API và ProtocolLib snapshot phân giải. Không build JAR.
+- Kiểm tra serializer và packet schema trên Paper 26.3/ProtocolLib 5.5.0.
+- Với chủ nhân và người chơi khác: chỉ chủ nhân thấy thanh, người khác chỉ thấy tên; kiểm tra tầm tracking, chunk load/unload, thay đổi HP/EXP, chết/despawn, triệu hồi lại và shutdown.
+- Xác nhận không còn display thật trong world và passenger thật không bị ảnh hưởng.
 
-## Quyết định đã chốt
-- Boss token: class cấu hình theo boss, tier theo level boss; token admin phổ thông được giữ.
-- AI ưu tiên mặc định theo yêu cầu, có thể điều chỉnh qua armies.yml.
-- Kỵ sĩ chỉ cưỡi ngựa plugin quản lý; tạo ngựa thay thế nếu cần.
-- EXP orb chỉ chuyển cho chủ online; nếu không phù hợp thì orb tự hết hạn.
-- Thanh HP + EXP hai hàng là mục tiêu; fallback tiến trình EXP dạng text nếu không ổn định.
-- Không thêm MythicMobs; không build JAR nếu chưa được yêu cầu.
+## Quyết định
+- Thanh một dòng; giữ config hiện tại.
+- Chỉ UUID chủ nhân nhận packet thanh.
+- Dùng packet tracking spawn/despawn mob để quản lý viewer.
+- Tuân theo metadata index 23/25/26 và kiểm chứng schema trên đúng phiên bản.
+- Không build JAR khi chưa được yêu cầu.
