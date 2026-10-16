@@ -110,10 +110,14 @@ hạn và thứ tự ưu tiên AI tại `classes.druid.skill-settings.SUMMON_VEX
 kẻ tấn công chủ nhân, rồi đi theo Tu sĩ rừng. Chủ nhân thấy thanh HP riêng của từng VEX dạng ô đầy/rỗng, không kèm số HP;
 thanh màu xanh lá có biểu tượng đổi theo trạng thái tấn công, theo Tu sĩ hoặc
 đứng yên. Khi không có mục tiêu để đánh, VEX quay về và được giữ trong phạm vi
-5 block quanh Tu sĩ rừng. Màu và biểu tượng tùy chỉnh tại `status-display.vex-health-color` và
+5 block quanh Tu sĩ rừng bằng cách bay theo từ từ; khi cho Tu sĩ rừng nghỉ, toàn
+bộ VEX do lính đó triệu hồi cũng bị xóa. Màu và biểu tượng tùy chỉnh tại `status-display.vex-health-color` và
 `status-display.vex-action-icons` trong `armies.yml`. Kỵ sĩ tự lên ngựa plugin quản lý;
 slot gear riêng lưu giáp ngựa tốt nhất và
-`classes.paladin.horse-health` cấu hình máu ngựa.
+`classes.paladin.horse-health`/`classes.paladin.horse-speed` cấu hình máu/tốc độ
+ngựa (tốc độ mặc định bằng mức phi nước đại tối đa). Lính sẽ chủ động truy đuổi
+mục tiêu mà chủ nhân vừa đánh, kể cả khi mục tiêu ở ngoài tầm nhìn trực tiếp của lính;
+lệnh tấn công trực tiếp hết hiệu lực sau 15 giây nếu không được làm mới.
 Token phải khớp class và bậc, rồi bị tiêu thụ khi thuê. Token boss có class riêng
 qua `army-token-class` trong từng `bosses/<id>.yml`; bậc token bằng level boss.
 Token chung từ lệnh admin vẫn dùng được cho mọi class.

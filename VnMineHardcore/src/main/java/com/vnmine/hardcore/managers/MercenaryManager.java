@@ -130,6 +130,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final Map<UUID, Map<String, Long>> skillCooldowns = new HashMap<>();
     private final Map<UUID, Set<UUID>> summonedMinions = new HashMap<>();
     private final Map<UUID, UUID> ownerAttackTargets = new HashMap<>();
+    private final Map<UUID, Long> ownerAttackTargetExpiries = new HashMap<>();
     private final Map<UUID, Map<UUID, Long>> ownerThreats = new HashMap<>();
     private final Map<UUID, Map<UUID, Long>> ownerAttackers = new HashMap<>();
     private final Map<UUID, Map<UUID, Long>> unitThreats = new HashMap<>();
@@ -582,6 +583,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         ownerAttackTargets.remove(event.getPlayer().getUniqueId());
+        ownerAttackTargetExpiries.remove(event.getPlayer().getUniqueId());
         awaitingGroupName.remove(event.getPlayer().getUniqueId());
         despawnForOwner(event.getPlayer().getUniqueId());
     }
@@ -731,14 +733,14 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         UUID ownerId = getOwnerId(mob);
         boolean ownerCommandedTarget = ownerId != null
-            && target.getUniqueId().equals(ownerAttackTargets.get(ownerId));
+            && isActiveOwnerAttackTarget(ownerId, target.getUniqueId());
         if (target.getUniqueId().equals(ownerId)
                 || !isAllowedMercenaryTarget(ownerId, target, ownerCommandedTarget)) {
             event.setCancelled(true);
             mob.setTarget(null);
             return;
         }
-        if (!mob.hasLineOfSight(target)) {
+        if (!ownerCommandedTarget && !mob.hasLineOfSight(target)) {
             event.setCancelled(true);
             mob.setTarget(null);
         }
@@ -894,11 +896,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         UUID targetOwner = getOwnerId(target);
         if (targetOwner != null && targetOwner.equals(owner.getUniqueId())) return;
         ownerAttackTargets.put(owner.getUniqueId(), target.getUniqueId());
+        ownerAttackTargetExpiries.put(owner.getUniqueId(), System.currentTimeMillis() + 15_000L);
         for (Unit unit : getOwnerUnits(owner.getUniqueId())) {
             Mob mob = activeEntities.get(unit.id);
             if (unit.deployed && mob != null && mob.isValid()
-                    && ((isValidTarget(target) && !isMercenary(target)) || isMercenary(target))
-                    && mob.hasLineOfSight(target)) mob.setTarget(target);
+                    && ((isValidTarget(target) && !isMercenary(target)) || isMercenary(target))) {
+                mob.setTarget(target);
+            }
         }
     }
 
@@ -1432,7 +1436,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private void runUnitAi(Unit unit, Mob mob, Player owner) {
         if (!owner.getWorld().equals(mob.getWorld())) {
             Location spawn = safeLocation(owner.getLocation());
-            mob.teleport(spawn);
+            teleportUnit(unit, mob, spawn);
             wanderTargets.remove(unit.id);
             wanderTargetExpiries.remove(unit.id);
             updateSummonedMinions(unit, null);
@@ -1440,7 +1444,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         double distanceSquared = owner.getLocation().distanceSquared(mob.getLocation());
         if (distanceSquared > teleportDistance * teleportDistance) {
-            mob.teleport(owner.getLocation().clone().add(0.8, 0.0, 0.8));
+            teleportUnit(unit, mob, owner.getLocation().clone().add(0.8, 0.0, 0.8));
             mob.setTarget(null);
             wanderTargets.remove(unit.id);
             wanderTargetExpiries.remove(unit.id);
@@ -1464,7 +1468,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             if (hasSkill(unit, "RANGED_ATTACK") && !hasSkill(unit, "ATTACK")) {
                 mob.setTarget(null);
                 double range = skillOptionDouble(unit, "RANGED_ATTACK", "range-blocks", 16.0, 4.0, 64.0);
-                if (mob.getLocation().distanceSquared(target.getLocation()) > range * range * 0.64) {
+                if (mob.getLocation().distanceSquared(target.getLocation()) > range * range * 0.64
+                        || !mob.hasLineOfSight(target)) {
                     mob.getPathfinder().moveTo(target.getLocation(), 1.0);
                 } else {
                     mob.getPathfinder().stopPathfinding();
@@ -1553,6 +1558,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private LivingEntity findTarget(Unit unit, Mob mob, Player owner) {
         if (!hasSkill(unit, "ATTACK") && !hasSkill(unit, "RANGED_ATTACK")
             && !hasSkill(unit, "FIRE_BOLT") && !hasSkill(unit, "ROOT_TARGET")) return null;
+        LivingEntity ownerTarget = ownerAttackTarget(unit, mob, owner);
+        if (ownerTarget != null) return ownerTarget;
         double classRadius = readBoundedDouble(settings, "classes." + unit.unitClass + ".target-radius-blocks",
             targetRadius, 4.0, 50.0);
         Location center = unit.mode == Mode.ATTACK ? mob.getLocation() : owner.getLocation();
@@ -1572,11 +1579,22 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private LivingEntity ownerAttackTarget(Unit unit, Mob mob, Player owner) {
         UUID targetId = ownerAttackTargets.get(owner.getUniqueId());
-        Entity entity = targetId == null ? null : Bukkit.getEntity(targetId);
+        if (targetId == null || !isActiveOwnerAttackTarget(owner.getUniqueId(), targetId)) return null;
+        Entity entity = Bukkit.getEntity(targetId);
         if (entity instanceof LivingEntity target && isAllowedMercenaryTarget(unit.owner, target, true)
-                && mob.getWorld().equals(target.getWorld()) && mob.hasLineOfSight(target)) return target;
+                && mob.getWorld().equals(target.getWorld())) return target;
         if (targetId != null && (entity == null || entity.isDead())) ownerAttackTargets.remove(owner.getUniqueId());
         return null;
+    }
+
+    private boolean isActiveOwnerAttackTarget(UUID ownerId, UUID targetId) {
+        Long expiresAt = ownerAttackTargetExpiries.get(ownerId);
+        if (expiresAt == null || System.currentTimeMillis() >= expiresAt) {
+            ownerAttackTargets.remove(ownerId);
+            ownerAttackTargetExpiries.remove(ownerId);
+            return false;
+        }
+        return targetId.equals(ownerAttackTargets.get(ownerId));
     }
 
     private LivingEntity findOwnerAttacker(Mob mob, Player owner) {
@@ -1674,13 +1692,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                         vex.teleport(druid.getLocation().clone().add(0.0, 2.0, 0.0));
                         vex.setVelocity(new Vector());
                         vex.getPathfinder().stopPathfinding();
-                    } else if (vex.getLocation().distanceSquared(druid.getLocation()) > 25.0) {
-                        Location returnLocation = vexReturnLocation(vex, druid);
-                        vex.teleport(returnLocation);
-                        vex.setVelocity(new Vector());
-                        vex.getPathfinder().stopPathfinding();
                     } else if (vex.getLocation().distanceSquared(druid.getLocation()) > 16.0) {
-                        vex.getPathfinder().moveTo(druid.getLocation(), 1.1);
+                        vex.getPathfinder().moveTo(druid.getLocation(), 0.6);
                     } else {
                         vex.getPathfinder().stopPathfinding();
                     }
@@ -1688,12 +1701,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
             updateVexStatusDisplay(vex, unit.owner, vexActionIcon(vex, druid));
         }
-    }
-
-    private Location vexReturnLocation(Vex vex, Mob druid) {
-        Vector offset = vex.getLocation().toVector().subtract(druid.getLocation().toVector());
-        if (offset.lengthSquared() < 0.0001) offset = new Vector(1.0, 0.0, 0.0);
-        return druid.getLocation().clone().add(offset.normalize().multiply(3.5));
     }
 
     private LivingEntity selectVexTarget(Unit unit, Mob druid, Player owner, Vex vex,
@@ -2274,8 +2281,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             UUID targetOwner = getOwnerId(target);
             if (targetOwner != null && threats.containsKey(targetOwner)) return true;
         }
-        UUID ownerTarget = ownerAttackTargets.get(ownerId);
-        return ownerTarget != null && ownerTarget.equals(target.getUniqueId());
+        return isActiveOwnerAttackTarget(ownerId, target.getUniqueId());
     }
 
     private void sanitizeMobAi(Mob mob) {
@@ -2493,6 +2499,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                         + "§c; lính vẫn được giữ nguyên.");
                     continue;
                 }
+                cleanupSummonedMinions(unit.id);
                 removeMount(unit.id, mob);
                 mob.remove();
                 activeEntities.remove(unit.id);
@@ -2501,6 +2508,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 unit.deployed = false;
                 unit.entityId = null;
                 if (saveData()) {
+                    cleanupSummonedMinions(unit.id);
                     removeMount(unit.id, null);
                     rested++;
                 }
@@ -2612,12 +2620,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private void applyHorseStatsAndArmor(Unit unit, Horse horse) {
         double horseHealth = readBoundedDouble(settings, "classes.paladin.horse-health", 50.0, 1.0, 1024.0);
+        double horseSpeed = readBoundedDouble(settings, "classes.paladin.horse-speed", 0.3375, 0.1, 1.0);
         if (horse.getAttribute(Attribute.MAX_HEALTH) != null) {
             double previousMaximum = horse.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
             horse.getAttribute(Attribute.MAX_HEALTH).setBaseValue(horseHealth);
             double currentHealth = horse.getHealth();
             horse.setHealth(currentHealth >= previousMaximum
                 ? horseHealth : Math.min(currentHealth, horseHealth));
+        }
+        if (horse.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
+            horse.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(horseSpeed);
         }
         if (isHorseArmor(horse.getInventory().getArmor())) {
             unit.horseArmor = selectBestHorseArmor(unit.horseArmor, horse.getInventory().getArmor());
@@ -2669,6 +2681,21 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             mountByUnit.put(unit.id, horse.getUniqueId());
         }
         return rider.getVehicle() == horse ? horse : null;
+    }
+
+    private void teleportUnit(Unit unit, Mob mob, Location destination) {
+        if ("paladin".equals(unit.unitClass) && mob instanceof Zombie rider) {
+            Horse horse = getMountedHorse(unit, rider);
+            if (horse != null) {
+                if (!horse.teleport(destination)) {
+                    plugin.getLogger().warning("[Army] Could not teleport horse for mercenary " + unit.id + ".");
+                    return;
+                }
+                if (rider.getVehicle() != horse) horse.addPassenger(rider);
+                return;
+            }
+        }
+        mob.teleport(destination);
     }
 
     private void setMode(Player player, Mode mode) {

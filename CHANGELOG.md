@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.36.0] - 2026-10-16
+
+### Fixed
+- Giới hạn mục tiêu người chơi do chủ nhân chủ động đánh trong 15 giây; lính không tiếp tục đuổi theo mục tiêu PvP cũ và có thể truy đuổi mục tiêu chủ nhân bắn trúng kể cả khi lính chưa nhìn thấy.
+- Xóa VEX được Tu sĩ rừng triệu hồi khi lính nghỉ; VEX quay về bằng đường bay chậm thay vì dịch chuyển giật cục.
+- Dịch chuyển cả ngựa của Kỵ sĩ cùng lính; thêm cấu hình tốc độ ngựa mặc định bằng mức phi nước đại tối đa.
+
 ## [v1.35.0] - 2026-10-16
 
 ### Changed
@@ -11,8 +18,6 @@
 ### Added
 - Thêm thanh HP riêng dạng ô đầy/rỗng cho từng VEX của Tu sĩ rừng và AI ưu tiên mục tiêu Tu sĩ đang đánh, kẻ tấn công Tu sĩ, kẻ tấn công chủ nhân, rồi theo Tu sĩ.
 - VEX của Tu sĩ rừng tăng sức chứa thêm một con mỗi 5 level, bắt đầu từ một con ở level 1; thêm cấu hình giới hạn và thứ tự ưu tiên AI.
-
-## [Unreleased]
 
 ## [v1.33.4] - 2026-10-16
 

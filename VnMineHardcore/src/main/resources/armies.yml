@@ -618,6 +618,9 @@ classes:
     # [VI] Máu tối đa của ngựa Kỵ sĩ; mặc định 50 HP, hợp lệ 1-1024.
     # [EN] Maximum health of the Paladin's horse; default 50 HP, valid range 1-1024.
     horse-health: 50.0
+    # [VI] Tốc độ di chuyển của ngựa; mặc định 0.3375 (mức phi nước đại tối đa), hợp lệ 0.1-1.0.
+    # [EN] Horse movement speed; default 0.3375 (maximum gallop speed), valid range 0.1-1.0.
+    horse-speed: 0.3375
     # [VI] Máu thêm mỗi cấp; mặc định 5, không âm.
     # [EN] Health per level; default 5, must be nonnegative.
     health-per-level: 5
