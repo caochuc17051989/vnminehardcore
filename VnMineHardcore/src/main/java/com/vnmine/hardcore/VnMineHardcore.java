@@ -27,6 +27,7 @@ public final class VnMineHardcore extends JavaPlugin {
     private BossEventManager bossEventManager;
     private BossLeaderboardManager bossLeaderboardManager;
     private GraveManager graveManager;
+    private DeathHistoryManager deathHistoryManager;
     private SpawnProtectionManager spawnProtectionManager;
     private PermissionManager permissionManager;
     private MercenaryManager mercenaryManager;
@@ -73,6 +74,7 @@ public final class VnMineHardcore extends JavaPlugin {
 
         // Initialize managers (pass config)
         this.logManager = new LogManager(this, configManager);
+        this.deathHistoryManager = new DeathHistoryManager(this);
         this.bossLeaderboardManager = new BossLeaderboardManager(this);
         this.deathPenaltyManager = new DeathPenaltyManager(this, configManager);
         this.thirstManager = new ThirstManager(this, configManager);
@@ -100,6 +102,7 @@ public final class VnMineHardcore extends JavaPlugin {
 
         // Register listeners
         Bukkit.getPluginManager().registerEvents(deathListener, this);
+        Bukkit.getPluginManager().registerEvents(deathHistoryManager, this);
         Bukkit.getPluginManager().registerEvents(hungerListener, this);
         Bukkit.getPluginManager().registerEvents(combatListener, this);
         Bukkit.getPluginManager().registerEvents(environmentListener, this);
@@ -125,6 +128,7 @@ public final class VnMineHardcore extends JavaPlugin {
         registerCommand("vnarmy", mercenaryManager, mercenaryManager);
         registerCommand("vnmenu", mercenaryManager, mercenaryManager);
         registerCommand("quatanthu", mercenaryManager, mercenaryManager);
+        registerCommand("vndeathhistory", deathHistoryManager, deathHistoryManager);
 
         getLogger().info("§a  VnMineHardcore enabled - Hell difficulty!");
         getLogger().info("§a  Deaths are recorded; no death bans are applied.");
@@ -412,6 +416,8 @@ public final class VnMineHardcore extends JavaPlugin {
             sender.sendMessage("§e/vngroup §7- Liệt kê/tạo/xóa nhóm và chỉnh quyền nhóm (admin).");
             sender.sendMessage("§e/vnuser §7- Xem, gán nhóm hoặc chỉnh quyền riêng người chơi (admin).");
             sender.sendMessage("§e/vnarmy §7- Thuê, triệu hồi, nghỉ, chỉnh chế độ và trang bị lính đánh thuê.");
+            sender.sendMessage("§e/vndeathhistory [player] §7- Xem lịch sử chết và khôi phục inventory (admin).");
+            sender.sendMessage("§e/quatanthu §7- Nhận túi quà tân thủ nếu đủ điều kiện.");
             sender.sendMessage("§e/vnmenu §7- Mở menu chính; phím F cũng mở menu này.");
             sender.sendMessage("§7  /vnarmy list [user] | hire <loại> <bậc> | recall [ID] | rest [ID]");
             sender.sendMessage("§7  /vnarmy rename <ID> <tên mới> | gear <ID> | mute <ID> | remove <ID>");
@@ -448,6 +454,10 @@ public final class VnMineHardcore extends JavaPlugin {
             }
             if (!tooltipManager.reload()) {
                 sender.sendMessage("§cCác cấu hình khác đã tải lại nhưng tooltips.yml không hợp lệ; tooltip đang dùng cấu hình cũ.");
+                return true;
+            }
+            if (!deathHistoryManager.reload()) {
+                sender.sendMessage("§cCác hệ thống khác đã tải lại nhưng giới hạn lịch sử chết vẫn giữ giá trị cũ do không lưu được dữ liệu.");
                 return true;
             }
             sender.sendMessage("§a✅ Config và các hệ thống đã được tải lại!");

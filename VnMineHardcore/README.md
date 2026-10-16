@@ -35,6 +35,8 @@ Yêu cầu runtime: Java 25+ và ProtocolLib `5.5.0-SNAPSHOT` dev-build có hỗ
 | `/vnspawn set\|go\|protect\|list\|remove` | Quản lý spawn và vùng bảo vệ | `vnmine.command.spawn.manage` |
 | `/vnrespawn` | Chọn hồi sinh khi đang chờ sau khi chết | `vnmine.command.respawn` |
 | `/vnleave` | Thoát máy chủ khi đang chờ sau khi chết | `vnmine.command.leave` |
+| `/vndeathhistory [player]` | Mở lịch sử chết của người chơi online; admin có thể chọn snapshot và khôi phục sau bước xác nhận | `vnmine.command.death.history` |
+| `/quatanthu` | Xin túi quà tân thủ nếu chưa nhận trước đây và chưa sở hữu lính đánh thuê | Không yêu cầu quyền riêng |
 | `/fly`, `/nodame`, `/spawn` | Tiện ích quản trị dành cho người chơi | `vnmine.command.fly`, `.nodame`, `.spawn` |
 | `/gm0`, `/gm1`, `/gm2`, `/gm3` | Chuyển game mode (chỉ người chơi) | `vnmine.command.gamemode` |
 | `/vnreload` | Tải lại config và các hệ thống | `vnmine.command.reload` |
@@ -71,8 +73,8 @@ Ví dụ: `vnmine.command.disasters`, `vnmine.command.spawn.manage`,
 của người khác. `F` mở menu chính thay thao tác đổi tay phụ; cấu hình tại
 `menus.main` và `menus.admin` trong `config.yml`.
 Menu admin có các thao tác trực tiếp cho quân đội, thiên tai/boss, thời gian/ngày,
-spawn protection, teleport, tiện ích người chơi và nhóm/quyền; các thao tác reset
-có bước xác nhận.
+spawn protection, teleport, tiện ích người chơi, nhóm/quyền và lịch sử chết.
+Khôi phục inventory và xóa lính qua GUI đều có bước xác nhận.
 Sau khi chỉnh `permission.yml` thủ công, chạy `/vnreload`.
 Nhóm/quyền không hỗ trợ wildcard, phủ định hoặc kế thừa; quyền nhóm và quyền
 cá nhân được cộng lại, vì vậy xóa quyền cá nhân không thể phủ định quyền được
@@ -91,7 +93,12 @@ Xạ Thủ (`archer`), Vệ Binh (`guardian`), Y Sư (`medic`), Cuồng Chiến
 skill được cấu hình riêng. Lính chọn vũ khí tốt nhất giữa tay chính và 36 ô
 kho; chỉ dùng vũ khí mặc định nếu kho không có món dùng được. Gear được giữ qua
 nghỉ, chết và triệu hồi lại. Mô tả skill và action bar dùng tên tiếng Việt.
-Xạ Thủ có `VOLLEY` (số tên, tốc độ, độ tỏa, sát thương); Vệ Binh có
+Xạ Thủ có `VOLLEY` (số tên, tốc độ, độ tỏa, sát thương); Trinh Sát dùng nỏ,
+phát hiện mục tiêu trong 48 block và bắn xa 32 block theo mặc định (gấp đôi
+Xạ Thủ), tiêu thụ đạn trong kho nếu có và dùng Spectral Arrow miễn phí khi hết
+đạn. Skill `ILLUMINATION` bắn loạt tên lửa lên trời, tạo đuốc tạm quanh mục tiêu
+trong 30 giây; số tên tăng thêm mỗi 5 level. Các thông số nằm trong
+`classes.ranger` và `classes.ranger.skill-settings.ILLUMINATION`. Vệ Binh có
 `POWER_STRIKE` (sát thương cộng thêm) và `TAUNT` (bán kính kéo quái khỏi chủ);
 Y Sư có `CLEANSE_OWNER` (cooldown và danh sách hiệu ứng được gỡ). Tất cả thông
 số nằm trong `classes.<class>.skill-settings.<SKILL>` và có thể chỉnh riêng.
@@ -267,6 +274,13 @@ chuyển tự do ngay cả khi miễn nhiễm sát thương vẫn còn. Quái v�
 chọn họ làm mục tiêu trong toàn bộ thời gian miễn nhiễm. Chạy `/vnreload` sau
 khi thay đổi các thiết lập này.
 
+Lịch sử chết lưu tối đa 10 snapshot đầy đủ gồm 36 ô kho, giáp và tay phụ trong
+`plugins/VnMineHardcore/death-history.yml`. Admin có thể dùng
+`/vndeathhistory` để chọn người chơi online hoặc `/vndeathhistory <player>` để
+mở trực tiếp lịch sử. Chọn lần chết sẽ hiển thị bước xác nhận; khôi phục sẽ thay
+thế inventory hiện tại của người chơi đang online bằng dữ liệu đã lưu. Số lượng
+snapshot có thể điều chỉnh từ 1 đến 10 bằng `death.history.max-records-per-player`.
+
 ```yaml
 death:
   respawn-protection:
@@ -282,7 +296,12 @@ death:
 `mini-graves: true` để dùng mộ mini, hoặc `false` để dùng mộ full. Khi nâng
 cấp, plugin tự bổ sung các cấu trúc/khóa còn thiếu vào file hiện có và giữ
 nguyên các giá trị tùy chỉnh. Bia mộ full dùng `PLAYER_WALL_HEAD` hướng về thân
-mộ để đầu dựng thẳng trên mặt bia.
+mộ để đầu dựng thẳng trên mặt bia. Nếu người chơi chết trong nước, mộ được đặt
+trên mặt nước và dùng block hỗ trợ tạm khi cần; block hỗ trợ được dọn cùng mộ.
+Có thể tắt tính năng hoặc chọn vật liệu block hỗ trợ đặc trong
+`graves.water-surface-placement` của `config.yml`.
+`/quatanthu` chỉ cấp túi khi người chơi chưa từng nhận quà và hiện không sở hữu
+lính đánh thuê, kể cả lính đang nghỉ hoặc hồi phục.
 
 ### Admin testing
 

@@ -88,6 +88,7 @@ public class GraveManager implements Listener {
         LinkedHashMap<Integer, ItemStack> items;
         Set<String> structureKeys = new LinkedHashSet<>();
         String headBlockKey;
+        String temporarySupportKey;
         // Lưu block cũ: key = "dx_dy_dz", value = "MATERIAL;BLOCKDATA"
         Map<String, String> originalBlocks = new HashMap<>();
         // Block grave đã đặt tại mỗi offset, dùng để tránh khôi phục đè lên thay đổi sau đó.
@@ -108,6 +109,8 @@ public class GraveManager implements Listener {
     public int expireDeaths;
     public String emptyMessage;
     public String displayFormat;
+    public boolean waterSurfacePlacementEnabled;
+    public Material waterSupportMaterial;
 
     public GraveManager(VnMineHardcore plugin, ConfigManager config) {
         this.plugin = plugin;
@@ -138,6 +141,17 @@ public class GraveManager implements Listener {
         this.expireDeaths = plugin.getConfig().getInt("graves.expire-deaths", 3);
         this.emptyMessage = plugin.getConfig().getString("graves.empty-message", "§7Ngôi mộ này chỉ còn xương trắng...");
         this.displayFormat = plugin.getConfig().getString("graves.display-format", "§cR.I.P §4{name} §c- {time}");
+        this.waterSurfacePlacementEnabled =
+            plugin.getConfig().getBoolean("graves.water-surface-placement.enabled", true);
+        String supportMaterial = plugin.getConfig().getString(
+            "graves.water-surface-placement.support-material", "COBBLESTONE");
+        Material configuredSupport = Material.matchMaterial(supportMaterial == null ? "" : supportMaterial);
+        if (configuredSupport == null || !configuredSupport.isSolid()) {
+            logger.warning("[Grave] Invalid water support material '" + supportMaterial
+                + "'; using COBBLESTONE.");
+            configuredSupport = Material.COBBLESTONE;
+        }
+        this.waterSupportMaterial = configuredSupport;
     }
 
     private void loadStructure() {
@@ -356,6 +370,13 @@ public class GraveManager implements Listener {
         grave.createdAt = System.currentTimeMillis();
         grave.deathCountAtCreation = plugin.getLogManager().getDeathCount(player);
         grave.isEmpty = false;
+        if (waterSurfacePlacementEnabled && deathLocation.getBlock().isLiquid()) {
+            int surfaceY = findWaterSurfaceY(deathLocation);
+            if (surfaceY >= 0 && grave.y == surfaceY + 2) {
+                Block support = graveLocation.clone().add(0, -2, 0).getBlock();
+                if (!support.getType().isSolid()) grave.temporarySupportKey = "0_-2_0";
+            }
+        }
 
         for (int i = 0; i < 36; i++) {
             ItemStack item = player.getInventory().getItem(i);
@@ -410,6 +431,17 @@ public class GraveManager implements Listener {
         World world = baseLocation.getWorld();
         if (world == null) return;
 
+        if (grave.temporarySupportKey != null) {
+            int[] offset = parseOffset(grave.temporarySupportKey);
+            if (offset != null) {
+                Block support = baseLocation.clone().add(offset[0], offset[1], offset[2]).getBlock();
+                grave.originalBlocks.put(grave.temporarySupportKey, support.getType() == Material.AIR ? "" :
+                    support.getType().name() + ";" + support.getBlockData().getAsString());
+                support.setType(waterSupportMaterial);
+                grave.placedBlocks.put(grave.temporarySupportKey, serializeBlock(support));
+            }
+        }
+
         // 1. Lưu block cũ
         for (GraveBlock block : graveStructure) {
             Location loc = baseLocation.clone().add(block.dx, block.dy, block.dz);
@@ -423,7 +455,13 @@ public class GraveManager implements Listener {
 
         // 2. Xây mộ
         List<GraveBlock> blocksToPlace = new ArrayList<>(graveStructure);
-        blocksToPlace.sort(Comparator.comparing(block -> block.material == Material.PLAYER_WALL_HEAD));
+        boolean waterMiniGrave = grave.temporarySupportKey != null
+            && graveStructure.stream().anyMatch(block -> block.material == Material.PLAYER_HEAD);
+        if (waterMiniGrave) {
+            blocksToPlace.sort(Comparator.comparing(block -> !isHeadBlock(block)));
+        } else {
+            blocksToPlace.sort(Comparator.comparing(block -> block.material == Material.PLAYER_WALL_HEAD));
+        }
         for (GraveBlock block : blocksToPlace) {
             Location loc = baseLocation.clone().add(block.dx, block.dy, block.dz);
             Block currentBlock = loc.getBlock();
@@ -453,6 +491,7 @@ public class GraveManager implements Listener {
             }
             grave.placedBlocks.put(key, serializeBlock(currentBlock));
         }
+        if (grave.temporarySupportKey != null) grave.structureKeys.add(grave.temporarySupportKey);
 
         // 3. Spawn ArmorStand hiển thị tên trên đỉnh bia
         spawnGraveNameDisplay(baseLocation, grave);
@@ -471,6 +510,18 @@ public class GraveManager implements Listener {
         int baseY = deathLocation.getBlockY();
         int baseZ = deathLocation.getBlockZ();
         Set<String> occupied = getOccupiedGraveBlocks(world.getName());
+        if (waterSurfacePlacementEnabled && deathLocation.getBlock().isLiquid()) {
+            int surfaceY = findWaterSurfaceY(deathLocation);
+            int waterBaseY = surfaceY + 2;
+            if (surfaceY >= 0 && waterBaseY < world.getMaxHeight()) {
+                baseY = waterBaseY;
+                Location waterCandidate = new Location(world, baseX, waterBaseY, baseZ);
+                String supportPosition = baseX + ":" + surfaceY + ":" + baseZ;
+                Block support = world.getBlockAt(baseX, surfaceY, baseZ);
+                if (!occupied.contains(supportPosition) && !support.getType().isSolid()
+                        && !wouldOverlapGrave(waterCandidate, occupied)) return waterCandidate;
+            }
+        }
         if (!wouldOverlapGrave(new Location(world, baseX, baseY, baseZ), occupied)) {
             return new Location(world, baseX, baseY, baseZ);
         }
@@ -500,11 +551,32 @@ public class GraveManager implements Listener {
                     int y = baseY + verticalOffset;
                     if (y <= world.getMinHeight() || y >= world.getMaxHeight()) continue;
                     Location candidate = new Location(world, x, y, z);
+                    if (waterSurfacePlacementEnabled && deathLocation.getBlock().isLiquid() && y == baseY
+                            && occupied.contains(x + ":" + (y - 2) + ":" + z)) continue;
                     if (!wouldOverlapGrave(candidate, occupied)) return candidate;
                 }
             }
         }
         return null;
+    }
+
+    private int findWaterSurfaceY(Location deathLocation) {
+        World world = deathLocation.getWorld();
+        if (world == null || !deathLocation.getBlock().isLiquid()) return -1;
+        int x = deathLocation.getBlockX();
+        int y = deathLocation.getBlockY();
+        int z = deathLocation.getBlockZ();
+        if (!world.isChunkLoaded(x >> 4, z >> 4)) return -1;
+        while (y < world.getMaxHeight() - 1) {
+            Block block = world.getBlockAt(x, y, z);
+            if (!block.isLiquid()) return -1;
+            Block above = world.getBlockAt(x, y + 1, z);
+            if (!above.isLiquid()) {
+                return above.getType().isAir() || above.isReplaceable() ? y : -1;
+            }
+            y++;
+        }
+        return -1;
     }
 
     private Set<String> getOccupiedGraveBlocks(String worldName) {

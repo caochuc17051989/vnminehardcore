@@ -1,5 +1,17 @@
 # Changelog
 
+## [v1.38.0] - 2026-10-16
+
+### Added
+- Thêm `/vndeathhistory [player]` và menu admin xem tối đa 10 snapshot inventory khi chết; khôi phục thay thế túi đồ, giáp và tay phụ sau bước xác nhận.
+- Thêm bước xác nhận trước khi xóa lính bằng GUI quản lý.
+- Thêm skill Soi Sáng cho Trinh Sát, bắn tên lửa tạo đuốc tạm 30 giây; thêm cấu hình số tên, tầm tỏa, tốc độ và hồi chiêu.
+
+### Changed
+- Đặt mộ trên mặt nước khi chết dưới nước, dùng block hỗ trợ tạm và khôi phục block gốc khi mộ bị dọn.
+- Trinh Sát dùng nỏ, chủ động tìm mục tiêu theo AI ưu tiên chung, có tầm phát hiện/bắn xa gấp đôi Xạ Thủ; tiêu thụ tên trong kho hoặc dùng Spectral Arrow miễn phí khi hết.
+- Chặn `/quatanthu` nếu người chơi đã nhận quà trước đây hoặc hiện sở hữu lính đánh thuê.
+
 ## [v1.37.0] - 2026-10-16
 
 ### Fixed
