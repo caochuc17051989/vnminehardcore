@@ -93,6 +93,8 @@ Xạ Thủ (`archer`), Vệ Binh (`guardian`), Y Sư (`medic`), Cuồng Chiến
 skill được cấu hình riêng. Lính chọn vũ khí tốt nhất giữa tay chính và 36 ô
 kho; chỉ dùng vũ khí mặc định nếu kho không có món dùng được. Gear được giữ qua
 nghỉ, chết và triệu hồi lại. Mô tả skill và action bar dùng tên tiếng Việt.
+AI dùng danh sách ưu tiên theo từng chế độ trong `ai.priorities`; lính có thể
+chọn mục tiêu khuất tầm nhìn rồi tự tìm đường đến mục tiêu.
 Xạ Thủ có `VOLLEY` (số tên, tốc độ, độ tỏa, sát thương); Trinh Sát dùng nỏ,
 phát hiện mục tiêu trong 48 block và bắn xa 32 block theo mặc định (gấp đôi
 Xạ Thủ), tiêu thụ đạn trong kho nếu có và dùng Spectral Arrow miễn phí khi hết

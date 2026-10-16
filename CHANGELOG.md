@@ -1,5 +1,16 @@
 # Changelog
 
+## [v1.38.2] - 2026-10-16
+
+### Fixed
+- Cho AI lính tìm mục tiêu theo danh sách ưu tiên kể cả khi mục tiêu đang khuất tầm nhìn, để Pathfinder tự tìm đường; Trinh Sát chỉ dừng khi đã ở trong tầm bắn và nhìn thấy mục tiêu.
+
+## [v1.38.1] - 2026-10-16
+
+### Fixed
+- Cho Trinh Sát tiếp tục chọn và tấn công mục tiêu theo AI của chế độ khi đang bảo vệ chủ, thay vì chỉ ưu tiên đi theo chủ nhân.
+- Tự bổ sung skill `ILLUMINATION` một lần vào cấu hình Ranger cũ, đồng thời giữ quyền tùy chỉnh danh sách skill sau khi nâng cấp.
+
 ## [v1.38.0] - 2026-10-16
 
 ### Added

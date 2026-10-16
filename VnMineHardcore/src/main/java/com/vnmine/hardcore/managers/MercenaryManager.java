@@ -801,10 +801,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             mob.setTarget(null);
             return;
         }
-        if (!ownerCommandedTarget && !mob.hasLineOfSight(target)) {
-            event.setCancelled(true);
-            mob.setTarget(null);
-        }
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -1261,6 +1257,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private void mergeBundledDefaults(YamlConfiguration loaded)
             throws IOException, InvalidConfigurationException {
+        boolean rangerIlluminationMigrationComplete =
+            loaded.getBoolean("_migrations.ranger-illumination-skill", false);
         InputStream resource = plugin.getResource("armies.yml");
         if (resource == null) throw new IOException("Bundled armies.yml is missing.");
         YamlConfiguration defaults = new YamlConfiguration();
@@ -1269,6 +1267,21 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             defaults.load(reader);
         }
         boolean changed = mergeSettingsSection(loaded, defaults, "");
+        List<String> rangerSkills = new ArrayList<>(loaded.getStringList("classes.ranger.skills"));
+        if (!rangerIlluminationMigrationComplete) {
+            boolean addedIllumination = false;
+            if (rangerSkills.stream().noneMatch(skill -> skill.equalsIgnoreCase("ILLUMINATION"))) {
+                rangerSkills.add("ILLUMINATION");
+                loaded.set("classes.ranger.skills", rangerSkills);
+                loaded.setComments("classes.ranger.skills", defaults.getComments("classes.ranger.skills"));
+                addedIllumination = true;
+            }
+            loaded.set("_migrations.ranger-illumination-skill", true);
+            changed = true;
+            if (addedIllumination) {
+                plugin.getLogger().info("[Army] Enabled the new ILLUMINATION skill for the Ranger in armies.yml.");
+            }
+        }
         if (loaded.getInt("max-units-per-player", 10) == 4) {
             loaded.set("max-units-per-player", 10);
             changed = true;
@@ -1510,6 +1523,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private void runUnitAi(Unit unit, Mob mob, Player owner) {
+        mob.setAware(true);
         if (!owner.getWorld().equals(mob.getWorld())) {
             Location spawn = safeLocation(owner.getLocation());
             teleportUnit(unit, mob, spawn);
@@ -1527,7 +1541,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             updateSummonedMinions(unit, null);
             return;
         }
-        if (unit.mode == Mode.PROTECT && hasAiPriority(unit, "FOLLOW_OWNER")
+        LivingEntity target = findTarget(unit, mob, owner);
+        if (target == null && unit.mode == Mode.PROTECT && hasAiPriority(unit, "FOLLOW_OWNER")
                 && distanceSquared > followDistance * followDistance) {
             mob.setTarget(null);
             mob.getPathfinder().moveTo(owner.getLocation(), 1.15);
@@ -1537,16 +1552,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             return;
         }
 
-        LivingEntity target = findTarget(unit, mob, owner);
         if (target != null) {
             mob.setAware(true);
-                mob.setSilent(unit.muted);
+            mob.setSilent(unit.muted);
             if (hasSkill(unit, "RANGED_ATTACK") && !hasSkill(unit, "ATTACK")) {
                 mob.setTarget(null);
                 double range = skillOptionDouble(unit, "RANGED_ATTACK", "range-blocks", 16.0, 4.0, 64.0);
-                if (mob.getLocation().distanceSquared(target.getLocation()) > range * range * 0.64
+                if (mob.getLocation().distanceSquared(target.getLocation()) > range * range
                         || !mob.hasLineOfSight(target)) {
-                    mob.getPathfinder().moveTo(target.getLocation(), 1.0);
+                    mob.getPathfinder().moveTo(target, 1.0);
                 } else {
                     mob.getPathfinder().stopPathfinding();
                 }
@@ -1689,7 +1703,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 }
                 return false;
             })
-            .filter(mob::hasLineOfSight)
             .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(owner.getLocation())))
             .orElse(null);
     }
@@ -1704,7 +1717,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             Entity entity = Bukkit.getEntity(threat.getKey());
             if (entity instanceof LivingEntity target && !target.isDead()
                     && mob.getWorld().equals(target.getWorld())
-                    && isAllowedMercenaryTarget(ownerId, target, false) && mob.hasLineOfSight(target)) return target;
+                    && isAllowedMercenaryTarget(ownerId, target, false)) return target;
         }
         return null;
     }
@@ -1716,8 +1729,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             .filter(living -> !living.equals(mob))
             .filter(living -> living.getLocation().distanceSquared(center) <= radius * radius)
             .filter(living -> isAllowedMercenaryTarget(unit.owner, living, false))
-            .filter(living -> !living.isGlowing())
-            .filter(mob::hasLineOfSight)
             .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(center)))
             .orElse(null);
     }
