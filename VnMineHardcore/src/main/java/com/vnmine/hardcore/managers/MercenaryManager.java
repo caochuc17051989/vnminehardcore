@@ -151,6 +151,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean experienceOrbPickupEnabled;
     private double experienceOrbPickupRadius;
     private boolean statusDisplayEnabled;
+    private boolean statusDisplaySeeThrough;
     private int statusDisplayBarLength;
     private BukkitRunnable aiTask;
 
@@ -1085,6 +1086,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         this.experienceOrbPickupRadius = readBoundedDouble(
             loaded, "experience-orb-pickup.radius-blocks", 4.0, 1.0, 16.0);
         this.statusDisplayEnabled = loaded.getBoolean("status-display.enabled", true);
+        this.statusDisplaySeeThrough = loaded.getBoolean("status-display.see-through", true);
         this.statusDisplayBarLength = readBoundedInt(loaded, "status-display.bar-length", 10, 5, 20);
         this.maxLevel = configuredMaxLevel;
         plugin.getLogger().info("[Army] Loaded " + getClassIds().size() + " class(es), enabled=" + enabled + ".");
@@ -4452,12 +4454,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         double maximumHealth = maxHealth(mob);
         double requiredExperience = nextLevelExperience(unit);
         int filledHealthBars = statusBarFilled(mob.getHealth(), maximumHealth);
-        String health = "§cHP: " + "■".repeat(filledHealthBars)
-            + "§f" + formatStat(mob.getHealth()) + "/" + formatStat(maximumHealth)
-            + "§7" + "■".repeat(statusDisplayBarLength - filledHealthBars);
-        String experience = unit.level >= maxLevel ? "§b EXP: MAX/MAX"
-            : "§b EXP: " + unit.experience + "/" + (int) requiredExperience;
-        statusPacketListener.update(unit.id, mob, unit.owner, health + experience);
+        String healthBar = "§c" + "■".repeat(filledHealthBars)
+            + "§7" + "□".repeat(statusDisplayBarLength - filledHealthBars);
+        String statusLine = "§c❤: §f" + formatStat(mob.getHealth()) + "/" + formatStat(maximumHealth)
+            + " §e✦ EXP: " + unit.experience + "/" + (int) requiredExperience;
+        String ownerName = Bukkit.getOfflinePlayer(unit.owner).getName();
+        if (ownerName == null || ownerName.isBlank()) ownerName = "Người chơi";
+        String nameLine = "§a[" + ownerName + "] §f" + displayName(unit)
+            + " §e[Bậc " + unit.tier + "] §f[Level: " + unit.level + "]";
+        statusPacketListener.update(unit.id, mob, unit.owner,
+            healthBar + "\n" + statusLine + "\n" + nameLine,
+            statusDisplaySeeThrough);
     }
 
     private int statusBarFilled(double value, double maximum) {

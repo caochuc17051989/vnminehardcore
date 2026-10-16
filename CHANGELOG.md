@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [v1.33.0] - 2026-10-16
+
+### Changed
+- Hiển thị tên chủ, tên lính, bậc và level ở dòng cuối của thanh trạng thái.
+
+## [v1.32.0] - 2026-10-16
+
+### Added
+- Thêm cấu hình `status-display.see-through` để điều khiển khả năng nhìn thanh HP xuyên tường; mặc định bật.
+
+## [v1.31.0] - 2026-10-16
+
+### Changed
+- Thanh lính đánh thuê hiển thị hai dòng: vạch HP riêng và dòng tim/HP/dấu sao/EXP.
+
 ## [v1.30.3] - 2026-10-16
 
 ### Fixed

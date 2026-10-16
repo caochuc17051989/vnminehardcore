@@ -141,9 +141,10 @@ thể chỉnh; AI không chủ động chọn người chơi, lính hoặc đệ
 
 GUI cho phép chọn lớp và bậc trước khi thuê; tooltip nêu mô tả skill tiếng Việt,
 thông số/cooldown, yêu cầu XP/vật liệu và chỉ số HP/giáp/sát thương. Hai thanh
-Thanh HP/EXP dạng một dòng chỉ hiển thị với chủ nhân lính; người chơi khác vẫn
-chỉ thấy tên lính. Bật/tắt tại `status-display.enabled`, độ dài vạch chỉnh tại
-`status-display.bar-length`. `experience-orb-pickup.enabled` và
+Thanh hiển thị ba dòng chỉ dành cho chủ nhân: vạch HP, `❤: HP hiện tại/tối đa ✦ EXP: hiện tại/yêu cầu`, rồi `[Tên chủ] Tên lính [Bậc X] [Level: Y]`; người chơi khác vẫn
+chỉ thấy tên lính. Bật/tắt tại `status-display.enabled`, độ dài vạch HP chỉnh tại
+`status-display.bar-length`; `status-display.see-through` điều khiển khả năng nhìn xuyên tường.
+`experience-orb-pickup.enabled` và
 `experience-orb-pickup.radius-blocks` điều khiển việc thu EXP cho chủ.
 Menu đội quân mở chi tiết từng lính, đổi chế
 độ, mute, xóa, cho nghỉ/triệu hồi và mở kho 36 ô cùng trang bị. Vũ khí và giáp

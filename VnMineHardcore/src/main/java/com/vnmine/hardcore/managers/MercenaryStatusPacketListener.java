@@ -48,15 +48,18 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
         private final int mobEntityId;
         private final int virtualEntityId;
         private volatile String text;
+        private volatile boolean seeThrough;
         private String sentText;
+        private boolean sentSeeThrough;
         private volatile boolean spawned;
 
-        private StatusEntry(Mob mob, UUID ownerId, String text) {
+        private StatusEntry(Mob mob, UUID ownerId, String text, boolean seeThrough) {
             this.mobId = mob.getUniqueId();
             this.ownerId = ownerId;
             this.mobEntityId = mob.getEntityId();
             this.virtualEntityId = NEXT_VIRTUAL_ENTITY_ID.getAndDecrement();
             this.text = text;
+            this.seeThrough = seeThrough;
         }
     }
 
@@ -88,19 +91,20 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
         protocolManager.addPacketListener(packetListener);
     }
 
-    void update(UUID unitId, Mob mob, UUID ownerId, String text) {
+    void update(UUID unitId, Mob mob, UUID ownerId, String text, boolean seeThrough) {
         StatusEntry entry = entriesByUnit.get(unitId);
         if (entry != null && !entry.mobId.equals(mob.getUniqueId())) {
             remove(unitId);
             entry = null;
         }
         if (entry == null) {
-            entry = new StatusEntry(mob, ownerId, text);
+            entry = new StatusEntry(mob, ownerId, text, seeThrough);
             entriesByUnit.put(unitId, entry);
             entriesByMobId.put(entry.mobId, entry);
             entriesByMobEntityId.put(entry.mobEntityId, entry);
         } else {
             entry.text = text;
+            entry.seeThrough = seeThrough;
         }
         reconcile(entry, mob);
     }
@@ -173,8 +177,10 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
         }
         if (!entry.spawned) {
             spawnVirtualEntity(owner, mob, entry);
-        } else if (!entry.text.equals(entry.sentText) && sendMetadata(owner, entry)) {
+        } else if ((!entry.text.equals(entry.sentText) || entry.seeThrough != entry.sentSeeThrough)
+                && sendMetadata(owner, entry)) {
             entry.sentText = entry.text;
+            entry.sentSeeThrough = entry.seeThrough;
         }
     }
 
@@ -191,7 +197,10 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
         if (!sendPacket(owner, spawn)) return;
 
         entry.spawned = true;
-        if (sendMetadata(owner, entry)) entry.sentText = entry.text;
+        if (sendMetadata(owner, entry)) {
+            entry.sentText = entry.text;
+            entry.sentSeeThrough = entry.seeThrough;
+        }
         sendPassengers(owner, mob, entry);
     }
 
@@ -203,7 +212,8 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
             new WrappedDataValue(23, CHAT_COMPONENT_SERIALIZER,
                 WrappedChatComponent.fromLegacyText(entry.text).getHandle()),
             new WrappedDataValue(25, INTEGER_SERIALIZER, 0),
-            new WrappedDataValue(26, BYTE_SERIALIZER, (byte) -1)
+            new WrappedDataValue(26, BYTE_SERIALIZER, (byte) -1),
+            new WrappedDataValue(27, BYTE_SERIALIZER, (byte) (entry.seeThrough ? 0x02 : 0x00))
         ));
         return sendPacket(viewer, metadata);
     }
@@ -224,6 +234,7 @@ final class MercenaryStatusPacketListener implements Listener, AutoCloseable {
         destroyVirtualEntity(viewer, entry);
         entry.spawned = false;
         entry.sentText = null;
+        entry.sentSeeThrough = false;
     }
 
     private void destroyVirtualEntity(Player viewer, StatusEntry entry) {
