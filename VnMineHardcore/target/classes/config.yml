@@ -42,6 +42,11 @@ death:
   # [EN] Play wither death sound when a player dies
   play-sound: true
 
+  history:
+    # [VI] Số snapshot inventory chết lưu tối đa cho mỗi người chơi; mặc định 10, hợp lệ 1-10.
+    # [EN] Maximum death inventory snapshots retained per player; default 10, valid range 1-10.
+    max-records-per-player: 10
+
   # [VI] Bảo vệ người chơi trong thời gian ngắn sau khi họ chọn hồi sinh.
   #     Màn hình chết vẫn cho phép chọn hồi sinh hoặc thoát game.
   # [EN] Protect players briefly after they choose to respawn.
@@ -850,6 +855,14 @@ graves:
   #     After protection time, anyone can retrieve items from the grave.
   #     Time displayed in BLUE.
   public-minutes: 15
+
+  water-surface-placement:
+    # [VI] Bật đặt mộ trên mặt nước khi người chơi chết dưới nước; mặc định true.
+    # [EN] Place graves above the water surface when a player dies underwater; default true.
+    enabled: true
+    # [VI] Vật liệu block hỗ trợ tạm; phải là vật liệu block đặc, mặc định COBBLESTONE.
+    # [EN] Temporary support block material; must be solid, default COBBLESTONE.
+    support-material: COBBLESTONE
 
   # [VI] Sau bao nhiêu lần chết thì mộ cũ thành trống
   #     Ví dụ: expire-deaths: 3

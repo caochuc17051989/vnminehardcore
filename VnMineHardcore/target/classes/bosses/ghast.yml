@@ -8,7 +8,7 @@ display-name: "§e§lGhast Khổng Lồ"
 # [VI] Class lính của token boss; bậc token theo level boss.
 # [EN] Mercenary class for this boss token; token tier follows the boss level.
 army-token-class: pyromancer
-hp: 100
+hp: 1300
 damage-multiplier: 2.5
 # [VI] EXP thưởng cơ bản level 1; mặc định 400, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
 # [EN] Base XP reward at level 1; default 400, valid range 1-1000000; boss level scaling is in _settings.yml.
@@ -25,16 +25,16 @@ activity-radius: 100 # Max horizontal distance from this boss's spawn location (
 # [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
 # damage là sát thương cơ sở (tăng theo level); số cầu lửa = level * multiply, tối đa 40.
 hp-by-level:
-  1: 100
-  2: 150
-  3: 225
-  4: 338
-  5: 507
-  6: 760
-  7: 1140
-  8: 1710
-  9: 2565
-  10: 3848
+  1: 1300
+  2: 2700
+  3: 4300
+  4: 5900
+  5: 7500
+  6: 9100
+  7: 10700
+  8: 13900
+  9: 17100
+  10: 20000
 # [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
 #      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
 #      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
@@ -162,6 +162,20 @@ armor-set:
     1: IRON
     4: DIAMOND
     7: NETHERITE
+  piece-names:
+    helmet: "Mũ Tro Khóc"
+    chestplate: "Áo Than Hồng"
+    leggings: "Quần Tàn Lửa"
+    boots: "Ủng Bước Nether"
+  enchantments:
+    helmet: [fire_protection, respiration, unbreaking]
+    chestplate: [fire_protection, unbreaking, thorns]
+    leggings: [protection, swift_sneak, unbreaking]
+    boots: [fire_protection, feather_falling, soul_speed, unbreaking]
+  bonuses:
+    2: {damage-reduction-percent: 0.10, damage-causes: [FIRE, FIRE_TICK, LAVA]}
+    3: {damage-reduction-percent: 0.15, damage-causes: [FIRE, FIRE_TICK, LAVA]}
+    4: {damage-reduction-percent: 0.22, damage-causes: [FIRE, FIRE_TICK, LAVA]}
 
 level-drops:
   1:

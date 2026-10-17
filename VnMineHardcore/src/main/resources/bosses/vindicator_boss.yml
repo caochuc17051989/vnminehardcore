@@ -8,7 +8,7 @@ display-name: "§c§lVindicator Boss"
 # [VI] Class lính của token boss; bậc token theo level boss.
 # [EN] Mercenary class for this boss token; token tier follows the boss level.
 army-token-class: guardian
-hp: 160
+hp: 1250
 damage-multiplier: 2.0
 # [VI] EXP thưởng cơ bản level 1; mặc định 450, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
 # [EN] Base XP reward at level 1; default 450, valid range 1-1000000; boss level scaling is in _settings.yml.
@@ -25,16 +25,16 @@ activity-radius: 100 # Max horizontal distance from this boss's spawn location (
 # [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
 # damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
 hp-by-level:
-  1: 160
-  2: 240
-  3: 360
-  4: 540
-  5: 810
-  6: 1215
-  7: 1822
-  8: 2733
-  9: 4100
-  10: 6150
+  1: 1250
+  2: 2600
+  3: 4150
+  4: 5700
+  5: 7250
+  6: 8800
+  7: 10350
+  8: 13500
+  9: 16800
+  10: 19800
 # [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
 #      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
 #      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.

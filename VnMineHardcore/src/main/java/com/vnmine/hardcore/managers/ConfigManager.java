@@ -218,7 +218,8 @@ public class ConfigManager {
     public double bossRewardDamageThresholdPercent;
     public boolean bossArmyTokenDropEnabled = true;
     public double bossArmyTokenDropChance = 0.30;
-    public double bossExperiencePerLevelMultiplier = 1.0;
+    public int bossExperienceLevelOne = 50;
+    public int bossExperienceLevelTen = 150;
     public String bossEventMinIntervalRaw;
     public int bossEventSpawnRadius;
     public boolean bossLevelProgressionEnabled;
@@ -226,14 +227,16 @@ public class ConfigManager {
     public boolean bossSpawnSuccessProgressionEnabled;
     public double bossSpawnSuccessDefaultPercent = 100.0;
     public List<BossSpawnSuccessThreshold> bossSpawnSuccessThresholds = new ArrayList<>();
-    public double bossArmorPieceDropChance = 0.45;
+    public double bossArmorPieceDropChance = 0.10;
     public int bossArmorNaturalLevelGap = 2;
     public double bossArmorLevelsPerEnchant = 0.8;
-    public int bossArmorMaximumEnchantLevel = 10;
+    public int bossArmorMaximumEnchantLevel = 5;
+    public boolean bossArmorAllowUnsafeEnchants = true;
 
     // Boss config map - each boss is a complete object (loaded from bosses/*.yml)
     public Map<String, BossConfig> bossConfigs = new HashMap<>();
     private final Map<String, List<String>> bossItemStories = new HashMap<>();
+    private final Map<String, BossArmorPieceStory> bossArmorPieceStories = new HashMap<>();
 
     // Ore Control
     public boolean oreControlEnabled;
@@ -321,6 +324,24 @@ public class ConfigManager {
         public String storyId;
         public double dropChance = 0.45;
         public Map<Integer, String> materialTiers = new HashMap<>();
+        public Map<String, String> pieceNames = new HashMap<>();
+        public Map<String, List<String>> enchantmentsBySlot = new HashMap<>();
+        public Map<Integer, BossArmorBonusConfig> bonuses = new HashMap<>();
+    }
+
+    public static class BossArmorBonusConfig {
+        public double damageReductionPercent;
+        public List<String> damageCauses = new ArrayList<>();
+        public double knockbackReductionPercent;
+        public double blockingDamageReductionPercent;
+        public double effectDurationReductionPercent;
+        public double healOnUndeadKill;
+        public int healCooldownSeconds = 10;
+    }
+
+    public static class BossArmorPieceStory {
+        public String itemName;
+        public List<String> lore = List.of();
     }
 
     public static class BossLevelThreshold {
@@ -1151,12 +1172,24 @@ public class ConfigManager {
                 "[EN] Chance to drop 1 token when a player damages the boss; default 30%, valid range 0-1."));
             migrateBossSettings = true;
         }
-        if (!bs.contains("experience-per-level-multiplier")) {
-            bs.set("experience-per-level-multiplier", 1.0);
-            bs.setComments("experience-per-level-multiplier", List.of(
-                "[VI] Hệ số tăng EXP boss theo level; mặc định 1, hợp lệ 0-10.",
-                "[EN] Boss XP scaling by level; default 1, valid range 0-10."));
+        if (!bs.contains("experience-pool.level-1")) {
+            bs.set("experience-pool.level-1", 50);
+            bs.setComments("experience-pool.level-1", List.of(
+                "[VI] Tổng EXP chia cho người chơi gây sát thương khi boss level 1; mặc định 50, hợp lệ 1-1000000.",
+                "[EN] Total XP pool shared among damage contributors for a level-1 boss; default 50, valid range 1-1000000."));
             migrateBossSettings = true;
+        }
+        if (!bs.contains("experience-pool.level-10")) {
+            bs.set("experience-pool.level-10", 150);
+            bs.setComments("experience-pool.level-10", List.of(
+                "[VI] Tổng EXP chia cho người chơi gây sát thương khi boss level 10; mặc định 150, hợp lệ 1-1000000.",
+                "[EN] Total XP pool shared among damage contributors for a level-10 boss; default 150, valid range 1-1000000."));
+            migrateBossSettings = true;
+        }
+        if (bs.contains("experience-per-level-multiplier")) {
+            bs.setComments("experience-per-level-multiplier", List.of(
+                "[VI] Cấu hình cũ, không còn được dùng; EXP hiện lấy từ experience-pool và chia theo sát thương.",
+                "[EN] Legacy setting, no longer used; XP now comes from experience-pool and is shared by damage."));
         }
         if (migrateBossSettings) {
             try {
@@ -1179,10 +1212,19 @@ public class ConfigManager {
             ? Math.max(0.0, Math.min(100.0, rewardDamageThreshold)) : 50.0;
         bossArmyTokenDropEnabled = bs.getBoolean("army-token-drop.enabled", true);
         bossArmyTokenDropChance = readBoundedDouble(bs, "army-token-drop.chance", 0.30, 0.0, 1.0);
-        bossExperiencePerLevelMultiplier = readBoundedDouble(
-            bs, "experience-per-level-multiplier", 1.0, 0.0, 10.0);
+        int levelOneExperience = bs.getInt("experience-pool.level-1", 50);
+        int levelTenExperience = bs.getInt("experience-pool.level-10", 150);
+        if (levelOneExperience < 1 || levelOneExperience > 1_000_000
+                || levelTenExperience < levelOneExperience || levelTenExperience > 1_000_000) {
+            plugin.getLogger().warning("[Boss] Invalid experience-pool range; using defaults 50-150.");
+            bossExperienceLevelOne = 50;
+            bossExperienceLevelTen = 150;
+        } else {
+            bossExperienceLevelOne = levelOneExperience;
+            bossExperienceLevelTen = levelTenExperience;
+        }
         bossArmorPieceDropChance = readBoundedDouble(bs, "reward-items.armor-piece-chance",
-            0.45, 0.0, 1.0);
+            0.10, 0.0, 1.0);
         int armorLevelGap = bs.getInt("reward-items.armor-natural-level-gap", 2);
         if (armorLevelGap < 0 || armorLevelGap > 5) {
             plugin.getLogger().warning("[Boss] reward-items.armor-natural-level-gap must be 0-5; clamping.");
@@ -1190,11 +1232,12 @@ public class ConfigManager {
         bossArmorNaturalLevelGap = Math.max(0, Math.min(5, armorLevelGap));
         bossArmorLevelsPerEnchant = readBoundedDouble(bs, "reward-items.enchant-levels-per-boss-level",
             0.8, 0.0, 5.0);
-        int maximumArmorEnchantLevel = bs.getInt("reward-items.maximum-enchant-level", 10);
+        int maximumArmorEnchantLevel = bs.getInt("reward-items.maximum-enchant-level", 5);
         if (maximumArmorEnchantLevel < 1 || maximumArmorEnchantLevel > 255) {
             plugin.getLogger().warning("[Boss] reward-items.maximum-enchant-level must be 1-255; clamping.");
         }
         bossArmorMaximumEnchantLevel = Math.max(1, Math.min(255, maximumArmorEnchantLevel));
+        bossArmorAllowUnsafeEnchants = bs.getBoolean("reward-items.allow-over-vanilla-enchants", true);
         bossEventMinIntervalRaw = getStringFromConfig(bs.getConfigurationSection(""), "min-interval-seconds", "1200-2400");
         bossEventSpawnRadius = bs.getInt("spawn-radius", 50);
         bossLevelProgressionEnabled = bs.getBoolean("level-progression.enabled", true);
@@ -1412,6 +1455,57 @@ public class ConfigManager {
                     dropChance = bossArmorPieceDropChance;
                 }
                 armorSet.dropChance = dropChance;
+                ConfigurationSection pieceNames = armorSetSection.getConfigurationSection("piece-names");
+                if (pieceNames != null) {
+                    for (String slot : List.of("helmet", "chestplate", "leggings", "boots")) {
+                        String pieceName = pieceNames.getString(slot);
+                        if (pieceName != null && !pieceName.isBlank()) {
+                            armorSet.pieceNames.put(slot.toUpperCase(Locale.ROOT), pieceName);
+                        }
+                    }
+                }
+                ConfigurationSection enchantments = armorSetSection.getConfigurationSection("enchantments");
+                if (enchantments != null) {
+                    for (String slot : List.of("helmet", "chestplate", "leggings", "boots")) {
+                        List<String> configuredEnchants = enchantments.getStringList(slot);
+                        if (!configuredEnchants.isEmpty()) {
+                            armorSet.enchantmentsBySlot.put(slot.toUpperCase(Locale.ROOT),
+                                configuredEnchants.stream().map(value -> value.toLowerCase(Locale.ROOT)).toList());
+                        }
+                    }
+                }
+                ConfigurationSection bonuses = armorSetSection.getConfigurationSection("bonuses");
+                if (bonuses != null) {
+                    for (String piecesKey : bonuses.getKeys(false)) {
+                        int pieces;
+                        try {
+                            pieces = Integer.parseInt(piecesKey);
+                        } catch (NumberFormatException exception) {
+                            plugin.getLogger().warning("[Boss] Ignoring invalid armor bonus threshold '"
+                                + piecesKey + "' in " + fileName + ".");
+                            continue;
+                        }
+                        if (pieces < 2 || pieces > 4) continue;
+                        ConfigurationSection bonusSection = bonuses.getConfigurationSection(piecesKey);
+                        if (bonusSection == null) continue;
+                        BossArmorBonusConfig bonus = new BossArmorBonusConfig();
+                        bonus.damageReductionPercent = readBoundedDouble(bonusSection,
+                            "damage-reduction-percent", 0.0, 0.0, 1.0);
+                        bonus.damageCauses = bonusSection.getStringList("damage-causes").stream()
+                            .map(value -> value.toUpperCase(Locale.ROOT)).toList();
+                        bonus.knockbackReductionPercent = readBoundedDouble(bonusSection,
+                            "knockback-reduction-percent", 0.0, 0.0, 1.0);
+                        bonus.blockingDamageReductionPercent = readBoundedDouble(bonusSection,
+                            "blocking-damage-reduction-percent", 0.0, 0.0, 1.0);
+                        bonus.effectDurationReductionPercent = readBoundedDouble(bonusSection,
+                            "effect-duration-reduction-percent", 0.0, 0.0, 1.0);
+                        bonus.healOnUndeadKill = readBoundedDouble(bonusSection,
+                            "heal-on-undead-kill", 0.0, 0.0, 20.0);
+                        bonus.healCooldownSeconds = Math.max(1, Math.min(3600,
+                            bonusSection.getInt("heal-cooldown-seconds", 10)));
+                        armorSet.bonuses.put(pieces, bonus);
+                    }
+                }
                 ConfigurationSection materialTiers = armorSetSection.getConfigurationSection("material-tiers");
                 if (materialTiers != null) {
                     for (String levelKey : materialTiers.getKeys(false)) {
@@ -1436,7 +1530,9 @@ public class ConfigManager {
                     plugin.getLogger().warning("[Boss] armor-set.story-id is missing in " + fileName +
                         "; armor rewards will be skipped until a story ID is configured.");
                     armorSet.enabled = false;
-                } else if (armorSet.enabled && !bossItemStories.containsKey(armorSet.storyId)) {
+                } else if (armorSet.enabled && !bossItemStories.containsKey(armorSet.storyId)
+                        && List.of("helmet", "chestplate", "leggings", "boots").stream()
+                            .noneMatch(slot -> bossArmorPieceStories.containsKey(armorSet.storyId + ":" + slot))) {
                     plugin.getLogger().warning("[Boss] Missing story-id '" + armorSet.storyId +
                         "' in story.yml for armor set in " + fileName + ".");
                     armorSet.enabled = false;
@@ -1534,6 +1630,7 @@ public class ConfigManager {
 
     private void loadBossItemStories() {
         bossItemStories.clear();
+        bossArmorPieceStories.clear();
         File storyFile = new File(plugin.getDataFolder(), "story.yml");
         YamlConfiguration storyConfig = YamlConfiguration.loadConfiguration(storyFile);
         ConfigurationSection artifacts = storyConfig.getConfigurationSection("artifacts");
@@ -1547,15 +1644,39 @@ public class ConfigManager {
             if (artifact == null) continue;
             List<String> lore = artifact.getStringList("lore");
             if (!lore.isEmpty()) bossItemStories.put(storyId, List.copyOf(lore));
+            ConfigurationSection pieces = artifact.getConfigurationSection("pieces");
+            if (pieces != null) {
+                for (String slot : List.of("helmet", "chestplate", "leggings", "boots")) {
+                    ConfigurationSection piece = pieces.getConfigurationSection(slot);
+                    if (piece == null) continue;
+                    BossArmorPieceStory pieceStory = new BossArmorPieceStory();
+                    pieceStory.itemName = piece.getString("item");
+                    pieceStory.lore = List.copyOf(piece.getStringList("lore"));
+                    if (pieceStory.itemName != null || !pieceStory.lore.isEmpty()) {
+                        bossArmorPieceStories.put(storyId + ":" + slot, pieceStory);
+                    }
+                }
+            }
         }
         plugin.getLogger().info("[Boss] Loaded " + bossItemStories.size() +
-            " item stories from story.yml.");
+            " item stories and " + bossArmorPieceStories.size() + " armor-piece stories from story.yml.");
     }
 
     public List<String> getBossItemStory(String storyId, int level) {
         List<String> lore = bossItemStories.get(storyId);
         if (lore == null) return List.of();
         return lore.stream().map(line -> line.replace("{level}", Integer.toString(level))).toList();
+    }
+
+    public BossArmorPieceStory getBossArmorPieceStory(String storyId, String slot, int level) {
+        BossArmorPieceStory story = bossArmorPieceStories.get(storyId + ":" + slot.toLowerCase(Locale.ROOT));
+        if (story == null) return null;
+        BossArmorPieceStory resolved = new BossArmorPieceStory();
+        resolved.itemName = story.itemName == null ? null
+            : story.itemName.replace("{level}", Integer.toString(level));
+        resolved.lore = story.lore.stream()
+            .map(line -> line.replace("{level}", Integer.toString(level))).toList();
+        return resolved;
     }
 
     private void readEnchantments(Object source, Map<String, Integer> destination) {

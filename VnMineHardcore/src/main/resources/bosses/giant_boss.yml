@@ -8,7 +8,7 @@ display-name: "§6§lKhổng Lồ"
 # [VI] Class lính của token boss; bậc token theo level boss.
 # [EN] Mercenary class for this boss token; token tier follows the boss level.
 army-token-class: berserker
-hp: 400
+hp: 1500
 damage-multiplier: 2.5
 # [VI] EXP thưởng cơ bản level 1; mặc định 1000, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
 # [EN] Base XP reward at level 1; default 1000, valid range 1-1000000; boss level scaling is in _settings.yml.
@@ -25,16 +25,16 @@ activity-radius: 100 # Max horizontal distance from this boss's spawn location (
 # [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
 # damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
 hp-by-level:
-  1: 400
-  2: 600
-  3: 900
-  4: 1350
-  5: 2025
-  6: 3038
-  7: 4557
-  8: 6836
-  9: 10254
-  10: 15381
+  1: 1500
+  2: 2900
+  3: 4400
+  4: 5900
+  5: 7400
+  6: 8900
+  7: 10400
+  8: 13600
+  9: 16800
+  10: 20000
 # [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
 #      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
 #      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
@@ -114,6 +114,20 @@ armor-set:
     1: IRON
     4: DIAMOND
     7: NETHERITE
+  piece-names:
+    helmet: "Mũ Mạch Đá"
+    chestplate: "Áo Thành Cổ"
+    leggings: "Quần Địa Tầng"
+    boots: "Ủng Trụ Núi"
+  enchantments:
+    helmet: [protection, respiration, unbreaking]
+    chestplate: [protection, unbreaking, thorns]
+    leggings: [protection, swift_sneak, unbreaking]
+    boots: [protection, feather_falling, unbreaking, depth_strider]
+  bonuses:
+    2: {damage-reduction-percent: 0.05, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK]}
+    3: {damage-reduction-percent: 0.05, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK], knockback-reduction-percent: 0.10}
+    4: {damage-reduction-percent: 0.12, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK, PROJECTILE, ENTITY_EXPLOSION, BLOCK_EXPLOSION]}
 
 level-drops:
   1:

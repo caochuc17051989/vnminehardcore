@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.33.4
+version: 1.39.2
 main: com.vnmine.hardcore.VnMineHardcore
 depend: [ProtocolLib]
 api-version: '26.3'
@@ -56,7 +56,7 @@ commands:
     usage: /gm3
     permission: vnmine.command.gamemode
   vnhelp:
-    description: Hiển thị hướng dẫn tất cả lệnh
+    description: Hiển thị hướng dẫn các lệnh bạn có quyền sử dụng
     usage: /vnhelp
     permission: vnmine.command.help
   vnevent:
@@ -108,6 +108,10 @@ commands:
     description: Thuê và quản lý lính đánh thuê của người chơi
     usage: /vnarmy <gui|list|hire|recall [ID]|rest [ID]|rename|attack|defend|protect|gear|mute|remove|clear|give|token>
     permission: vnmine.command.army
+  vndeathhistory:
+    description: Xem và khôi phục lịch sử inventory lúc người chơi chết (admin)
+    usage: /vndeathhistory [player]
+    permission: vnmine.command.death.history
   vnmenu:
     description: Mở menu chức năng của VnMineHardcore
     usage: /vnmenu
@@ -136,6 +140,9 @@ permissions:
     default: op
   vnmine.command.death.reset:
     description: Cho phép đặt lại số lần chết của người chơi
+    default: op
+  vnmine.command.death.history:
+    description: Cho phép xem và khôi phục lịch sử inventory lúc chết
     default: op
   vnmine.command.reward:
     description: Cho phép nhận phần thưởng boss bằng /reward
@@ -175,7 +182,7 @@ permissions:
     default: op
   vnmine.command.help:
     description: Cho phép xem hướng dẫn bằng /vnhelp
-    default: op
+    default: true
   vnmine.command.groups.manage:
     description: Cho phép quản lý nhóm bằng /vngroup
     default: op

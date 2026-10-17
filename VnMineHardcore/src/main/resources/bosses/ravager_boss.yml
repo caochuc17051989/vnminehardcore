@@ -8,7 +8,7 @@ display-name: "§4§lRavager Boss"
 # [VI] Class lính của token boss; bậc token theo level boss.
 # [EN] Mercenary class for this boss token; token tier follows the boss level.
 army-token-class: paladin
-hp: 250
+hp: 1400
 damage-multiplier: 2.5
 # [VI] EXP thưởng cơ bản level 1; mặc định 600, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
 # [EN] Base XP reward at level 1; default 600, valid range 1-1000000; boss level scaling is in _settings.yml.
@@ -25,16 +25,16 @@ activity-radius: 100 # Max horizontal distance from this boss's spawn location (
 # [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
 # damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
 hp-by-level:
-  1: 250
-  2: 375
-  3: 563
-  4: 844
-  5: 1266
-  6: 1899
-  7: 2848
-  8: 4272
-  9: 6408
-  10: 9612
+  1: 1400
+  2: 2850
+  3: 4500
+  4: 6150
+  5: 7800
+  6: 9450
+  7: 11100
+  8: 14300
+  9: 17600
+  10: 20000
 # [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
 #      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
 #      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
@@ -161,6 +161,20 @@ armor-set:
     1: IRON
     4: DIAMOND
     7: NETHERITE
+  piece-names:
+    helmet: "Mũ Tiền Tuyến"
+    chestplate: "Áo Chiến Trường"
+    leggings: "Quần Xung Kích"
+    boots: "Ủng Giữ Thành"
+  enchantments:
+    helmet: [protection, unbreaking, respiration]
+    chestplate: [protection, unbreaking, thorns]
+    leggings: [protection, swift_sneak, unbreaking]
+    boots: [protection, feather_falling, depth_strider, unbreaking]
+  bonuses:
+    2: {damage-reduction-percent: 0.06, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK]}
+    3: {damage-reduction-percent: 0.06, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK], knockback-reduction-percent: 0.12}
+    4: {damage-reduction-percent: 0.15, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK]}
 
 level-drops:
   1:

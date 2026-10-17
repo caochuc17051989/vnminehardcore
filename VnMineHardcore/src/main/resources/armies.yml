@@ -14,6 +14,10 @@ pvp:
 # [EN] Maximum units per owner; default 10, valid range 1-100.
 max-units-per-player: 10
 
+# [VI] Số lính tối đa được triệu hồi cùng lúc cho mỗi người chơi; mặc định 3, hợp lệ 1-10.
+# [EN] Maximum mercenaries summoned at once per player; default 3, valid range 1-10.
+max-summoned-per-player: 3
+
 # [VI] Khoảng cách theo chủ; mặc định 8 block, hợp lệ 2-64.
 # [EN] Follow distance; default 8 blocks, valid range 2-64.
 follow-distance-blocks: 8.0
@@ -34,6 +38,9 @@ ai-interval-ticks: 20
 # [EN] Idle wander radius when no target is found; default 6 blocks, valid range 1-32.
 ai:
   wander-radius-blocks: 6.0
+  # [VI] Chỉ chọn và tấn công mục tiêu trong tầm nhìn trực tiếp; mặc định bật.
+  # [EN] Only acquire and attack targets in direct line of sight; enabled by default.
+  require-line-of-sight: true
   # [VI] Bỏ qua mục tiêu bị che khuất khi đang dưới mặt địa hình; mặc định true.
   # [EN] Ignore obscured targets below terrain; default true.
   ignore-hidden-underground-targets: true
@@ -47,8 +54,8 @@ ai:
 # [VI] Tiến trình cấp lính; mặc định 5 XP mỗi mạng, 100 XP mỗi cấp, tối đa cấp 30.
 # [EN] Mercenary progression; defaults to 5 XP per kill, 100 XP per level, maximum level 30.
 progression:
-  # [VI] XP lính nhận khi hạ quái; mặc định 5, hợp lệ 0-100000.
-  # [EN] XP awarded to a mercenary per mob kill; default 5, valid range 0-100000.
+  # [VI] Tổng XP tiến trình lính cho mỗi mob kill, chia đều cho lính đang triệu hồi; mặc định 5, hợp lệ 0-100000.
+  # [EN] Total mercenary progression XP pool per mob kill, shared by deployed units; default 5, valid range 0-100000.
   experience-per-kill: 5
   # [VI] XP cơ bản cần cho level tiếp theo; yêu cầu tăng theo level hiện tại; mặc định 100, hợp lệ 1-100000.
   # [EN] Base XP required for the next level; requirement scales with current level; default 100, valid range 1-100000.
@@ -983,6 +990,9 @@ classes:
         # [VI] Giới hạn VEX tối đa; bắt đầu 1 ở level 1, thêm 1 mỗi 5 level; mặc định 7, hợp lệ 1-10.
         # [EN] Maximum Vex cap; starts at 1 at level 1 and adds 1 every 5 levels; default 7, valid range 1-10.
         max-active: 7
+        # [VI] Bán kính VEX quay về và ở gần tu sĩ khi không có mục tiêu; mặc định 5 block, hợp lệ 2-16.
+        # [EN] Vex return/idle radius around the druid when no target remains; default 5 blocks, valid range 2-16.
+        follow-radius-blocks: 5.0
         # [VI] Thứ tự AI VEX: DRUID_TARGET, DRUID_ATTACKER, OWNER_ATTACKER, FOLLOW_DRUID; mặc định theo thứ tự này.
         # [EN] Vex AI priority order: DRUID_TARGET, DRUID_ATTACKER, OWNER_ATTACKER, FOLLOW_DRUID; defaults to this order.
         ai-priorities: [DRUID_TARGET, DRUID_ATTACKER, OWNER_ATTACKER, FOLLOW_DRUID]

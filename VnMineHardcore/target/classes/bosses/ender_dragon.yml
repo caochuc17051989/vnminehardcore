@@ -8,7 +8,7 @@ display-name: "§5§lRồng Tử Thần"
 # [VI] Class lính của token boss; bậc token theo level boss.
 # [EN] Mercenary class for this boss token; token tier follows the boss level.
 army-token-class: paladin
-hp: 1000
+hp: 1700
 damage-multiplier: 3.0
 # [VI] EXP thưởng cơ bản level 1; mặc định 2000, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
 # [EN] Base XP reward at level 1; default 2000, valid range 1-1000000; boss level scaling is in _settings.yml.
@@ -25,16 +25,16 @@ activity-radius: 100 # Max horizontal distance from this boss's spawn location (
 # [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
 # damage là sát thương cơ sở (tăng theo level); số cầu lửa = level * multiply, tối đa 40.
 hp-by-level:
-  1: 1000
-  2: 1500
-  3: 2250
-  4: 3375
-  5: 5062
-  6: 7593
-  7: 11390
-  8: 17085
-  9: 25628
-  10: 38442
+  1: 1700
+  2: 3300
+  3: 5000
+  4: 6700
+  5: 8400
+  6: 10100
+  7: 11800
+  8: 15100
+  9: 18400
+  10: 20000
 skills:
   fireball-volley:
     enabled: true
@@ -127,6 +127,20 @@ armor-set:
     1: IRON
     4: DIAMOND
     7: NETHERITE
+  piece-names:
+    helmet: "Mũ Long Vảy"
+    chestplate: "Áo Long Vảy"
+    leggings: "Quần Long Vảy"
+    boots: "Ủng Long Vảy"
+  enchantments:
+    helmet: [fire_protection, unbreaking, respiration]
+    chestplate: [fire_protection, unbreaking, thorns]
+    leggings: [fire_protection, swift_sneak, unbreaking]
+    boots: [fire_protection, feather_falling, soul_speed, unbreaking]
+  bonuses:
+    2: {damage-reduction-percent: 0.08, damage-causes: [FIRE, FIRE_TICK, LAVA, ENTITY_EXPLOSION]}
+    3: {damage-reduction-percent: 0.14, damage-causes: [FIRE, FIRE_TICK, LAVA, ENTITY_EXPLOSION]}
+    4: {damage-reduction-percent: 0.20, damage-causes: [FIRE, FIRE_TICK, LAVA, ENTITY_EXPLOSION]}
 
 level-drops:
   1:
