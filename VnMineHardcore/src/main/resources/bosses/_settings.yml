@@ -51,9 +51,9 @@ army-token-drop:
   # [VI] Bật/tắt nguồn token từ boss; mặc định true.
   # [EN] Enable summon-token boss drops; default true.
   enabled: true
-  # [VI] Tỉ lệ rơi 1 token khi boss bị người chơi gây sát thương; mặc định 30%, hợp lệ 0-1.
-  # [EN] Chance to drop 1 token when a player damages the boss; default 30%, valid range 0-1.
-  chance: 0.30
+  # [VI] Tỉ lệ rơi 1 token khi boss bị người chơi gây sát thương; mặc định 10%, hợp lệ 0-1.
+  # [EN] Chance to drop 1 token when a player damages the boss; default 10%, valid range 0-1.
+  chance: 0.1
 
 # [VI] Tổng EXP boss được chia theo tỷ lệ sát thương; level 1 mặc định 50 EXP, level 10 mặc định 150 EXP.
 #      Hai mốc hợp lệ 1-1000000; giá trị level 1 phải nhỏ hơn hoặc bằng level 10, level giữa nội suy tuyến tính.
@@ -80,7 +80,7 @@ reward-items:
 
   # [VI] Trần enchant cấu hình cho giáp boss; mặc định V, hợp lệ 1-255.
   # [EN] Configured enchantment cap for boss armor; default V, valid range 1-255.
-  maximum-enchant-level: 5
+  maximum-enchant-level: 7
 
   # [VI] Cho phép enchant chính ngực/ủng vượt trần vanilla; chỉ áp dụng đến trần phía trên.
   # [EN] Allow primary chest/boot enchants above vanilla maximum, limited by the cap above.
@@ -98,15 +98,15 @@ level-progression:
   enabled: true
   thresholds:
     - {min-day: 0, min-level: 1, max-level: 1}
-    - {min-day: 25, min-level: 1, max-level: 2}
-    - {min-day: 50, min-level: 2, max-level: 3}
-    - {min-day: 100, min-level: 3, max-level: 4}
-    - {min-day: 150, min-level: 4, max-level: 5}
-    - {min-day: 200, min-level: 5, max-level: 6}
-    - {min-day: 250, min-level: 6, max-level: 7}
-    - {min-day: 300, min-level: 7, max-level: 8}
-    - {min-day: 350, min-level: 8, max-level: 9}
-    - {min-day: 400, min-level: 9, max-level: 10}
+    - {min-day: 100, min-level: 1, max-level: 2}
+    - {min-day: 200, min-level: 1, max-level: 3}
+    - {min-day: 400, min-level: 1, max-level: 4}
+    - {min-day: 600, min-level: 2, max-level: 5}
+    - {min-day: 900, min-level: 2, max-level: 6}
+    - {min-day: 1200, min-level: 2, max-level: 7}
+    - {min-day: 1500, min-level: 3, max-level: 8}
+    - {min-day: 1800, min-level: 3, max-level: 9}
+    - {min-day: 2500, min-level: 3, max-level: 10}
 
 # [VI] Tỉ lệ boss xuất hiện thành công theo ngày trong game.
 #      Đây là bước kiểm tra RIÊNG sau khi đã roll chọn loại boss theo `chance`
@@ -123,12 +123,12 @@ spawn-success-progression:
   default-percent: 15
   thresholds:
     - {min-day: 0, chance-percent: 15}
-    - {min-day: 25, chance-percent: 25}
-    - {min-day: 50, chance-percent: 35}
-    - {min-day: 100, chance-percent: 50}
-    - {min-day: 150, chance-percent: 65}
-    - {min-day: 200, chance-percent: 75}
-    - {min-day: 250, chance-percent: 85}
-    - {min-day: 300, chance-percent: 90}
-    - {min-day: 350, chance-percent: 95}
-    - {min-day: 400, chance-percent: 100}
+    - {min-day: 50, chance-percent: 25}
+    - {min-day: 100, chance-percent: 35}
+    - {min-day: 150, chance-percent: 50}
+    - {min-day: 200, chance-percent: 65}
+    - {min-day: 250, chance-percent: 75}
+    - {min-day: 300, chance-percent: 85}
+    - {min-day: 500, chance-percent: 90}
+    - {min-day: 700, chance-percent: 95}
+    - {min-day: 1000, chance-percent: 100}
