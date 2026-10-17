@@ -14,9 +14,9 @@ scoreboard:
   title: "§6§lBOSS RANKING"
 
 reset:
-  # [VI] Số ngày trong game giữa các lần reset; mặc định 30, hợp lệ 1-100000.
-  # [EN] In-game days between resets; default 30, valid range 1-100000.
-  every-game-days: 30
+  # [VI] Số ngày trong game giữa các lần reset; mặc định 100, hợp lệ 1-100000.
+  # [EN] In-game days between resets; default 100, valid range 1-100000.
+  every-game-days: 100
   # [VI] Số giây hiển thị title chúc mừng người đứng đầu; mặc định 10, hợp lệ 1-60.
   # [EN] Seconds to show the winner title; default 10, valid range 1-60.
   winner-title-seconds: 10
@@ -30,6 +30,10 @@ rewards:
   #      Enchantments dùng ID như sharpness, unbreaking; level 1-255, vượt giới hạn vanilla sẽ over-enchant.
   # [EN] Each item supports enabled, material, amount, optional name/lore and optional enchantments.
   #      Use IDs such as sharpness, unbreaking; levels 1-255, levels above vanilla limits are over-enchants.
+  # [VI] Pool bổ sung cho mỗi top-N: danh sách khoảng 20 map {material, amount, enabled?, name?}; mặc định enabled=true, mỗi mùa chọn đúng một món ngẫu nhiên.
+  #      material phải hợp lệ, amount từ 1 đến max stack của vật phẩm, name là tên hiển thị tùy chọn.
+  # [EN] Each top-N can define a pool of about 20 maps {material, amount, enabled?, name?}; enabled defaults to true and one item is randomly selected per season.
+  #      material must be valid, amount must be 1 through the item's max stack size, and name is optional.
   top-1:
     netherite-sword:
       # [VI] Bật/tắt riêng vật phẩm mẫu; mặc định true.
@@ -64,6 +68,25 @@ rewards:
       # [VI] Số lượng; mặc định 32, hợp lệ 1-64.
       # [EN] Amount; default 32, valid range 1-64.
       amount: 32
+    pool:
+      - {material: NETHERITE_CHESTPLATE, amount: 1, name: "§6Giáp Ngực Vô Song"}
+      - {material: NETHERITE_LEGGINGS, amount: 1, name: "§6Quần Vô Song"}
+      - {material: NETHERITE_HELMET, amount: 1, name: "§6Mũ Vô Song"}
+      - {material: NETHERITE_BOOTS, amount: 1, name: "§6Ủng Vô Song"}
+      - {material: ELYTRA, amount: 1, name: "§dĐôi Cánh Huyền Thoại"}
+      - {material: TRIDENT, amount: 1, name: "§bĐinh Ba Sấm Sét"}
+      - {material: NETHERITE_PICKAXE, amount: 1}
+      - {material: NETHERITE_AXE, amount: 1}
+      - {material: NETHERITE_SHOVEL, amount: 1}
+      - {material: NETHERITE_HOE, amount: 1}
+      - {material: NETHERITE_INGOT, amount: 4}
+      - {material: NETHER_STAR, amount: 1}
+      - {material: TOTEM_OF_UNDYING, amount: 1}
+      - {material: ENCHANTED_GOLDEN_APPLE, amount: 2}
+      - {material: GOLDEN_APPLE, amount: 16}
+      - {material: DIAMOND_BLOCK, amount: 8}
+      - {material: EXPERIENCE_BOTTLE, amount: 64}
+      - {material: SHULKER_BOX, amount: 1, name: "§dRương Shulker Top 1"}
 
   top-2:
     diamond-sword:
@@ -98,6 +121,25 @@ rewards:
       # [VI] Số lượng; mặc định 24, hợp lệ 1-64.
       # [EN] Amount; default 24, valid range 1-64.
       amount: 24
+    pool:
+      - {material: DIAMOND_CHESTPLATE, amount: 1, name: "§bGiáp Ngực Á Quân"}
+      - {material: DIAMOND_LEGGINGS, amount: 1, name: "§bQuần Á Quân"}
+      - {material: DIAMOND_HELMET, amount: 1, name: "§bMũ Á Quân"}
+      - {material: DIAMOND_BOOTS, amount: 1, name: "§bỦng Á Quân"}
+      - {material: DIAMOND_PICKAXE, amount: 1}
+      - {material: DIAMOND_AXE, amount: 1}
+      - {material: DIAMOND_SHOVEL, amount: 1}
+      - {material: DIAMOND_HOE, amount: 1}
+      - {material: ENCHANTED_GOLDEN_APPLE, amount: 1}
+      - {material: GOLDEN_APPLE, amount: 12}
+      - {material: DIAMOND_BLOCK, amount: 4}
+      - {material: NETHERITE_INGOT, amount: 2}
+      - {material: TOTEM_OF_UNDYING, amount: 1}
+      - {material: TRIDENT, amount: 1}
+      - {material: BOW, amount: 1}
+      - {material: CROSSBOW, amount: 1}
+      - {material: EMERALD_BLOCK, amount: 8}
+      - {material: EXPERIENCE_BOTTLE, amount: 48}
 
   top-3:
     enchanted-book:
@@ -125,6 +167,25 @@ rewards:
       # [VI] Số lượng; mặc định 16, hợp lệ 1-64.
       # [EN] Amount; default 16, valid range 1-64.
       amount: 16
+    pool:
+      - {material: DIAMOND_CHESTPLATE, amount: 1, name: "§bGiáp Ngực Thợ Săn"}
+      - {material: DIAMOND_LEGGINGS, amount: 1}
+      - {material: DIAMOND_HELMET, amount: 1}
+      - {material: DIAMOND_BOOTS, amount: 1}
+      - {material: DIAMOND_PICKAXE, amount: 1}
+      - {material: DIAMOND_AXE, amount: 1}
+      - {material: GOLDEN_APPLE, amount: 8}
+      - {material: DIAMOND, amount: 24}
+      - {material: EMERALD, amount: 32}
+      - {material: NETHERITE_INGOT, amount: 1}
+      - {material: ENCHANTED_BOOK, amount: 1, name: "§dSách Phù Phép"}
+      - {material: SHIELD, amount: 1}
+      - {material: CROSSBOW, amount: 1}
+      - {material: BOW, amount: 1}
+      - {material: ENDER_PEARL, amount: 16}
+      - {material: EXPERIENCE_BOTTLE, amount: 32}
+      - {material: DIAMOND_BLOCK, amount: 2}
+      - {material: EMERALD_BLOCK, amount: 4}
 
   top-4:
     diamonds:
@@ -137,6 +198,26 @@ rewards:
       # [VI] Số lượng; mặc định 12, hợp lệ 1-64.
       # [EN] Amount; default 12, valid range 1-64.
       amount: 12
+    pool:
+      - {material: EMERALD, amount: 32}
+      - {material: DIAMOND, amount: 12}
+      - {material: GOLD_INGOT, amount: 32}
+      - {material: IRON_INGOT, amount: 64}
+      - {material: GOLDEN_APPLE, amount: 6}
+      - {material: ENDER_PEARL, amount: 16}
+      - {material: EXPERIENCE_BOTTLE, amount: 32}
+      - {material: OBSIDIAN, amount: 32}
+      - {material: BLAZE_ROD, amount: 16}
+      - {material: DIAMOND_HORSE_ARMOR, amount: 1}
+      - {material: IRON_SWORD, amount: 1}
+      - {material: IRON_PICKAXE, amount: 1}
+      - {material: IRON_CHESTPLATE, amount: 1}
+      - {material: SHIELD, amount: 1}
+      - {material: BOW, amount: 1}
+      - {material: CROSSBOW, amount: 1}
+      - {material: ENCHANTED_BOOK, amount: 1}
+      - {material: EMERALD_BLOCK, amount: 4}
+      - {material: DIAMOND_BLOCK, amount: 2}
 
   top-5:
     diamonds:
@@ -149,6 +230,26 @@ rewards:
       # [VI] Số lượng; mặc định 10, hợp lệ 1-64.
       # [EN] Amount; default 10, valid range 1-64.
       amount: 10
+    pool:
+      - {material: EMERALD, amount: 24}
+      - {material: DIAMOND, amount: 10}
+      - {material: GOLD_INGOT, amount: 24}
+      - {material: IRON_INGOT, amount: 48}
+      - {material: GOLDEN_APPLE, amount: 5}
+      - {material: ENDER_PEARL, amount: 12}
+      - {material: EXPERIENCE_BOTTLE, amount: 24}
+      - {material: OBSIDIAN, amount: 24}
+      - {material: BLAZE_ROD, amount: 12}
+      - {material: DIAMOND_HORSE_ARMOR, amount: 1}
+      - {material: IRON_SWORD, amount: 1}
+      - {material: IRON_PICKAXE, amount: 1}
+      - {material: IRON_CHESTPLATE, amount: 1}
+      - {material: SHIELD, amount: 1}
+      - {material: BOW, amount: 1}
+      - {material: CROSSBOW, amount: 1}
+      - {material: ENCHANTED_BOOK, amount: 1}
+      - {material: EMERALD_BLOCK, amount: 3}
+      - {material: DIAMOND_BLOCK, amount: 1}
 
   top-6:
     diamonds:
@@ -161,6 +262,26 @@ rewards:
       # [VI] Số lượng; mặc định 8, hợp lệ 1-64.
       # [EN] Amount; default 8, valid range 1-64.
       amount: 8
+    pool:
+      - {material: EMERALD, amount: 20}
+      - {material: DIAMOND, amount: 8}
+      - {material: GOLD_INGOT, amount: 20}
+      - {material: IRON_INGOT, amount: 40}
+      - {material: GOLDEN_APPLE, amount: 4}
+      - {material: ENDER_PEARL, amount: 10}
+      - {material: EXPERIENCE_BOTTLE, amount: 20}
+      - {material: OBSIDIAN, amount: 20}
+      - {material: BLAZE_ROD, amount: 10}
+      - {material: IRON_HORSE_ARMOR, amount: 1}
+      - {material: IRON_SWORD, amount: 1}
+      - {material: IRON_PICKAXE, amount: 1}
+      - {material: IRON_CHESTPLATE, amount: 1}
+      - {material: SHIELD, amount: 1}
+      - {material: BOW, amount: 1}
+      - {material: CROSSBOW, amount: 1}
+      - {material: ENCHANTED_BOOK, amount: 1}
+      - {material: EMERALD_BLOCK, amount: 2}
+      - {material: DIAMOND, amount: 4}
 
   top-7:
     diamonds:
@@ -173,6 +294,26 @@ rewards:
       # [VI] Số lượng; mặc định 7, hợp lệ 1-64.
       # [EN] Amount; default 7, valid range 1-64.
       amount: 7
+    pool:
+      - {material: EMERALD, amount: 16}
+      - {material: DIAMOND, amount: 6}
+      - {material: GOLD_INGOT, amount: 16}
+      - {material: IRON_INGOT, amount: 32}
+      - {material: GOLDEN_APPLE, amount: 3}
+      - {material: ENDER_PEARL, amount: 8}
+      - {material: EXPERIENCE_BOTTLE, amount: 16}
+      - {material: OBSIDIAN, amount: 16}
+      - {material: BLAZE_ROD, amount: 8}
+      - {material: IRON_HORSE_ARMOR, amount: 1}
+      - {material: IRON_SWORD, amount: 1}
+      - {material: IRON_PICKAXE, amount: 1}
+      - {material: IRON_CHESTPLATE, amount: 1}
+      - {material: SHIELD, amount: 1}
+      - {material: BOW, amount: 1}
+      - {material: CROSSBOW, amount: 1}
+      - {material: ENCHANTED_BOOK, amount: 1}
+      - {material: EMERALD_BLOCK, amount: 1}
+      - {material: GOLDEN_CARROT, amount: 16}
 
   top-8:
     diamonds:
@@ -185,6 +326,26 @@ rewards:
       # [VI] Số lượng; mặc định 6, hợp lệ 1-64.
       # [EN] Amount; default 6, valid range 1-64.
       amount: 6
+    pool:
+      - {material: EMERALD, amount: 14}
+      - {material: DIAMOND, amount: 5}
+      - {material: GOLD_INGOT, amount: 14}
+      - {material: IRON_INGOT, amount: 28}
+      - {material: GOLDEN_APPLE, amount: 3}
+      - {material: ENDER_PEARL, amount: 7}
+      - {material: EXPERIENCE_BOTTLE, amount: 14}
+      - {material: OBSIDIAN, amount: 14}
+      - {material: BLAZE_ROD, amount: 7}
+      - {material: IRON_HORSE_ARMOR, amount: 1}
+      - {material: IRON_SWORD, amount: 1}
+      - {material: IRON_PICKAXE, amount: 1}
+      - {material: IRON_CHESTPLATE, amount: 1}
+      - {material: SHIELD, amount: 1}
+      - {material: BOW, amount: 1}
+      - {material: CROSSBOW, amount: 1}
+      - {material: ENCHANTED_BOOK, amount: 1}
+      - {material: GOLDEN_CARROT, amount: 12}
+      - {material: COOKED_BEEF, amount: 32}
 
   top-9:
     diamonds:
@@ -197,6 +358,26 @@ rewards:
       # [VI] Số lượng; mặc định 5, hợp lệ 1-64.
       # [EN] Amount; default 5, valid range 1-64.
       amount: 5
+    pool:
+      - {material: EMERALD, amount: 12}
+      - {material: DIAMOND, amount: 4}
+      - {material: GOLD_INGOT, amount: 12}
+      - {material: IRON_INGOT, amount: 24}
+      - {material: GOLDEN_APPLE, amount: 2}
+      - {material: ENDER_PEARL, amount: 6}
+      - {material: EXPERIENCE_BOTTLE, amount: 12}
+      - {material: OBSIDIAN, amount: 12}
+      - {material: BLAZE_ROD, amount: 6}
+      - {material: IRON_HORSE_ARMOR, amount: 1}
+      - {material: IRON_SWORD, amount: 1}
+      - {material: IRON_PICKAXE, amount: 1}
+      - {material: IRON_CHESTPLATE, amount: 1}
+      - {material: SHIELD, amount: 1}
+      - {material: BOW, amount: 1}
+      - {material: CROSSBOW, amount: 1}
+      - {material: ENCHANTED_BOOK, amount: 1}
+      - {material: GOLDEN_CARROT, amount: 10}
+      - {material: COOKED_BEEF, amount: 24}
 
   top-10:
     diamonds:
@@ -209,3 +390,23 @@ rewards:
       # [VI] Số lượng; mặc định 4, hợp lệ 1-64.
       # [EN] Amount; default 4, valid range 1-64.
       amount: 4
+    pool:
+      - {material: EMERALD, amount: 10}
+      - {material: DIAMOND, amount: 3}
+      - {material: GOLD_INGOT, amount: 10}
+      - {material: IRON_INGOT, amount: 20}
+      - {material: GOLDEN_APPLE, amount: 2}
+      - {material: ENDER_PEARL, amount: 5}
+      - {material: EXPERIENCE_BOTTLE, amount: 10}
+      - {material: OBSIDIAN, amount: 10}
+      - {material: BLAZE_ROD, amount: 5}
+      - {material: IRON_HORSE_ARMOR, amount: 1}
+      - {material: IRON_SWORD, amount: 1}
+      - {material: IRON_PICKAXE, amount: 1}
+      - {material: IRON_CHESTPLATE, amount: 1}
+      - {material: SHIELD, amount: 1}
+      - {material: BOW, amount: 1}
+      - {material: CROSSBOW, amount: 1}
+      - {material: ENCHANTED_BOOK, amount: 1}
+      - {material: GOLDEN_CARROT, amount: 8}
+      - {material: COOKED_BEEF, amount: 20}

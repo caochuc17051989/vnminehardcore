@@ -40,7 +40,7 @@ Yêu cầu runtime: Java 25+ và ProtocolLib `5.5.0-SNAPSHOT` dev-build có hỗ
 | `/fly`, `/nodame`, `/spawn` | Tiện ích quản trị dành cho người chơi | `vnmine.command.fly`, `.nodame`, `.spawn` |
 | `/gm0`, `/gm1`, `/gm2`, `/gm3` | Chuyển game mode (chỉ người chơi) | `vnmine.command.gamemode` |
 | `/vnreload` | Tải lại config và các hệ thống | `vnmine.command.reload` |
-| `/vnhelp`, `/vn help` | Hiển thị hướng dẫn lệnh | `vnmine.command.help`, `.utility` |
+| `/vnhelp`, `/vn help` | Hiển thị lệnh theo quyền người dùng; admin/OP thấy thêm lệnh quản trị | `vnmine.command.help`, `.utility` |
 | `/vnmenu` hoặc phím `F` | Mở menu chức năng; phím F thay thao tác đổi tay phụ | Không yêu cầu quyền riêng |
 | `/vngroup ...` | Tạo/xóa nhóm, xem nhóm, cấp/thu hồi quyền nhóm | `vnmine.command.groups.manage` |
 | `/vnuser ...` | Xem/gán nhóm, cấp/thu hồi quyền cá nhân, reset người chơi | `vnmine.command.users.manage` |
@@ -84,7 +84,8 @@ cấp bởi nhóm. Nhóm mặc định áp dụng cho người mới và `/vnuse
 ### Lính đánh thuê (`armies.yml`)
 
 `plugins/VnMineHardcore/armies.yml` là file tinh chỉnh AI và cấu hình lính: giới
-hạn đội quân (mặc định 10), tầm tìm mục tiêu, chu kỳ AI, chỉ số, kỹ năng, EXP,
+hạn sở hữu đội quân (mặc định 10), giới hạn triệu hồi đồng thời (mặc định 3),
+tầm tìm mục tiêu, chu kỳ AI, chỉ số, kỹ năng, EXP,
 thời gian hồi phục, vũ khí ban đầu và vật phẩm nâng bậc. Mười class mặc định:
 Xạ Thủ (`archer`), Vệ Binh (`guardian`), Y Sư (`medic`), Cuồng Chiến
 (`berserker`), Trinh Sát (`ranger`), Thánh Kỵ (`paladin`), Pháp Sư Lửa
@@ -93,9 +94,13 @@ Xạ Thủ (`archer`), Vệ Binh (`guardian`), Y Sư (`medic`), Cuồng Chiến
 skill được cấu hình riêng. Lính chọn vũ khí tốt nhất giữa tay chính và 36 ô
 kho; chỉ dùng vũ khí mặc định nếu kho không có món dùng được. Gear được giữ qua
 nghỉ, chết và triệu hồi lại. Mô tả skill và action bar dùng tên tiếng Việt.
-AI dùng danh sách ưu tiên theo từng chế độ trong `ai.priorities`; lính có thể
-tìm đường quanh vật cản trên mặt đất nhưng bỏ qua mục tiêu bị che khuất nằm
-dưới địa hình (`ai.ignore-hidden-underground-targets`).
+AI dùng danh sách ưu tiên theo từng chế độ trong `ai.priorities`; mặc định chỉ
+chọn và tấn công mục tiêu trong tầm nhìn (`ai.require-line-of-sight`); kỹ năng
+đánh mục tiêu kiểm tra lại tầm nhìn ngay lúc thi triển để tránh gây sát thương/
+hiệu ứng xuyên vật cản. Lính không chọn dân làng/thực thể thụ động. Khi gọi toàn đội,
+lính bậc cao nhất rồi level
+cao nhất được ưu tiên cho tối đa 3 vị trí triển khai; giới hạn sở hữu và triển
+khai đều chỉnh được trong `armies.yml`.
 Xạ Thủ có `VOLLEY` (số tên, tốc độ, độ tỏa, sát thương); Trinh Sát dùng nỏ,
 phát hiện mục tiêu trong 48 block và bắn thường xa 32 block theo mặc định
 (gấp đôi Xạ Thủ), tiêu thụ đạn trong kho nếu có và dùng Spectral Arrow miễn phí
@@ -131,16 +136,17 @@ hạn và thứ tự ưu tiên AI tại `classes.druid.skill-settings.SUMMON_VEX
 kẻ tấn công chủ nhân, rồi đi theo Tu sĩ rừng. Chủ nhân thấy thanh HP riêng của từng VEX dạng ô đầy/rỗng, không kèm số HP;
 thanh màu xanh lá có biểu tượng đổi theo trạng thái tấn công, theo Tu sĩ hoặc
 đứng yên. Khi không có mục tiêu để đánh, VEX quay về và được giữ trong phạm vi
-5 block quanh Tu sĩ rừng bằng cách bay theo từ từ; khi cho Tu sĩ rừng nghỉ, toàn
+5 block quanh Tu sĩ rừng bằng cách bay theo từ từ (`follow-radius-blocks`); khi cho Tu sĩ rừng nghỉ, toàn
 bộ VEX do lính đó triệu hồi cũng bị xóa. Màu và biểu tượng tùy chỉnh tại `status-display.vex-health-color` và
 `status-display.vex-action-icons` trong `armies.yml`. Kỵ sĩ tự lên ngựa plugin quản lý;
 slot gear riêng lưu giáp ngựa tốt nhất và
 `classes.paladin.horse-health`/`classes.paladin.horse-speed` cấu hình máu/tốc độ
 ngựa (tốc độ mặc định bằng mức phi nước đại tối đa). Khi ngựa chết, Kỵ sĩ tiếp
 tục đi bộ, ngựa không tự hồi sinh kể cả sau khi khởi động lại; cho Kỵ sĩ nghỉ
-rồi xuất chiến lại để tạo ngựa thay thế. Lính sẽ chủ động truy đuổi
-mục tiêu mà chủ nhân vừa đánh, kể cả khi mục tiêu ở ngoài tầm nhìn trực tiếp của lính;
-lệnh tấn công trực tiếp hết hiệu lực sau 15 giây nếu không được làm mới.
+rồi xuất chiến lại để tạo ngựa thay thế. Lính truy đuổi mục tiêu chủ nhân vừa
+đánh khi mục tiêu còn trong tầm nhìn; lệnh tấn công trực tiếp hết hiệu lực sau
+15 giây nếu không được làm mới. Kỵ sĩ được gọi lại riêng lẻ vẫn tự tạo và gắn
+ngựa plugin quản lý.
 Token phải khớp class và bậc, rồi bị tiêu thụ khi thuê. Token boss có class riêng
 qua `army-token-class` trong từng `bosses/<id>.yml`; bậc token bằng level boss.
 Token chung từ lệnh admin vẫn dùng được cho mọi class.
@@ -171,7 +177,8 @@ nhân bản. AI ưu tiên hành động theo `ai.priorities` trong `armies.yml`:
 ưu tiên mục tiêu chủ đã đánh, mối đe dọa lên chủ, hostile gần, tìm kiếm, quay về
 chủ và tuần tra; DEFEND ưu tiên hostile gần, tìm kiếm và tuần tra; PROTECT ưu
 tiên áp sát chủ, đánh mob đang nhắm chủ, trả đũa và tìm hostile gần. Thứ tự có
-thể chỉnh; AI không chủ động chọn người chơi, lính hoặc đệ của chủ khác.
+thể chỉnh; mặc định chỉ chọn mục tiêu nhìn thấy, và không chủ động chọn dân làng,
+thực thể thụ động, người chơi, lính hoặc đệ của chủ khác.
 
 GUI cho phép chọn lớp và bậc trước khi thuê; tooltip nêu mô tả skill tiếng Việt,
 thông số/cooldown, yêu cầu XP/vật liệu và chỉ số HP/giáp/sát thương. Hai thanh
@@ -195,16 +202,23 @@ bậc gốc khi thuê.
 Lính bị hạ sẽ không mất hồ sơ/trang bị mà chuyển sang **Hồi phục** (mặc định
 300 giây); `/vnarmy list` hiển thị Xuất chiến/Nghỉ ngơi/Hồi phục cùng bậc, cấp,
 EXP hiện tại/yêu cầu và tên riêng. `/vnarmy rename <ID> <Tên mới>` đổi tên.
-`recall` và `rest` tác động cả đội; thêm ID để chỉ gọi/nghỉ một lính. Lệnh thuê
-liệt kê rõ token, cấp kinh nghiệm và từng vật phẩm đang thiếu.
+`recall` và `rest` tác động cả đội; thêm ID để chỉ gọi/nghỉ một lính. Gọi cả
+đội chỉ triển khai tối đa số lính cấu hình và ưu tiên bậc cao, sau đó level cao.
+Lệnh thuê liệt kê rõ token, cấp kinh nghiệm và từng vật phẩm đang thiếu.
 
 Token boss có class theo `army-token-class` trong file boss và bậc bằng level
 boss, rơi với xác suất mặc định 30% (`bosses/_settings.yml`, khóa
-`army-token-drop.chance`) khi có người chơi gây sát thương boss. Mỗi file boss
-có `experience` riêng cho EXP cơ bản; EXP tăng theo
-level bằng `experience-per-level-multiplier` trong `_settings.yml`. Mọi người
-chơi gây sát thương nhận EXP boss; lính đang xuất chiến của họ nhận cùng lượng
-EXP. Quy tắc vật phẩm/điểm boss hiện hành vẫn dùng ngưỡng đóng góp riêng.
+`army-token-drop.chance`) khi có người chơi gây sát thương boss. EXP boss là
+một quỹ chung, mặc định 50 EXP ở level 1 và 150 EXP ở level 10, nội suy tuyến
+tính giữa hai mốc; quỹ chia theo tỷ lệ sát thương giữa những người chơi đã gây
+sát thương. Có thể chỉnh hai mốc tại `experience-pool.level-1` và
+`experience-pool.level-10` trong `bosses/_settings.yml`. Điểm mùa cũng được
+chia theo tỷ lệ sát thương giữa tất cả người đóng góp; ngưỡng sát thương chỉ
+còn áp dụng cho vật phẩm boss. Pool EXP tiến trình lính mỗi kill (mặc định 5,
+`progression.experience-per-kill`) được chia đều giữa các lính đang triển khai
+của chủ; phần dư do chia số nguyên được cộng lần lượt theo ID ổn định. Chủ nhân
+nhận EXP rơi của mob theo vanilla; khi lính gây kill, EXP được cấp trực tiếp
+cho chủ để không phụ thuộc khoảng cách nhặt orb.
 `give ... army` cấp lính trực tiếp và vẫn tôn trọng giới hạn quân số;
 `give ... token` cấp token chung bậc.
 
@@ -220,8 +234,9 @@ ngựa. Khi ngựa chết, Kỵ sĩ đi bộ cho đến khi nghỉ và được 
 
 `plugins/VnMineHardcore/tooltips.yml` định nghĩa nhắc nhở chức năng định kỳ:
 `settings.interval-seconds` đặt khoảng thời gian và `settings.mode` chọn
-`random` hoặc `sequential`; các dòng tooltip nằm ở cuối file. Dùng `/vnreload`
-sau khi chỉnh cấu hình.
+`random` hoặc `sequential`; `tooltips.players` chỉ hiển thị cho người chơi,
+`tooltips.admins` chỉ hiển thị cho OP/người có quyền quản trị. Tooltip hướng dẫn
+bấm `F` hoặc dùng `/vnmenu` để mở menu chính. Dùng `/vnreload` sau khi chỉnh cấu hình.
 
 Để tránh xung đột, chỉ dùng một hệ thống làm nguồn cấp quyền cho node
 `vnmine.*`; permission từ plugin khác có thể cộng thêm quyền. Chỉ cấp
@@ -396,9 +411,10 @@ Ravager block breaking uses the `break-blocks`, `max-break-blocks`, and
 `reward-damage-threshold-percent` in `bosses/_settings.yml` defaults to 50.
 Each player's actual damage is accumulated against the boss's maximum HP; only
 players who deal strictly more than the configured percentage qualify for
-leaderboard points. Their contribution remains eligible if the boss dies from
-another cause, but `/vnboss kill` and lifetime expiry always end the encounter
-without points or loot.
+boss item drops. All players who deal positive damage receive boss XP and
+leaderboard points; both pools are split by each player's share of total damage.
+Contributions remain eligible if the boss dies from another cause, but
+`/vnboss kill` and lifetime expiry always end the encounter without points or loot.
 
 Global boss skill cast feedback is configured in `bosses/_settings.yml`:
 `skill-cast-feedback.console-log` logs successful casts to the console,
@@ -466,15 +482,17 @@ phép gọi boss ở level được chọn. Khi boss xuất hiện, server broad
 thể rơi ở level đó và tỉ lệ từng món. Mọi boss tồn tại mặc định 20 phút;
 bộ đếm roll boss kế tiếp tạm dừng trong khi cảnh báo hoặc boss đang hoạt động.
 
-`scoreboard.yml` cấu hình chu kỳ reset (`reset.every-game-days`), sidebar,
-thời gian title top 1, chu kỳ nhắc và quà của từng hạng top 1–10. Top 5 người
-đủ ngưỡng damage nhận tổng cộng `10 × level` điểm, chia theo tỉ lệ damage
-trong nhóm đủ điều kiện. Điểm và quà
+`scoreboard.yml` cấu hình chu kỳ reset (`reset.every-game-days`, mặc định 100
+ngày trong game), sidebar, thời gian title top 1, chu kỳ nhắc và pool khoảng 20
+vật phẩm cho từng hạng top 1–10. Khi mùa kết thúc, mỗi hạng nhận đúng một món
+được chọn ngẫu nhiên; lựa chọn được lưu cùng phần thưởng đang chờ để không bị
+đổi khi nhận lại. Mỗi boss tạo tổng quỹ `10 × level` điểm mùa, chia theo tỉ lệ
+sát thương giữa tất cả người đóng góp. Điểm và quà
 đang chờ được lưu trong `scoreboard-data.yml`. Người chơi nhận quà bằng
 `/reward`; nếu inventory không đủ chỗ, quà vẫn chờ và có thể nhận lại sau khi
 dọn túi. Boss không nhận sát thương từ môi trường (bao gồm sát thương rơi) hoặc
-skill/đòn đánh do chính boss tạo ra; loot và điểm thông thường vẫn theo ngưỡng
-đóng góp, còn token triệu hồi có thể rơi khi có người chơi gây sát thương.
+skill/đòn đánh do chính boss tạo ra; vật phẩm thông thường vẫn theo ngưỡng đóng
+góp, còn token triệu hồi có thể rơi khi có người chơi gây sát thương.
 Chạy `/vnreload` để nạp cấu hình.
 
 ### Disasters - Thiên tai
@@ -598,7 +616,7 @@ sát thương người chơi, thông báo và tỷ lệ. Chạy `/vnreload` sau 
 - Thêm `/scoreboard reset` để xóa điểm mùa và phần thưởng boss đang chờ nhận.
 - Thêm `/vntime set day <phút>` và `/vntime set night <phút>`; tự lưu cấu hình
   global và giữ nguyên override riêng từng world.
-- `/vnhelp` liệt kê toàn bộ lệnh plugin; nhấn Tab để gợi ý tham số.
+- `/vnhelp` chỉ liệt kê các lệnh bạn có quyền sử dụng; nhấn Tab để gợi ý tham số.
 
 ## Build từ mã nguồn
 

@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.38.5
+version: 1.39.2
 main: com.vnmine.hardcore.VnMineHardcore
 depend: [ProtocolLib]
 api-version: '26.3'
@@ -56,7 +56,7 @@ commands:
     usage: /gm3
     permission: vnmine.command.gamemode
   vnhelp:
-    description: Hiển thị hướng dẫn tất cả lệnh
+    description: Hiển thị hướng dẫn các lệnh bạn có quyền sử dụng
     usage: /vnhelp
     permission: vnmine.command.help
   vnevent:
@@ -182,7 +182,7 @@ permissions:
     default: op
   vnmine.command.help:
     description: Cho phép xem hướng dẫn bằng /vnhelp
-    default: op
+    default: true
   vnmine.command.groups.manage:
     description: Cho phép quản lý nhóm bằng /vngroup
     default: op

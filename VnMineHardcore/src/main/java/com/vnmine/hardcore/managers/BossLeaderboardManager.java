@@ -10,20 +10,15 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
@@ -45,7 +40,7 @@ import java.util.logging.Level;
 
 public final class BossLeaderboardManager implements Listener {
     private static final int MAX_RANKED_PLAYERS = 10;
-    private static final int MAX_BOSS_CONTRIBUTORS = 5;
+    private static final int MAX_DAMAGE_DISPLAY = 5;
     private static final Map<String, String> LEGACY_ENCHANTMENTS = Map.ofEntries(
         Map.entry("DAMAGE_ALL", "sharpness"),
         Map.entry("DAMAGE_UNDEAD", "smite"),
@@ -64,9 +59,7 @@ public final class BossLeaderboardManager implements Listener {
         Map.entry("ARROW_FIRE", "flame"),
         Map.entry("ARROW_INFINITE", "infinity")
     );
-
     private final VnMineHardcore plugin;
-    private final NamespacedKey armyOwnerKey;
     private final File dataFile;
     private final Map<UUID, Double> seasonPoints = new HashMap<>();
     private final Map<UUID, String> playerNames = new HashMap<>();
@@ -79,7 +72,7 @@ public final class BossLeaderboardManager implements Listener {
     private YamlConfiguration settings;
     private long lastResetGameDay;
     private long seasonNumber;
-    private int resetEveryGameDays = 30;
+    private int resetEveryGameDays = 100;
     private int winnerTitleSeconds = 10;
     private int reminderIntervalMinutes = 60;
     private boolean enabled = true;
@@ -91,7 +84,6 @@ public final class BossLeaderboardManager implements Listener {
 
     public BossLeaderboardManager(VnMineHardcore plugin) {
         this.plugin = plugin;
-        this.armyOwnerKey = new NamespacedKey(plugin, "army_owner");
         this.dataFile = new File(plugin.getDataFolder(), "scoreboard-data.yml");
         reload();
         Bukkit.getPluginManager().registerEvents(this, plugin);
@@ -101,10 +93,21 @@ public final class BossLeaderboardManager implements Listener {
     public void reload() {
         File settingsFile = new File(plugin.getDataFolder(), "scoreboard.yml");
         settings = YamlConfiguration.loadConfiguration(settingsFile);
+        if (settings.getInt("reset.every-game-days", 30) == 30
+                && !settings.getBoolean("_migrations.reset-every-game-days-100", false)) {
+            settings.set("reset.every-game-days", 100);
+            settings.set("_migrations.reset-every-game-days-100", true);
+            try {
+                settings.save(settingsFile);
+            } catch (IOException exception) {
+                plugin.getLogger().log(Level.SEVERE,
+                    "[Scoreboard] Could not migrate reset.every-game-days to 100.", exception);
+            }
+        }
         enabled = settings.getBoolean("enabled", true);
         scoreboardEnabled = enabled && settings.getBoolean("scoreboard.enabled", true);
         scoreboardTitle = color(settings.getString("scoreboard.title", "§6§lBOSS RANKING"));
-        resetEveryGameDays = boundedInt("reset.every-game-days", 30, 1, 100000);
+        resetEveryGameDays = boundedInt("reset.every-game-days", 100, 1, 100000);
         winnerTitleSeconds = boundedInt("reset.winner-title-seconds", 10, 1, 60);
         reminderIntervalMinutes = boundedInt("rewards.reminder-interval-minutes", 60, 1, 10080);
         loadData();
@@ -244,10 +247,12 @@ public final class BossLeaderboardManager implements Listener {
         String seasonId = Long.toString(seasonNumber);
         for (int index = 0; index < Math.min(MAX_RANKED_PLAYERS, ranking.size()); index++) {
             Map.Entry<UUID, Double> entry = ranking.get(index);
-            List<ItemStack> items = configuredRewardItems(index + 1);
-            if (items.isEmpty()) continue;
+            List<ItemStack> configuredItems = configuredRewardItems(index + 1);
+            if (configuredItems.isEmpty()) continue;
+            ItemStack selectedReward = configuredItems.get(
+                java.util.concurrent.ThreadLocalRandom.current().nextInt(configuredItems.size()));
             pendingRewards.computeIfAbsent(entry.getKey(), ignored -> new LinkedHashMap<>())
-                .put(seasonId, items);
+                .put(seasonId, List.of(selectedReward));
         }
 
         String winnerName = ranking.isEmpty() ? null : nameOf(ranking.get(0).getKey());
@@ -316,14 +321,50 @@ public final class BossLeaderboardManager implements Listener {
     private List<ItemStack> configuredRewardItems(int rank) {
         List<ItemStack> items = new ArrayList<>();
         ConfigurationSection rewardSection = settings.getConfigurationSection("rewards.top-" + rank);
-        if (rewardSection == null) return items;
-        for (String id : rewardSection.getKeys(false)) {
-            ConfigurationSection section = rewardSection.getConfigurationSection(id);
-            if (section == null || !section.getBoolean("enabled", false)) continue;
-            ItemStack item = createConfiguredItem(section);
-            if (item != null) items.add(item);
+        if (rewardSection != null) {
+            for (String id : rewardSection.getKeys(false)) {
+                ConfigurationSection section = rewardSection.getConfigurationSection(id);
+                if (section == null || !section.getBoolean("enabled", false)) continue;
+                ItemStack item = createConfiguredItem(section);
+                if (item != null) items.add(item);
+            }
         }
+        addRewardPoolItems(rank, items);
         return items;
+    }
+
+    private void addRewardPoolItems(int rank, List<ItemStack> items) {
+        List<Map<?, ?>> configuredPool = settings.getMapList("rewards.top-" + rank + ".pool");
+        for (int index = 0; index < configuredPool.size(); index++) {
+            Map<?, ?> entry = configuredPool.get(index);
+            if (Boolean.FALSE.equals(entry.get("enabled"))) continue;
+            Object materialValue = entry.get("material");
+            if (!(materialValue instanceof String materialName)) {
+                plugin.getLogger().warning("[Scoreboard] Missing material in rewards.top-" + rank
+                    + ".pool[" + index + "].");
+                continue;
+            }
+            Material material = Material.matchMaterial(materialName);
+            if (material == null || material.isAir()) {
+                plugin.getLogger().warning("[Scoreboard] Invalid reward material '" + materialName
+                    + "' in rewards.top-" + rank + ".pool[" + index + "].");
+                continue;
+            }
+            Object amountValue = entry.get("amount");
+            int amount = amountValue instanceof Number number ? number.intValue() : 1;
+            if (amount < 1 || amount > material.getMaxStackSize()) {
+                plugin.getLogger().warning("[Scoreboard] Invalid amount in rewards.top-" + rank
+                    + ".pool[" + index + "].");
+                continue;
+            }
+            String name = entry.get("name") instanceof String value ? value : null;
+            List<String> lore = entry.get("lore") instanceof List<?> values
+                ? values.stream().filter(String.class::isInstance).map(String.class::cast).toList()
+                : List.of();
+            ItemStack item = new ItemStack(material, amount);
+            applyMetadata(item, name, lore, null, null);
+            items.add(item);
+        }
     }
 
     private ItemStack createConfiguredItem(ConfigurationSection section) {
@@ -363,21 +404,37 @@ public final class BossLeaderboardManager implements Listener {
         refreshAllBoards();
     }
 
+    public void recordBossDamage(Player attacker, double damage) {
+        if (activeBoss == null || attacker == null || !Double.isFinite(damage) || damage <= 0.0) return;
+        UUID id = attacker.getUniqueId();
+        bossDamage.merge(id, damage, Double::sum);
+        playerNames.put(id, attacker.getName());
+        refreshAllBoards();
+    }
+
     public void finishBoss(int level, boolean killed) {
         finishBoss(level, killed ? bossDamage.keySet() : java.util.Set.of());
     }
 
-    public void finishBoss(int level, java.util.Set<UUID> eligiblePlayers) {
-        if (enabled && !bossDamage.isEmpty() && !eligiblePlayers.isEmpty()) {
-            List<Map.Entry<UUID, Double>> contributors = bossDamage.entrySet().stream()
-                .filter(entry -> eligiblePlayers.contains(entry.getKey()))
+    public void finishBoss(int level, java.util.Set<UUID> contributors) {
+        finishBoss(level, bossDamage, contributors);
+    }
+
+    public void finishBoss(int level, Map<UUID, Double> contributionDamage) {
+        finishBoss(level, contributionDamage, contributionDamage.keySet());
+    }
+
+    private void finishBoss(int level, Map<UUID, Double> contributionDamage, java.util.Set<UUID> contributors) {
+        if (enabled && !contributionDamage.isEmpty() && !contributors.isEmpty()) {
+            List<Map.Entry<UUID, Double>> contributionEntries = contributionDamage.entrySet().stream()
+                .filter(entry -> contributors.contains(entry.getKey()))
+                .filter(entry -> Double.isFinite(entry.getValue()) && entry.getValue() > 0.0)
                 .sorted(Map.Entry.<UUID, Double>comparingByValue().reversed())
-                .limit(MAX_BOSS_CONTRIBUTORS)
                 .toList();
-            double totalDamage = contributors.stream().mapToDouble(Map.Entry::getValue).sum();
+            double totalDamage = contributionEntries.stream().mapToDouble(Map.Entry::getValue).sum();
             double pointsToShare = 10.0 * Math.max(1, level);
             if (totalDamage > 0.0) {
-                for (Map.Entry<UUID, Double> contributor : contributors) {
+                for (Map.Entry<UUID, Double> contributor : contributionEntries) {
                     UUID uuid = contributor.getKey();
                     seasonPoints.merge(uuid, pointsToShare * contributor.getValue() / totalDamage, Double::sum);
                     Player player = Bukkit.getPlayer(uuid);
@@ -389,33 +446,6 @@ public final class BossLeaderboardManager implements Listener {
         activeBoss = null;
         bossDamage.clear();
         refreshAllBoards();
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onBossDamage(EntityDamageByEntityEvent event) {
-        if (!(activeBoss instanceof LivingEntity livingBoss) || event.getEntity() != activeBoss) return;
-        double damage = Math.min(event.getFinalDamage(), livingBoss.getHealth());
-        if (!Double.isFinite(damage) || damage <= 0.0) return;
-        Player attacker = playerAttacker(event.getDamager());
-        if (attacker == null) return;
-        UUID id = attacker.getUniqueId();
-        bossDamage.merge(id, damage, Double::sum);
-        playerNames.put(id, attacker.getName());
-        refreshAllBoards();
-    }
-
-    private Player playerAttacker(Entity damager) {
-        Entity source = damager;
-        if (source instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) {
-            source = shooter;
-        }
-        if (source instanceof Player player) return player;
-        String owner = source.getPersistentDataContainer().get(armyOwnerKey, PersistentDataType.STRING);
-        try {
-            return owner == null ? null : Bukkit.getPlayer(UUID.fromString(owner));
-        } catch (IllegalArgumentException exception) {
-            return null;
-        }
     }
 
     @EventHandler
@@ -516,7 +546,7 @@ public final class BossLeaderboardManager implements Listener {
             lines.add("§e§lSát thương boss");
             List<Map.Entry<UUID, Double>> ranking = bossDamage.entrySet().stream()
                 .sorted(Map.Entry.<UUID, Double>comparingByValue().reversed())
-                .limit(MAX_BOSS_CONTRIBUTORS).toList();
+                .limit(MAX_DAMAGE_DISPLAY).toList();
             if (ranking.isEmpty()) lines.add("§7Chưa có sát thương");
             else {
                 for (int index = 0; index < ranking.size(); index++) {

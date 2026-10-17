@@ -18,7 +18,8 @@ public final class TooltipManager {
     private final VnMineHardcore plugin;
     private final File configFile;
     private YamlConfiguration settings;
-    private List<String> tooltips = List.of();
+    private List<String> playerTooltips = List.of();
+    private List<String> adminTooltips = List.of();
     private String mode = "random";
     private int intervalSeconds = 300;
     private int nextIndex;
@@ -46,19 +47,40 @@ public final class TooltipManager {
             plugin.getLogger().severe("[Tooltip] Invalid settings.interval-seconds or settings.mode in tooltips.yml.");
             return false;
         }
-        List<String> messages = loaded.getStringList("tooltips").stream()
+        if (loaded.isList("tooltips")) {
+            List<String> legacy = loaded.getStringList("tooltips");
+            List<String> players = legacy.stream().filter(message -> !isLegacyAdminTooltip(message)).toList();
+            List<String> admins = legacy.stream().filter(TooltipManager::isLegacyAdminTooltip).toList();
+            loaded.set("tooltips", null);
+            loaded.set("tooltips.players", players);
+            loaded.set("tooltips.admins", admins);
+            try {
+                loaded.save(configFile);
+            } catch (IOException exception) {
+                plugin.getLogger().log(Level.SEVERE, "[Tooltip] Could not migrate tooltips.yml.", exception);
+                return false;
+            }
+        }
+        List<String> players = loaded.getStringList("tooltips.players").stream()
             .map(String::trim).filter(value -> !value.isEmpty()).toList();
-        if (messages.isEmpty()) {
-            plugin.getLogger().severe("[Tooltip] tooltips.yml must define at least one non-empty tooltip.");
+        List<String> admins = loaded.getStringList("tooltips.admins").stream()
+            .map(String::trim).filter(value -> !value.isEmpty()).toList();
+        if (players.isEmpty()) {
+            plugin.getLogger().severe("[Tooltip] tooltips.yml must define at least one player tooltip.");
             return false;
         }
         settings = loaded;
         intervalSeconds = interval;
         mode = selection.toLowerCase(Locale.ROOT);
-        tooltips = messages;
-        nextIndex = Math.floorMod(nextIndex, tooltips.size());
+        playerTooltips = players;
+        adminTooltips = admins;
+        nextIndex = Math.floorMod(nextIndex, Math.max(players.size(), admins.size()));
         startTask();
         return true;
+    }
+
+    private static boolean isLegacyAdminTooltip(String message) {
+        return message.contains("/vnevent") || message.contains("/vnboss");
     }
 
     private void startTask() {
@@ -68,15 +90,39 @@ public final class TooltipManager {
     }
 
     private void broadcastNext() {
-        if (tooltips.isEmpty()) return;
-        String message;
-        if (mode.equals("random")) {
-            message = tooltips.get(ThreadLocalRandom.current().nextInt(tooltips.size()));
-        } else {
-            message = tooltips.get(nextIndex);
-            nextIndex = (nextIndex + 1) % tooltips.size();
+        if (playerTooltips.isEmpty()) return;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            List<String> messages = new java.util.ArrayList<>(playerTooltips);
+            if (isAdmin(player)) messages.addAll(adminTooltips);
+            if (messages.isEmpty()) continue;
+            int index = mode.equals("random")
+                ? ThreadLocalRandom.current().nextInt(messages.size())
+                : Math.floorMod(nextIndex, messages.size());
+            player.sendMessage(messages.get(index));
         }
-        for (Player player : Bukkit.getOnlinePlayers()) player.sendMessage(message);
+        if (mode.equals("sequential")) nextIndex++;
+    }
+
+    private boolean isAdmin(Player player) {
+        return player.isOp() || List.of(
+            "vnmine.command.reload",
+            "vnmine.command.disasters",
+            "vnmine.command.bosses",
+            "vnmine.command.utility",
+            "vnmine.command.scoreboard.reset",
+            "vnmine.command.time.manage",
+            "vnmine.command.day.manage",
+            "vnmine.command.spawn.manage",
+            "vnmine.command.teleport.other",
+            "vnmine.command.gamemode",
+            "vnmine.command.fly",
+            "vnmine.command.nodame",
+            "vnmine.command.groups.manage",
+            "vnmine.command.users.manage",
+            "vnmine.command.army.admin",
+            "vnmine.command.death.history"
+        ).stream().anyMatch(permission ->
+            plugin.getPermissionManager().hasPermission(player, permission));
     }
 
     public void stop() {

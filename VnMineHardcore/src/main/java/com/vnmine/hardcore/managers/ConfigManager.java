@@ -218,7 +218,8 @@ public class ConfigManager {
     public double bossRewardDamageThresholdPercent;
     public boolean bossArmyTokenDropEnabled = true;
     public double bossArmyTokenDropChance = 0.30;
-    public double bossExperiencePerLevelMultiplier = 1.0;
+    public int bossExperienceLevelOne = 50;
+    public int bossExperienceLevelTen = 150;
     public String bossEventMinIntervalRaw;
     public int bossEventSpawnRadius;
     public boolean bossLevelProgressionEnabled;
@@ -1171,12 +1172,24 @@ public class ConfigManager {
                 "[EN] Chance to drop 1 token when a player damages the boss; default 30%, valid range 0-1."));
             migrateBossSettings = true;
         }
-        if (!bs.contains("experience-per-level-multiplier")) {
-            bs.set("experience-per-level-multiplier", 1.0);
-            bs.setComments("experience-per-level-multiplier", List.of(
-                "[VI] Hệ số tăng EXP boss theo level; mặc định 1, hợp lệ 0-10.",
-                "[EN] Boss XP scaling by level; default 1, valid range 0-10."));
+        if (!bs.contains("experience-pool.level-1")) {
+            bs.set("experience-pool.level-1", 50);
+            bs.setComments("experience-pool.level-1", List.of(
+                "[VI] Tổng EXP chia cho người chơi gây sát thương khi boss level 1; mặc định 50, hợp lệ 1-1000000.",
+                "[EN] Total XP pool shared among damage contributors for a level-1 boss; default 50, valid range 1-1000000."));
             migrateBossSettings = true;
+        }
+        if (!bs.contains("experience-pool.level-10")) {
+            bs.set("experience-pool.level-10", 150);
+            bs.setComments("experience-pool.level-10", List.of(
+                "[VI] Tổng EXP chia cho người chơi gây sát thương khi boss level 10; mặc định 150, hợp lệ 1-1000000.",
+                "[EN] Total XP pool shared among damage contributors for a level-10 boss; default 150, valid range 1-1000000."));
+            migrateBossSettings = true;
+        }
+        if (bs.contains("experience-per-level-multiplier")) {
+            bs.setComments("experience-per-level-multiplier", List.of(
+                "[VI] Cấu hình cũ, không còn được dùng; EXP hiện lấy từ experience-pool và chia theo sát thương.",
+                "[EN] Legacy setting, no longer used; XP now comes from experience-pool and is shared by damage."));
         }
         if (migrateBossSettings) {
             try {
@@ -1199,8 +1212,17 @@ public class ConfigManager {
             ? Math.max(0.0, Math.min(100.0, rewardDamageThreshold)) : 50.0;
         bossArmyTokenDropEnabled = bs.getBoolean("army-token-drop.enabled", true);
         bossArmyTokenDropChance = readBoundedDouble(bs, "army-token-drop.chance", 0.30, 0.0, 1.0);
-        bossExperiencePerLevelMultiplier = readBoundedDouble(
-            bs, "experience-per-level-multiplier", 1.0, 0.0, 10.0);
+        int levelOneExperience = bs.getInt("experience-pool.level-1", 50);
+        int levelTenExperience = bs.getInt("experience-pool.level-10", 150);
+        if (levelOneExperience < 1 || levelOneExperience > 1_000_000
+                || levelTenExperience < levelOneExperience || levelTenExperience > 1_000_000) {
+            plugin.getLogger().warning("[Boss] Invalid experience-pool range; using defaults 50-150.");
+            bossExperienceLevelOne = 50;
+            bossExperienceLevelTen = 150;
+        } else {
+            bossExperienceLevelOne = levelOneExperience;
+            bossExperienceLevelTen = levelTenExperience;
+        }
         bossArmorPieceDropChance = readBoundedDouble(bs, "reward-items.armor-piece-chance",
             0.10, 0.0, 1.0);
         int armorLevelGap = bs.getInt("reward-items.armor-natural-level-gap", 2);

@@ -562,6 +562,7 @@ public class BossEventManager implements Listener {
         if (Double.isFinite(damage) && damage > 0.0) {
             Player attacker = playerAttacker(event.getDamager());
             bossDamageContributions.merge(attacker.getUniqueId(), damage, Double::sum);
+            leaderboardManager.recordBossDamage(attacker, damage);
             if (currentBoss.getType() == EntityType.PHANTOM) revealPhantom(3000L);
             if (currentBoss.getType() == EntityType.PHANTOM
                     && event.getDamager() instanceof Projectile projectile
@@ -2658,7 +2659,7 @@ public class BossEventManager implements Listener {
         if (currentBoss != null && bossDamageContributions.values().stream().anyMatch(damage -> damage > 0.0)) {
             dropArmySummonToken(currentBoss.getLocation(), currentBossLevel, bc.armyTokenClass);
         }
-        leaderboardManager.finishBoss(currentBossLevel, eligiblePlayers);
+        leaderboardManager.finishBoss(currentBossLevel, Map.copyOf(bossDamageContributions));
         logManager.logDisaster("BOSS: " + bc.displayName +
             (playerEarnedRewards ? " defeated; eligible contributors=" + eligiblePlayers
                 : " died without eligible contribution") +
@@ -2666,26 +2667,54 @@ public class BossEventManager implements Listener {
     }
 
     private void awardBossExperience(ConfigManager.BossConfig bossConfig) {
-        int level = Math.max(1, currentBossLevel);
-        double multiplier = 1.0 + (level - 1) * config.bossExperiencePerLevelMultiplier;
-        int experience = (int) Math.max(1L, Math.min(1_000_000L,
-            Math.round(bossConfig.experience * multiplier)));
+        int level = Math.max(1, Math.min(10, currentBossLevel));
+        int experiencePool = (int) Math.round(config.bossExperienceLevelOne
+            + (config.bossExperienceLevelTen - config.bossExperienceLevelOne) * (level - 1) / 9.0);
+        Map<UUID, Double> onlineContributions = new HashMap<>();
+        for (Map.Entry<UUID, Double> entry : bossDamageContributions.entrySet()) {
+            Player player = Bukkit.getPlayer(entry.getKey());
+            if (entry.getValue() > 0.0 && player != null && player.isOnline()) {
+                onlineContributions.put(entry.getKey(), entry.getValue());
+            }
+        }
+        double totalDamage = onlineContributions.values().stream().mapToDouble(Double::doubleValue).sum();
+        if (totalDamage <= 0.0) return;
+
+        Map<UUID, Integer> experienceShares = new HashMap<>();
+        Map<UUID, Double> fractionalShares = new HashMap<>();
+        int distributedExperience = 0;
+        for (Map.Entry<UUID, Double> entry : onlineContributions.entrySet()) {
+            double exactShare = experiencePool * entry.getValue() / totalDamage;
+            int wholeShare = (int) Math.floor(exactShare);
+            experienceShares.put(entry.getKey(), wholeShare);
+            fractionalShares.put(entry.getKey(), exactShare - wholeShare);
+            distributedExperience += wholeShare;
+        }
+        int remainingExperience = experiencePool - distributedExperience;
+        List<UUID> remainderRecipients = onlineContributions.keySet().stream()
+            .sorted(Comparator.<UUID>comparingDouble(fractionalShares::get).reversed()
+                .thenComparing(UUID::toString))
+            .toList();
+        for (int index = 0; index < remainingExperience; index++) {
+            UUID recipient = remainderRecipients.get(index % remainderRecipients.size());
+            experienceShares.merge(recipient, 1, Integer::sum);
+        }
+
         int playersRewarded = 0;
         int mercenariesRewarded = 0;
-        for (Map.Entry<UUID, Double> entry : bossDamageContributions.entrySet()) {
-            if (entry.getValue() <= 0.0) continue;
+        for (Map.Entry<UUID, Integer> entry : experienceShares.entrySet()) {
             Player player = Bukkit.getPlayer(entry.getKey());
-            if (player == null || !player.isOnline()) continue;
-            player.giveExp(experience);
+            if (player == null || !player.isOnline() || entry.getValue() <= 0) continue;
+            player.giveExp(entry.getValue());
             playersRewarded++;
             if (plugin.getMercenaryManager() != null) {
                 mercenariesRewarded += plugin.getMercenaryManager()
-                    .awardBossExperience(player.getUniqueId(), experience);
+                    .awardBossExperience(player.getUniqueId(), entry.getValue());
             }
-            player.sendMessage("§aBạn nhận được §e" + experience + " EXP§a khi hạ "
+            player.sendMessage("§aBạn nhận được §e" + entry.getValue() + " EXP§a khi hạ "
                 + bossConfig.displayName + ".");
         }
-        logger.info("[BossEvent] Awarded " + experience + " XP to " + playersRewarded
+        logger.info("[BossEvent] Shared " + experiencePool + " XP across " + playersRewarded
             + " contributor(s) and " + mercenariesRewarded + " deployed mercenary unit(s).");
     }
 

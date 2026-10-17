@@ -55,9 +55,13 @@ army-token-drop:
   # [EN] Chance to drop 1 token when a player damages the boss; default 30%, valid range 0-1.
   chance: 0.30
 
-# [VI] Hệ số tăng EXP boss theo level: EXP = exp-boss * (1 + (level - 1) * hệ số); mặc định 1, hợp lệ 0-10.
-# [EN] Boss XP scaling by level: XP = boss exp * (1 + (level - 1) * multiplier); default 1, valid range 0-10.
-experience-per-level-multiplier: 1.0
+# [VI] Tổng EXP boss được chia theo tỷ lệ sát thương; level 1 mặc định 50 EXP, level 10 mặc định 150 EXP.
+#      Hai mốc hợp lệ 1-1000000; giá trị level 1 phải nhỏ hơn hoặc bằng level 10, level giữa nội suy tuyến tính.
+# [EN] Total boss XP shared by damage contribution; defaults to 50 XP at level 1 and 150 XP at level 10.
+#      Both values must be 1-1000000 and level 1 must not exceed level 10; intermediate levels are interpolated linearly.
+experience-pool:
+  level-1: 50
+  level-10: 150
 
 # [VI] Cấu hình chung cho bộ giáp boss; có thể ghi đè tỷ lệ trong armor-set của từng boss.
 # [EN] Shared boss armor reward settings; per-boss armor-set may override the drop chance.

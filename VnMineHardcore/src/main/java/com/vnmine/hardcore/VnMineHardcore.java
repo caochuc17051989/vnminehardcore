@@ -387,43 +387,91 @@ public final class VnMineHardcore extends JavaPlugin {
             sender.sendMessage("§6§m========================================");
             sender.sendMessage("§6§l  VnMineHardcore - Danh sách lệnh");
             sender.sendMessage("§6§m========================================");
-            sender.sendMessage("§e/vnstats §7- Xem thống kê cá nhân (chỉ người chơi).");
-            sender.sendMessage("§e/vnhardcore §7- Xem trạng thái hệ thống (admin).");
-            sender.sendMessage("§e/vn death reset <player> §7- Đặt số lần chết của người chơi về 0 (admin).");
-            sender.sendMessage("§e/vnevent §7- Xem danh sách thiên tai.");
-            sender.sendMessage("§e/vnevent <id> <warning-giây> <duration-giây> §7- Gọi thiên tai (admin).");
-            sender.sendMessage("§e/vnevent stop §7- Dừng thiên tai đang cảnh báo/diễn ra ngay (admin).");
-            sender.sendMessage("§e/vnboss §7- Xem danh sách boss.");
-            sender.sendMessage("§e/vnboss <id> <level> <warning-giây> <duration-giây> §7- Gọi boss (admin).");
-            sender.sendMessage("§e/reward §7- Nhận phần thưởng boss đang chờ; cần đủ chỗ trong túi.");
-            sender.sendMessage("§e/scoreboard reset §7- Xóa điểm mùa và phần thưởng đang chờ (admin).");
-            sender.sendMessage("§e/vnscoreboard reset, /sb reset §7- Bí danh của /scoreboard.");
-            sender.sendMessage("§e/vntime set <day|night> <phút> [world] §7- Đặt thời lượng ngày/đêm toàn cục hoặc theo world (admin).");
-            sender.sendMessage("§e/vnday set <ngày> §7- Đặt world hiện tại về bình minh ngày thứ đó (admin, chỉ người chơi).");
-            sender.sendMessage("§e/tp <user> <world> §7- Đưa người chơi đến điểm spawn của world (admin).");
-            sender.sendMessage("§e/vnspawn set §7- Đặt spawn của world hiện tại tại vị trí đang đứng (admin).");
-            sender.sendMessage("§e/vnspawn go <world> §7- Dịch chuyển bạn đến spawn của world đã chọn (admin).");
-            sender.sendMessage("§e/vnspawn protect <X> §7- Bảo vệ bán kính X block quanh vị trí hiện tại (admin).");
-            sender.sendMessage("§e/vnspawn list §7- Liệt kê các khu vực spawn được bảo vệ (admin).");
-            sender.sendMessage("§e/vnspawn remove <ID> §7- Xóa khu vực spawn được bảo vệ (admin).");
-            sender.sendMessage("§e/vnrespawn §7- Chọn hồi sinh khi đang chờ sau khi chết.");
-            sender.sendMessage("§e/vnleave §7- Thoát máy chủ khi đang chờ sau khi chết.");
-            sender.sendMessage("§e/fly §7- Bật/tắt bay trong Survival (admin, chỉ người chơi).");
-            sender.sendMessage("§e/nodame §7- Bật/tắt miễn sát thương để thử boss (admin, chỉ người chơi).");
-            sender.sendMessage("§e/spawn §7- Dịch chuyển về spawn của world hiện tại (admin, chỉ người chơi).");
-            sender.sendMessage("§e/gm0 /gm1 /gm2 /gm3 §7- Đổi game mode (admin, chỉ người chơi).");
-            sender.sendMessage("§e/vnreload §7- Tải lại config và các hệ thống (admin).");
-            sender.sendMessage("§e/vngroup §7- Liệt kê/tạo/xóa nhóm và chỉnh quyền nhóm (admin).");
-            sender.sendMessage("§e/vnuser §7- Xem, gán nhóm hoặc chỉnh quyền riêng người chơi (admin).");
-            sender.sendMessage("§e/vnarmy §7- Thuê, triệu hồi, nghỉ, chỉnh chế độ và trang bị lính đánh thuê.");
-            sender.sendMessage("§e/vndeathhistory [player] §7- Xem lịch sử chết và khôi phục inventory (admin).");
-            sender.sendMessage("§e/quatanthu §7- Nhận túi quà tân thủ nếu đủ điều kiện.");
-            sender.sendMessage("§e/vnmenu §7- Mở menu chính; phím F cũng mở menu này.");
-            sender.sendMessage("§7  /vnarmy list [user] | hire <loại> <bậc> | recall [ID] | rest [ID]");
-            sender.sendMessage("§7  /vnarmy rename <ID> <tên mới> | gear <ID> | mute <ID> | remove <ID>");
-            sender.sendMessage("§7  /vnarmy attack | defend | protect | remove <user> <ID> | clear <user>");
-            sender.sendMessage("§e/vn help §7- Hướng dẫn lệnh /vn.");
-            sender.sendMessage("§e/vnhelp §7- Hiển thị danh sách lệnh này.");
+            sendHelpLine(sender, "vnmine.command.stats",
+                "§e/vnstats §7- Xem thống kê cá nhân.");
+            sendHelpLine(sender, "vnmine.command.status",
+                "§e/vnhardcore §7- Xem trạng thái hệ thống.");
+            sendHelpLine(sender, "vnmine.command.death.reset",
+                "§e/vn death reset <player> §7- Đặt số lần chết của người chơi về 0.");
+            sendHelpLine(sender, "vnmine.command.disasters",
+                "§e/vnevent §7- Xem danh sách thiên tai.");
+            sendHelpLine(sender, "vnmine.command.disasters",
+                "§e/vnevent <id> <warning-giây> <duration-giây> §7- Gọi thiên tai.");
+            sendHelpLine(sender, "vnmine.command.disasters",
+                "§e/vnevent stop §7- Dừng thiên tai đang cảnh báo/diễn ra.");
+            sendHelpLine(sender, "vnmine.command.bosses", "§e/vnboss §7- Xem danh sách boss.");
+            sendHelpLine(sender, "vnmine.command.bosses",
+                "§e/vnboss <id> <level> <warning-giây> <duration-giây> §7- Gọi boss.");
+            sendHelpLine(sender, "vnmine.command.bosses",
+                "§e/vnboss kill §7- Kết thúc boss, không phát điểm hoặc loot.");
+            sendHelpLine(sender, "vnmine.command.reward",
+                "§e/reward §7- Nhận phần thưởng boss đang chờ; cần đủ chỗ trong túi.");
+            sendHelpLine(sender, "vnmine.command.scoreboard.reset",
+                "§e/scoreboard reset §7- Xóa điểm mùa và phần thưởng đang chờ.");
+            sendHelpLine(sender, "vnmine.command.scoreboard.reset",
+                "§e/vnscoreboard reset, /sb reset §7- Bí danh của /scoreboard.");
+            sendHelpLine(sender, "vnmine.command.time.manage",
+                "§e/vntime set <day|night> <phút> [world] §7- Đặt thời lượng ngày/đêm.");
+            sendHelpLine(sender, "vnmine.command.day.manage",
+                "§e/vnday set <ngày> §7- Đặt world hiện tại về bình minh ngày đó.");
+            sendHelpLine(sender, "vnmine.command.teleport.other",
+                "§e/tp <user> <world> §7- Đưa người chơi đến điểm spawn của world.");
+            sendHelpLine(sender, "vnmine.command.spawn.manage",
+                "§e/vnspawn set §7- Đặt spawn tại vị trí hiện tại.");
+            sendHelpLine(sender, "vnmine.command.spawn.manage",
+                "§e/vnspawn go <world> §7- Dịch chuyển đến spawn của world.");
+            sendHelpLine(sender, "vnmine.command.spawn.manage",
+                "§e/vnspawn protect <X> §7- Bảo vệ bán kính X quanh vị trí hiện tại.");
+            sendHelpLine(sender, "vnmine.command.spawn.manage",
+                "§e/vnspawn list §7- Liệt kê các vùng spawn được bảo vệ.");
+            sendHelpLine(sender, "vnmine.command.spawn.manage",
+                "§e/vnspawn remove <ID> §7- Xóa vùng bảo vệ.");
+            sendHelpLine(sender, "vnmine.command.respawn",
+                "§e/vnrespawn §7- Chọn hồi sinh khi đang chờ sau khi chết.");
+            sendHelpLine(sender, "vnmine.command.leave",
+                "§e/vnleave §7- Thoát máy chủ khi đang chờ sau khi chết.");
+            sendHelpLine(sender, "vnmine.command.fly",
+                "§e/fly §7- Bật/tắt bay trong Survival.");
+            sendHelpLine(sender, "vnmine.command.nodame",
+                "§e/nodame §7- Bật/tắt miễn sát thương để thử boss.");
+            sendHelpLine(sender, "vnmine.command.spawn",
+                "§e/spawn §7- Dịch chuyển về spawn của world hiện tại.");
+            sendHelpLine(sender, "vnmine.command.gamemode",
+                "§e/gm0 /gm1 /gm2 /gm3 §7- Đổi game mode.");
+            sendHelpLine(sender, "vnmine.command.reload",
+                "§e/vnreload §7- Tải lại cấu hình và các hệ thống.");
+            sendHelpLine(sender, "vnmine.command.users.manage",
+                "§e/vnuser info <player> §7- Xem nhóm/quyền người chơi.");
+            sendHelpLine(sender, "vnmine.command.users.manage",
+                "§e/vnuser group <player> <group> §7- Gán nhóm.");
+            sendHelpLine(sender, "vnmine.command.users.manage",
+                "§e/vnuser permission <add|remove> <player> <permission> §7- Chỉnh quyền riêng.");
+            sendHelpLine(sender, "vnmine.command.users.manage",
+                "§e/vnuser reset <player> §7- Đặt lại nhóm mặc định.");
+            sendHelpLine(sender, "vnmine.command.army",
+                "§e/vnarmy §7- Thuê và quản lý lính đánh thuê.");
+            sendHelpLine(sender, "vnmine.command.army",
+                "§7  gui | list | hire <loại> <bậc> | recall [ID] | rest [ID]");
+            sendHelpLine(sender, "vnmine.command.army",
+                "§7  rename <ID> <tên> | gear <ID> | mute <ID> | remove <ID>");
+            sendHelpLine(sender, "vnmine.command.army",
+                "§7  attack | defend | protect | token give <player> <loại> <bậc>");
+            sendHelpLine(sender, "vnmine.command.army.admin",
+                "§7  /vnarmy list <user> | remove <user> <ID> | clear <user>");
+            sendHelpLine(sender, "vnmine.command.army.admin",
+                "§7  /vnarmy give <user> token <bậc> | give <user> army <loại> <bậc>");
+            sendHelpLine(sender, "vnmine.command.groups.manage",
+                "§e/vngroup list|info <group>|create <group>|delete <group> §7- Quản lý nhóm.");
+            sendHelpLine(sender, "vnmine.command.groups.manage",
+                "§e/vngroup permission <add|remove> <group> <permission> §7- Chỉnh quyền nhóm.");
+            sendHelpLine(sender, "vnmine.command.death.history",
+                "§e/vndeathhistory [player] §7- Xem/khôi phục lịch sử inventory lúc chết.");
+            sendHelpLine(sender, null,
+                "§e/quatanthu §7- Nhận túi quà tân thủ nếu đủ điều kiện.");
+            sendHelpLine(sender, null,
+                "§e/vnmenu §7- Mở menu chính; phím F cũng mở menu này.");
+            sendHelpLine(sender, "vnmine.command.utility", "§e/vn help §7- Hướng dẫn lệnh /vn.");
+            sendHelpLine(sender, "vnmine.command.help", "§e/vnhelp §7- Hiển thị trợ giúp theo quyền của bạn.");
             sender.sendMessage("§6§m========================================");
             return true;
         }
@@ -667,6 +715,12 @@ public final class VnMineHardcore extends JavaPlugin {
             return true;
         }
         return false;
+    }
+
+    private void sendHelpLine(CommandSender sender, String permission, String message) {
+        if (permission == null || permissionManager.hasPermission(sender, permission)) {
+            sender.sendMessage(message);
+        }
     }
 
     private boolean handleTeleportToWorldSpawn(CommandSender sender, String[] args) {

@@ -8,11 +8,16 @@ settings:
   # [EN] Selection mode: random or sequential.
   mode: random
 
-# [VI] Danh sách thông báo chức năng; mỗi mục là một tooltip gửi tới người chơi đang online.
-# [EN] Feature reminder list; each entry is sent to currently online players.
+# [VI] Tooltip người chơi; chỉ hiển thị hướng dẫn mà mọi người chơi đều có thể dùng.
+# [EN] Player tooltips; only show instructions available to regular players.
 tooltips:
-  - "§eMẹo: Dùng §a/vnarmy gui §eđể thuê, triệu hồi và quản lý lính đánh thuê."
-  - "§eMẹo: Dùng §a/vnarmy gear <ID> §eđể chỉnh trang bị và kho đồ của lính."
-  - "§eMẹo: Boss có thể rơi lệnh triệu hồi lính; hãy xem Bậc ghi trên vật phẩm."
-  - "§eMẹo: Dùng §a/vnevent §eđể xem các thiên tai có thể gọi."
-  - "§eMẹo: Dùng §a/vnboss §eđể xem lệnh gọi boss dành cho quản trị viên."
+  players:
+    - "§eMẹo: Dùng §a/vnarmy gui §eđể thuê, triệu hồi và quản lý lính đánh thuê."
+    - "§eMẹo: Dùng §a/vnarmy gear <ID> §eđể chỉnh trang bị và kho đồ của lính."
+    - "§eMẹo: Boss có thể rơi lệnh triệu hồi lính; hãy xem Bậc ghi trên vật phẩm."
+    - "§eMẹo: Bấm §aF §ehoặc dùng §a/vnmenu §eđể mở menu chính."
+  # [VI] Tooltip quản trị; chỉ gửi cho OP hoặc người có ít nhất một quyền quản trị của plugin.
+  # [EN] Admin tooltips; sent only to operators or players with at least one plugin admin permission.
+  admins:
+    - "§eMẹo quản trị: Dùng §a/vnevent §eđể xem và gọi thiên tai."
+    - "§eMẹo quản trị: Dùng §a/vnboss §eđể xem và gọi boss."

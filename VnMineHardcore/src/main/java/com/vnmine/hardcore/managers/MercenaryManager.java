@@ -158,10 +158,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean enabled;
     private boolean ownerCommandedPvpEnabled;
     private int maxUnits;
+    private int maxDeployedUnits;
     private double followDistance;
     private double teleportDistance;
     private double targetRadius;
     private double wanderRadius;
+    private boolean requireLineOfSight;
     private int aiIntervalTicks;
     private double healAmount;
     private double healRadius;
@@ -396,6 +398,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
 
             startAiTask();
+            if (enabled) {
+                for (Player player : Bukkit.getOnlinePlayers()) restoreDeployedUnits(player);
+            }
             return true;
         } catch (IOException | InvalidConfigurationException exception) {
             plugin.getLogger().log(Level.SEVERE, "[Army] Could not reload armies.yml; keeping old settings.",
@@ -756,7 +761,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (source instanceof org.bukkit.entity.Projectile projectile
                 && projectile.getShooter() instanceof Entity shooter) source = shooter;
         if (source == null) return;
-        if (experiencePerKill <= 0) return;
+        boolean mercenaryKill = isMercenary(source) || isSummonedMinion(source);
         UUID ownerId = null;
         String unitId = source.getPersistentDataContainer().get(unitKey, PersistentDataType.STRING);
         if (unitId != null) {
@@ -771,10 +776,28 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             if (ownerId == null && source instanceof Player player) ownerId = player.getUniqueId();
         }
         if (ownerId == null) return;
+        if (mercenaryKill) {
+            Player owner = Bukkit.getPlayer(ownerId);
+            int droppedExperience = event.getDroppedExp();
+            if (owner != null && owner.isOnline() && droppedExperience > 0) {
+                owner.giveExp(droppedExperience);
+                event.setDroppedExp(0);
+            }
+        }
+        if (experiencePerKill <= 0) return;
+        List<Unit> recipients = getOwnerUnits(ownerId).stream()
+            .filter(unit -> unit.deployed && unit.recoveryUntilMillis <= System.currentTimeMillis())
+            .sorted(Comparator.comparing(unit -> unit.id.toString()))
+            .toList();
+        if (recipients.isEmpty()) return;
+        int baseShare = experiencePerKill / recipients.size();
+        int remainder = experiencePerKill % recipients.size();
         boolean changed = false;
-        for (Unit unit : getOwnerUnits(ownerId)) {
-            if (!unit.deployed || unit.recoveryUntilMillis > System.currentTimeMillis()) continue;
-            changed |= addExperience(unit, experiencePerKill);
+        for (int index = 0; index < recipients.size(); index++) {
+            Unit unit = recipients.get(index);
+            int share = baseShare + (index < remainder ? 1 : 0);
+            if (share <= 0) continue;
+            changed |= addExperience(unit, share);
         }
         if (changed && !saveData()) {
             plugin.getLogger().warning("[Army] Could not save kill XP for owner " + ownerId + ".");
@@ -803,7 +826,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             && isActiveOwnerAttackTarget(ownerId, target.getUniqueId());
         if (target.getUniqueId().equals(ownerId)
                 || !isAllowedMercenaryTarget(ownerId, target, ownerCommandedTarget)
-                || (!ownerCommandedTarget && isHiddenUndergroundTarget(mob, target))) {
+                || (requireLineOfSight && !mob.hasLineOfSight(target))
+                || isHiddenUndergroundTarget(mob, target)) {
             event.setCancelled(true);
             mob.setTarget(null);
             return;
@@ -1229,10 +1253,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         this.ownerCommandedPvpEnabled =
             loaded.getBoolean("pvp.allow-owner-commanded-targets", true);
         this.maxUnits = readBoundedInt(loaded, "max-units-per-player", 10, 1, 100);
+        this.maxDeployedUnits = readBoundedInt(loaded, "max-summoned-per-player", 3, 1, 10);
         this.followDistance = readBoundedDouble(loaded, "follow-distance-blocks", 8.0, 2.0, 64.0);
         this.teleportDistance = readBoundedDouble(loaded, "teleport-distance-blocks", 40.0, 8.0, 256.0);
         this.targetRadius = readBoundedDouble(loaded, "target-radius-blocks", 50.0, 4.0, 50.0);
         this.wanderRadius = readBoundedDouble(loaded, "ai.wander-radius-blocks", 6.0, 1.0, 32.0);
+        this.requireLineOfSight = loaded.getBoolean("ai.require-line-of-sight", true);
         this.aiIntervalTicks = readBoundedInt(loaded, "ai-interval-ticks", 20, 10, 100);
         this.healAmount = readBoundedDouble(loaded, "skills.heal-amount", 4.0, 0.0, 100.0);
         this.healRadius = readBoundedDouble(loaded, "skills.heal-radius-blocks", 8.0, 1.0, 32.0);
@@ -1702,8 +1728,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     "ranger".equals(unit.unitClass) ? classRadius : targetRadius);
                 default -> null;
             };
-            if (target != null && ("OWNER_ATTACK_TARGET".equals(action)
-                    || !isHiddenUndergroundTarget(mob, target))) return target;
+            if (target != null
+                    && (!requireLineOfSight || mob.hasLineOfSight(target))
+                    && !isHiddenUndergroundTarget(mob, target)) return target;
         }
         return null;
     }
@@ -1771,6 +1798,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             .filter(living -> !living.equals(mob))
             .filter(living -> living.getLocation().distanceSquared(center) <= radius * radius)
             .filter(living -> isAllowedMercenaryTarget(unit.owner, living, false))
+            .filter(living -> !requireLineOfSight || mob.hasLineOfSight(living))
             .filter(living -> !isHiddenUndergroundTarget(mob, living))
             .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(center)))
             .orElse(null);
@@ -1813,7 +1841,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (minionIds == null) return;
         Mob druid = activeEntities.get(unit.id);
         Player owner = Bukkit.getPlayer(unit.owner);
-        for (UUID minionId : minionIds) {
+        for (UUID minionId : List.copyOf(minionIds)) {
             Entity entity = Bukkit.getEntity(minionId);
             if (!(entity instanceof Vex vex) || !vex.isValid() || vex.isDead()) {
                 removeStatusDisplay(minionId);
@@ -1826,10 +1854,14 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 } else {
                     if (vex.getTarget() != null) vex.setTarget(null);
                     if (!vex.getWorld().equals(druid.getWorld())) {
-                        vex.teleport(druid.getLocation().clone().add(0.0, 2.0, 0.0));
-                        vex.setVelocity(new Vector());
-                        vex.getPathfinder().stopPathfinding();
-                    } else if (vex.getLocation().distanceSquared(druid.getLocation()) > 16.0) {
+                        removeStatusDisplay(vex.getUniqueId());
+                        vex.remove();
+                        minionIds.remove(minionId);
+                        continue;
+                    }
+                    double returnRadius = skillOptionDouble(
+                        unit, "SUMMON_VEXES", "follow-radius-blocks", 5.0, 2.0, 16.0);
+                    if (vex.getLocation().distanceSquared(druid.getLocation()) > returnRadius * returnRadius) {
                         vex.getPathfinder().moveTo(druid.getLocation(), 0.6);
                     } else {
                         vex.getPathfinder().stopPathfinding();
@@ -1931,6 +1963,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private void useSkills(Unit unit, Player owner, LivingEntity target) {
         Mob mob = activeEntities.get(unit.id);
+        if (target != null && (mob == null || !mob.isValid() || !target.isValid() || target.isDead()
+                || !mob.getWorld().equals(target.getWorld()) || !mob.hasLineOfSight(target)
+                || isHiddenUndergroundTarget(mob, target))) {
+            if (mob != null && mob.isValid()) mob.setTarget(null);
+            target = null;
+        }
         if (hasSkill(unit, "SUMMON_VEXES") && mob != null && target instanceof Monster hostile
                 && !isMercenary(hostile) && ready(unit, "summon-vexes")) {
             int maximum = maxSummonedMinions(unit);
@@ -2004,7 +2042,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     12, 0.35, 0.5, 0.35, 0.04);
                 for (Entity nearby : hostile.getWorld().getNearbyEntities(hostile.getLocation(), radius, radius, radius)) {
                     if (!(nearby instanceof Monster victim) || !isValidTarget(victim) || isMercenary(victim)) continue;
-                    if (victim.getLocation().distanceSquared(hostile.getLocation()) <= radius * radius) {
+                    if (zombie.hasLineOfSight(victim)
+                            && victim.getLocation().distanceSquared(hostile.getLocation()) <= radius * radius) {
                         victim.damage(damage, zombie);
                         victim.setVelocity(victim.getVelocity().add(chargeDir.clone().multiply(0.35)));
                     }
@@ -2816,23 +2855,29 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             return;
         }
         player.setLevel(levelsBefore - xpCost);
-        Unit unit = new Unit(UUID.randomUUID(), player.getUniqueId(), classId, tier, Mode.PROTECT, true);
+        boolean deployImmediately = deployedUnitCount(player.getUniqueId()) < maxDeployedUnits;
+        Unit unit = new Unit(UUID.randomUUID(), player.getUniqueId(), classId, tier,
+            Mode.PROTECT, deployImmediately);
         Location spawnAt = player.getLocation().clone().add(0.8, 0.0, 0.8);
-        Mob mob = spawnUnit(unit, spawnAt);
-        if (mob == null) {
+        Mob mob = deployImmediately ? spawnUnit(unit, spawnAt) : null;
+        if (deployImmediately && mob == null) {
             player.getInventory().setContents(inventoryBefore);
             player.setLevel(levelsBefore);
             player.sendMessage("§cKhông thể tạo lính; toàn bộ chi phí đã được hoàn lại.");
             return;
         }
         units.put(unit.id, unit);
-        activeEntities.put(unit.id, mob);
-        updateLocation(unit, mob.getLocation());
+        if (mob != null) {
+            activeEntities.put(unit.id, mob);
+            updateLocation(unit, mob.getLocation());
+        }
         if (!saveData()) {
             units.remove(unit.id);
             removeUnitData(unit);
-            activeEntities.remove(unit.id);
-            mob.remove();
+            if (mob != null) {
+                activeEntities.remove(unit.id);
+                mob.remove();
+            }
             player.getInventory().setContents(inventoryBefore);
             player.setLevel(levelsBefore);
             saveData();
@@ -2840,23 +2885,55 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             return;
         }
         player.sendMessage("§aĐã thuê §e" + displayName(unit) + " §aBậc " + tier
-            + " (§7ID " + shortId(unit.id) + "§a). Dùng /vnarmy gear " + shortId(unit.id) + " để trang bị.");
+            + " (§7ID " + shortId(unit.id) + "§a)."
+            + (deployImmediately ? "" : " §7Lính đang nghỉ vì đã đủ giới hạn triệu hồi.")
+            + " Dùng /vnarmy gear " + shortId(unit.id) + " để trang bị.");
     }
 
     private void recall(Player player, String[] args) {
-        List<Unit> owned = selectedUnits(player, args, "recall");
-        if (owned == null) return;
-        if (owned.isEmpty()) {
+        List<Unit> requested = selectedUnits(player, args, "recall");
+        if (requested == null) return;
+        if (requested.isEmpty()) {
             player.sendMessage("§7Bạn chưa sở hữu lính đánh thuê nào.");
             return;
         }
+        boolean summonAll = args.length == 1;
+        List<Unit> candidates = summonAll
+            ? getOwnerUnits(player.getUniqueId()).stream()
+                .filter(unit -> unit.recoveryUntilMillis <= System.currentTimeMillis())
+                .sorted(summonPriority())
+                .limit(maxDeployedUnits)
+                .toList()
+            : requested;
+        Set<UUID> selectedIds = candidates.stream().map(unit -> unit.id)
+            .collect(java.util.stream.Collectors.toSet());
+        if (summonAll) {
+            for (Unit unit : getOwnerUnits(player.getUniqueId())) {
+                if (unit.deployed && unit.recoveryUntilMillis <= System.currentTimeMillis()
+                        && !selectedIds.contains(unit.id)) {
+                    restForQuickRecall(player, unit);
+                }
+            }
+        } else if (candidates.get(0).recoveryUntilMillis <= System.currentTimeMillis()
+                && !candidates.get(0).deployed
+                && deployedUnitCount(player.getUniqueId()) >= maxDeployedUnits) {
+            player.sendMessage("§cBạn đã đạt giới hạn triệu hồi " + maxDeployedUnits
+                + " lính. Hãy cho một lính nghỉ trước.");
+            return;
+        }
+
         int restored = 0;
-        int recovering = 0;
-        for (Unit unit : owned) {
+        int recovering = (int) (summonAll ? getOwnerUnits(player.getUniqueId()).stream()
+            : candidates.stream()).filter(unit -> unit.recoveryUntilMillis > System.currentTimeMillis()).count();
+        for (Unit unit : candidates) {
             if (unit.recoveryUntilMillis > System.currentTimeMillis()) {
-                recovering++;
                 player.sendMessage("§e" + displayName(unit) + " §7đang hồi phục, còn "
                     + remainingRecoverySeconds(unit) + " giây.");
+                continue;
+            }
+            if (!unit.deployed && deployedUnitCount(player.getUniqueId()) >= maxDeployedUnits) {
+                player.sendMessage("§cKhông thể gọi thêm lính: đã đạt giới hạn triệu hồi "
+                    + maxDeployedUnits + ".");
                 continue;
             }
             unit.deployed = true;
@@ -2869,6 +2946,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
             mob.teleport(player.getLocation().clone().add(0.8, 0.0, 0.8));
             mob.setTarget(null);
+            ensurePaladinMounted(unit, mob);
             activeEntities.put(unit.id, mob);
             updateLocation(unit, mob.getLocation());
             restored++;
@@ -2878,16 +2956,23 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             plugin.getLogger().severe("[Army] Could not save recall state for owner " + player.getUniqueId() + ".");
             return;
         }
-        player.sendMessage("§aĐã triệu hồi " + restored + "/" + owned.size() + " lính đánh thuê."
+        player.sendMessage("§aĐã triệu hồi " + restored + "/" + candidates.size() + " lính đánh thuê."
             + (recovering > 0 ? " §7(" + recovering + " đang hồi phục)" : ""));
     }
 
     private void restoreDeployedUnits(Player player) {
         if (!enabled || !player.isOnline()) return;
-        List<Unit> owned = getOwnerUnits(player.getUniqueId());
+        List<Unit> owned = getOwnerUnits(player.getUniqueId()).stream()
+            .filter(unit -> unit.deployed && unit.recoveryUntilMillis <= System.currentTimeMillis())
+            .sorted(summonPriority())
+            .toList();
         boolean changed = false;
-        for (Unit unit : owned) {
-            if (!unit.deployed) continue;
+        for (int index = 0; index < owned.size(); index++) {
+            Unit unit = owned.get(index);
+            if (index >= maxDeployedUnits) {
+                changed |= restForQuickRecall(player, unit);
+                continue;
+            }
             Mob mob = findExistingEntity(unit);
             if (mob == null) mob = spawnUnit(unit, player.getLocation().clone().add(0.8, 0.0, 0.8));
             if (mob == null) {
@@ -2901,6 +2986,48 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
         }
         if (changed || !owned.isEmpty()) saveData();
+    }
+
+    private Comparator<Unit> summonPriority() {
+        return Comparator.comparingInt((Unit unit) -> unit.tier).reversed()
+            .thenComparing(Comparator.comparingInt((Unit unit) -> unit.level).reversed())
+            .thenComparing(unit -> unit.id.toString());
+    }
+
+    private int deployedUnitCount(UUID ownerId) {
+        long now = System.currentTimeMillis();
+        return (int) getOwnerUnits(ownerId).stream()
+            .filter(unit -> unit.deployed && unit.recoveryUntilMillis <= now)
+            .count();
+    }
+
+    private boolean restForQuickRecall(Player player, Unit unit) {
+        Mob mob = activeEntities.get(unit.id);
+        if (mob == null || !mob.isValid()) mob = findExistingEntity(unit);
+        boolean wasDeployed = unit.deployed;
+        boolean previousHorseDead = unit.horseDead;
+        UUID previousEntityId = unit.entityId;
+        if (mob != null && mob.isValid()) {
+            captureEquipment(unit, mob);
+            updateLocation(unit, mob.getLocation());
+        }
+        unit.deployed = false;
+        unit.horseDead = false;
+        unit.entityId = null;
+        if (!saveData()) {
+            unit.deployed = wasDeployed;
+            unit.horseDead = previousHorseDead;
+            unit.entityId = previousEntityId;
+            player.sendMessage("§cKhông thể lưu trạng thái nghỉ của lính §e#" + shortId(unit.id)
+                + "§c; lính vẫn được giữ nguyên.");
+            plugin.getLogger().severe("[Army] Could not save deployment-limit rest for unit " + unit.id + ".");
+            return false;
+        }
+        cleanupSummonedMinions(unit.id);
+        removeMount(unit.id, mob);
+        if (mob != null && mob.isValid()) mob.remove();
+        activeEntities.remove(unit.id);
+        return true;
     }
 
     private void rest(Player player, String[] args) {
@@ -3154,7 +3281,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private void listUnits(Player player) {
         List<Unit> owned = getOwnerUnits(player.getUniqueId());
-        player.sendMessage("§6§lLính đánh thuê §7(" + owned.size() + "/" + maxUnits + ")");
+        player.sendMessage("§6§lLính đánh thuê §7(Sở hữu " + owned.size() + "/" + maxUnits
+            + " | Đang gọi " + deployedUnitCount(player.getUniqueId()) + "/" + maxDeployedUnits + ")");
         if (owned.isEmpty()) {
             player.sendMessage("§7Thuê lính bằng /vnarmy hire <loại> <bậc>.");
             return;
@@ -3839,7 +3967,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         ArmyMenuHolder holder = new ArmyMenuHolder(player.getUniqueId(), safePage, pageIds);
         Inventory inventory = Bukkit.createInventory(holder, 54, "Đội quân • " + (safePage + 1) + "/" + pages);
         holder.inventory = inventory;
-        inventory.setItem(2, menuItem(Material.WOODEN_SWORD, "§aTriệu hồi tất cả", List.of("§7Gọi tất cả lính ra chiến.")));
+        inventory.setItem(2, menuItem(Material.WOODEN_SWORD, "§aTriệu hồi đội hình",
+            List.of("§7Gọi tối đa " + maxDeployedUnits + " lính.",
+                "§7Ưu tiên bậc cao nhất, sau đó level cao nhất.")));
         inventory.setItem(4, menuItem(Material.EMERALD, "§aThuê lính", List.of("§7Chọn lớp và Bậc.")));
         inventory.setItem(6, menuItem(Material.RED_BED, "§7Nghỉ tất cả", List.of("§7Cho tất cả lính nghỉ ngơi.")));
         for (int index = 0; index < pageIds.size(); index++) {
@@ -4609,16 +4739,28 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 captureEquipment(unit, mob);
                 updateLocation(unit, mob.getLocation());
             }
+            boolean previousHorseDead = unit.horseDead;
+            UUID previousEntityId = unit.entityId;
             unit.entityId = null;
             unit.deployed = false;
+            unit.horseDead = false;
             if (!saveData()) {
                 unit.deployed = true;
+                unit.horseDead = previousHorseDead;
+                unit.entityId = previousEntityId;
                 player.sendMessage("§cKhông thể lưu trạng thái lính; hãy thử lại.");
                 return;
             }
+            cleanupSummonedMinions(unit.id);
+            removeMount(unit.id, mob);
             Mob removed = activeEntities.remove(unit.id);
             if (removed == null) removed = mob;
             if (removed != null && removed.isValid()) removed.remove();
+            return;
+        }
+        if (deployedUnitCount(player.getUniqueId()) >= maxDeployedUnits) {
+            player.sendMessage("§cBạn đã đạt giới hạn triệu hồi " + maxDeployedUnits
+                + " lính. Hãy cho một lính nghỉ trước.");
             return;
         }
         unit.deployed = true;
@@ -4629,6 +4771,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             player.sendMessage("§cKhông thể triệu hồi lính này.");
             return;
         }
+        ensurePaladinMounted(unit, mob);
         activeEntities.put(unit.id, mob);
         updateLocation(unit, mob.getLocation());
         if (!saveData()) {
@@ -4965,26 +5108,35 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 sender.sendMessage("§cNgười chơi đã đạt giới hạn " + maxUnits + " lính.");
                 return true;
             }
-            Unit unit = new Unit(UUID.randomUUID(), target.getUniqueId(), classId, level, Mode.PROTECT, true);
-            Mob mob = spawnUnit(unit, safeLocation(target.getLocation()));
-            if (mob == null) {
+            boolean deployImmediately = deployedUnitCount(target.getUniqueId()) < maxDeployedUnits;
+            Unit unit = new Unit(UUID.randomUUID(), target.getUniqueId(), classId, level,
+                Mode.PROTECT, deployImmediately);
+            Mob mob = deployImmediately ? spawnUnit(unit, safeLocation(target.getLocation())) : null;
+            if (deployImmediately && mob == null) {
                 sender.sendMessage("§cKhông thể tạo lính; kiểm tra cấu hình entity.");
                 return true;
             }
             units.put(unit.id, unit);
-            activeEntities.put(unit.id, mob);
-            updateLocation(unit, mob.getLocation());
+            if (mob != null) {
+                activeEntities.put(unit.id, mob);
+                updateLocation(unit, mob.getLocation());
+            }
             if (!saveData()) {
                 units.remove(unit.id);
-                activeEntities.remove(unit.id);
-                mob.remove();
+                if (mob != null) {
+                    activeEntities.remove(unit.id);
+                    mob.remove();
+                }
                 removeUnitData(unit);
                 saveData();
                 sender.sendMessage("§cKhông thể lưu lính; chưa hoàn tất việc cấp.");
                 return true;
             }
-            sender.sendMessage("§aĐã cấp " + displayName(unit) + " tier " + level + " cho §e" + target.getName() + "§a.");
-            target.sendMessage("§aBạn được cấp " + displayName(unit) + " tier " + level + "§a.");
+            String deploymentMessage = deployImmediately ? "" : " (đang nghỉ do đã đủ giới hạn triệu hồi)";
+            sender.sendMessage("§aĐã cấp " + displayName(unit) + " tier " + level + " cho §e"
+                + target.getName() + "§a" + deploymentMessage + ".");
+            target.sendMessage("§aBạn được cấp " + displayName(unit) + " tier " + level
+                + "§a" + deploymentMessage + ".");
             return true;
         }
         sender.sendMessage("§eDùng: /vnarmy give <người chơi> <token> <tier>");
@@ -5691,7 +5843,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         sender.sendMessage("§e/vnarmy gui §7- Mở giao diện quản lý đội quân.");
         sender.sendMessage("§e/vnarmy list [user] §7- Xem đội quân của bạn; admin có thể xem người chơi khác.");
         sender.sendMessage("§e/vnarmy hire <loại> <bậc> §7- Thuê bằng token, XP và vật phẩm.");
-        sender.sendMessage("§e/vnarmy recall [ID] | rest [ID] §7- Gọi/nghỉ toàn đội hoặc một lính.");
+        sender.sendMessage("§e/vnarmy recall [ID] | rest [ID] §7- Gọi tối đa " + maxDeployedUnits
+            + " lính bậc/level cao nhất hoặc gọi/nghỉ một lính.");
         sender.sendMessage("§e/vnarmy rename <ID> <tên mới> §7- Đổi tên lính.");
         sender.sendMessage("§e/vnarmy attack | defend | protect §7- Đổi xu hướng AI của cả đội.");
         sender.sendMessage("§e/vnarmy gear <ID> §7- Mở kho trang bị cho một lính.");
@@ -5705,7 +5858,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         sender.sendMessage("§7Loại lính: " + String.join(", ", getClassIds()));
         sender.sendMessage("§7Bậc thuê: " + String.join(", ", getTierIds())
-            + " §8| §7Cấp tối đa: §f" + maxLevel + " §8| §7Giới hạn đội: §f" + maxUnits);
+            + " §8| §7Cấp tối đa: §f" + maxLevel + " §8| §7Sở hữu: §f" + maxUnits
+            + " §8| §7Triệu hồi: §f" + maxDeployedUnits);
     }
 
     public void stop() {

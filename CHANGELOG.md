@@ -1,5 +1,31 @@
 # Changelog
 
+## [v1.39.2] - 2026-10-17
+
+### Fixed
+- Ngăn kỹ năng lính đánh thuê tác động tức thời lên mục tiêu sau vật cản hoặc bị che dưới địa hình; kiểm tra tầm nhìn lại ngay khi thi triển thay vì chỉ lúc chọn mục tiêu.
+
+## [v1.39.1] - 2026-10-17
+
+### Fixed
+- Khắc phục leaderboard sát thương boss không cập nhật khi boss dùng máu ảo làm hủy sự kiện damage; giờ bảng nhận sát thương từ cùng luồng đã xác nhận đóng góp của boss.
+
+## [v1.39.0] - 2026-10-17
+
+### Added
+- Thêm giới hạn triệu hồi đồng thời cho lính đánh thuê (mặc định 3, cấu hình riêng với giới hạn sở hữu); gọi cả đội ưu tiên bậc rồi level cao nhất.
+- Mở rộng mỗi hạng top-1 đến top-10 thành pool khoảng 20 phần thưởng và chọn/lưu đúng một món ngẫu nhiên mỗi mùa.
+- Tách tooltip người chơi và quản trị; `/vnhelp` lọc từng lệnh theo quyền và tooltip hướng dẫn phím F/`/vnmenu`.
+
+### Changed
+- Chia tổng EXP boss theo tỷ lệ sát thương, từ 50 EXP ở level 1 đến 150 EXP ở level 10; điểm mùa cũng chia theo tỷ lệ đóng góp cho mọi người gây sát thương.
+- EXP mob cấp cho lính đang triệu hồi được chia đều, phần dư phân phối ổn định theo ID; chủ nhân tiếp tục nhận EXP mob.
+- Đổi chu kỳ reset leaderboard mặc định thành 100 ngày trong game; ngưỡng damage boss chỉ còn áp dụng cho vật phẩm.
+
+### Fixed
+- Ngăn lính đánh dân làng/thực thể thụ động và mục tiêu ngoài tầm nhìn theo cấu hình AI mặc định.
+- Cho kỵ sĩ được gọi lại riêng lẻ tạo và gắn ngựa; VEX bay về trong bán kính cấu hình quanh Tu sĩ rừng thay vì dịch chuyển khác world.
+
 ## [v1.38.4] - 2026-10-16
 
 ### Fixed
