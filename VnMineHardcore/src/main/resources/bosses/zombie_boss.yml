@@ -8,7 +8,7 @@ display-name: "§2§lZombie Boss"
 # [VI] Class lính của token boss; bậc token theo level boss.
 # [EN] Mercenary class for this boss token; token tier follows the boss level.
 army-token-class: guardian
-hp: 150
+hp: 1100
 damage-multiplier: 1.5
 # [VI] EXP thưởng cơ bản level 1; mặc định 200, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
 # [EN] Base XP reward at level 1; default 200, valid range 1-1000000; boss level scaling is in _settings.yml.
@@ -25,16 +25,16 @@ activity-radius: 100 # Max horizontal distance from this boss's spawn location (
 # [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
 # damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
 hp-by-level:
-  1: 150
-  2: 225
-  3: 338
-  4: 507
-  5: 760
-  6: 1140
-  7: 1710
-  8: 2565
-  9: 3848
-  10: 5772
+  1: 1100
+  2: 2400
+  3: 3900
+  4: 5400
+  5: 6900
+  6: 8400
+  7: 9800
+  8: 12800
+  9: 15900
+  10: 19000
 skills:
   ground-slam:
     enabled: true

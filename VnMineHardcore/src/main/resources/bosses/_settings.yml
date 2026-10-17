@@ -62,9 +62,9 @@ experience-per-level-multiplier: 1.0
 # [VI] Cấu hình chung cho bộ giáp boss; có thể ghi đè tỷ lệ trong armor-set của từng boss.
 # [EN] Shared boss armor reward settings; per-boss armor-set may override the drop chance.
 reward-items:
-  # [VI] Tỷ lệ rơi riêng cho mỗi món giáp; mặc định 45%, hợp lệ 0-1.
-  # [EN] Drop chance for each armor piece; default 45%, valid range 0-1.
-  armor-piece-chance: 0.45
+  # [VI] Tỷ lệ rơi độc lập cho mỗi món giáp; mặc định 10%, hợp lệ 0-1.
+  # [EN] Independent drop chance for each armor piece; default 10%, valid range 0-1.
+  armor-piece-chance: 0.10
 
   # [VI] Cấp phù phép giáp level 1 thấp hơn mức tự nhiên; mặc định thấp hơn 2 cấp, hợp lệ 0-5.
   # [EN] Level-1 armor enchants start below vanilla maximum; default gap 2, valid range 0-5.
@@ -74,9 +74,13 @@ reward-items:
   # [EN] Enchantment growth per boss level; default 0.8, valid range 0-5.
   enchant-levels-per-boss-level: 0.8
 
-  # [VI] Giới hạn enchant tối đa cho giáp boss; mặc định 10, hợp lệ 1-255.
-  # [EN] Maximum boss armor enchant level; default 10, valid range 1-255.
-  maximum-enchant-level: 10
+  # [VI] Trần enchant cấu hình cho giáp boss; mặc định V, hợp lệ 1-255.
+  # [EN] Configured enchantment cap for boss armor; default V, valid range 1-255.
+  maximum-enchant-level: 5
+
+  # [VI] Cho phép enchant chính ngực/ủng vượt trần vanilla; chỉ áp dụng đến trần phía trên.
+  # [EN] Allow primary chest/boot enchants above vanilla maximum, limited by the cap above.
+  allow-over-vanilla-enchants: true
 
 # [VI] Tiến trình cấp độ boss dựa theo ngày trong game, tăng dần đến level 10.
 #      Ngày 0 là từ lúc bắt đầu thế giới. Mỗi mốc chọn ngẫu nhiên một level

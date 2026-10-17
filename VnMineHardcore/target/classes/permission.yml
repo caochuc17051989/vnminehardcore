@@ -35,6 +35,7 @@ groups:
       - vnmine.command.bosses
       - vnmine.command.utility
       - vnmine.command.death.reset
+      - vnmine.command.death.history
       - vnmine.command.reward
       - vnmine.command.respawn
       - vnmine.command.leave

@@ -8,7 +8,7 @@ display-name: "§5§lEnderman Boss"
 # [VI] Class lính của token boss; bậc token theo level boss.
 # [EN] Mercenary class for this boss token; token tier follows the boss level.
 army-token-class: ranger
-hp: 180
+hp: 1150
 damage-multiplier: 2.2
 # [VI] EXP thưởng cơ bản level 1; mặc định 300, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
 # [EN] Base XP reward at level 1; default 300, valid range 1-1000000; boss level scaling is in _settings.yml.
@@ -25,16 +25,16 @@ activity-radius: 100 # Max horizontal distance from this boss's spawn location (
 # [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
 # damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
 hp-by-level:
-  1: 180
-  2: 270
-  3: 405
-  4: 608
-  5: 912
-  6: 1368
-  7: 2052
-  8: 3078
-  9: 4617
-  10: 6926
+  1: 1150
+  2: 2450
+  3: 3950
+  4: 5450
+  5: 6950
+  6: 8450
+  7: 9950
+  8: 12900
+  9: 16000
+  10: 19000
 # [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
 #      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
 #      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
@@ -154,6 +154,20 @@ armor-set:
     1: IRON
     4: DIAMOND
     7: NETHERITE
+  piece-names:
+    helmet: "Mũ Mắt Tím"
+    chestplate: "Áo Khe Nứt"
+    leggings: "Quần Bước Không Gian"
+    boots: "Ủng Lối End"
+  enchantments:
+    helmet: [protection, respiration, unbreaking]
+    chestplate: [protection, unbreaking, thorns]
+    leggings: [protection, swift_sneak, unbreaking]
+    boots: [protection, feather_falling, soul_speed, depth_strider]
+  bonuses:
+    2: {damage-reduction-percent: 0.10, damage-causes: [FALL]}
+    3: {damage-reduction-percent: 0.15, damage-causes: [FALL]}
+    4: {damage-reduction-percent: 0.20, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK]}
 
 level-drops:
   1:

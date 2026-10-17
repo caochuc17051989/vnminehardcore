@@ -44,6 +44,7 @@ public class BossEventManager implements Listener {
 
     private final VnMineHardcore plugin;
     private final NamespacedKey armyOwnerKey;
+    private final NamespacedKey bossArmorSetKey;
     private final ConfigManager config;
     private final LogManager logManager;
     private final BossLeaderboardManager leaderboardManager;
@@ -82,6 +83,10 @@ public class BossEventManager implements Listener {
     private long giantWanderUntilMs;
     private BukkitTask aiTask;
     private int currentBossLevel = 1;
+    private double logicalBossMaxHealth;
+    private double logicalBossHealth;
+    private boolean bossUsesVirtualHealth;
+    private final Map<EntityDamageByEntityEvent, Double> virtualHealthDamageEvents = new IdentityHashMap<>();
     private long nextCreeperExplosionAtMs;
     private BukkitTask creeperChargeTask;
     private final Map<String, Long> bossSkillCooldowns = new HashMap<>();
@@ -97,11 +102,12 @@ public class BossEventManager implements Listener {
     private final Map<UUID, Location> splitFireballs = new HashMap<>();
     private final Map<UUID, Long> ravagerThornsCooldowns = new HashMap<>();
     private final Map<UUID, Long> spinDamageCooldowns = new HashMap<>();
+    private final Map<UUID, Long> armorKillHealCooldowns = new HashMap<>();
     private final Map<BlockPosition, TemporaryBlock> temporaryBlocks = new HashMap<>();
     private final Set<BlockPosition> playerModifiedTemporaryBlocks = new HashSet<>();
     private final Map<UUID, Long> phantomRevealedUntil = new HashMap<>();
     private boolean spiderBroodReleased;
-    private static final double MAX_BOSS_HEALTH = 1024.0;
+    private static final double MAX_CONFIGURED_BOSS_HEALTH = 1_000_000_000.0;
 
     private record BossProjectileConfig(double damage, double radius, boolean splashOnImpact) { }
     private record BlockPosition(UUID worldId, int x, int y, int z) { }
@@ -110,6 +116,7 @@ public class BossEventManager implements Listener {
     public BossEventManager(VnMineHardcore plugin, ConfigManager config) {
         this.plugin = plugin;
         this.armyOwnerKey = new NamespacedKey(plugin, "army_owner");
+        this.bossArmorSetKey = new NamespacedKey(plugin, "boss_armor_set");
         this.config = config;
         this.logManager = plugin.getLogManager();
         this.leaderboardManager = plugin.getBossLeaderboardManager();
@@ -237,7 +244,7 @@ public class BossEventManager implements Listener {
         if (bc == null) return 1.0;
         if (bc.hpByLevel != null && !bc.hpByLevel.isEmpty()) {
             Double exact = bc.hpByLevel.get(level);
-            if (isValidBossHealth(exact)) return Math.min(MAX_BOSS_HEALTH, exact);
+            if (isValidBossHealth(exact)) return exact;
             Integer bestLevel = null;
             Double bestHp = null;
             for (Map.Entry<Integer, Double> entry : bc.hpByLevel.entrySet()) {
@@ -247,16 +254,20 @@ public class BossEventManager implements Listener {
                     bestHp = entry.getValue();
                 }
             }
-            if (bestHp != null) return Math.min(MAX_BOSS_HEALTH, bestHp);
+            if (bestHp != null) return bestHp;
         }
         double baseHp = isValidBossHealth(bc.hp) ? bc.hp : 1.0;
         double scaledHp = baseHp * Math.pow(1.5, Math.max(0, level - 1));
-        if (!Double.isFinite(scaledHp)) return MAX_BOSS_HEALTH;
-        return Math.max(1.0, Math.min(MAX_BOSS_HEALTH, scaledHp));
+        if (!Double.isFinite(scaledHp) || scaledHp > MAX_CONFIGURED_BOSS_HEALTH) {
+            logger.warning("[BossEvent] Calculated boss HP is invalid or exceeds "
+                + MAX_CONFIGURED_BOSS_HEALTH + "; using " + MAX_CONFIGURED_BOSS_HEALTH + " HP.");
+            return MAX_CONFIGURED_BOSS_HEALTH;
+        }
+        return Math.max(1.0, scaledHp);
     }
 
     private boolean isValidBossHealth(Double hp) {
-        return hp != null && Double.isFinite(hp) && hp > 0.0;
+        return hp != null && Double.isFinite(hp) && hp > 0.0 && hp <= MAX_CONFIGURED_BOSS_HEALTH;
     }
 
     private double safeSkillValue(double value, double fallback, double minimum, double maximum) {
@@ -493,6 +504,20 @@ public class BossEventManager implements Listener {
             event.setCancelled(true);
             return;
         }
+        if (bossUsesVirtualHealth) {
+            double appliedDamage = Math.min(logicalBossHealth, Math.max(0.0, event.getFinalDamage()));
+            virtualHealthDamageEvents.put(damageEvent, appliedDamage);
+            logicalBossHealth = Math.max(0.0, logicalBossHealth - appliedDamage);
+            if (logicalBossHealth <= 0.0) {
+                event.setDamage(Math.max(1.0, currentBoss.getHealth() + currentBoss.getMaxHealth()));
+                return;
+            }
+            event.setCancelled(true);
+            currentBoss.setHealth(Math.max(1.0, currentBoss.getMaxHealth()
+                * logicalBossHealth / logicalBossMaxHealth));
+            updateBossDisplay(currentBossName, Math.max(0, bossDurationSeconds - bossElapsedSeconds));
+            return;
+        }
         if (currentBoss.getType() == EntityType.GIANT && traitEnabled(activeBossConfig, "giant-armor", true)) {
             boolean headshot = damageEvent.getDamager() instanceof Arrow projectile
                 && projectile.getShooter() instanceof Player
@@ -526,11 +551,14 @@ public class BossEventManager implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onBossPlayerDamage(EntityDamageByEntityEvent event) {
         if (currentBoss == null || event.getEntity() != currentBoss
                 || playerAttacker(event.getDamager()) == null) return;
-        double damage = Math.min(event.getFinalDamage(), currentBoss.getHealth());
+        Double virtualDamage = virtualHealthDamageEvents.remove(event);
+        if (event.isCancelled() && virtualDamage == null) return;
+        double damage = virtualDamage != null ? virtualDamage
+            : Math.min(event.getFinalDamage(), currentBoss.getHealth());
         if (Double.isFinite(damage) && damage > 0.0) {
             Player attacker = playerAttacker(event.getDamager());
             bossDamageContributions.merge(attacker.getUniqueId(), damage, Double::sum);
@@ -569,6 +597,42 @@ public class BossEventManager implements Listener {
         if (currentBoss == event.getEntity()) event.setDroppedExp(0);
         if (currentBoss == event.getEntity() && getRewardEligiblePlayers().isEmpty()) {
             event.getDrops().clear();
+        }
+        Player killer = event.getEntity().getKiller();
+        if (killer != null && !bossSummons.contains(event.getEntity().getUniqueId())
+                && event.getEntity().getType().name().matches(
+                    "ZOMBIE|HUSK|DROWNED|ZOMBIE_VILLAGER|SKELETON|STRAY|WITHER_SKELETON|PHANTOM|ZOGLIN|ZOMBIFIED_PIGLIN|WITHER")) {
+            long now = System.currentTimeMillis();
+            if (armorKillHealCooldowns.getOrDefault(killer.getUniqueId(), 0L) <= now) {
+                for (ConfigManager.BossConfig boss : config.bossConfigs.values()) {
+                    if (boss.armorSet == null || boss.armorSet.storyId == null
+                            || countArmorSetPieces(killer, boss.armorSet.storyId) < 4) continue;
+                    ConfigManager.BossArmorBonusConfig bonus = boss.armorSet.bonuses.get(4);
+                    if (bonus == null || bonus.healOnUndeadKill <= 0.0) continue;
+                    killer.setHealth(Math.min(killer.getMaxHealth(), killer.getHealth() + bonus.healOnUndeadKill));
+                    armorKillHealCooldowns.put(killer.getUniqueId(), now + bonus.healCooldownSeconds * 1000L);
+                    break;
+                }
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBossArmorSetDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        double reduction = 0.0;
+        for (ConfigManager.BossConfig boss : config.bossConfigs.values()) {
+            if (boss.armorSet == null || boss.armorSet.storyId == null) continue;
+            int pieces = countArmorSetPieces(player, boss.armorSet.storyId);
+            ConfigManager.BossArmorBonusConfig bonus = highestArmorSetBonus(boss.armorSet, pieces);
+            if (bonus == null || bonus.damageReductionPercent <= reduction) continue;
+            if (bonus.damageCauses.isEmpty() || bonus.damageCauses.contains(event.getCause().name())) {
+                reduction = bonus.damageReductionPercent;
+            }
+        }
+        if (reduction > 0.0) {
+            event.setDamage(Math.max(0.0, event.getDamage()
+                - event.getFinalDamage() * Math.min(1.0, reduction)));
         }
     }
 
@@ -1842,8 +1906,9 @@ public class BossEventManager implements Listener {
 
     private void updateBossDisplay(String displayName, int secondsRemaining) {
         if (currentBoss == null || !currentBoss.isValid() || currentBoss.isDead()) return;
-        double maximum = Math.max(1.0, currentBoss.getMaxHealth());
-        double health = Math.max(0.0, Math.min(maximum, currentBoss.getHealth()));
+        double maximum = bossUsesVirtualHealth ? logicalBossMaxHealth : Math.max(1.0, currentBoss.getMaxHealth());
+        double health = bossUsesVirtualHealth ? logicalBossHealth : currentBoss.getHealth();
+        health = Math.max(0.0, Math.min(maximum, health));
         currentBoss.setCustomName(displayName + " §8[Lv." + currentBossLevel + "] §c"
             + String.format(java.util.Locale.US, "%.0f", health) + "/"
             + String.format(java.util.Locale.US, "%.0f", maximum) + " HP");
@@ -2048,6 +2113,9 @@ public class BossEventManager implements Listener {
         }
         double effectiveHp = resolveBossHp(bc, currentBossLevel);
         currentBossName = bc.displayName;
+        logicalBossMaxHealth = effectiveHp;
+        logicalBossHealth = effectiveHp;
+        bossUsesVirtualHealth = false;
         try {
             if (currentBoss.getAttribute(Attribute.MAX_HEALTH) != null) {
                 currentBoss.getAttribute(Attribute.MAX_HEALTH).setBaseValue(effectiveHp);
@@ -2055,11 +2123,18 @@ public class BossEventManager implements Listener {
                 currentBoss.setMaxHealth(effectiveHp);
             }
         } catch (IllegalArgumentException exception) {
-            effectiveHp = Math.min(effectiveHp, currentBoss.getMaxHealth());
-            logger.warning("[BossEvent] Unable to set boss max health; using " + effectiveHp + " HP");
+            logger.warning("[BossEvent] Runtime rejected " + effectiveHp + " max HP for " + bc.displayName
+                + "; using virtual health pool with entity max HP " + currentBoss.getMaxHealth() + ".");
         }
-        effectiveHp = Math.max(1.0, Math.min(MAX_BOSS_HEALTH, Math.min(effectiveHp, currentBoss.getMaxHealth())));
-        currentBoss.setHealth(effectiveHp);
+        double entityMaximum = currentBoss.getMaxHealth();
+        if (entityMaximum + 0.001 < effectiveHp) {
+            bossUsesVirtualHealth = true;
+            logger.warning("[BossEvent] Runtime max-health attribute is " + entityMaximum + " HP, below configured "
+                + effectiveHp + " HP for " + bc.displayName + "; virtual health pool enabled.");
+            currentBoss.setHealth(entityMaximum);
+        } else {
+            currentBoss.setHealth(effectiveHp);
+        }
         bossRewardThresholdHealth = effectiveHp;
         currentBoss.setCustomNameVisible(true);
         currentBoss.setGlowing(true);
@@ -2652,13 +2727,18 @@ public class BossEventManager implements Listener {
             {"LEGGINGS", "Quần Giáp"},
             {"BOOTS", "Ủng"}
         };
-        List<String> lore = config.getBossItemStory(armorSet.storyId, level);
-        if (lore.isEmpty()) {
-            logger.warning("[BossEvent] Armor set story is unavailable: " + armorSet.storyId);
-            return;
-        }
+        List<String> fallbackLore = config.getBossItemStory(armorSet.storyId, level);
         for (String[] piece : pieces) {
             if (random.nextDouble() >= armorSet.dropChance) continue;
+            String slot = piece[0].toLowerCase(Locale.ROOT);
+            ConfigManager.BossArmorPieceStory pieceStory = config.getBossArmorPieceStory(
+                armorSet.storyId, slot, level);
+            List<String> lore = pieceStory == null || pieceStory.lore.isEmpty()
+                ? fallbackLore : pieceStory.lore;
+            if (lore.isEmpty()) {
+                logger.warning("[BossEvent] Armor set story is unavailable for " + armorSet.storyId + ":" + slot);
+                continue;
+            }
             Material material = Material.matchMaterial(materialTier + "_" + piece[0]);
             if (material == null || material.isAir()) {
                 logger.warning("[BossEvent] Invalid armor material tier '" + materialTier +
@@ -2666,11 +2746,21 @@ public class BossEventManager implements Listener {
                 continue;
             }
             ItemStack item = new ItemStack(material);
-            String itemName = armorSet.name + " " + piece[1] + " · Cấp " + level;
+            String configuredName = pieceStory == null || pieceStory.itemName == null
+                ? armorSet.pieceNames.getOrDefault(piece[0], piece[1]) : pieceStory.itemName;
+            String itemName = configuredName + " · Cấp " + level;
             BossLeaderboardManager.applyMetadata(item, itemName, lore, null, null);
-            for (String enchantment : armorEnchantments(piece[0])) {
-                int enchantmentLevel = armorEnchantmentLevel(enchantment, level);
-                addConfiguredEnchantment(item, enchantment, enchantmentLevel, false);
+            ItemMeta meta = item.getItemMeta();
+            meta.getPersistentDataContainer().set(bossArmorSetKey,
+                PersistentDataType.STRING, armorSet.storyId);
+            item.setItemMeta(meta);
+            List<String> enchants = armorSet.enchantmentsBySlot.getOrDefault(piece[0],
+                armorEnchantments(piece[0]));
+            int enchantCount = Math.min(4, level == 1 ? 2 : level == 2 ? 3 : 4);
+            for (int index = 0; index < Math.min(enchantCount, enchants.size()); index++) {
+                String enchantment = enchants.get(index);
+                int enchantmentLevel = armorEnchantmentLevel(enchantment, slot, index, level);
+                addArmorEnchantment(item, enchantment, enchantmentLevel);
             }
             dropItemsNaturally(currentBoss.getLocation(), item, 1);
         }
@@ -2686,7 +2776,7 @@ public class BossEventManager implements Listener {
         };
     }
 
-    private int armorEnchantmentLevel(String enchantmentKey, int bossLevel) {
+    private int armorEnchantmentLevel(String enchantmentKey, String slot, int enchantIndex, int bossLevel) {
         Enchantment enchantment;
         try {
             enchantment = Enchantment.getByKey(NamespacedKey.minecraft(enchantmentKey));
@@ -2697,11 +2787,61 @@ public class BossEventManager implements Listener {
             logger.warning("[BossEvent] Unknown armor enchantment: " + enchantmentKey);
             return 0;
         }
+        if (bossLevel <= 3) return 1;
+        if ((slot.equals("CHESTPLATE") || slot.equals("BOOTS")) && enchantIndex == 0) {
+            return bossLevel <= 7 ? bossLevel - 2 : 5;
+        }
         int naturalMaximum = enchantment.getMaxLevel();
-        if (naturalMaximum <= 2) return naturalMaximum;
-        int initialLevel = Math.max(1, naturalMaximum - config.bossArmorNaturalLevelGap);
-        int levelBonus = (int) Math.floor((bossLevel - 1) * config.bossArmorLevelsPerEnchant);
-        return Math.min(config.bossArmorMaximumEnchantLevel, initialLevel + levelBonus);
+        if ((slot.equals("CHESTPLATE") || slot.equals("BOOTS")) && enchantIndex == 1
+                && bossLevel >= 8) {
+            return Math.min(Math.min(naturalMaximum, config.bossArmorMaximumEnchantLevel), bossLevel - 6);
+        }
+        int scaled = 1 + Math.max(0, bossLevel - 3) / 2;
+        return Math.min(naturalMaximum, scaled);
+    }
+
+    private void addArmorEnchantment(ItemStack item, String enchantmentKey, int level) {
+        Enchantment enchantment;
+        try {
+            enchantment = Enchantment.getByKey(NamespacedKey.minecraft(enchantmentKey));
+        } catch (IllegalArgumentException exception) {
+            enchantment = null;
+        }
+        if (enchantment == null || level < 1) return;
+        int appliedLevel = config.bossArmorAllowUnsafeEnchants
+            ? Math.min(config.bossArmorMaximumEnchantLevel, level)
+            : Math.min(enchantment.getMaxLevel(), level);
+        for (Enchantment existing : item.getEnchantments().keySet()) {
+            if (enchantment.conflictsWith(existing)) {
+                logger.warning("[BossEvent] Skipping conflicting armor enchantment " + enchantmentKey + ".");
+                return;
+            }
+        }
+        if (appliedLevel > enchantment.getMaxLevel()) {
+            item.addUnsafeEnchantment(enchantment, appliedLevel);
+        } else {
+            item.addEnchantment(enchantment, appliedLevel);
+        }
+    }
+
+    private int countArmorSetPieces(Player player, String storyId) {
+        int count = 0;
+        for (ItemStack item : player.getInventory().getArmorContents()) {
+            if (item == null || item.getType().isAir() || !item.hasItemMeta()) continue;
+            String itemStory = item.getItemMeta().getPersistentDataContainer()
+                .get(bossArmorSetKey, PersistentDataType.STRING);
+            if (storyId.equals(itemStory)) count++;
+        }
+        return count;
+    }
+
+    private ConfigManager.BossArmorBonusConfig highestArmorSetBonus(
+            ConfigManager.BossArmorSetConfig armorSet, int pieces) {
+        for (int threshold = Math.min(4, pieces); threshold >= 2; threshold--) {
+            ConfigManager.BossArmorBonusConfig bonus = armorSet.bonuses.get(threshold);
+            if (bonus != null) return bonus;
+        }
+        return null;
     }
 
     private void broadcastPossibleDrops(ConfigManager.BossConfig bc, int level) {
@@ -2835,6 +2975,10 @@ public class BossEventManager implements Listener {
         pendingBossLevel = null;
         warningTimeLeft = 0;
         currentBossLevel = 1;
+        logicalBossMaxHealth = 0.0;
+        logicalBossHealth = 0.0;
+        bossUsesVirtualHealth = false;
+        virtualHealthDamageEvents.clear();
         bossRewardThresholdHealth = 0.0;
         bossDamageContributions.clear();
         spiderBroodReleased = false;
