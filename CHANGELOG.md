@@ -1,14 +1,123 @@
 # Changelog
 
-## [Unreleased]
+## [v1.38.4] - 2026-10-16
+
+### Fixed
+- Bảo vệ đuốc của skill ILLUMINATION khỏi phá block, nước, piston và vụ nổ cho đến khi hết thời hạn.
+- Chỉ cho Trinh Sát dùng ILLUMINATION khi trời tối hoặc ánh sáng tại vị trí của nó thấp theo ngưỡng cấu hình.
+- AI mặc định bỏ qua mục tiêu bị che khuất nằm dưới mặt địa hình, đồng thời vẫn cho phép tìm đường quanh vật cản trên mặt đất.
+
+## [v1.38.3] - 2026-10-16
+
+### Changed
+- Điều chỉnh Trinh Sát: sát thương cơ bản, tăng theo cấp và sát thương tên còn 70% Xạ Thủ; giữ tầm phát hiện 48 block và tầm bắn thường 32 block; tầm VOLLEY/Soi Sáng là 20.8 block (30% xa hơn tầm Xạ Thủ 16 block).
+- Tự cập nhật các giá trị mặc định Ranger cũ một lần trong `armies.yml`, không ghi đè các giá trị đã tùy chỉnh khác mặc định cũ.
+
+## [v1.38.2] - 2026-10-16
+
+### Fixed
+- Cho AI lính tìm mục tiêu theo danh sách ưu tiên kể cả khi mục tiêu đang khuất tầm nhìn, để Pathfinder tự tìm đường; Trinh Sát chỉ dừng khi đã ở trong tầm bắn và nhìn thấy mục tiêu.
+
+## [v1.38.1] - 2026-10-16
+
+### Fixed
+- Cho Trinh Sát tiếp tục chọn và tấn công mục tiêu theo AI của chế độ khi đang bảo vệ chủ, thay vì chỉ ưu tiên đi theo chủ nhân.
+- Tự bổ sung skill `ILLUMINATION` một lần vào cấu hình Ranger cũ, đồng thời giữ quyền tùy chỉnh danh sách skill sau khi nâng cấp.
+
+## [v1.38.0] - 2026-10-16
 
 ### Added
+- Thêm `/vndeathhistory [player]` và menu admin xem tối đa 10 snapshot inventory khi chết; khôi phục thay thế túi đồ, giáp và tay phụ sau bước xác nhận.
+- Thêm bước xác nhận trước khi xóa lính bằng GUI quản lý.
+- Thêm skill Soi Sáng cho Trinh Sát, bắn tên lửa tạo đuốc tạm 30 giây; thêm cấu hình số tên, tầm tỏa, tốc độ và hồi chiêu.
+
+### Changed
+- Đặt mộ trên mặt nước khi chết dưới nước, dùng block hỗ trợ tạm và khôi phục block gốc khi mộ bị dọn.
+- Trinh Sát dùng nỏ, chủ động tìm mục tiêu theo AI ưu tiên chung, có tầm phát hiện/bắn xa gấp đôi Xạ Thủ; tiêu thụ tên trong kho hoặc dùng Spectral Arrow miễn phí khi hết.
+- Chặn `/quatanthu` nếu người chơi đã nhận quà trước đây hoặc hiện sở hữu lính đánh thuê.
+
+## [v1.37.0] - 2026-10-16
+
+### Fixed
+- Chặn lính đánh thuê và VEX gây sát thương lên người chơi/lính của chủ khác, trừ khi chủ nhân trực tiếp đánh đúng mục tiêu trong thời hạn 15 giây; thêm cấu hình để tắt hoàn toàn ngoại lệ PvP.
+- Khi ngựa Kỵ sĩ chết, lưu trạng thái qua khởi động lại và không tự tạo ngựa thay thế; nghỉ Kỵ sĩ sẽ xóa ngựa còn sống và cho phép tạo ngựa mới ở lần xuất chiến tiếp theo.
+
+## [v1.36.0] - 2026-10-16
+
+### Fixed
+- Giới hạn mục tiêu người chơi do chủ nhân chủ động đánh trong 15 giây; lính không tiếp tục đuổi theo mục tiêu PvP cũ và có thể truy đuổi mục tiêu chủ nhân bắn trúng kể cả khi lính chưa nhìn thấy.
+- Xóa VEX được Tu sĩ rừng triệu hồi khi lính nghỉ; VEX quay về bằng đường bay chậm thay vì dịch chuyển giật cục.
+- Dịch chuyển cả ngựa của Kỵ sĩ cùng lính; thêm cấu hình tốc độ ngựa mặc định bằng mức phi nước đại tối đa.
+
+## [v1.35.0] - 2026-10-16
+
+### Changed
+- Đổi thanh HP VEX sang màu xanh lá và thêm biểu tượng hành động AI cập nhật theo trạng thái tấn công, theo Tu sĩ hoặc đứng yên; màu và biểu tượng có thể tùy chỉnh trong `armies.yml`.
+- Khi nghỉ, VEX quay về gần Tu sĩ rừng và được giữ trong bán kính tối đa 5 block.
+
+## [v1.34.0] - 2026-10-16
+
+### Added
+- Thêm thanh HP riêng dạng ô đầy/rỗng cho từng VEX của Tu sĩ rừng và AI ưu tiên mục tiêu Tu sĩ đang đánh, kẻ tấn công Tu sĩ, kẻ tấn công chủ nhân, rồi theo Tu sĩ.
+- VEX của Tu sĩ rừng tăng sức chứa thêm một con mỗi 5 level, bắt đầu từ một con ở level 1; thêm cấu hình giới hạn và thứ tự ưu tiên AI.
+
+## [v1.33.4] - 2026-10-16
+
+### Fixed
+- Buộc mọi lính Cuồng Chiến có cấu hình cũ `PIGLIN_BRUTE` được tạo và khôi phục dưới dạng `ZOMBIFIED_PIGLIN`; ghi log cảnh báo khi gặp cấu hình cũ.
+
+## [v1.33.3] - 2026-10-16
+
+### Fixed
+- Chuyển Cuồng Chiến sang ZOMBIFIED_PIGLIN để loại bỏ nguyên nhân biến hình ở Overworld; tự cập nhật cấu hình mặc định cũ và thay entity đang chạy sau khi lưu trang bị.
+
+## [v1.33.2] - 2026-10-16
+
+### Fixed
+- Bảo toàn vật phẩm lính đang mang khi chặn sự kiện biến hình; khôi phục ô bị trống từ dữ liệu đã lưu ở tick kế tiếp và tái áp dụng miễn nhiễm zombification định kỳ.
+
+## [v1.33.1] - 2026-10-16
+
+### Fixed
+- Ngăn lính đánh thuê thuộc nhóm Piglin, bao gồm Cuồng Chiến, biến thành Zombified Piglin ở Overworld; áp dụng cả khi lính được tải lại từ chunk.
+
+## [v1.33.0] - 2026-10-16
+
+### Changed
+- Hiển thị tên chủ, tên lính, bậc và level ở dòng cuối của thanh trạng thái.
+
+## [v1.32.0] - 2026-10-16
+
+### Added
+- Thêm cấu hình `status-display.see-through` để điều khiển khả năng nhìn thanh HP xuyên tường; mặc định bật.
+
+## [v1.31.0] - 2026-10-16
+
+### Changed
+- Thanh lính đánh thuê hiển thị hai dòng: vạch HP riêng và dòng tim/HP/dấu sao/EXP.
+
+## [v1.30.3] - 2026-10-16
+
+### Fixed
+- Dùng `IntList` cho packet `ENTITY_DESTROY` theo đúng kiểu `entityIds` trên Paper 26.3; giữ `int[]` cho packet `MOUNT`.
+
+## [v1.30.2] - 2026-10-16
+
+### Fixed
+- Sửa metadata `TEXT_DISPLAY`: dùng `Component` không bọc Optional, billboard đúng index 15 và opacity đầy đủ tại index 26.
+- Sửa modifier entity ID của packet `MOUNT`/`ENTITY_DESTROY` cho schema 26.3 dùng `int[]`, tránh lỗi `FieldAccessException` khi gọi lính.
+
+## [v1.30.0] - 2026-10-16
+
+### Added
+- Chuyển thanh HP/EXP lính đánh thuê sang `TextDisplay` ảo qua ProtocolLib; chỉ chủ nhân nhìn thấy, người khác chỉ thấy tên lính.
 - Thêm token triệu hồi theo class cấu hình riêng từng boss; bậc token khớp level boss.
 - Thêm thanh HP/EXP phía trên lính, tự thu EXP orb cho chủ online, cấu hình ưu tiên AI theo mode và bán kính tuần tra.
 - Thêm cơ chế Kỵ sĩ tự tìm mount do plugin quản lý, lưu/chọn giáp ngựa tốt nhất và cấu hình HP riêng cho ngựa.
 - VEX của Tu sĩ rừng tăng giới hạn theo level, mỗi lần cast chỉ gọi thêm một con; summon dùng chung bộ lọc mục tiêu của lính.
 
 ### Changed
+- Đồng bộ compile target với Paper `26.3.build.175-stable` và Java 25; yêu cầu ProtocolLib runtime `5.5.0-SNAPSHOT`.
 - Việt hóa tên class/skill và hiển thị mô tả, thông số, cooldown thực tế theo level; sức mạnh tăng tuyến tính, cooldown giảm tối đa vài giây.
 - Lính chọn vũ khí tốt nhất giữa tay chính và kho; chỉ cấp vũ khí mặc định khi không có vũ khí phù hợp hơn.
 - AI phân thứ tự trả đũa, tìm mục tiêu, theo chủ và tuần tra; không chủ động tấn công lính/đệ của người chơi khác.

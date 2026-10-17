@@ -35,6 +35,8 @@ Yêu cầu runtime: Java 25+ và ProtocolLib `5.5.0-SNAPSHOT` dev-build có hỗ
 | `/vnspawn set\|go\|protect\|list\|remove` | Quản lý spawn và vùng bảo vệ | `vnmine.command.spawn.manage` |
 | `/vnrespawn` | Chọn hồi sinh khi đang chờ sau khi chết | `vnmine.command.respawn` |
 | `/vnleave` | Thoát máy chủ khi đang chờ sau khi chết | `vnmine.command.leave` |
+| `/vndeathhistory [player]` | Mở lịch sử chết của người chơi online; admin có thể chọn snapshot và khôi phục sau bước xác nhận | `vnmine.command.death.history` |
+| `/quatanthu` | Xin túi quà tân thủ nếu chưa nhận trước đây và chưa sở hữu lính đánh thuê | Không yêu cầu quyền riêng |
 | `/fly`, `/nodame`, `/spawn` | Tiện ích quản trị dành cho người chơi | `vnmine.command.fly`, `.nodame`, `.spawn` |
 | `/gm0`, `/gm1`, `/gm2`, `/gm3` | Chuyển game mode (chỉ người chơi) | `vnmine.command.gamemode` |
 | `/vnreload` | Tải lại config và các hệ thống | `vnmine.command.reload` |
@@ -71,8 +73,8 @@ Ví dụ: `vnmine.command.disasters`, `vnmine.command.spawn.manage`,
 của người khác. `F` mở menu chính thay thao tác đổi tay phụ; cấu hình tại
 `menus.main` và `menus.admin` trong `config.yml`.
 Menu admin có các thao tác trực tiếp cho quân đội, thiên tai/boss, thời gian/ngày,
-spawn protection, teleport, tiện ích người chơi và nhóm/quyền; các thao tác reset
-có bước xác nhận.
+spawn protection, teleport, tiện ích người chơi, nhóm/quyền và lịch sử chết.
+Khôi phục inventory và xóa lính qua GUI đều có bước xác nhận.
 Sau khi chỉnh `permission.yml` thủ công, chạy `/vnreload`.
 Nhóm/quyền không hỗ trợ wildcard, phủ định hoặc kế thừa; quyền nhóm và quyền
 cá nhân được cộng lại, vì vậy xóa quyền cá nhân không thể phủ định quyền được
@@ -91,10 +93,29 @@ Xạ Thủ (`archer`), Vệ Binh (`guardian`), Y Sư (`medic`), Cuồng Chiến
 skill được cấu hình riêng. Lính chọn vũ khí tốt nhất giữa tay chính và 36 ô
 kho; chỉ dùng vũ khí mặc định nếu kho không có món dùng được. Gear được giữ qua
 nghỉ, chết và triệu hồi lại. Mô tả skill và action bar dùng tên tiếng Việt.
-Xạ Thủ có `VOLLEY` (số tên, tốc độ, độ tỏa, sát thương); Vệ Binh có
+AI dùng danh sách ưu tiên theo từng chế độ trong `ai.priorities`; lính có thể
+tìm đường quanh vật cản trên mặt đất nhưng bỏ qua mục tiêu bị che khuất nằm
+dưới địa hình (`ai.ignore-hidden-underground-targets`).
+Xạ Thủ có `VOLLEY` (số tên, tốc độ, độ tỏa, sát thương); Trinh Sát dùng nỏ,
+phát hiện mục tiêu trong 48 block và bắn thường xa 32 block theo mặc định
+(gấp đôi Xạ Thủ), tiêu thụ đạn trong kho nếu có và dùng Spectral Arrow miễn phí
+khi hết đạn. Skill `VOLLEY` và `ILLUMINATION` có tầm 20.8 block (hơn 30% so với
+tầm bắn 16 block của Xạ Thủ). Sát thương cơ bản và sát thương tên của Trinh Sát
+bằng 70% Xạ Thủ theo cấu hình mặc định. Skill `ILLUMINATION` bắn loạt tên lửa
+lên trời, tạo đuốc không thể phá trong thời hạn quanh mục tiêu (mặc định 30
+giây); chỉ dùng khi trời tối hoặc ánh sáng tại Trinh Sát không vượt quá mức
+thấp cấu hình (mặc định 7). Số tên tăng thêm mỗi 5 level. Có thể chỉnh điều
+kiện qua `classes.ranger.skill-settings.ILLUMINATION.darkness-only` và
+`low-light-threshold`. Các thông số nằm trong
+`classes.ranger` và `classes.ranger.skill-settings.ILLUMINATION`. Vệ Binh có
 `POWER_STRIKE` (sát thương cộng thêm) và `TAUNT` (bán kính kéo quái khỏi chủ);
 Y Sư có `CLEANSE_OWNER` (cooldown và danh sách hiệu ứng được gỡ). Tất cả thông
 số nằm trong `classes.<class>.skill-settings.<SKILL>` và có thể chỉnh riêng.
+Mặc định lính và VEX không gây sát thương lên người chơi hoặc quân của người
+chơi khác chỉ vì phát hiện họ hay bị họ tấn công. Ngoại lệ: sau khi chủ nhân
+trực tiếp đánh đúng mục tiêu, lính có thể tấn công mục tiêu đó trong 15 giây.
+Đặt `pvp.allow-owner-commanded-targets: false` trong `armies.yml` để chặn hoàn
+toàn sát thương PvP từ lính và VEX.
 Scaling skill chỉnh tại `progression.skill-power-per-level`,
 `progression.max-skill-power-multiplier` và
 `progression.skill-cooldown-reduction-at-max-level-seconds`.
@@ -103,10 +124,23 @@ Thánh Kỵ đỡ đòn; Pháp Sư Lửa gây sát thương/đốt và làm ch�
 hồi máu, thanh tẩy; Sát Thủ hút máu và cuồng nộ khi nguy cấp; Pháp Sư Băng
 bắn loạt và làm chậm mục tiêu. Dùng ID class trong lệnh
 `/vnarmy hire <loại> <bậc>` hoặc menu GUI.
-Tu sĩ rừng gọi tối đa một VEX mỗi lần cast; giới hạn tăng theo cấp đến
-`classes.druid.skill-settings.SUMMON_VEXES.max-active` ở level 30. Kỵ sĩ tự lên
-ngựa plugin quản lý; slot gear riêng lưu giáp ngựa tốt nhất và
-`classes.paladin.horse-health` cấu hình máu ngựa.
+Tu sĩ rừng gọi tối đa một VEX mỗi lần cast; cứ mỗi 5 level tăng sức chứa thêm
+1 VEX, bắt đầu từ 1 ở level 1 (mặc định tối đa 7 ở level 30). Tùy chỉnh giới
+hạn và thứ tự ưu tiên AI tại `classes.druid.skill-settings.SUMMON_VEXES` trong
+`armies.yml`. VEX ưu tiên mục tiêu Tu sĩ rừng đang đánh, kẻ tấn công Tu sĩ rừng,
+kẻ tấn công chủ nhân, rồi đi theo Tu sĩ rừng. Chủ nhân thấy thanh HP riêng của từng VEX dạng ô đầy/rỗng, không kèm số HP;
+thanh màu xanh lá có biểu tượng đổi theo trạng thái tấn công, theo Tu sĩ hoặc
+đứng yên. Khi không có mục tiêu để đánh, VEX quay về và được giữ trong phạm vi
+5 block quanh Tu sĩ rừng bằng cách bay theo từ từ; khi cho Tu sĩ rừng nghỉ, toàn
+bộ VEX do lính đó triệu hồi cũng bị xóa. Màu và biểu tượng tùy chỉnh tại `status-display.vex-health-color` và
+`status-display.vex-action-icons` trong `armies.yml`. Kỵ sĩ tự lên ngựa plugin quản lý;
+slot gear riêng lưu giáp ngựa tốt nhất và
+`classes.paladin.horse-health`/`classes.paladin.horse-speed` cấu hình máu/tốc độ
+ngựa (tốc độ mặc định bằng mức phi nước đại tối đa). Khi ngựa chết, Kỵ sĩ tiếp
+tục đi bộ, ngựa không tự hồi sinh kể cả sau khi khởi động lại; cho Kỵ sĩ nghỉ
+rồi xuất chiến lại để tạo ngựa thay thế. Lính sẽ chủ động truy đuổi
+mục tiêu mà chủ nhân vừa đánh, kể cả khi mục tiêu ở ngoài tầm nhìn trực tiếp của lính;
+lệnh tấn công trực tiếp hết hiệu lực sau 15 giây nếu không được làm mới.
 Token phải khớp class và bậc, rồi bị tiêu thụ khi thuê. Token boss có class riêng
 qua `army-token-class` trong từng `bosses/<id>.yml`; bậc token bằng level boss.
 Token chung từ lệnh admin vẫn dùng được cho mọi class.
@@ -141,8 +175,10 @@ thể chỉnh; AI không chủ động chọn người chơi, lính hoặc đệ
 
 GUI cho phép chọn lớp và bậc trước khi thuê; tooltip nêu mô tả skill tiếng Việt,
 thông số/cooldown, yêu cầu XP/vật liệu và chỉ số HP/giáp/sát thương. Hai thanh
-HP/EXP hiển thị phía trên lính; bật/tắt tại `status-display.enabled`, độ dài
-chỉnh tại `status-display.bar-length`. `experience-orb-pickup.enabled` và
+Thanh hiển thị ba dòng chỉ dành cho chủ nhân: vạch HP, `❤: HP hiện tại/tối đa ✦ EXP: hiện tại/yêu cầu`, rồi `[Tên chủ] Tên lính [Bậc X] [Level: Y]`; người chơi khác vẫn
+chỉ thấy tên lính. Bật/tắt tại `status-display.enabled`, độ dài vạch HP chỉnh tại
+`status-display.bar-length`; `status-display.see-through` điều khiển khả năng nhìn xuyên tường.
+`experience-orb-pickup.enabled` và
 `experience-orb-pickup.radius-blocks` điều khiển việc thu EXP cho chủ.
 Menu đội quân mở chi tiết từng lính, đổi chế
 độ, mute, xóa, cho nghỉ/triệu hồi và mở kho 36 ô cùng trang bị. Vũ khí và giáp
@@ -177,9 +213,10 @@ người chơi khác thấy tiền tố xanh da trời sáng, đậm. ProtocolLi
 riêng theo người xem. Dữ liệu
 đội quân/kho đồ lưu tại `plugins/VnMineHardcore/mercenaries.yml`. AI không chọn
 mục tiêu bị che khuất khỏi tầm nhìn. `ai.priorities` và `ai.wander-radius-blocks`
-chỉnh thứ tự hành động/phạm vi tuần tra. Kỵ sĩ tự lên lại ngựa do plugin quản lý,
-không chiếm mount của người chơi/lính khác; ô gear riêng lưu giáp ngựa tốt nhất
-và `classes.paladin.horse-health` chỉnh HP mount.
+chỉnh thứ tự hành động/phạm vi tuần tra. Kỵ sĩ sử dụng ngựa do plugin quản lý,
+không chiếm mount của người chơi/lính khác; ô gear riêng lưu giáp ngựa tốt nhất.
+`classes.paladin.horse-health`/`classes.paladin.horse-speed` chỉnh HP/tốc độ
+ngựa. Khi ngựa chết, Kỵ sĩ đi bộ cho đến khi nghỉ và được xuất chiến lại.
 
 `plugins/VnMineHardcore/tooltips.yml` định nghĩa nhắc nhở chức năng định kỳ:
 `settings.interval-seconds` đặt khoảng thời gian và `settings.mode` chọn
@@ -246,6 +283,13 @@ chuyển tự do ngay cả khi miễn nhiễm sát thương vẫn còn. Quái v�
 chọn họ làm mục tiêu trong toàn bộ thời gian miễn nhiễm. Chạy `/vnreload` sau
 khi thay đổi các thiết lập này.
 
+Lịch sử chết lưu tối đa 10 snapshot đầy đủ gồm 36 ô kho, giáp và tay phụ trong
+`plugins/VnMineHardcore/death-history.yml`. Admin có thể dùng
+`/vndeathhistory` để chọn người chơi online hoặc `/vndeathhistory <player>` để
+mở trực tiếp lịch sử. Chọn lần chết sẽ hiển thị bước xác nhận; khôi phục sẽ thay
+thế inventory hiện tại của người chơi đang online bằng dữ liệu đã lưu. Số lượng
+snapshot có thể điều chỉnh từ 1 đến 10 bằng `death.history.max-records-per-player`.
+
 ```yaml
 death:
   respawn-protection:
@@ -261,7 +305,12 @@ death:
 `mini-graves: true` để dùng mộ mini, hoặc `false` để dùng mộ full. Khi nâng
 cấp, plugin tự bổ sung các cấu trúc/khóa còn thiếu vào file hiện có và giữ
 nguyên các giá trị tùy chỉnh. Bia mộ full dùng `PLAYER_WALL_HEAD` hướng về thân
-mộ để đầu dựng thẳng trên mặt bia.
+mộ để đầu dựng thẳng trên mặt bia. Nếu người chơi chết trong nước, mộ được đặt
+trên mặt nước và dùng block hỗ trợ tạm khi cần; block hỗ trợ được dọn cùng mộ.
+Có thể tắt tính năng hoặc chọn vật liệu block hỗ trợ đặc trong
+`graves.water-surface-placement` của `config.yml`.
+`/quatanthu` chỉ cấp túi khi người chơi chưa từng nhận quà và hiện không sở hữu
+lính đánh thuê, kể cả lính đang nghỉ hoặc hồi phục.
 
 ### Admin testing
 
@@ -481,9 +530,8 @@ sẽ được bỏ qua và ghi cảnh báo.
 
 ### Phiên bản tương thích
 
-Dự án nhắm tới Paper 26.x và Java 25+ cho server. Mã nguồn hiện biên dịch với
-Paper API 1.21.4 để giữ tương thích API như mô tả trong `BUILD_GUIDE.md`.
-`api-version` trong `plugin.yml` hiện vẫn là `1.21`.
+Dự án nhắm tới Paper 26.3 và Java 25+ cho server. Mã nguồn biên dịch với
+Paper API `26.3.build.175-stable`; `api-version` trong `plugin.yml` là `26.3`.
 
 `config.yml` và các file boss/disaster giữ nguyên giá trị tùy chỉnh khi plugin
 cập nhật. Vì vậy, nếu máy chủ đã có file
@@ -502,9 +550,9 @@ sát thương người chơi, thông báo và tỷ lệ. Chạy `/vnreload` sau 
 
 ## Yêu cầu
 
-- Paper 26.x
+- Paper 26.3
 - Java 25+ (runtime server)
-- Paper API 1.21.4 dùng làm compile baseline
+- Paper API `26.3.build.175-stable` dùng làm compile baseline
 
 ## Cài đặt
 

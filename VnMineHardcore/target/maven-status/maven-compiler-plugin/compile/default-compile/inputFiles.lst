@@ -20,6 +20,7 @@
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/LogManager.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/MercenaryManager.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/MercenaryNamePacketListener.java
+/workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/MercenaryStatusPacketListener.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/PermissionManager.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/SpawnProtectionManager.java
 /workspaces/vnminehardcore/VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/ThirstManager.java

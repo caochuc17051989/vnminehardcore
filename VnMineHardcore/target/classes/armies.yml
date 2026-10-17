@@ -80,14 +80,17 @@ experience-orb-pickup:
   # [EN] Pickup radius around a mercenary; default 4 blocks, valid range 1-16.
   radius-blocks: 4.0
 
-# [VI] Thanh trạng thái HP/EXP hiển thị phía trên lính.
-# [EN] Health/experience bars displayed above mercenaries.
+# [VI] Hiển thị thanh HP, dòng HP/EXP và tên lính thành ba dòng phía trên lính.
+# [EN] Show the HP bar, HP/EXP status, and mercenary name in three lines above mercenaries.
 status-display:
-  # [VI] Bật/tắt hai thanh trạng thái; mặc định true.
-  # [EN] Enable/disable the two status bars; default true.
+  # [VI] Bật/tắt hiển thị trạng thái; mặc định true.
+  # [EN] Enable/disable the status display; default true.
   enabled: true
-  # [VI] Số ô mỗi thanh; mặc định 10, hợp lệ 5-20.
-  # [EN] Segments per bar; default 10, valid range 5-20.
+  # [VI] Cho phép nhìn thanh xuyên tường; mặc định true.
+  # [EN] Make the display visible through walls; default true.
+  see-through: true
+  # [VI] Số ô trên vạch HP; mặc định 10, hợp lệ 5-20.
+  # [EN] Segments in the HP bar; default 10, valid range 5-20.
   bar-length: 10
 
 # [VI] Giá trị mặc định cho kỹ năng hỗ trợ; giới hạn được ghi tại từng khóa.
@@ -410,9 +413,9 @@ classes:
     # [VI] Mô tả chức năng hiện trong GUI.
     # [EN] Short role description shown in the GUI.
     description: "Áp sát, gây sát thương lớn và kéo quái khỏi chủ nhân."
-    # [VI] Entity phải là mob có AI; mặc định PIGLIN_BRUTE.
-    # [EN] Entity must be an AI mob; default PIGLIN_BRUTE.
-    entity-type: PIGLIN_BRUTE
+    # [VI] Entity phải là mob có AI; dùng ZOMBIFIED_PIGLIN để không bị biến hình ở Overworld.
+    # [EN] Entity must be an AI mob; use ZOMBIFIED_PIGLIN to avoid Overworld transformation.
+    entity-type: ZOMBIFIED_PIGLIN
     # [VI] Máu cấp 1; mặc định 36, phải lớn hơn 0.
     # [EN] Level-1 health; default 36, must be positive.
     base-health: 36

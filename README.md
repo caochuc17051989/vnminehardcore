@@ -1,8 +1,8 @@
 # 🔥 VnMineHardcore
 
-**Hell Difficulty Plugin for Paper 26.x**
+**Hell Difficulty Plugin for Paper 26.3**
 
-Plugin Paper 26.x bổ sung các hệ thống sinh tồn khó hơn. Người chơi không bị ban khi chết.
+Plugin Paper 26.3 bổ sung các hệ thống sinh tồn khó hơn. Người chơi không bị ban khi chết.
 
 ---
 
@@ -175,7 +175,7 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 |-------------|---------|
 | **Server** | Paper 26.3 |
 | **Java runtime** | 25+ |
-| **Compile API** | Paper API 1.21.4 (tương thích với Paper 26.x theo build guide của dự án) |
+| **Compile API** | Paper API `26.3.build.175-stable` |
 | **Required plugin** | ProtocolLib `5.5.0-SNAPSHOT` dev-build with Minecraft 26.3 support ([official builds](https://github.com/dmulloy2/ProtocolLib/releases/tag/dev-build)) |
 
 ---
@@ -183,7 +183,7 @@ enabled: false  # in plugins/VnMineHardcore/disasters/chorus-explosion.yml
 ## 📥 Installation
 
 1. Download `VnMineHardcore.jar` from the [releases page](#)
-2. Install the required ProtocolLib dev-build, then place both JAR files in `plugins/`
+2. Install the required ProtocolLib `5.5.0-SNAPSHOT` dev-build, then place both JAR files in `plugins/`
 3. Restart your server (or use `/plugman load VnMineHardcore`)
 4. Edit `plugins/VnMineHardcore/config.yml` to your liking
 5. Use `/vnreload` to reload config without restarting

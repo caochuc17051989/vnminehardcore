@@ -2,6 +2,7 @@ package com.vnmine.hardcore.managers;
 
 import com.vnmine.hardcore.VnMineHardcore;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -15,6 +16,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Evoker;
@@ -23,10 +25,9 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Piglin;
+import org.bukkit.entity.PiglinAbstract;
 import org.bukkit.entity.PiglinBrute;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.TextDisplay;
-import org.bukkit.entity.Display;
 import org.bukkit.entity.Vex;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Zombie;
@@ -39,6 +40,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -50,6 +58,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -59,6 +68,7 @@ import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.Inventory;
@@ -74,6 +84,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import org.bukkit.entity.Spellcaster;
 
@@ -100,6 +111,13 @@ import java.util.logging.Level;
 public final class MercenaryManager implements CommandExecutor, TabCompleter, Listener {
     private static final String COMMAND_PERMISSION = "vnmine.command.army";
     private static final String ADMIN_PERMISSION = "vnmine.command.army.admin";
+    private static final List<org.bukkit.inventory.EquipmentSlot> EQUIPMENT_SLOTS = List.of(
+        org.bukkit.inventory.EquipmentSlot.HAND,
+        org.bukkit.inventory.EquipmentSlot.HEAD,
+        org.bukkit.inventory.EquipmentSlot.CHEST,
+        org.bukkit.inventory.EquipmentSlot.LEGS,
+        org.bukkit.inventory.EquipmentSlot.FEET,
+        org.bukkit.inventory.EquipmentSlot.OFF_HAND);
     private static final String[] COMMANDS = {
         "list", "gui", "hire", "recall", "rest", "attack", "defend", "protect", "gear", "give", "token",
         "remove", "clear", "mute", "rename"
@@ -107,6 +125,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final VnMineHardcore plugin;
     private final File configFile;
     private final File dataFile;
+    private final File torchFile;
     private final NamespacedKey unitKey;
     private final NamespacedKey ownerKey;
     private final NamespacedKey horseMountKey;
@@ -114,24 +133,30 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final NamespacedKey tokenClassKey;
     private final NamespacedKey tokenLevelKey;
     private final NamespacedKey welcomeGiftKey;
-    private final NamespacedKey statusDisplayKey;
+    private final NamespacedKey illuminationArrowKey;
     private final File welcomeGiftFile;
     private final Set<UUID> claimedWelcomeGiftPlayers = new HashSet<>();
+    private final Map<UUID, TemporaryTorch> temporaryTorches = new HashMap<>();
+    private final Map<UUID, BukkitTask> torchRemovalTasks = new HashMap<>();
     private final MercenaryNamePacketListener namePacketListener;
+    private final MercenaryStatusPacketListener statusPacketListener;
     private final Map<UUID, Unit> units = new HashMap<>();
     private final Map<UUID, Mob> activeEntities = new HashMap<>();
     private final Map<UUID, Map<String, Long>> skillCooldowns = new HashMap<>();
     private final Map<UUID, Set<UUID>> summonedMinions = new HashMap<>();
     private final Map<UUID, UUID> ownerAttackTargets = new HashMap<>();
+    private final Map<UUID, Long> ownerAttackTargetExpiries = new HashMap<>();
     private final Map<UUID, Map<UUID, Long>> ownerThreats = new HashMap<>();
+    private final Map<UUID, Map<UUID, Long>> ownerAttackers = new HashMap<>();
+    private final Map<UUID, Map<UUID, Long>> unitThreats = new HashMap<>();
     private final Map<UUID, UUID> mountByUnit = new HashMap<>();
-    private final Map<UUID, UUID> statusDisplayByUnit = new HashMap<>();
     private final Map<UUID, Location> wanderTargets = new HashMap<>();
     private final Map<UUID, Long> wanderTargetExpiries = new HashMap<>();
     private final Set<UUID> awaitingGroupName = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private YamlConfiguration settings;
     private YamlConfiguration data;
     private boolean enabled;
+    private boolean ownerCommandedPvpEnabled;
     private int maxUnits;
     private double followDistance;
     private double teleportDistance;
@@ -154,8 +179,31 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean experienceOrbPickupEnabled;
     private double experienceOrbPickupRadius;
     private boolean statusDisplayEnabled;
+    private boolean statusDisplaySeeThrough;
     private int statusDisplayBarLength;
+    private ChatColor vexHealthColor;
+    private String vexAttackIcon;
+    private String vexFollowIcon;
+    private String vexIdleIcon;
     private BukkitRunnable aiTask;
+
+    private static final class TemporaryTorch {
+        private final UUID id;
+        private final String worldName;
+        private final int x;
+        private final int y;
+        private final int z;
+        private final long expiresAt;
+
+        private TemporaryTorch(UUID id, String worldName, int x, int y, int z, long expiresAt) {
+            this.id = id;
+            this.worldName = worldName;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.expiresAt = expiresAt;
+        }
+    }
 
     private enum Mode {
         ATTACK, DEFEND, PROTECT
@@ -236,6 +284,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         private Mode mode;
         private boolean deployed;
         private boolean muted;
+        private boolean horseDead;
         private UUID entityId;
         private String worldName;
         private double x;
@@ -280,7 +329,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         ADMIN_USER_PLAYERS, ADMIN_USER_ACTION, ADMIN_GROUPS, ADMIN_GROUP_SELECT,
         ADMIN_GROUP_DELETE_CONFIRM, ADMIN_PERMISSION_SELECT, ADMIN_USER_GROUP_SELECT,
         ADMIN_USER_PERMISSION_ACTIONS, ADMIN_USER_PERMISSION_SELECT,
-        ADMIN_SCOREBOARD_CONFIRM, ADMIN_DEATH_PLAYERS, ADMIN_SPAWN_WORLD
+        ADMIN_SCOREBOARD_CONFIRM, ADMIN_DEATH_PLAYERS, ADMIN_SPAWN_WORLD, UNIT_DELETE_CONFIRM
     }
 
     private static final class ServiceMenuHolder implements InventoryHolder {
@@ -313,6 +362,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         this.plugin = plugin;
         configFile = new File(plugin.getDataFolder(), "armies.yml");
         dataFile = new File(plugin.getDataFolder(), "mercenaries.yml");
+        torchFile = new File(plugin.getDataFolder(), "ranger-torches.yml");
         welcomeGiftFile = new File(plugin.getDataFolder(), "new-player-gifts.yml");
         unitKey = new NamespacedKey(plugin, "army_unit");
         ownerKey = new NamespacedKey(plugin, "army_owner");
@@ -321,11 +371,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         tokenClassKey = new NamespacedKey(plugin, "army_token_class");
         tokenLevelKey = new NamespacedKey(plugin, "army_token_level");
         welcomeGiftKey = new NamespacedKey(plugin, "welcome_gift");
-        statusDisplayKey = new NamespacedKey(plugin, "army_status_display");
+        illuminationArrowKey = new NamespacedKey(plugin, "ranger_illumination_arrow");
         namePacketListener = new MercenaryNamePacketListener(plugin);
+        statusPacketListener = new MercenaryStatusPacketListener(plugin);
         loadSettings();
         loadData();
         loadWelcomeGiftClaims();
+        loadTemporaryTorches();
         Bukkit.getPluginManager().registerEvents(this, plugin);
         startAiTask();
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -569,6 +621,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         ownerAttackTargets.remove(event.getPlayer().getUniqueId());
+        ownerAttackTargetExpiries.remove(event.getPlayer().getUniqueId());
         awaitingGroupName.remove(event.getPlayer().getUniqueId());
         despawnForOwner(event.getPlayer().getUniqueId());
     }
@@ -607,6 +660,35 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     @EventHandler
+    public void onMercenaryHorseDeath(EntityDeathEvent event) {
+        if (!(event.getEntity() instanceof Horse horse)) return;
+        String unitIdValue = horse.getPersistentDataContainer()
+            .get(horseMountKey, PersistentDataType.STRING);
+        if (unitIdValue == null) return;
+        UUID unitId;
+        try {
+            unitId = UUID.fromString(unitIdValue);
+        } catch (IllegalArgumentException exception) {
+            plugin.getLogger().warning("[Army] Ignoring invalid horse unit UUID on entity " + horse.getUniqueId());
+            return;
+        }
+        Unit unit = units.get(unitId);
+        if (unit == null || !"paladin".equals(unit.unitClass)) return;
+        unit.horseDead = true;
+        mountByUnit.remove(unitId, horse.getUniqueId());
+        event.getDrops().clear();
+        event.setDroppedExp(0);
+        Player owner = Bukkit.getPlayer(unit.owner);
+        if (owner != null) {
+            owner.sendMessage("§eNgựa của §6" + displayName(unit)
+                + " §eđã chết. Kỵ sĩ sẽ tiếp tục đi bộ; hãy cho lính nghỉ rồi xuất chiến lại để có ngựa mới.");
+        }
+        if (!saveData()) {
+            plugin.getLogger().severe("[Army] Could not persist dead horse state for mercenary " + unitId + ".");
+        }
+    }
+
+    @EventHandler
     public void onMercenaryEntityRemove(EntityRemoveEvent event) {
         if (isMercenary(event.getEntity())) namePacketListener.remove(event.getEntity());
         UUID unitId = getUnitId(event.getEntity());
@@ -630,8 +712,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             try {
                 Unit unit = idValue == null ? null : units.get(UUID.fromString(idValue));
                 if (unit != null && unit.deployed) {
+                    preventZombification(mob);
                     activeEntities.put(unit.id, mob);
                     unit.entityId = mob.getUniqueId();
+                    repairEquipmentFromSaved(unit, mob);
                     updateEntityName(unit, mob);
                 }
             } catch (IllegalArgumentException exception) {
@@ -716,16 +800,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         UUID ownerId = getOwnerId(mob);
         boolean ownerCommandedTarget = ownerId != null
-            && target.getUniqueId().equals(ownerAttackTargets.get(ownerId));
+            && isActiveOwnerAttackTarget(ownerId, target.getUniqueId());
         if (target.getUniqueId().equals(ownerId)
-                || !isAllowedMercenaryTarget(ownerId, target, ownerCommandedTarget)) {
+                || !isAllowedMercenaryTarget(ownerId, target, ownerCommandedTarget)
+                || (!ownerCommandedTarget && isHiddenUndergroundTarget(mob, target))) {
             event.setCancelled(true);
             mob.setTarget(null);
             return;
-        }
-        if (!mob.hasLineOfSight(target)) {
-            event.setCancelled(true);
-            mob.setTarget(null);
         }
     }
 
@@ -741,15 +822,79 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     public void onMercenaryTransform(EntityTransformEvent event) {
         Entity entity = event.getEntity();
         if (!(entity instanceof Mob mob) || !isMercenary(mob)) return;
+        boolean converting = false;
+        String conversionTime = "n/a";
+        boolean immune = false;
+        if (mob instanceof PiglinAbstract piglin) {
+            immune = piglin.isImmuneToZombification();
+            if (piglin.isConverting()) {
+                converting = true;
+                conversionTime = Integer.toString(piglin.getConversionTime());
+            }
+        }
+        List<String> equipmentBefore = occupiedEquipmentSlots(mob);
+        event.setCancelled(true);
+        preventZombification(mob);
+        plugin.getLogger().warning("[Army] Cancelled transform for mercenary " + mob.getUniqueId()
+            + " (reason=" + event.getTransformReason() + ", converting=" + converting
+            + ", conversionTicks=" + conversionTime + ", immuneBefore=" + immune
+            + ", equipmentBefore=" + equipmentBefore + ").");
+
         UUID unitId = getUnitId(mob);
         Unit unit = unitId == null ? null : units.get(unitId);
         if (unit != null) {
-            captureEquipment(unit, mob);
+            reconcileEquipment(unit, mob, false);
             if (!saveData()) {
-                plugin.getLogger().warning("[Army] Could not save gear before cancelling transform for " + unit.id);
+                plugin.getLogger().warning("[Army] Could not save gear after cancelling transform for " + unit.id);
+            }
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (!mob.isValid() || !isUnit(mob, unit.id)) return;
+                preventZombification(mob);
+                repairEquipmentFromSaved(unit, mob);
+                if (!saveData()) {
+                    plugin.getLogger().warning("[Army] Could not save restored gear for mercenary " + unit.id + ".");
+                }
+            });
+        }
+    }
+
+    private void repairEquipmentFromSaved(Unit unit, Mob mob) {
+        List<String> restored = reconcileEquipment(unit, mob, true);
+        if (!restored.isEmpty()) {
+            plugin.getLogger().warning("[Army] Restored missing equipment slots " + restored
+                + " for mercenary " + unit.id + ".");
+        }
+    }
+
+    private List<String> reconcileEquipment(Unit unit, Mob mob, boolean restoreMissing) {
+        EntityEquipment equipment = mob.getEquipment();
+        if (equipment == null) return List.of();
+        List<String> restored = new ArrayList<>();
+        for (org.bukkit.inventory.EquipmentSlot slot : EQUIPMENT_SLOTS) {
+            ItemStack item = equipment.getItem(slot);
+            ItemStack saved = unit.equipment.get(slot);
+            if (restoreMissing && (item == null || item.getType().isAir())
+                    && saved != null && !saved.getType().isAir()) {
+                equipment.setItem(slot, saved.clone());
+                restored.add(slot.name());
+                item = equipment.getItem(slot);
+            }
+            if (item != null && !item.getType().isAir()) {
+                unit.equipment.put(slot, item.clone());
             }
         }
-        event.setCancelled(true);
+        return restored;
+    }
+
+    private List<String> occupiedEquipmentSlots(Mob mob) {
+        EntityEquipment equipment = mob.getEquipment();
+        if (equipment == null) return List.of();
+        List<String> slots = new ArrayList<>();
+        for (org.bukkit.inventory.EquipmentSlot slot : EQUIPMENT_SLOTS) {
+            ItemStack item = equipment.getItem(slot);
+            if (item != null && !item.getType().isAir()) slots.add(slot.name());
+        }
+        return slots;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -762,10 +907,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onSummonedMinionFriendlyFire(EntityDamageByEntityEvent event) {
-        if (!(event.getDamager() instanceof Mob mob) || !isSummonedMinion(mob)) return;
+    public void onMercenaryFriendlyFire(EntityDamageByEntityEvent event) {
+        Entity source = resolveDamageSource(event.getDamager());
+        if (!isMercenary(source)) return;
         if (!(event.getEntity() instanceof LivingEntity target)) return;
-        if (!isAllowedMinionVictim(mob, target)) event.setCancelled(true);
+        if (!canMercenaryDamageTarget(getOwnerId(source), target)) event.setCancelled(true);
     }
 
     @EventHandler
@@ -775,17 +921,24 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     @EventHandler
     public void onMercenaryCombat(EntityDamageByEntityEvent event) {
-        Entity source = event.getDamager();
-        if (source instanceof org.bukkit.entity.Projectile projectile
-                && projectile.getShooter() instanceof Entity shooter) source = shooter;
+        Entity source = resolveDamageSource(event.getDamager());
+        if (isMercenary(source) && event.getEntity() instanceof LivingEntity victim
+                && !canMercenaryDamageTarget(getOwnerId(source), victim)) {
+            event.setCancelled(true);
+            return;
+        }
+        if (event.isCancelled()) return;
         if (event.getEntity() instanceof Player player) {
             registerOwnerThreat(player.getUniqueId(), source);
+            registerThreat(ownerAttackers, player.getUniqueId(), source);
         }
         if (event.getEntity() instanceof LivingEntity victim && !(victim instanceof Player)) {
             UUID victimOwner = getOwnerId(victim);
             if (victimOwner != null) {
                 registerOwnerThreat(victimOwner, source);
             }
+            UUID victimUnitId = getUnitId(victim);
+            if (victimUnitId != null) registerThreat(unitThreats, victimUnitId, source);
         }
         UUID attackingOwner = source instanceof LivingEntity living ? getOwnerId(living) : null;
         if (attackingOwner != null && event.getEntity() instanceof LivingEntity victim) {
@@ -812,11 +965,14 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         UUID targetOwner = getOwnerId(target);
         if (targetOwner != null && targetOwner.equals(owner.getUniqueId())) return;
         ownerAttackTargets.put(owner.getUniqueId(), target.getUniqueId());
+        ownerAttackTargetExpiries.put(owner.getUniqueId(), System.currentTimeMillis() + 15_000L);
         for (Unit unit : getOwnerUnits(owner.getUniqueId())) {
             Mob mob = activeEntities.get(unit.id);
             if (unit.deployed && mob != null && mob.isValid()
                     && ((isValidTarget(target) && !isMercenary(target)) || isMercenary(target))
-                    && mob.hasLineOfSight(target)) mob.setTarget(target);
+                    && isAllowedMercenaryTarget(unit.owner, target, true)) {
+                mob.setTarget(target);
+            }
         }
     }
 
@@ -903,6 +1059,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (loaded.contains("enabled") && !loaded.isBoolean("enabled")) {
             throw new InvalidConfigurationException("enabled must be true or false.");
         }
+        if (loaded.contains("pvp.allow-owner-commanded-targets")
+                && !loaded.isBoolean("pvp.allow-owner-commanded-targets")) {
+            throw new InvalidConfigurationException("pvp.allow-owner-commanded-targets must be true or false.");
+        }
         if (loaded.getConfigurationSection("classes").getKeys(false).isEmpty()
                 || loaded.getConfigurationSection("tiers").getKeys(false).isEmpty()) {
             throw new InvalidConfigurationException("armies.yml must define at least one class and one tier.");
@@ -942,7 +1102,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 if (!Set.of("ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES",
                             "BUFF_OWNER", "BUFF_ALLIES", "SHIELD_OWNER", "VOLLEY",
                             "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
-                            "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE")
+                            "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE",
+                            "ILLUMINATION")
                         .contains(skill.toUpperCase(Locale.ROOT))) {
                     throw new InvalidConfigurationException(
                         "Unknown skill '" + skill + "' in class '" + classId + "'.");
@@ -955,7 +1116,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     if (!Set.of("ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES",
                                 "BUFF_OWNER", "BUFF_ALLIES", "SHIELD_OWNER", "VOLLEY",
                                 "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
-                                "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE")
+                                "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE",
+                                "ILLUMINATION")
                             .contains(skill.toUpperCase(Locale.ROOT))) {
                         throw new InvalidConfigurationException(
                             "Unknown skill-settings entry '" + skill + "' in class '" + classId + "'.");
@@ -1064,6 +1226,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         this.settings = loaded;
         this.enabled = loaded.getBoolean("enabled", true);
+        this.ownerCommandedPvpEnabled =
+            loaded.getBoolean("pvp.allow-owner-commanded-targets", true);
         this.maxUnits = readBoundedInt(loaded, "max-units-per-player", 10, 1, 100);
         this.followDistance = readBoundedDouble(loaded, "follow-distance-blocks", 8.0, 2.0, 64.0);
         this.teleportDistance = readBoundedDouble(loaded, "teleport-distance-blocks", 40.0, 8.0, 256.0);
@@ -1088,13 +1252,22 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         this.experienceOrbPickupRadius = readBoundedDouble(
             loaded, "experience-orb-pickup.radius-blocks", 4.0, 1.0, 16.0);
         this.statusDisplayEnabled = loaded.getBoolean("status-display.enabled", true);
+        this.statusDisplaySeeThrough = loaded.getBoolean("status-display.see-through", true);
         this.statusDisplayBarLength = readBoundedInt(loaded, "status-display.bar-length", 10, 5, 20);
+        this.vexHealthColor = readVexHealthColor(loaded);
+        this.vexAttackIcon = readVexActionIcon(loaded, "attack", "⚔");
+        this.vexFollowIcon = readVexActionIcon(loaded, "follow", "🐾");
+        this.vexIdleIcon = readVexActionIcon(loaded, "idle", "•");
         this.maxLevel = configuredMaxLevel;
         plugin.getLogger().info("[Army] Loaded " + getClassIds().size() + " class(es), enabled=" + enabled + ".");
     }
 
     private void mergeBundledDefaults(YamlConfiguration loaded)
             throws IOException, InvalidConfigurationException {
+        boolean rangerIlluminationMigrationComplete =
+            loaded.getBoolean("_migrations.ranger-illumination-skill", false);
+        boolean rangerRangeTuningMigrationComplete =
+            loaded.getBoolean("_migrations.ranger-range-and-damage-tuning", false);
         InputStream resource = plugin.getResource("armies.yml");
         if (resource == null) throw new IOException("Bundled armies.yml is missing.");
         YamlConfiguration defaults = new YamlConfiguration();
@@ -1103,6 +1276,31 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             defaults.load(reader);
         }
         boolean changed = mergeSettingsSection(loaded, defaults, "");
+        List<String> rangerSkills = new ArrayList<>(loaded.getStringList("classes.ranger.skills"));
+        if (!rangerIlluminationMigrationComplete) {
+            boolean addedIllumination = false;
+            if (rangerSkills.stream().noneMatch(skill -> skill.equalsIgnoreCase("ILLUMINATION"))) {
+                rangerSkills.add("ILLUMINATION");
+                loaded.set("classes.ranger.skills", rangerSkills);
+                loaded.setComments("classes.ranger.skills", defaults.getComments("classes.ranger.skills"));
+                addedIllumination = true;
+            }
+            loaded.set("_migrations.ranger-illumination-skill", true);
+            changed = true;
+            if (addedIllumination) {
+                plugin.getLogger().info("[Army] Enabled the new ILLUMINATION skill for the Ranger in armies.yml.");
+            }
+        }
+        if (!rangerRangeTuningMigrationComplete) {
+            migrateRangerDefault(loaded, defaults, "classes.ranger.base-damage", 4.0, 2.8);
+            migrateRangerDefault(loaded, defaults, "classes.ranger.damage-per-level", 0.45, 0.35);
+            migrateRangerDefault(loaded, defaults,
+                "classes.ranger.skill-settings.RANGED_ATTACK.damage", 4.5, 4.2);
+            migrateRangerDefault(loaded, defaults,
+                "classes.ranger.skill-settings.VOLLEY.damage", 2.5, 2.1);
+            loaded.set("_migrations.ranger-range-and-damage-tuning", true);
+            changed = true;
+        }
         if (loaded.getInt("max-units-per-player", 10) == 4) {
             loaded.set("max-units-per-player", 10);
             changed = true;
@@ -1116,6 +1314,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             loaded.set(weaponPath, "IRON_SPEAR");
             loaded.setComments(weaponPath, defaults.getComments(weaponPath));
             changed = true;
+        }
+        String berserkerEntityPath = "classes.berserker.entity-type";
+        if ("PIGLIN_BRUTE".equalsIgnoreCase(loaded.getString(berserkerEntityPath, ""))) {
+            loaded.set(berserkerEntityPath, defaults.getString(berserkerEntityPath, "ZOMBIFIED_PIGLIN"));
+            loaded.setComments(berserkerEntityPath, defaults.getComments(berserkerEntityPath));
+            changed = true;
+            plugin.getLogger().info("[Army] Migrated berserker entity to ZOMBIFIED_PIGLIN to prevent transformation.");
         }
         if (loaded.getStringList("classes.archer.skills").equals(List.of("RANGED_ATTACK"))) {
             loaded.set("classes.archer.skills", defaults.getStringList("classes.archer.skills"));
@@ -1141,8 +1346,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             changed = true;
         }
         String vexMaximumPath = "classes.druid.skill-settings.SUMMON_VEXES.max-active";
-        if (loaded.getInt(vexMaximumPath, 4) == 2) {
-            loaded.set(vexMaximumPath, 4);
+        int oldVexMaximum = loaded.getInt(vexMaximumPath, 7);
+        if (oldVexMaximum == 2 || oldVexMaximum == 4) {
+            loaded.set(vexMaximumPath, 7);
             loaded.setComments(vexMaximumPath, defaults.getComments(vexMaximumPath));
             changed = true;
         }
@@ -1159,6 +1365,14 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             changed = true;
         }
         if (changed) loaded.save(configFile);
+    }
+
+    private void migrateRangerDefault(YamlConfiguration loaded, YamlConfiguration defaults, String path,
+                                     double previous, double updated) {
+        if (loaded.contains(path) && Double.compare(loaded.getDouble(path), previous) == 0) {
+            loaded.set(path, updated);
+            loaded.setComments(path, defaults.getComments(path));
+        }
     }
 
     private boolean mergeSettingsSection(YamlConfiguration target, ConfigurationSection defaults, String prefix)
@@ -1227,6 +1441,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     unit.recoveryUntilMillis = Math.max(0L,
                         loaded.getLong("units." + idText + ".recovery-until", 0L));
                     unit.gearCustomized = loaded.getBoolean("units." + idText + ".gear-customized", false);
+                    unit.horseDead = loaded.getBoolean("units." + idText + ".horse-dead", false);
                     unit.entityId = parseUuid(loaded.getString("units." + idText + ".entity-uuid", ""));
                     unit.muted = loaded.getBoolean("units." + idText + ".muted", false);
                     unit.worldName = loaded.getString("units." + idText + ".world", "");
@@ -1264,6 +1479,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     if (!unit.deployed) continue;
                     Player owner = Bukkit.getPlayer(unit.owner);
                     Mob mob = activeEntities.get(unit.id);
+                    if (mob != null && mob.isValid()) preventZombification(mob);
                     if (owner == null || !owner.isOnline()) {
                         cleanupSummonedMinions(unit.id);
                         if (mob != null) {
@@ -1287,6 +1503,26 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                             unit.deployed = false;
                             continue;
                         }
+                        activeEntities.put(unit.id, mob);
+                    }
+                    EntityType configuredType = configuredEntityType(unit);
+                    if (configuredType != null && mob.getType() != configuredType) {
+                        captureEquipment(unit, mob);
+                        updateLocation(unit, mob.getLocation());
+                        if (!saveData()) {
+                            plugin.getLogger().severe("[Army] Could not save gear before replacing entity "
+                                + "for mercenary " + unit.id + "; keeping the current entity.");
+                            continue;
+                        }
+                        Mob replacement = spawnUnit(unit, mob.getLocation());
+                        if (replacement == null) {
+                            plugin.getLogger().severe("[Army] Could not replace outdated entity for mercenary "
+                                + unit.id + "; keeping the current entity.");
+                            unit.entityId = mob.getUniqueId();
+                            continue;
+                        }
+                        mob.remove();
+                        mob = replacement;
                         activeEntities.put(unit.id, mob);
                     }
                     mob.setSilent(unit.muted);
@@ -1314,22 +1550,26 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private void runUnitAi(Unit unit, Mob mob, Player owner) {
+        mob.setAware(true);
         if (!owner.getWorld().equals(mob.getWorld())) {
             Location spawn = safeLocation(owner.getLocation());
-            mob.teleport(spawn);
+            teleportUnit(unit, mob, spawn);
             wanderTargets.remove(unit.id);
             wanderTargetExpiries.remove(unit.id);
+            updateSummonedMinions(unit, null);
             return;
         }
         double distanceSquared = owner.getLocation().distanceSquared(mob.getLocation());
         if (distanceSquared > teleportDistance * teleportDistance) {
-            mob.teleport(owner.getLocation().clone().add(0.8, 0.0, 0.8));
+            teleportUnit(unit, mob, owner.getLocation().clone().add(0.8, 0.0, 0.8));
             mob.setTarget(null);
             wanderTargets.remove(unit.id);
             wanderTargetExpiries.remove(unit.id);
+            updateSummonedMinions(unit, null);
             return;
         }
-        if (unit.mode == Mode.PROTECT && hasAiPriority(unit, "FOLLOW_OWNER")
+        LivingEntity target = findTarget(unit, mob, owner);
+        if (target == null && unit.mode == Mode.PROTECT && hasAiPriority(unit, "FOLLOW_OWNER")
                 && distanceSquared > followDistance * followDistance) {
             mob.setTarget(null);
             mob.getPathfinder().moveTo(owner.getLocation(), 1.15);
@@ -1339,15 +1579,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             return;
         }
 
-        LivingEntity target = findTarget(unit, mob, owner);
         if (target != null) {
             mob.setAware(true);
-                mob.setSilent(unit.muted);
+            mob.setSilent(unit.muted);
             if (hasSkill(unit, "RANGED_ATTACK") && !hasSkill(unit, "ATTACK")) {
                 mob.setTarget(null);
-                double range = skillOptionDouble(unit, "RANGED_ATTACK", "range-blocks", 16.0, 4.0, 64.0);
-                if (mob.getLocation().distanceSquared(target.getLocation()) > range * range * 0.64) {
-                    mob.getPathfinder().moveTo(target.getLocation(), 1.0);
+                double range = preferredRangedPositionRange(unit, mob);
+                if (mob.getLocation().distanceSquared(target.getLocation()) > range * range
+                        || !mob.hasLineOfSight(target)) {
+                    mob.getPathfinder().moveTo(target, 1.0);
                 } else {
                     mob.getPathfinder().stopPathfinding();
                 }
@@ -1373,6 +1613,20 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         useSkills(unit, owner, target);
         updateSummonedMinions(unit, target);
         feedMercenary(unit, mob, owner);
+    }
+
+    private double preferredRangedPositionRange(Unit unit, Mob mob) {
+        double range = skillOptionDouble(unit, "RANGED_ATTACK", "range-blocks", 16.0, 4.0, 64.0);
+        if (!"ranger".equals(unit.unitClass)) return range;
+        if (hasSkill(unit, "VOLLEY") && ready(unit, "volley")) {
+            range = Math.min(range, skillOptionDouble(unit, "VOLLEY", "range-blocks", range, 4.0, 64.0));
+        }
+        if (hasSkill(unit, "ILLUMINATION") && ready(unit, "illumination")
+                && canUseIlluminationInCurrentLight(mob)) {
+            range = Math.min(range,
+                skillOptionDouble(unit, "ILLUMINATION", "range-blocks", range, 4.0, 64.0));
+        }
+        return range;
     }
 
     private void feedMercenary(Unit unit, Mob mob, Player owner) {
@@ -1444,21 +1698,34 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 case "OWNER_ATTACKER" -> unit.mode == Mode.PROTECT ? findOwnerAttacker(mob, owner) : null;
                 case "OWNER_THREAT" -> unit.mode == Mode.DEFEND ? null : findOwnerThreatTarget(unit.owner, mob);
                 case "NEAREST_HOSTILE" -> findNearestTarget(unit, mob, center, classRadius);
-                case "SEARCH" -> findNearestTarget(unit, mob, center, targetRadius);
+                case "SEARCH" -> findNearestTarget(unit, mob, center,
+                    "ranger".equals(unit.unitClass) ? classRadius : targetRadius);
                 default -> null;
             };
-            if (target != null) return target;
+            if (target != null && ("OWNER_ATTACK_TARGET".equals(action)
+                    || !isHiddenUndergroundTarget(mob, target))) return target;
         }
         return null;
     }
 
     private LivingEntity ownerAttackTarget(Unit unit, Mob mob, Player owner) {
         UUID targetId = ownerAttackTargets.get(owner.getUniqueId());
-        Entity entity = targetId == null ? null : Bukkit.getEntity(targetId);
+        if (targetId == null || !isActiveOwnerAttackTarget(owner.getUniqueId(), targetId)) return null;
+        Entity entity = Bukkit.getEntity(targetId);
         if (entity instanceof LivingEntity target && isAllowedMercenaryTarget(unit.owner, target, true)
-                && mob.getWorld().equals(target.getWorld()) && mob.hasLineOfSight(target)) return target;
+                && mob.getWorld().equals(target.getWorld())) return target;
         if (targetId != null && (entity == null || entity.isDead())) ownerAttackTargets.remove(owner.getUniqueId());
         return null;
+    }
+
+    private boolean isActiveOwnerAttackTarget(UUID ownerId, UUID targetId) {
+        Long expiresAt = ownerAttackTargetExpiries.get(ownerId);
+        if (expiresAt == null || System.currentTimeMillis() >= expiresAt) {
+            ownerAttackTargets.remove(ownerId);
+            ownerAttackTargetExpiries.remove(ownerId);
+            return false;
+        }
+        return targetId.equals(ownerAttackTargets.get(ownerId));
     }
 
     private LivingEntity findOwnerAttacker(Mob mob, Player owner) {
@@ -1478,7 +1745,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 }
                 return false;
             })
-            .filter(mob::hasLineOfSight)
             .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(owner.getLocation())))
             .orElse(null);
     }
@@ -1493,7 +1759,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             Entity entity = Bukkit.getEntity(threat.getKey());
             if (entity instanceof LivingEntity target && !target.isDead()
                     && mob.getWorld().equals(target.getWorld())
-                    && isAllowedMercenaryTarget(ownerId, target, false) && mob.hasLineOfSight(target)) return target;
+                    && isAllowedMercenaryTarget(ownerId, target, false)) return target;
         }
         return null;
     }
@@ -1505,10 +1771,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             .filter(living -> !living.equals(mob))
             .filter(living -> living.getLocation().distanceSquared(center) <= radius * radius)
             .filter(living -> isAllowedMercenaryTarget(unit.owner, living, false))
-            .filter(living -> !living.isGlowing())
-            .filter(mob::hasLineOfSight)
+            .filter(living -> !isHiddenUndergroundTarget(mob, living))
             .min(Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(center)))
             .orElse(null);
+    }
+
+    private boolean isHiddenUndergroundTarget(Mob mob, LivingEntity target) {
+        if (!settings.getBoolean("ai.ignore-hidden-underground-targets", true)
+                || mob.hasLineOfSight(target) || !mob.getWorld().equals(target.getWorld())) return false;
+        Location targetLocation = target.getLocation();
+        int terrainHeight = target.getWorld().getHighestBlockYAt(targetLocation);
+        return targetLocation.getBlockY() <= terrainHeight;
     }
 
     private List<String> aiPriorities(Unit unit) {
@@ -1538,12 +1811,122 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private void updateSummonedMinions(Unit unit, LivingEntity target) {
         Set<UUID> minionIds = summonedMinions.get(unit.id);
         if (minionIds == null) return;
+        Mob druid = activeEntities.get(unit.id);
+        Player owner = Bukkit.getPlayer(unit.owner);
         for (UUID minionId : minionIds) {
             Entity entity = Bukkit.getEntity(minionId);
-            if (!(entity instanceof Mob minion) || !minion.isValid() || minion.isDead()) continue;
-            LivingEntity allowedTarget = target != null && canMinionTarget(minion, target) ? target : null;
-            if (minion.getTarget() != allowedTarget) minion.setTarget(allowedTarget);
+            if (!(entity instanceof Vex vex) || !vex.isValid() || vex.isDead()) {
+                removeStatusDisplay(minionId);
+                continue;
+            }
+            if (druid != null && druid.isValid() && owner != null && owner.isOnline()) {
+                LivingEntity selectedTarget = selectVexTarget(unit, druid, owner, vex, target);
+                if (selectedTarget != null) {
+                    if (vex.getTarget() != selectedTarget) vex.setTarget(selectedTarget);
+                } else {
+                    if (vex.getTarget() != null) vex.setTarget(null);
+                    if (!vex.getWorld().equals(druid.getWorld())) {
+                        vex.teleport(druid.getLocation().clone().add(0.0, 2.0, 0.0));
+                        vex.setVelocity(new Vector());
+                        vex.getPathfinder().stopPathfinding();
+                    } else if (vex.getLocation().distanceSquared(druid.getLocation()) > 16.0) {
+                        vex.getPathfinder().moveTo(druid.getLocation(), 0.6);
+                    } else {
+                        vex.getPathfinder().stopPathfinding();
+                    }
+                }
+            }
+            updateVexStatusDisplay(vex, unit.owner, vexActionIcon(vex, druid));
         }
+    }
+
+    private LivingEntity selectVexTarget(Unit unit, Mob druid, Player owner, Vex vex,
+                                         LivingEntity druidTarget) {
+        List<String> priorities = settings.getStringList(
+            "classes.druid.skill-settings.SUMMON_VEXES.ai-priorities").stream()
+            .map(value -> value.toUpperCase(Locale.ROOT)).toList();
+        if (priorities.isEmpty()) {
+            priorities = List.of("DRUID_TARGET", "DRUID_ATTACKER", "OWNER_ATTACKER", "FOLLOW_DRUID");
+        }
+        for (String priority : priorities) {
+            if ("FOLLOW_DRUID".equals(priority)) return null;
+            LivingEntity candidate = switch (priority) {
+                case "DRUID_TARGET" -> druidTarget != null ? druidTarget : druid.getTarget();
+                case "DRUID_ATTACKER" -> findRecentThreatTarget(vex, unitThreats.get(unit.id));
+                case "OWNER_ATTACKER" -> {
+                    LivingEntity recentAttacker = findRecentThreatTarget(vex, ownerAttackers.get(unit.owner));
+                    yield recentAttacker != null ? recentAttacker : findOwnerAttacker(vex, owner);
+                }
+                default -> null;
+            };
+            if (candidate != null && canMinionTarget(vex, candidate)) return candidate;
+        }
+        return null;
+    }
+
+    private LivingEntity findRecentThreatTarget(Mob mob, Map<UUID, Long> threats) {
+        if (threats == null) return null;
+        long now = System.currentTimeMillis();
+        threats.entrySet().removeIf(entry -> now - entry.getValue() > 15_000L);
+        for (Map.Entry<UUID, Long> threat : threats.entrySet().stream()
+                .sorted(Map.Entry.<UUID, Long>comparingByValue().reversed()).toList()) {
+            Entity entity = Bukkit.getEntity(threat.getKey());
+            if (entity instanceof LivingEntity target && !target.isDead()
+                    && canMinionTarget(mob, target)) return target;
+        }
+        return null;
+    }
+
+    private String vexActionIcon(Vex vex, Mob druid) {
+        LivingEntity target = vex.getTarget();
+        if (target != null && canMinionTarget(vex, target)) return vexAttackIcon;
+        if (druid != null && druid.isValid()
+                && (!vex.getWorld().equals(druid.getWorld())
+                    || vex.getLocation().distanceSquared(druid.getLocation()) > 16.0)) {
+            return vexFollowIcon;
+        }
+        return vexIdleIcon;
+    }
+
+    private void updateVexStatusDisplay(Vex vex, UUID ownerId, String actionIcon) {
+        if (!statusDisplayEnabled) {
+            removeStatusDisplay(vex.getUniqueId());
+            return;
+        }
+        double maximumHealth = vex.getAttribute(Attribute.MAX_HEALTH) == null
+            ? vex.getHealth() : vex.getAttribute(Attribute.MAX_HEALTH).getValue();
+        int filledBars = statusBarFilled(vex.getHealth(), maximumHealth);
+        String healthBar = "§e" + actionIcon + " " + vexHealthColor
+            + "■".repeat(filledBars)
+            + "§7" + "□".repeat(statusDisplayBarLength - filledBars);
+        statusPacketListener.update(vex.getUniqueId(), vex, ownerId, healthBar, statusDisplaySeeThrough);
+    }
+
+    private ChatColor readVexHealthColor(YamlConfiguration loaded) throws InvalidConfigurationException {
+        String configuredColor = loaded.getString("status-display.vex-health-color", "GREEN");
+        if (configuredColor == null || configuredColor.isBlank()) {
+            throw new InvalidConfigurationException(
+                "status-display.vex-health-color must be a valid ChatColor color name.");
+        }
+        try {
+            ChatColor color = ChatColor.valueOf(configuredColor.toUpperCase(Locale.ROOT));
+            if (!color.isColor()) throw new IllegalArgumentException("Formatting colors are not allowed.");
+            return color;
+        } catch (IllegalArgumentException exception) {
+            throw new InvalidConfigurationException(
+                "Unknown status-display.vex-health-color '" + configuredColor + "'. Use a ChatColor color name.");
+        }
+    }
+
+    private String readVexActionIcon(YamlConfiguration loaded, String action, String defaultIcon)
+            throws InvalidConfigurationException {
+        String path = "status-display.vex-action-icons." + action;
+        String icon = loaded.getString(path, defaultIcon);
+        if (icon == null || icon.isBlank() || icon.codePointCount(0, icon.length()) > 4) {
+            throw new InvalidConfigurationException(
+                "Invalid " + path + "; use a non-empty symbol of at most 4 Unicode code points.");
+        }
+        return icon;
     }
 
     private void useSkills(Unit unit, Player owner, LivingEntity target) {
@@ -1630,13 +2013,26 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 announceSkillCast(unit, owner, "LANCE_CHARGE", Particle.CRIT);
             }
         }
+        if (hasSkill(unit, "ILLUMINATION") && mob != null && target != null
+                && isWithinConfiguredSkillRange(unit, mob, target, "ILLUMINATION")
+                && canUseIlluminationInCurrentLight(mob)
+                && ready(unit, "illumination")) {
+            fireIlluminationVolley(unit, mob, target, owner);
+        }
         if (hasSkill(unit, "RANGED_ATTACK") && target != null && mob != null
+                && isWithinConfiguredSkillRange(unit, mob, target, "RANGED_ATTACK")
                 && ready(unit, "ranged-attack")) {
             try {
+                int ammoBefore = countStoredArrows(unit);
                 AbstractArrow arrow = launchConfiguredArrow(mob, unit);
                 arrow.setDamage(Math.min(100.0, skillOptionDouble(unit, "RANGED_ATTACK",
                     "damage", 4.0, 0.0, 100.0) * skillPowerMultiplier(unit)));
                 arrow.setPickupStatus(Arrow.PickupStatus.DISALLOWED);
+                if ("ranger".equals(unit.unitClass)) {
+                    Vector aim = target.getEyeLocation().toVector().subtract(mob.getEyeLocation().toVector());
+                    if (aim.lengthSquared() > 0.0001) arrow.setVelocity(aim.normalize().multiply(2.4));
+                }
+                persistAmmoIfConsumed(unit, ammoBefore);
                 markUsed(unit, "ranged-attack", skillCooldownSeconds(unit, "RANGED_ATTACK"));
                 announceSkillCast(unit, owner, "RANGED_ATTACK", Particle.CRIT);
             } catch (IllegalArgumentException exception) {
@@ -1645,12 +2041,14 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
         }
 
-        if (hasSkill(unit, "VOLLEY") && target != null && mob != null && ready(unit, "volley")) {
+        if (hasSkill(unit, "VOLLEY") && target != null && mob != null
+                && isWithinConfiguredSkillRange(unit, mob, target, "VOLLEY") && ready(unit, "volley")) {
             int arrowCount = (int) skillOptionDouble(unit, "VOLLEY", "arrow-count", 3.0, 2.0, 5.0);
             double speed = skillOptionDouble(unit, "VOLLEY", "arrow-speed", 2.0, 0.5, 4.0);
             double spread = skillOptionDouble(unit, "VOLLEY", "spread-degrees", 8.0, 0.0, 30.0);
             double damage = Math.min(100.0, skillOptionDouble(unit, "VOLLEY", "damage", 3.0,
                 0.0, 100.0) * skillPowerMultiplier(unit));
+            int ammoBefore = countStoredArrows(unit);
             Vector direction = target.getEyeLocation().toVector().subtract(mob.getEyeLocation().toVector());
             if (direction.lengthSquared() > 0.0) {
                 for (int index = 0; index < arrowCount; index++) {
@@ -1661,6 +2059,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     arrow.setDamage(damage);
                     arrow.setPickupStatus(Arrow.PickupStatus.DISALLOWED);
                 }
+                persistAmmoIfConsumed(unit, ammoBefore);
                 markUsed(unit, "volley", skillCooldownSeconds(unit, "VOLLEY"));
                 announceSkillCast(unit, owner, "VOLLEY", Particle.CRIT);
             }
@@ -1837,32 +2236,289 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private ItemStack findStoredArrow(Unit unit) {
         ItemStack offhand = unit.equipment.get(org.bukkit.inventory.EquipmentSlot.OFF_HAND);
-        if (offhand != null && Set.of(Material.ARROW, Material.SPECTRAL_ARROW, Material.TIPPED_ARROW)
-                .contains(offhand.getType())) return offhand;
+        if (isArrowItem(offhand)) return offhand;
         for (ItemStack item : unit.inventory) {
-            if (item != null && Set.of(Material.ARROW, Material.SPECTRAL_ARROW, Material.TIPPED_ARROW)
-                    .contains(item.getType())) return item;
+            if (isArrowItem(item)) return item;
         }
         return null;
     }
 
+    private boolean isWithinConfiguredSkillRange(Unit unit, Mob mob, LivingEntity target, String skill) {
+        if (!"ranger".equals(unit.unitClass)) return true;
+        double defaultRange = skillOptionDouble(unit, "RANGED_ATTACK", "range-blocks", 16.0, 4.0, 64.0);
+        double range = skillOptionDouble(unit, skill, "range-blocks", defaultRange, 4.0, 64.0);
+        return mob.getWorld().equals(target.getWorld())
+            && mob.getLocation().distanceSquared(target.getLocation()) <= range * range;
+    }
+
+    private boolean isArrowItem(ItemStack item) {
+        return item != null && Set.of(Material.ARROW, Material.SPECTRAL_ARROW, Material.TIPPED_ARROW)
+            .contains(item.getType());
+    }
+
     private AbstractArrow launchConfiguredArrow(Mob mob, Unit unit) {
         ItemStack ammunition = findStoredArrow(unit);
-        if (ammunition != null && ammunition.getType() == Material.SPECTRAL_ARROW) {
-            return mob.launchProjectile(SpectralArrow.class);
-        }
-        if (ammunition != null && ammunition.getType() == Material.TIPPED_ARROW) {
-            TippedArrow arrow = mob.launchProjectile(TippedArrow.class);
+        AbstractArrow arrow;
+        boolean scout = "ranger".equals(unit.unitClass);
+        if (ammunition == null) {
+            arrow = scout ? mob.launchProjectile(SpectralArrow.class) : mob.launchProjectile(Arrow.class);
+        } else if (ammunition.getType() == Material.SPECTRAL_ARROW) {
+            arrow = mob.launchProjectile(SpectralArrow.class);
+            if (scout) consumeStoredArrow(unit, ammunition);
+        } else if (ammunition.getType() == Material.TIPPED_ARROW) {
+            TippedArrow tippedArrow = mob.launchProjectile(TippedArrow.class);
             if (ammunition.getItemMeta() instanceof PotionMeta potionMeta) {
                 PotionType potionType = potionMeta.getBasePotionType();
-                if (potionType != null) arrow.setBasePotionType(potionType);
+                if (potionType != null) tippedArrow.setBasePotionType(potionType);
                 for (PotionEffect effect : potionMeta.getCustomEffects()) {
-                    arrow.addCustomEffect(effect, true);
+                    tippedArrow.addCustomEffect(effect, true);
                 }
             }
-            return arrow;
+            arrow = tippedArrow;
+            if (scout) consumeStoredArrow(unit, ammunition);
+        } else {
+            arrow = mob.launchProjectile(Arrow.class);
+            if (scout) consumeStoredArrow(unit, ammunition);
         }
-        return mob.launchProjectile(Arrow.class);
+        return arrow;
+    }
+
+    private void consumeStoredArrow(Unit unit, ItemStack ammunition) {
+        org.bukkit.inventory.EquipmentSlot offhandSlot = org.bukkit.inventory.EquipmentSlot.OFF_HAND;
+        if (unit.equipment.get(offhandSlot) == ammunition) {
+            ItemStack remaining = decrementStack(ammunition);
+            if (remaining == null) unit.equipment.remove(offhandSlot);
+            else unit.equipment.put(offhandSlot, remaining);
+            return;
+        }
+        for (int slot = 0; slot < unit.inventory.length; slot++) {
+            if (unit.inventory[slot] == ammunition) {
+                unit.inventory[slot] = decrementStack(ammunition);
+                return;
+            }
+        }
+    }
+
+    private ItemStack decrementStack(ItemStack item) {
+        if (item.getAmount() <= 1) return null;
+        ItemStack remaining = item.clone();
+        remaining.setAmount(item.getAmount() - 1);
+        return remaining;
+    }
+
+    private int countStoredArrows(Unit unit) {
+        int count = 0;
+        ItemStack offhand = unit.equipment.get(org.bukkit.inventory.EquipmentSlot.OFF_HAND);
+        if (isArrowItem(offhand)) count += offhand.getAmount();
+        for (ItemStack item : unit.inventory) {
+            if (isArrowItem(item)) count += item.getAmount();
+        }
+        return count;
+    }
+
+    private void persistAmmoIfConsumed(Unit unit, int previousCount) {
+        if (countStoredArrows(unit) < previousCount && !saveData()) {
+            plugin.getLogger().warning("[Army] Could not persist consumed arrows for mercenary " + unit.id + ".");
+        }
+    }
+
+    private void fireIlluminationVolley(Unit unit, Mob mob, LivingEntity target, Player owner) {
+        String skill = "ILLUMINATION";
+        int baseArrowCount = (int) skillOptionDouble(unit, skill, "base-arrow-count", 1.0, 1.0, 20.0);
+        int levelsPerArrow = (int) skillOptionDouble(unit, skill, "levels-per-extra-arrow", 5.0, 1.0, 30.0);
+        int arrowCount = Math.min(20, baseArrowCount + unit.level / levelsPerArrow);
+        double radius = skillOptionDouble(unit, skill, "spread-radius-blocks", 5.0, 0.0, 16.0);
+        double angle = Math.toRadians(skillOptionDouble(unit, skill, "upward-angle-degrees", 55.0, 10.0, 85.0));
+        double speedMultiplier = skillOptionDouble(unit, skill, "speed-multiplier", 1.0, 0.5, 2.0);
+        Vector origin = mob.getEyeLocation().toVector();
+        Vector targetPosition = target.getLocation().toVector();
+        java.util.concurrent.ThreadLocalRandom random = java.util.concurrent.ThreadLocalRandom.current();
+
+        for (int index = 0; index < arrowCount; index++) {
+            double spreadAngle = random.nextDouble(Math.PI * 2.0);
+            double spreadDistance = radius * Math.sqrt(random.nextDouble());
+            Vector landingPoint = targetPosition.clone().add(new Vector(
+                Math.cos(spreadAngle) * spreadDistance, 0.0, Math.sin(spreadAngle) * spreadDistance));
+            Vector horizontal = landingPoint.subtract(origin.clone());
+            horizontal.setY(0.0);
+            double horizontalDistance = Math.max(1.0, horizontal.length());
+            double sinDoubleAngle = Math.max(0.1, Math.sin(angle * 2.0));
+            double speed = Math.sqrt(horizontalDistance * 0.05 / sinDoubleAngle) * speedMultiplier;
+            speed = Math.max(0.5, Math.min(4.0, speed));
+
+            Arrow arrow = mob.launchProjectile(Arrow.class);
+            Vector velocity = horizontal.normalize().multiply(speed * Math.cos(angle));
+            velocity.setY(speed * Math.sin(angle));
+            arrow.setVelocity(velocity);
+            arrow.setDamage(0.0);
+            arrow.setFireTicks(1_200);
+            arrow.setPickupStatus(Arrow.PickupStatus.DISALLOWED);
+            arrow.getPersistentDataContainer().set(illuminationArrowKey, PersistentDataType.BYTE, (byte) 1);
+        }
+
+        markUsed(unit, "illumination", illuminationCooldownSeconds(unit));
+        announceSkillCast(unit, owner, skill, Particle.FLAME);
+    }
+
+    private double illuminationCooldownSeconds(Unit unit) {
+        double cooldown = skillOptionDouble(unit, "ILLUMINATION", "cooldown-seconds", 30.0, 1.0, 3600.0);
+        double reduction = skillOptionDouble(unit, "ILLUMINATION",
+            "cooldown-reduction-per-level-seconds", 0.2, 0.0, 30.0) * (unit.level - 1);
+        return Math.max(1.0, cooldown - reduction);
+    }
+
+    private boolean canUseIlluminationInCurrentLight(Mob mob) {
+        if (!settings.getBoolean("classes.ranger.skill-settings.ILLUMINATION.darkness-only", true)) return true;
+        long time = mob.getWorld().getTime();
+        if (time >= 13_000L && time <= 23_000L) return true;
+        int threshold = (int) readBoundedDouble(settings,
+            "classes.ranger.skill-settings.ILLUMINATION.low-light-threshold", 7.0, 0.0, 15.0);
+        return mob.getLocation().getBlock().getLightLevel() <= threshold;
+    }
+
+    @EventHandler
+    public void onIlluminationArrowHit(ProjectileHitEvent event) {
+        if (!(event.getEntity() instanceof Arrow arrow)
+                || !arrow.getPersistentDataContainer().has(illuminationArrowKey, PersistentDataType.BYTE)) return;
+        Block hitBlock = event.getHitBlock();
+        if (hitBlock == null) return;
+
+        Block torchBlock = hitBlock.getRelative(org.bukkit.block.BlockFace.UP);
+        if (!hitBlock.getType().isSolid() || !torchBlock.getType().isAir()) return;
+        torchBlock.setType(Material.TORCH, false);
+        int duration = (int) skillOptionDoubleForRanger(
+            "ILLUMINATION", "torch-duration-seconds", 30.0, 1.0, 600.0);
+        TemporaryTorch temporaryTorch = new TemporaryTorch(UUID.randomUUID(),
+            torchBlock.getWorld().getName(), torchBlock.getX(), torchBlock.getY(), torchBlock.getZ(),
+            System.currentTimeMillis() + duration * 1000L);
+        temporaryTorches.put(temporaryTorch.id, temporaryTorch);
+        saveTemporaryTorches();
+        scheduleTorchRemoval(temporaryTorch);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryTorchBreak(BlockBreakEvent event) {
+        if (isTemporaryTorchOrSupport(event.getBlock())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTemporaryTorchPhysics(BlockPhysicsEvent event) {
+        if (isTemporaryTorch(event.getBlock())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTemporaryTorchWaterFlow(BlockFromToEvent event) {
+        if (isTemporaryTorch(event.getToBlock())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryTorchEntityExplosion(EntityExplodeEvent event) {
+        event.blockList().removeIf(this::isTemporaryTorchOrSupport);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryTorchBlockExplosion(BlockExplodeEvent event) {
+        event.blockList().removeIf(this::isTemporaryTorchOrSupport);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryTorchPistonExtend(BlockPistonExtendEvent event) {
+        if (event.getBlocks().stream().anyMatch(this::isTemporaryTorchOrSupport)) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryTorchPistonRetract(BlockPistonRetractEvent event) {
+        if (event.getBlocks().stream().anyMatch(this::isTemporaryTorchOrSupport)) event.setCancelled(true);
+    }
+
+    private boolean isTemporaryTorch(Block block) {
+        return temporaryTorches.values().stream().anyMatch(torch ->
+            torch.worldName.equals(block.getWorld().getName())
+                && torch.x == block.getX() && torch.y == block.getY() && torch.z == block.getZ());
+    }
+
+    private boolean isTemporaryTorchOrSupport(Block block) {
+        return temporaryTorches.values().stream().anyMatch(torch ->
+            torch.worldName.equals(block.getWorld().getName())
+                && torch.x == block.getX() && torch.z == block.getZ()
+                && (torch.y == block.getY() || torch.y - 1 == block.getY()));
+    }
+
+    private double skillOptionDoubleForRanger(String skill, String key, double fallback,
+                                               double minimum, double maximum) {
+        return readBoundedDouble(settings, "classes.ranger.skill-settings." + skill + "." + key,
+            fallback, minimum, maximum);
+    }
+
+    @EventHandler
+    public void onTemporaryTorchChunkLoad(ChunkLoadEvent event) {
+        for (TemporaryTorch temporaryTorch : temporaryTorches.values()) {
+            if (temporaryTorch.worldName.equals(event.getWorld().getName())
+                    && temporaryTorch.x >> 4 == event.getChunk().getX()
+                    && temporaryTorch.z >> 4 == event.getChunk().getZ()) {
+                scheduleTorchRemoval(temporaryTorch);
+            }
+        }
+    }
+
+    private void loadTemporaryTorches() {
+        if (!torchFile.isFile()) return;
+        YamlConfiguration loaded = new YamlConfiguration();
+        try {
+            loaded.load(torchFile);
+        } catch (IOException | InvalidConfigurationException exception) {
+            plugin.getLogger().log(Level.SEVERE, "[Army] Could not load temporary Ranger torches.", exception);
+            return;
+        }
+        if (!loaded.isConfigurationSection("torches")) return;
+        for (String id : loaded.getConfigurationSection("torches").getKeys(false)) {
+            try {
+                TemporaryTorch torch = new TemporaryTorch(UUID.fromString(id),
+                    loaded.getString("torches." + id + ".world", ""),
+                    loaded.getInt("torches." + id + ".x"), loaded.getInt("torches." + id + ".y"),
+                    loaded.getInt("torches." + id + ".z"), loaded.getLong("torches." + id + ".expiresAt"));
+                temporaryTorches.put(torch.id, torch);
+                scheduleTorchRemoval(torch);
+            } catch (IllegalArgumentException exception) {
+                plugin.getLogger().warning("[Army] Ignoring invalid temporary Ranger torch ID: " + id);
+            }
+        }
+    }
+
+    private void scheduleTorchRemoval(TemporaryTorch torch) {
+        if (torchRemovalTasks.containsKey(torch.id)) return;
+        World world = Bukkit.getWorld(torch.worldName);
+        if (world == null || !world.isChunkLoaded(torch.x >> 4, torch.z >> 4)) return;
+        long delay = Math.max(1L, (torch.expiresAt - System.currentTimeMillis() + 49L) / 50L);
+        BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> expireTemporaryTorch(torch), delay);
+        torchRemovalTasks.put(torch.id, task);
+    }
+
+    private void expireTemporaryTorch(TemporaryTorch torch) {
+        torchRemovalTasks.remove(torch.id);
+        World world = Bukkit.getWorld(torch.worldName);
+        if (world == null || !world.isChunkLoaded(torch.x >> 4, torch.z >> 4)) return;
+        Block block = world.getBlockAt(torch.x, torch.y, torch.z);
+        if (block.getType() == Material.TORCH) block.setType(Material.AIR, false);
+        temporaryTorches.remove(torch.id);
+        saveTemporaryTorches();
+    }
+
+    private void saveTemporaryTorches() {
+        YamlConfiguration output = new YamlConfiguration();
+        for (TemporaryTorch torch : temporaryTorches.values()) {
+            String path = "torches." + torch.id;
+            output.set(path + ".world", torch.worldName);
+            output.set(path + ".x", torch.x);
+            output.set(path + ".y", torch.y);
+            output.set(path + ".z", torch.z);
+            output.set(path + ".expiresAt", torch.expiresAt);
+        }
+        try {
+            output.save(torchFile);
+        } catch (IOException exception) {
+            plugin.getLogger().log(Level.SEVERE, "[Army] Could not save temporary Ranger torch data.", exception);
+        }
     }
 
     private void announceSkillCast(Unit unit, Player owner, String skill, Particle particle) {
@@ -1974,13 +2630,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean isAllowedMercenaryTarget(UUID ownerId, LivingEntity target, boolean ownerCommandedTarget) {
         if (target == null || !target.isValid() || target.isDead()) return false;
         if (target.getUniqueId().equals(ownerId)) return false;
-        if (isMercenary(target)) {
-            UUID targetOwner = getOwnerId(target);
-            if (targetOwner != null && targetOwner.equals(ownerId)) return false;
-            return ownerCommandedTarget || isRetaliationTarget(ownerId, target);
-        }
-        if (target instanceof Player player) {
-            return ownerCommandedTarget || isRetaliationTarget(ownerId, player);
+        if (target instanceof Player || isMercenary(target)) {
+            return canMercenaryDamageTarget(ownerId, target)
+                && ownerCommandedTarget
+                && isActiveOwnerAttackTarget(ownerId, target.getUniqueId());
         }
         return isHostileMob(target);
     }
@@ -1993,35 +2646,63 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private int maxSummonedMinions(Unit unit) {
-        int configuredMaximum = (int) skillOptionDouble(unit, "SUMMON_VEXES", "max-active", 4.0, 1.0, 10.0);
-        double levelProgress = maxLevel <= 1 ? 1.0 : (double) (unit.level - 1) / (maxLevel - 1);
-        return Math.min(configuredMaximum, 1 + (int) Math.floor(levelProgress * (configuredMaximum - 1)));
+        int configuredMaximum = (int) skillOptionDouble(unit, "SUMMON_VEXES", "max-active", 7.0, 1.0, 10.0);
+        return Math.min(configuredMaximum, 1 + unit.level / 5);
     }
 
     private boolean isAllowedMinionVictim(Mob minion, LivingEntity target) {
         UUID ownerId = getOwnerId(minion);
-        if (ownerId != null && target.getUniqueId().equals(ownerId)) return false;
-        if (isMercenary(target)) {
-            UUID targetOwner = getOwnerId(target);
-            if (ownerId == null || ownerId.equals(targetOwner) || !isRetaliationTarget(ownerId, target)) {
-                return false;
-            }
+        if (target == null || ownerId == null || target.getUniqueId().equals(ownerId)) return false;
+        if (target instanceof Player || isMercenary(target)) {
+            return canMercenaryDamageTarget(ownerId, target)
+                && isActiveOwnerAttackTarget(ownerId, target.getUniqueId());
         }
-        if (target instanceof Player) return ownerId != null && isRetaliationTarget(ownerId, target);
-        return target instanceof Monster || isMercenary(target);
+        return isHostileMob(target);
+    }
+
+    private boolean canMercenaryDamageTarget(UUID sourceOwnerId, LivingEntity target) {
+        if (target == null) return false;
+        if (!(target instanceof Player) && !isMercenary(target)) return true;
+        if (sourceOwnerId == null) return false;
+        UUID targetOwnerId = target instanceof Player player
+            ? player.getUniqueId() : getOwnerId(target);
+        if (sourceOwnerId.equals(targetOwnerId)) return false;
+        return isOwnerCommandedPvpTarget(sourceOwnerId, target);
+    }
+
+    private boolean isOwnerCommandedPvpTarget(UUID ownerId, LivingEntity target) {
+        return ownerCommandedPvpEnabled && target != null
+            && isActiveOwnerAttackTarget(ownerId, target.getUniqueId());
+    }
+
+    private Entity resolveDamageSource(Entity damager) {
+        if (damager instanceof org.bukkit.entity.Projectile projectile
+                && projectile.getShooter() instanceof Entity shooter) {
+            return shooter;
+        }
+        return damager;
     }
 
     private void registerOwnerThreat(UUID ownerId, Entity source) {
         if (ownerId == null || source == null) return;
-        Map<UUID, Long> threats = ownerThreats.computeIfAbsent(ownerId, ignored -> new HashMap<>());
-        long now = System.currentTimeMillis();
-        threats.put(source.getUniqueId(), now);
+        registerThreat(ownerThreats, ownerId, source);
         UUID sourceOwner = getOwnerId(source);
-        if (sourceOwner != null && !sourceOwner.equals(ownerId)) threats.put(sourceOwner, now);
+        if (sourceOwner != null && !sourceOwner.equals(ownerId)) {
+            ownerThreats.get(ownerId).put(sourceOwner, System.currentTimeMillis());
+        }
+    }
+
+    private void registerThreat(Map<UUID, Map<UUID, Long>> threatMap, UUID subjectId, Entity source) {
+        if (subjectId == null || source == null) return;
+        Map<UUID, Long> threats = threatMap.computeIfAbsent(subjectId, ignored -> new HashMap<>());
+        threats.put(source.getUniqueId(), System.currentTimeMillis());
     }
 
     private boolean isRetaliationTarget(UUID ownerId, LivingEntity target) {
         if (ownerId == null || target == null) return false;
+        if (target instanceof Player || isMercenary(target)) {
+            return isOwnerCommandedPvpTarget(ownerId, target);
+        }
         Map<UUID, Long> threats = ownerThreats.get(ownerId);
         long now = System.currentTimeMillis();
         if (threats != null) {
@@ -2030,8 +2711,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             UUID targetOwner = getOwnerId(target);
             if (targetOwner != null && threats.containsKey(targetOwner)) return true;
         }
-        UUID ownerTarget = ownerAttackTargets.get(ownerId);
-        return ownerTarget != null && ownerTarget.equals(target.getUniqueId());
+        return isActiveOwnerAttackTarget(ownerId, target.getUniqueId());
     }
 
     private void sanitizeMobAi(Mob mob) {
@@ -2239,9 +2919,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 activeEntities.put(unit.id, mob);
                 captureEquipment(unit, mob);
                 updateLocation(unit, mob.getLocation());
+                boolean previousHorseDead = unit.horseDead;
+                unit.horseDead = false;
                 unit.entityId = null;
                 unit.deployed = false;
                 if (!saveData()) {
+                    unit.horseDead = previousHorseDead;
                     unit.deployed = true;
                     unit.entityId = mob.getUniqueId();
                     applyEquipment(unit, mob);
@@ -2249,18 +2932,25 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                         + "§c; lính vẫn được giữ nguyên.");
                     continue;
                 }
+                cleanupSummonedMinions(unit.id);
                 removeMount(unit.id, mob);
                 mob.remove();
                 activeEntities.remove(unit.id);
                 rested++;
             } else if (unit.deployed) {
+                boolean previousHorseDead = unit.horseDead;
+                unit.horseDead = false;
                 unit.deployed = false;
                 unit.entityId = null;
                 if (saveData()) {
+                    cleanupSummonedMinions(unit.id);
                     removeMount(unit.id, null);
                     rested++;
+                } else {
+                    unit.horseDead = previousHorseDead;
+                    unit.deployed = true;
+                    player.sendMessage("§cKhông thể lưu trạng thái nghỉ của lính §e#" + shortId(unit.id) + "§c.");
                 }
-                else player.sendMessage("§cKhông thể lưu trạng thái nghỉ của lính §e#" + shortId(unit.id) + "§c.");
             }
         }
         player.sendMessage(rested == 0 ? "§7Không có lính nào đang triển khai."
@@ -2314,7 +3004,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private void ensurePaladinMounted(Unit unit, Mob rider) {
-        if (!(rider instanceof Zombie) || !"paladin".equals(unit.unitClass)) return;
+        if (!(rider instanceof Zombie) || !"paladin".equals(unit.unitClass) || unit.horseDead) return;
         if (rider.getVehicle() instanceof Horse current && isUnitHorse(current, unit)) {
             mountByUnit.put(unit.id, current.getUniqueId());
             applyHorseStatsAndArmor(unit, current);
@@ -2329,6 +3019,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private Horse getOrCreateUnitHorse(Unit unit, Location location) {
+        if (unit.horseDead) return null;
         Entity tracked = mountByUnit.containsKey(unit.id) ? Bukkit.getEntity(mountByUnit.get(unit.id)) : null;
         if (tracked instanceof Horse horse && horse.isValid() && isUnitHorse(horse, unit)
                 && (horse.getPassengers().isEmpty() || horse.getPassengers().stream()
@@ -2368,12 +3059,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private void applyHorseStatsAndArmor(Unit unit, Horse horse) {
         double horseHealth = readBoundedDouble(settings, "classes.paladin.horse-health", 50.0, 1.0, 1024.0);
+        double horseSpeed = readBoundedDouble(settings, "classes.paladin.horse-speed", 0.3375, 0.1, 1.0);
         if (horse.getAttribute(Attribute.MAX_HEALTH) != null) {
             double previousMaximum = horse.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
             horse.getAttribute(Attribute.MAX_HEALTH).setBaseValue(horseHealth);
             double currentHealth = horse.getHealth();
             horse.setHealth(currentHealth >= previousMaximum
                 ? horseHealth : Math.min(currentHealth, horseHealth));
+        }
+        if (horse.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
+            horse.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(horseSpeed);
         }
         if (isHorseArmor(horse.getInventory().getArmor())) {
             unit.horseArmor = selectBestHorseArmor(unit.horseArmor, horse.getInventory().getArmor());
@@ -2413,6 +3108,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private Horse getMountedHorse(Unit unit, Zombie rider) {
+        if (unit.horseDead) return null;
         UUID mountId = mountByUnit.get(unit.id);
         Entity mount = mountId == null ? null : Bukkit.getEntity(mountId);
         Horse horse;
@@ -2425,6 +3121,21 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             mountByUnit.put(unit.id, horse.getUniqueId());
         }
         return rider.getVehicle() == horse ? horse : null;
+    }
+
+    private void teleportUnit(Unit unit, Mob mob, Location destination) {
+        if ("paladin".equals(unit.unitClass) && mob instanceof Zombie rider) {
+            Horse horse = getMountedHorse(unit, rider);
+            if (horse != null) {
+                if (!horse.teleport(destination)) {
+                    plugin.getLogger().warning("[Army] Could not teleport horse for mercenary " + unit.id + ".");
+                    return;
+                }
+                if (rider.getVehicle() != horse) horse.addPassenger(rider);
+                return;
+            }
+        }
+        mob.teleport(destination);
     }
 
     private void setMode(Player player, Mode mode) {
@@ -2697,6 +3408,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             List.of("§7Chọn người chơi.")));
         holder.inventory.setItem(33, menuItem(Material.MAP, "§bĐi tới spawn world",
             List.of("§7Chọn world đích.")));
+        if (player.hasPermission("vnmine.command.death.history")) {
+            holder.inventory.setItem(34, menuItem(Material.CLOCK, "§cLịch sử chết",
+                List.of("§7Chọn người chơi online và xem inventory lúc chết.")));
+        }
         holder.inventory.setItem(49, menuItem(Material.ARROW, "§7Menu chính", List.of()));
         player.openInventory(holder.inventory);
     }
@@ -2707,7 +3422,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             "vnmine.command.spawn.manage", "vnmine.command.teleport.other", "vnmine.command.groups.manage",
             "vnmine.command.users.manage", "vnmine.command.fly", "vnmine.command.nodame",
             "vnmine.command.gamemode", "vnmine.command.scoreboard.reset", "vnmine.command.death.reset")
-            .stream().anyMatch(player::hasPermission);
+            .stream().anyMatch(player::hasPermission)
+            || player.hasPermission("vnmine.command.death.history");
     }
 
     private void openAdminArmyPlayers(Player player, int page) {
@@ -3172,6 +3888,19 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         player.openInventory(inventory);
     }
 
+    private void openUnitDeleteConfirm(Player player, Unit unit) {
+        ServiceMenuHolder holder = createServiceMenu(player, MenuType.UNIT_DELETE_CONFIRM,
+            unit.owner, unit.id.toString(), null, 0, 27, "Xác nhận xóa lính");
+        holder.inventory.setItem(4, menuItem(Material.BARRIER, "§cXóa " + unitLabel(unit, true) + "?",
+            List.of("§7ID: §f#" + shortId(unit.id), "§cThao tác này không thể hoàn tác.")));
+        holder.inventory.setItem(11, menuItem(Material.LIME_WOOL, "§aXÁC NHẬN XÓA",
+            List.of("§7Xóa lính khỏi đội quân.")));
+        holder.inventory.setItem(15, menuItem(Material.RED_WOOL, "§cHỦY",
+            List.of("§7Giữ lại lính.")));
+        holder.inventory.setItem(22, menuItem(Material.ARROW, "§7Quay lại lính", List.of()));
+        player.openInventory(holder.inventory);
+    }
+
     private List<String> unitDetails(Unit unit) {
         List<String> details = new ArrayList<>();
         Mob mob = activeEntities.get(unit.id);
@@ -3210,7 +3939,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             String cooldownKey = skillCooldownKey(normalized);
             long remaining = Math.max(0L, skillCooldowns.getOrDefault(unit.id, Map.of())
                 .getOrDefault(cooldownKey, 0L) - System.currentTimeMillis());
-            String cooldown = formatStat(skillCooldownSeconds(unit, normalized)) + " giây";
+            double cooldownSeconds = normalized.equals("ILLUMINATION")
+                ? illuminationCooldownSeconds(unit) : skillCooldownSeconds(unit, normalized);
+            String cooldown = formatStat(cooldownSeconds) + " giây";
             if (remaining > 0L) cooldown += " (còn " + formatStat(remaining / 1000.0) + " giây)";
             details.add("§7" + skillDisplayName(normalized) + ": §f"
                 + skillDescription(unit, normalized, damage) + " §8| §7Hồi chiêu: §f" + cooldown);
@@ -3244,7 +3975,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 + formatStat(skillOptionDouble(unit, skill, "radius-blocks", healRadius, 1.0, 32.0)) + " block";
             case "VOLLEY" -> "Bắn " + (int) skillOptionDouble(unit, skill, "arrow-count", 3.0, 2.0, 5.0)
                 + " mũi tên, mỗi mũi gây " + formatStat(skillOptionDouble(unit, skill, "damage", 3.0,
-                0.0, 100.0) * power) + " sát thương";
+                0.0, 100.0) * power) + " sát thương"
+                + ("ranger".equals(unit.unitClass) ? ", tầm " + formatStat(skillOptionDouble(unit, skill,
+                "range-blocks", 20.8, 4.0, 64.0)) + " block" : "");
             case "POWER_STRIKE" -> "Cộng " + formatStat(skillOptionDouble(unit, skill, "damage", 8.0,
                 0.0, 100.0) * power) + " sát thương cho đòn đánh mạnh";
             case "TAUNT" -> "Khiêu khích quái trong bán kính "
@@ -3269,6 +4002,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             case "LANCE_CHARGE" -> "Khi cưỡi ngựa gây " + formatStat(skillOptionDouble(unit, skill,
                 "damage", 12.0, 0.0, 100.0) * power) + " sát thương trong bán kính "
                 + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0)) + " block";
+            case "ILLUMINATION" -> "Bắn " + Math.min(20, (int) skillOptionDouble(unit, skill,
+                "base-arrow-count", 1.0, 1.0, 20.0) + unit.level / (int) skillOptionDouble(unit, skill,
+                "levels-per-extra-arrow", 5.0, 1.0, 30.0))
+                + " tên lửa rơi quanh mục tiêu, cắm đuốc "
+                + (int) skillOptionDouble(unit, skill, "torch-duration-seconds", 30.0, 1.0, 600.0)
+                + " giây, tầm " + formatStat(skillOptionDouble(unit, skill,
+                    "range-blocks", 20.8, 4.0, 64.0)) + " block";
             default -> "Chiến đấu với mục tiêu";
         };
     }
@@ -3305,6 +4045,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             case "BERSERK" -> "Cuồng nộ";
             case "SUMMON_VEXES" -> "Triệu hồi Vex";
             case "LANCE_CHARGE" -> "Lao giáo";
+            case "ILLUMINATION" -> "Soi Sáng";
             default -> "Kỹ năng chiến đấu";
         };
     }
@@ -3391,7 +4132,28 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 else if (slot == 31) openAdminScoreboardConfirm(player);
                 else if (slot == 32) openAdminDeathPlayers(player);
                 else if (slot == 33) openAdminSpawnWorlds(player);
+                else if (slot == 34 && player.hasPermission("vnmine.command.death.history")) {
+                    player.performCommand("vndeathhistory");
+                }
                 else if (slot == 49) openMainMenu(player);
+            }
+            case UNIT_DELETE_CONFIRM -> {
+                if (slot == 15 || slot == 22) {
+                    UUID unitId = holder.itemType == null ? null : UUID.fromString(holder.itemType);
+                    Unit unit = unitId == null ? null : units.get(unitId);
+                    if (unit == null || !unit.owner.equals(player.getUniqueId())) openArmyMenu(player, 0);
+                    else openUnitMenu(player, unit);
+                }
+                else if (slot == 11) {
+                    Unit unit = units.get(UUID.fromString(holder.itemType));
+                    if (unit == null || !unit.owner.equals(player.getUniqueId())) {
+                        player.sendMessage("§cKhông tìm thấy lính cần xóa.");
+                        player.closeInventory();
+                    } else {
+                        handleRemoveCommand(player, new String[] {"remove", shortId(unit.id)});
+                        if (!units.containsKey(unit.id)) player.closeInventory();
+                    }
+                }
             }
             case ADMIN_PLAYERS -> {
                 if (slot == 45 && holder.page > 0) openAdminArmyPlayers(player, holder.page - 1);
@@ -3735,10 +4497,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             case 16 -> openGear(player, new String[] {"gear", shortId(unit.id)});
             case 17 -> upgradeTier(player, unit);
             case 22 -> openArmyMenu(player, 0);
-            case 15 -> {
-                player.closeInventory();
-                handleRemoveCommand(player, new String[] {"remove", shortId(unit.id)});
-            }
+            case 15 -> openUnitDeleteConfirm(player, unit);
 
             default -> { return; }
         }
@@ -4002,6 +4761,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             sender.sendMessage("§cBạn đã nhận quà tân thủ rồi.");
             return true;
         }
+        if (hasOwnedMercenaries(player.getUniqueId())) {
+            sender.sendMessage("§cBạn đã sở hữu lính đánh thuê nên không thể nhận quà tân thủ.");
+            return true;
+        }
         if (hasWelcomeGiftBag(player)) {
             sender.sendMessage("§eBạn đã có túi quà tân thủ trong túi đồ.");
             return true;
@@ -4014,6 +4777,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private void openWelcomeGiftMenu(Player player) {
         if (isWelcomeGiftClaimed(player.getUniqueId())) {
             player.sendMessage("§cBạn đã nhận quà tân thủ rồi.");
+            return;
+        }
+        if (hasOwnedMercenaries(player.getUniqueId())) {
+            player.sendMessage("§cBạn đã sở hữu lính đánh thuê nên không thể dùng quà tân thủ.");
             return;
         }
         ServiceMenuHolder holder = createServiceMenu(player, MenuType.WELCOME_GIFT, null, null, null,
@@ -4034,6 +4801,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private void selectWelcomeGift(Player player, String classId) {
         if (isWelcomeGiftClaimed(player.getUniqueId())) {
             player.sendMessage("§cBạn đã nhận quà tân thủ rồi.");
+            player.closeInventory();
+            return;
+        }
+        if (hasOwnedMercenaries(player.getUniqueId())) {
+            player.sendMessage("§cBạn đã sở hữu lính đánh thuê nên không thể dùng quà tân thủ.");
             player.closeInventory();
             return;
         }
@@ -4256,8 +5028,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private Mob spawnUnit(Unit unit, Location location) {
-        EntityType type = EntityType.fromName(settings.getString("classes." + unit.unitClass + ".entity-type", ""));
+        EntityType type = configuredEntityType(unit);
         if (type == null || !type.isAlive()) return null;
+        String configuredType = settings.getString("classes." + unit.unitClass + ".entity-type", "");
+        if ("berserker".equals(unit.unitClass) && "PIGLIN_BRUTE".equalsIgnoreCase(configuredType)) {
+            plugin.getLogger().warning("[Army] Refusing to spawn PIGLIN_BRUTE for berserker; "
+                + "using ZOMBIFIED_PIGLIN.");
+        }
         Entity entity;
         try {
             entity = location.getWorld().spawnEntity(location, type);
@@ -4277,6 +5054,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         PersistentDataContainer pdc = mob.getPersistentDataContainer();
         pdc.set(unitKey, PersistentDataType.STRING, unit.id.toString());
         pdc.set(ownerKey, PersistentDataType.STRING, unit.owner.toString());
+        preventZombification(mob);
         if ("paladin".equals(unit.unitClass)) {
             Horse horse = getOrCreateUnitHorse(unit, location);
             if (horse != null) {
@@ -4299,6 +5077,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return mob;
     }
 
+    private EntityType configuredEntityType(Unit unit) {
+        EntityType configured = EntityType.fromName(
+            settings.getString("classes." + unit.unitClass + ".entity-type", ""));
+        if ("berserker".equals(unit.unitClass) && configured == EntityType.PIGLIN_BRUTE) {
+            return EntityType.ZOMBIFIED_PIGLIN;
+        }
+        return configured;
+    }
+
     private void removeUnskilledVexes(Mob mob) {
         if (!(mob instanceof Evoker)) return;
         for (Entity nearby : mob.getNearbyEntities(24.0, 24.0, 24.0)) {
@@ -4312,6 +5099,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         Set<UUID> minionIds = summonedMinions.remove(unitId);
         if (minionIds == null) return;
         for (UUID minionId : minionIds) {
+            removeStatusDisplay(minionId);
             Entity minion = Bukkit.getEntity(minionId);
             if (minion != null && minion.isValid()) minion.remove();
         }
@@ -4449,65 +5237,47 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private void updateStatusDisplay(Unit unit, Mob mob) {
         if (!statusDisplayEnabled) {
-            removeStatusDisplay(unit.id);
+            statusPacketListener.remove(unit.id);
             return;
         }
-        Entity entity = statusDisplayByUnit.containsKey(unit.id)
-            ? Bukkit.getEntity(statusDisplayByUnit.get(unit.id)) : null;
-        Location location = mob.getLocation().add(0.0, mob.getHeight() + 0.75, 0.0);
-        TextDisplay display;
-        if (entity instanceof TextDisplay existing && existing.isValid()
-                && existing.getWorld().equals(mob.getWorld())) {
-            display = existing;
-        } else {
-            if (entity != null && entity.isValid()) entity.remove();
-            display = mob.getWorld().spawn(location, TextDisplay.class);
-            display.setPersistent(false);
-            display.setInvulnerable(true);
-            display.setGravity(false);
-            display.setSilent(true);
-            display.setBillboard(Display.Billboard.CENTER);
-            display.setAlignment(TextDisplay.TextAlignment.CENTER);
-            display.setDefaultBackground(false);
-            display.setSeeThrough(true);
-            display.setShadowed(true);
-            display.setLineWidth(240);
-            display.getPersistentDataContainer().set(statusDisplayKey,
-                PersistentDataType.STRING, unit.id.toString());
-            statusDisplayByUnit.put(unit.id, display.getUniqueId());
-        }
-        display.teleport(location);
         double maximumHealth = maxHealth(mob);
         double requiredExperience = nextLevelExperience(unit);
-        String health = "§cHP " + formatStat(mob.getHealth()) + "/" + formatStat(maximumHealth)
-            + " " + statusBar(mob.getHealth(), maximumHealth, "§c");
-        String experience = unit.level >= maxLevel ? "§bEXP TỐI ĐA " + statusBar(1.0, 1.0, "§b")
-            : "§bEXP " + unit.experience + "/" + (int) requiredExperience + " "
-                + statusBar(unit.experience, requiredExperience, "§b");
-        display.setText(health + "\n" + experience);
+        int filledHealthBars = statusBarFilled(mob.getHealth(), maximumHealth);
+        String healthBar = "§c" + "■".repeat(filledHealthBars)
+            + "§7" + "□".repeat(statusDisplayBarLength - filledHealthBars);
+        String statusLine = "§c❤: §f" + formatStat(mob.getHealth()) + "/" + formatStat(maximumHealth)
+            + " §e✦ EXP: " + unit.experience + "/" + (int) requiredExperience;
+        String ownerName = Bukkit.getOfflinePlayer(unit.owner).getName();
+        if (ownerName == null || ownerName.isBlank()) ownerName = "Người chơi";
+        String nameLine = "§a[" + ownerName + "] §f" + displayName(unit)
+            + " §e[Bậc " + unit.tier + "] §f[Level: " + unit.level + "]";
+        statusPacketListener.update(unit.id, mob, unit.owner,
+            healthBar + "\n" + statusLine + "\n" + nameLine,
+            statusDisplaySeeThrough);
     }
 
-    private String statusBar(double value, double maximum, String color) {
+    private int statusBarFilled(double value, double maximum) {
         double progress = maximum <= 0.0 ? 0.0 : Math.max(0.0, Math.min(1.0, value / maximum));
-        int filled = (int) Math.round(progress * statusDisplayBarLength);
-        return color + "■".repeat(filled) + "§7□".repeat(statusDisplayBarLength - filled);
+        return (int) Math.round(progress * statusDisplayBarLength);
     }
 
     private void removeStatusDisplay(UUID unitId) {
-        UUID displayId = statusDisplayByUnit.remove(unitId);
-        Entity display = displayId == null ? null : Bukkit.getEntity(displayId);
-        if (display != null && display.isValid()) display.remove();
+        statusPacketListener.remove(unitId);
     }
 
     private void captureEquipment(Unit unit, Mob mob) {
         EntityEquipment equipment = mob.getEquipment();
         if (equipment == null) return;
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HAND, cloneOrNull(equipment.getItemInMainHand()));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HEAD, cloneOrNull(equipment.getHelmet()));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.CHEST, cloneOrNull(equipment.getChestplate()));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.LEGS, cloneOrNull(equipment.getLeggings()));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.FEET, cloneOrNull(equipment.getBoots()));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.OFF_HAND, cloneOrNull(equipment.getItemInOffHand()));
+        if (mob instanceof PiglinAbstract) {
+            reconcileEquipment(unit, mob, false);
+        } else {
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HAND, cloneOrNull(equipment.getItemInMainHand()));
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HEAD, cloneOrNull(equipment.getHelmet()));
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.CHEST, cloneOrNull(equipment.getChestplate()));
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.LEGS, cloneOrNull(equipment.getLeggings()));
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.FEET, cloneOrNull(equipment.getBoots()));
+            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.OFF_HAND, cloneOrNull(equipment.getItemInOffHand()));
+        }
         Entity mount = mountByUnit.containsKey(unit.id) ? Bukkit.getEntity(mountByUnit.get(unit.id)) : null;
         if (mount instanceof Horse horse && horse.isValid()) captureHorseArmor(unit.id, horse);
     }
@@ -4516,7 +5286,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (unit.entityId != null) {
             Entity entity = Bukkit.getEntity(unit.entityId);
             if (entity instanceof Mob mob && isUnit(mob, unit.id)) {
+                preventZombification(mob);
                 activeEntities.put(unit.id, mob);
+                repairEquipmentFromSaved(unit, mob);
                 updateEntityName(unit, mob);
                 return mob;
             }
@@ -4550,8 +5322,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (found != null) {
             unit.entityId = found.getUniqueId();
             activeEntities.put(unit.id, found);
+            preventZombification(found);
             updateEntityName(unit, found);
-            captureEquipment(unit, found);
+            repairEquipmentFromSaved(unit, found);
             return found;
         }
         return null;
@@ -4565,6 +5338,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean isMercenary(Entity entity) {
         return entity.getPersistentDataContainer().has(unitKey, PersistentDataType.STRING)
             || isSummonedMinion(entity);
+    }
+
+    private void preventZombification(Mob mob) {
+        if (mob instanceof PiglinAbstract piglin) piglin.setImmuneToZombification(true);
     }
 
     private boolean isMercenaryMount(Entity entity) {
@@ -4620,6 +5397,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         data.set(path + ".gear-customized", unit.gearCustomized);
         data.set(path + ".mode", unit.mode.name());
         data.set(path + ".deployed", unit.deployed);
+        data.set(path + ".horse-dead", unit.horseDead);
         data.set(path + ".muted", unit.muted);
         data.set(path + ".entity-uuid", unit.entityId == null ? null : unit.entityId.toString());
         data.set(path + ".world", unit.worldName);
@@ -4760,6 +5538,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private List<Unit> getOwnerUnits(UUID owner) {
         return units.values().stream().filter(unit -> unit.owner.equals(owner))
             .sorted(Comparator.comparing(unit -> unit.id)).toList();
+    }
+
+    private boolean hasOwnedMercenaries(UUID owner) {
+        return !getOwnerUnits(owner).isEmpty();
     }
 
     private Unit findOwnedByShortId(UUID owner, String shortId) {
@@ -4931,6 +5713,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             aiTask.cancel();
             aiTask = null;
         }
+        for (BukkitTask task : torchRemovalTasks.values()) task.cancel();
+        torchRemovalTasks.clear();
         for (Unit unit : units.values()) {
             removeStatusDisplay(unit.id);
             Mob mob = activeEntities.remove(unit.id);
@@ -4945,5 +5729,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         if (!saveData()) plugin.getLogger().severe("[Army] Could not persist mercenaries on plugin shutdown.");
         namePacketListener.close();
+        statusPacketListener.close();
     }
 }
