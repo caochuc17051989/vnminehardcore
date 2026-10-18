@@ -1121,7 +1121,7 @@ classes:
     description: "Bắn loạt băng, làm chậm quái và hồi máu cho chủ nhân."
     # [VI] Entity AI; mặc định SNOW_GOLEM.
     # [EN] AI entity; default SNOW_GOLEM.
-    entity-type: SNOW_GOLEM
+    entity-type: WITCH
     # [VI] Máu cấp 1; mặc định 26, phải lớn hơn 0.
     # [EN] Level-1 health; default 26, must be positive.
     base-health: 26
