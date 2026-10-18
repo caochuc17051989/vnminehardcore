@@ -4688,12 +4688,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         ItemStack[] before = cloneContents(player.getInventory().getContents());
         int previousTier = unit.tier;
+        int previousLevel = unit.level;
+        int previousExperience = unit.experience;
         if (!removeMaterials(player, costs)) {
             player.getInventory().setContents(before);
             player.sendMessage("§cKhông thể trừ đủ vật phẩm; giao dịch đã được hoàn tác.");
             return;
         }
         unit.tier = nextTier;
+        unit.level = 1;
+        unit.experience = 0;
         Mob mob = activeEntities.get(unit.id);
         if (mob != null && mob.isValid()) {
             applyStats(unit, mob);
@@ -4701,6 +4705,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         if (!saveData()) {
             unit.tier = previousTier;
+            unit.level = previousLevel;
+            unit.experience = previousExperience;
             player.getInventory().setContents(before);
             if (mob != null && mob.isValid()) {
                 applyStats(unit, mob);
