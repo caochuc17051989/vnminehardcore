@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.39.3] - 2026-10-18
+
+### Fixed
+- Khi lính đánh thuê nâng bậc, đặt level về 1 và EXP về 0 để chỉ số cơ bản khớp với bậc mới; hoàn tác đầy đủ nếu không lưu được.
+
 ## [v1.39.2] - 2026-10-17
 
 ### Fixed
