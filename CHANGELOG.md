@@ -1,5 +1,20 @@
 # Changelog
 
+## [v1.41.3] - 2026-10-18
+
+### Fixed
+- Cho Pháp Sư Lửa tìm mục tiêu dựa trên bộ kỹ năng lửa, để AI tấn công và kích hoạt kỹ năng.
+
+## [v1.41.2] - 2026-10-18
+
+### Fixed
+- Build lại từ mã nguồn mới nhất để JAR chứa danh sách skill hợp lệ đã đồng bộ, không đóng gói lớp biên dịch cũ.
+
+## [v1.41.1] - 2026-10-18
+
+### Fixed
+- Đồng bộ danh sách skill hợp lệ dùng để kiểm tra cấu hình lính, tránh JAR cũ từ chối `ICE_SPIKE` trong cấu hình Pháp Sư Băng.
+
 ## [v1.41.0] - 2026-10-18
 
 ### Added

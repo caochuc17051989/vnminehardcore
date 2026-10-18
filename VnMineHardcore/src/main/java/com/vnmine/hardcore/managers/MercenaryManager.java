@@ -115,6 +115,13 @@ import java.util.logging.Level;
 public final class MercenaryManager implements CommandExecutor, TabCompleter, Listener {
     private static final String COMMAND_PERMISSION = "vnmine.command.army";
     private static final String ADMIN_PERMISSION = "vnmine.command.army.admin";
+    private static final Set<String> VALID_SKILLS = Set.of(
+        "ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES", "BUFF_OWNER", "BUFF_ALLIES",
+        "SHIELD_OWNER", "VOLLEY", "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
+        "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE", "ILLUMINATION",
+        "FLAME_BOLT", "IGNITE", "FLAME_NOVA", "FIRE_WALL", "METEOR_STRIKE", "PHOENIX_REBIRTH",
+        "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL", "FROST_SHIELD", "FROST_STEP",
+        "FROST_WALKER", "ICE_AGE");
     private static final Set<String> FROST_MAGE_SKILLS = Set.of(
         "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL",
         "FROST_SHIELD", "FROST_STEP", "FROST_WALKER", "ICE_AGE");
@@ -1291,15 +1298,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 throw new InvalidConfigurationException("Entity type for class '" + classId + "' must be an AI mob.");
             }
             for (String skill : loaded.getStringList("classes." + classId + ".skills")) {
-                if (!Set.of("ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES",
-                            "BUFF_OWNER", "BUFF_ALLIES", "SHIELD_OWNER", "VOLLEY",
-                            "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
-                            "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE",
-                            "ILLUMINATION", "FLAME_BOLT", "IGNITE", "FLAME_NOVA", "FIRE_WALL",
-                            "METEOR_STRIKE", "PHOENIX_REBIRTH",
-                            "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL",
-                            "FROST_SHIELD", "FROST_STEP", "FROST_WALKER", "ICE_AGE")
-                        .contains(skill.toUpperCase(Locale.ROOT))) {
+                if (!VALID_SKILLS.contains(skill.toUpperCase(Locale.ROOT))) {
                     throw new InvalidConfigurationException(
                         "Unknown skill '" + skill + "' in class '" + classId + "'.");
                 }
@@ -1318,15 +1317,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 loaded.getConfigurationSection("classes." + classId + ".skill-settings");
             if (skillSettings != null) {
                 for (String skill : skillSettings.getKeys(false)) {
-                    if (!Set.of("ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES",
-                                "BUFF_OWNER", "BUFF_ALLIES", "SHIELD_OWNER", "VOLLEY",
-                                "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
-                                "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE",
-                                "ILLUMINATION", "FLAME_BOLT", "IGNITE", "FLAME_NOVA", "FIRE_WALL",
-                                "METEOR_STRIKE", "PHOENIX_REBIRTH",
-                                "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL",
-                                "FROST_SHIELD", "FROST_STEP", "FROST_WALKER", "ICE_AGE")
-                            .contains(skill.toUpperCase(Locale.ROOT))) {
+                    if (!VALID_SKILLS.contains(skill.toUpperCase(Locale.ROOT))) {
                         throw new InvalidConfigurationException(
                             "Unknown skill-settings entry '" + skill + "' in class '" + classId + "'.");
                     }
@@ -1987,7 +1978,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private LivingEntity findTarget(Unit unit, Mob mob, Player owner) {
         if (!hasSkill(unit, "ATTACK") && !hasSkill(unit, "RANGED_ATTACK")
             && !hasSkill(unit, "FIRE_BOLT") && !hasSkill(unit, "ROOT_TARGET")
-            && FROST_MAGE_SKILLS.stream().noneMatch(skill -> hasSkill(unit, skill))) return null;
+            && FROST_MAGE_SKILLS.stream().noneMatch(skill -> hasSkill(unit, skill))
+            && FIRE_MAGE_SKILLS.stream().noneMatch(skill -> hasSkill(unit, skill))) return null;
         double classRadius = readBoundedDouble(settings, "classes." + unit.unitClass + ".target-radius-blocks",
             targetRadius, 4.0, 50.0);
         Location center = unit.mode == Mode.ATTACK ? mob.getLocation() : owner.getLocation();
