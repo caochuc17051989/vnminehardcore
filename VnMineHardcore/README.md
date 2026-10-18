@@ -90,8 +90,7 @@ thời gian hồi phục, vũ khí ban đầu và vật phẩm nâng bậc. Mư�
 Xạ Thủ (`archer`), Vệ Binh (`guardian`), Y Sư (`medic`), Cuồng Chiến
 (`berserker`), Trinh Sát (`ranger`), Thánh Kỵ (`paladin`), Pháp Sư Lửa
 (`pyromancer`), Tu sĩ rừng (`druid`), Sát Thủ (`assassin`) và Pháp Sư Băng
-(`frost_mage`); mỗi class có 4–6
-skill được cấu hình riêng. Lính chọn vũ khí tốt nhất giữa tay chính và 36 ô
+(`frost_mage`); mỗi class có bộ skill được cấu hình riêng. Lính chọn vũ khí tốt nhất giữa tay chính và 36 ô
 kho; chỉ dùng vũ khí mặc định nếu kho không có món dùng được. Gear được giữ qua
 nghỉ, chết và triệu hồi lại. Mô tả skill và action bar dùng tên tiếng Việt.
 AI dùng danh sách ưu tiên theo từng chế độ trong `ai.priorities`; mặc định chỉ
@@ -116,6 +115,30 @@ kiện qua `classes.ranger.skill-settings.ILLUMINATION.darkness-only` và
 `POWER_STRIKE` (sát thương cộng thêm) và `TAUNT` (bán kính kéo quái khỏi chủ);
 Y Sư có `CLEANSE_OWNER` (cooldown và danh sách hiệu ứng được gỡ). Tất cả thông
 số nằm trong `classes.<class>.skill-settings.<SKILL>` và có thể chỉnh riêng.
+Pháp Sư Băng dùng snowball bay thẳng làm đòn đánh cơ bản và tám skill: `ICE_SPIKE`,
+`BLIZZARD`, `FROST_NOVA`, `ICE_WALL`, `FROST_SHIELD`, `FROST_STEP`,
+`FROST_WALKER`, `ICE_AGE`. Tùy chỉnh tại `classes.frost_mage.basic-attack`,
+`classes.frost_mage.skill-settings` và `classes.frost_mage.level-scaling` trong
+`armies.yml`. Mặc định sát thương snowball/gai băng là 3.0, cộng 0.1 mỗi level;
+cooldown giảm 0.1 giây mỗi level (tối thiểu 1 giây), tầm tăng 1 block tại mỗi
+mốc 5 level. Blizzard gây sát thương và Slowness theo nhịp; Ice Wall, Frost
+Nova và Frost Walker chỉ dùng băng tạm, hoàn nguyên theo thời gian. Băng chỉ
+được đặt trong không gian trống hoặc trên mặt nước, không thay thế block rắn;
+Ice Age chỉ đóng băng/làm chậm mục tiêu và tạo particle, không đổi địa hình.
+Frost Step chỉ lướt khi đường phía trước không bị block che.
+Pháp Sư Lửa (`pyromancer`) dùng sáu skill `FLAME_BOLT`, `IGNITE`, `FLAME_NOVA`,
+`FIRE_WALL`, `METEOR_STRIKE`, `PHOENIX_REBIRTH`; cấu hình tại
+`classes.pyromancer.skill-settings` trong `armies.yml`. Hỏa Cầu gây sát thương
+và giảm tốc độ đúng 20% trong 3 giây; Thiêu Đốt gây DoT mỗi 2 giây trong 8 giây
+và lây có giới hạn; Hỏa Bão gây sát thương/đẩy lùi quanh pháp sư; Hỏa Tường
+dựng block tạm 3 giây, chặn đường và gây sát thương theo nhịp; Thiên Thạch Lửa
+rơi tại vị trí mục tiêu AI, gây AoE và chôn chân 2 giây. Phượng Hoàng tự kích
+hoạt khi máu còn 65% trở xuống: hồi 30% máu tối đa, miễn sát thương 2 giây,
+rồi lao vào mục tiêu gây sát thương AoE và đốt. Damage, cooldown, tầm, kích
+thước vùng, mục tiêu tối đa và thời lượng đều chỉnh riêng theo từng skill;
+cooldown mặc định lần lượt là 2/6/10/12/25/90 giây. Hỏa Tường chỉ đặt block ở
+khoảng trống, không ghi đè địa hình và tự hoàn nguyên; các skill chỉ gây sát
+thương lên mục tiêu hợp lệ theo luật PvP/đồng minh hiện hành.
 Mặc định lính và VEX không gây sát thương lên người chơi hoặc quân của người
 chơi khác chỉ vì phát hiện họ hay bị họ tấn công. Ngoại lệ: sau khi chủ nhân
 trực tiếp đánh đúng mục tiêu, lính có thể tấn công mục tiêu đó trong 15 giây.
@@ -125,9 +148,10 @@ Scaling skill chỉnh tại `progression.skill-power-per-level`,
 `progression.max-skill-power-multiplier` và
 `progression.skill-cooldown-reduction-at-max-level-seconds`.
 Cuồng Chiến thiên về áp sát/khiêu khích; Trinh Sát bắn loạt và hỗ trợ chủ;
-Thánh Kỵ đỡ đòn; Pháp Sư Lửa gây sát thương/đốt và làm chậm; Tu sĩ rừng khống chế,
+Thánh Kỵ đỡ đòn; Pháp Sư Lửa gây sát thương/đốt, khống chế và có ultimate hồi sinh;
+Tu sĩ rừng khống chế,
 hồi máu, thanh tẩy; Sát Thủ hút máu và cuồng nộ khi nguy cấp; Pháp Sư Băng
-bắn loạt và làm chậm mục tiêu. Dùng ID class trong lệnh
+bắn snowball và dùng tám kỹ năng băng. Dùng ID class trong lệnh
 `/vnarmy hire <loại> <bậc>` hoặc menu GUI.
 Tu sĩ rừng gọi tối đa một VEX mỗi lần cast; cứ mỗi 5 level tăng sức chứa thêm
 1 VEX, bắt đầu từ 1 ở level 1 (mặc định tối đa 7 ở level 30). Tùy chỉnh giới

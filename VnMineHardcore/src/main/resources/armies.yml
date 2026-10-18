@@ -175,8 +175,8 @@ classes:
     menu-icon: BOW
     # [VI] Skill Xạ Thủ; có thể bật/tắt bằng cách thêm/xóa ID skill.
     # [EN] Archer skills; enable/disable skills by adding/removing skill IDs.
-    # [VI] ID hợp lệ gồm: ATTACK, RANGED_ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, SHIELD_OWNER, VOLLEY, POWER_STRIKE, TAUNT, CLEANSE_OWNER, FIRE_BOLT, ROOT_TARGET, LIFESTEAL, BERSERK, ILLUMINATION.
-    # [EN] Valid IDs: ATTACK, RANGED_ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, SHIELD_OWNER, VOLLEY, POWER_STRIKE, TAUNT, CLEANSE_OWNER, FIRE_BOLT, ROOT_TARGET, LIFESTEAL, BERSERK, ILLUMINATION.
+    # [VI] ID hợp lệ còn gồm: ATTACK, RANGED_ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, SHIELD_OWNER, VOLLEY, POWER_STRIKE, TAUNT, CLEANSE_OWNER, FIRE_BOLT, ROOT_TARGET, LIFESTEAL, BERSERK, ILLUMINATION, FLAME_BOLT, IGNITE, FLAME_NOVA, FIRE_WALL, METEOR_STRIKE, PHOENIX_REBIRTH, ICE_SPIKE, BLIZZARD, FROST_NOVA, ICE_WALL, FROST_SHIELD, FROST_STEP, FROST_WALKER, ICE_AGE.
+    # [EN] Valid IDs also include: ATTACK, RANGED_ATTACK, HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, SHIELD_OWNER, VOLLEY, POWER_STRIKE, TAUNT, CLEANSE_OWNER, FIRE_BOLT, ROOT_TARGET, LIFESTEAL, BERSERK, ILLUMINATION, FLAME_BOLT, IGNITE, FLAME_NOVA, FIRE_WALL, METEOR_STRIKE, PHOENIX_REBIRTH, ICE_SPIKE, BLIZZARD, FROST_NOVA, ICE_WALL, FROST_SHIELD, FROST_STEP, FROST_WALKER, ICE_AGE.
     skills: [ATTACK, RANGED_ATTACK, BUFF_OWNER, VOLLEY]
     # [VI] Vũ khí mặc định khi thuê; mặc định BOW, phải là Material hợp lệ.
     # [EN] Starting weapon on hire; default BOW, must be a valid material.
@@ -786,7 +786,7 @@ classes:
     display-name: "Pháp Sư Lửa"
     # [VI] Mô tả chức năng trong GUI.
     # [EN] Role description shown in the GUI.
-    description: "Thiêu đốt mục tiêu, làm chậm kẻ địch và kháng lửa cho chủ."
+    description: "Cầu lửa, thiêu đốt, khống chế diện rộng và hóa phượng hoàng."
     # [VI] Entity AI; mặc định WITCH.
     # [EN] AI entity; default WITCH.
     entity-type: WITCH
@@ -811,9 +811,9 @@ classes:
     # [VI] Biểu tượng GUI; mặc định BLAZE_POWDER.
     # [EN] GUI icon; default BLAZE_POWDER.
     menu-icon: BLAZE_POWDER
-    # [VI] Skill: bắn xa, cầu lửa, làm chậm và kháng lửa; tổng 4.
-    # [EN] Ranged kit: fire bolt, slow, and fire resistance; 4 skills total.
-    skills: [RANGED_ATTACK, FIRE_BOLT, ROOT_TARGET, BUFF_OWNER]
+    # [VI] Sáu kỹ năng Pháp Sư Lửa; cấu hình từng kỹ năng trong skill-settings.
+    # [EN] Six Fire Mage skills; configure each skill under skill-settings.
+    skills: [FLAME_BOLT, IGNITE, FLAME_NOVA, FIRE_WALL, METEOR_STRIKE, PHOENIX_REBIRTH]
     # [VI] Vũ khí mặc định; mặc định BLAZE_ROD.
     # [EN] Default weapon; default BLAZE_ROD.
     starting-weapon: BLAZE_ROD
@@ -864,6 +864,156 @@ classes:
         # [VI] Thời lượng; mặc định 8 giây, hợp lệ 1-600.
         # [EN] Duration; default 8 seconds, valid range 1-600.
         duration-seconds: 8
+      FLAME_BOLT:
+        # [VI] Hồi chiêu Hỏa Cầu; mặc định 2 giây, hợp lệ 1-3600.
+        # [EN] Flame Bolt cooldown; default 2 seconds, valid range 1-3600.
+        cooldown-seconds: 2
+        # [VI] Sát thương khi trúng; mặc định 6, hợp lệ 0-100.
+        # [EN] Hit damage; default 6, valid range 0-100.
+        damage: 6.0
+        # [VI] Tầm bắn; mặc định 24 block, hợp lệ 1-64.
+        # [EN] Projectile range; default 24 blocks, valid range 1-64.
+        range-blocks: 24.0
+        # [VI] Tốc độ projectile; mặc định 1.8, hợp lệ 0.5-4.
+        # [EN] Projectile speed; default 1.8, valid range 0.5-4.
+        projectile-speed: 1.8
+        # [VI] Phần trăm giảm tốc độ; mặc định 20%, hợp lệ 0-80%.
+        # [EN] Movement speed reduction; default 20%, valid range 0-80%.
+        slowness-percent: 20.0
+        # [VI] Thời gian giảm tốc; mặc định 3 giây, hợp lệ 1-15.
+        # [EN] Slow duration; default 3 seconds, valid range 1-15.
+        slowness-duration-seconds: 3
+      IGNITE:
+        # [VI] Hồi chiêu Thiêu Đốt; mặc định 6 giây, hợp lệ 1-3600.
+        # [EN] Ignite cooldown; default 6 seconds, valid range 1-3600.
+        cooldown-seconds: 6
+        # [VI] Tầm dùng skill; mặc định 24 block, hợp lệ 1-64.
+        # [EN] Cast range; default 24 blocks, valid range 1-64.
+        range-blocks: 24.0
+        # [VI] Sát thương mỗi nhịp; mặc định 2.5, hợp lệ 0-100.
+        # [EN] Damage per pulse; default 2.5, valid range 0-100.
+        damage-per-pulse: 2.5
+        # [VI] Tổng thời gian DoT; mặc định 8 giây, hợp lệ 2-30.
+        # [EN] Damage-over-time duration; default 8 seconds, valid range 2-30.
+        duration-seconds: 8
+        # [VI] Khoảng cách giữa các nhịp; mặc định 40 tick (2 giây), hợp lệ 20-200.
+        # [EN] Pulse interval; default 40 ticks (2 seconds), valid range 20-200.
+        pulse-interval-ticks: 40
+        # [VI] Bán kính lây; mặc định 4 block, hợp lệ 1-12.
+        # [EN] Spread radius; default 4 blocks, valid range 1-12.
+        spread-radius-blocks: 4.0
+        # [VI] Số mục tiêu tối đa trong một chuỗi lây; mặc định 6, hợp lệ 1-24.
+        # [EN] Maximum targets per spread chain; default 6, valid range 1-24.
+        max-spread-targets: 6
+      FLAME_NOVA:
+        # [VI] Hồi chiêu Hỏa Bão; mặc định 10 giây, hợp lệ 1-3600.
+        # [EN] Flame Nova cooldown; default 10 seconds, valid range 1-3600.
+        cooldown-seconds: 10
+        # [VI] Tầm mục tiêu kích hoạt; mặc định 5 block, hợp lệ 1-12.
+        # [EN] Target trigger distance; default 5 blocks, valid range 1-12.
+        trigger-range-blocks: 5.0
+        # [VI] Bán kính nổ quanh pháp sư; mặc định 5 block, hợp lệ 1-12.
+        # [EN] Explosion radius around the mage; default 5 blocks, valid range 1-12.
+        radius-blocks: 5.0
+        # [VI] Sát thương; mặc định 6, hợp lệ 0-100.
+        # [EN] Damage; default 6, valid range 0-100.
+        damage: 6.0
+        # [VI] Cường độ đẩy lùi; mặc định 1.2, hợp lệ 0.1-4.
+        # [EN] Knockback strength; default 1.2, valid range 0.1-4.
+        knockback-strength: 1.2
+        # [VI] Số mục tiêu tối đa; mặc định 24, hợp lệ 1-64.
+        # [EN] Maximum targets; default 24, valid range 1-64.
+        max-targets: 24
+      FIRE_WALL:
+        # [VI] Hồi chiêu Hỏa Tường; mặc định 12 giây, hợp lệ 1-3600.
+        # [EN] Fire Wall cooldown; default 12 seconds, valid range 1-3600.
+        cooldown-seconds: 12
+        # [VI] Tầm mục tiêu; mặc định 16 block, hợp lệ 1-64.
+        # [EN] Target range; default 16 blocks, valid range 1-64.
+        range-blocks: 16.0
+        # [VI] Chiều dài tường; mặc định 5 block, hợp lệ 1-9.
+        # [EN] Wall width; default 5 blocks, valid range 1-9.
+        width-blocks: 5
+        # [VI] Chiều cao tường; mặc định 3 block, hợp lệ 1-5.
+        # [EN] Wall height; default 3 blocks, valid range 1-5.
+        height-blocks: 3
+        # [VI] Thời gian tồn tại; mặc định 3 giây, hợp lệ 1-15.
+        # [EN] Wall duration; default 3 seconds, valid range 1-15.
+        duration-seconds: 3
+        # [VI] Block đặc tạo tường; mặc định MAGMA_BLOCK.
+        # [EN] Solid wall block material; default MAGMA_BLOCK.
+        block-material: MAGMA_BLOCK
+        # [VI] Giới hạn block tường lửa tạm đồng thời; mặc định 96, hợp lệ 1-512.
+        # [EN] Maximum simultaneous temporary wall blocks; default 96, valid range 1-512.
+        temporary-block-limit: 96
+        # [VI] Khoảng cách giữa các lần gây sát thương; mặc định 10 tick, hợp lệ 5-40.
+        # [EN] Damage interval; default 10 ticks, valid range 5-40.
+        damage-interval-ticks: 10
+        # [VI] Sát thương mỗi nhịp chạm tường; mặc định 2, hợp lệ 0-100.
+        # [EN] Damage per wall pulse; default 2, valid range 0-100.
+        damage-per-pulse: 2.0
+        # [VI] Số mục tiêu tối đa mỗi nhịp; mặc định 12, hợp lệ 1-32.
+        # [EN] Maximum targets per pulse; default 12, valid range 1-32.
+        max-targets: 12
+      METEOR_STRIKE:
+        # [VI] Hồi chiêu Thiên Thạch Lửa; mặc định 25 giây, hợp lệ 1-3600.
+        # [EN] Meteor Strike cooldown; default 25 seconds, valid range 1-3600.
+        cooldown-seconds: 25
+        # [VI] Tầm chọn mục tiêu; mặc định 32 block, hợp lệ 1-64.
+        # [EN] Target selection range; default 32 blocks, valid range 1-64.
+        range-blocks: 32.0
+        # [VI] Bán kính nổ; mặc định 4 block, hợp lệ 1-12.
+        # [EN] Impact radius; default 4 blocks, valid range 1-12.
+        radius-blocks: 4.0
+        # [VI] Sát thương; mặc định 12, hợp lệ 0-100.
+        # [EN] Damage; default 12, valid range 0-100.
+        damage: 12.0
+        # [VI] Thời gian rơi/cảnh báo; mặc định 30 tick, hợp lệ 10-100.
+        # [EN] Fall/telegraph delay; default 30 ticks, valid range 10-100.
+        impact-delay-ticks: 30
+        # [VI] Thời gian chôn chân; mặc định 2 giây, hợp lệ 1-5.
+        # [EN] Root duration; default 2 seconds, valid range 1-5.
+        root-duration-seconds: 2
+        # [VI] Cấp Slowness dùng để chôn chân; mặc định 10, hợp lệ 0-20.
+        # [EN] Slowness amplifier for rooting; default 10, valid range 0-20.
+        root-amplifier: 10
+        # [VI] Số mục tiêu tối đa; mặc định 24, hợp lệ 1-64.
+        # [EN] Maximum targets; default 24, valid range 1-64.
+        max-targets: 24
+      PHOENIX_REBIRTH:
+        # [VI] Hồi chiêu Phượng Hoàng Tái Sinh; mặc định 90 giây, hợp lệ 1-3600.
+        # [EN] Phoenix Rebirth cooldown; default 90 seconds, valid range 1-3600.
+        cooldown-seconds: 90
+        # [VI] Tầm chọn mục tiêu; mặc định 32 block, hợp lệ 1-64.
+        # [EN] Target selection range; default 32 blocks, valid range 1-64.
+        range-blocks: 32.0
+        # [VI] Ngưỡng HP kích hoạt tự động; mặc định 65%, hợp lệ 1-99%.
+        # [EN] Automatic health trigger; default 65%, valid range 1-99%.
+        health-percent-trigger: 65.0
+        # [VI] Phần trăm máu tối đa hồi; mặc định 30%, hợp lệ 1-100%.
+        # [EN] Maximum-health healing; default 30%, valid range 1-100%.
+        heal-percent: 30.0
+        # [VI] Thời gian miễn sát thương; mặc định 2 giây, hợp lệ 1-5.
+        # [EN] Damage immunity duration; default 2 seconds, valid range 1-5.
+        immunity-duration-seconds: 2
+        # [VI] Tốc độ lao; mặc định 1.8, hợp lệ 0.5-3.5.
+        # [EN] Dash speed; default 1.8, valid range 0.5-3.5.
+        dash-speed: 1.8
+        # [VI] Độ trễ AoE sau khi lao; mặc định 10 tick, hợp lệ 1-40.
+        # [EN] AoE delay after dash; default 10 ticks, valid range 1-40.
+        dash-impact-delay-ticks: 10
+        # [VI] Bán kính AoE; mặc định 8 block, hợp lệ 1-16.
+        # [EN] AoE radius; default 8 blocks, valid range 1-16.
+        radius-blocks: 8.0
+        # [VI] Sát thương AoE; mặc định 18, hợp lệ 0-100.
+        # [EN] AoE damage; default 18, valid range 0-100.
+        damage: 18.0
+        # [VI] Thời gian đốt sau AoE; mặc định 5 giây, hợp lệ 1-15.
+        # [EN] Burn duration after AoE; default 5 seconds, valid range 1-15.
+        burn-duration-seconds: 5
+        # [VI] Số mục tiêu tối đa; mặc định 32, hợp lệ 1-64.
+        # [EN] Maximum targets; default 32, valid range 1-64.
+        max-targets: 32
     # [VI] Chi phí nâng bậc; tier đích 2-13, số lượng vật liệu 0-1000000.
     # [EN] Tier-upgrade costs; target tier 2-13, material amount 0-1000000.
     tier-upgrades:
@@ -1118,7 +1268,7 @@ classes:
     display-name: "Pháp Sư Băng"
     # [VI] Mô tả chức năng trong GUI.
     # [EN] Role description shown in the GUI.
-    description: "Bắn loạt băng, làm chậm quái và hồi máu cho chủ nhân."
+    description: "Bắn đòn băng, khống chế diện rộng và tạo lá chắn băng."
     # [VI] Entity AI; mặc định SNOW_GOLEM.
     # [EN] AI entity; default SNOW_GOLEM.
     entity-type: WITCH
@@ -1143,62 +1293,200 @@ classes:
     # [VI] Biểu tượng GUI; mặc định SNOWBALL.
     # [EN] GUI icon; default SNOWBALL.
     menu-icon: SNOWBALL
-    # [VI] Skill: bắn xa/loạt, khống chế băng và hồi máu; tổng 4.
-    # [EN] Ranged volley, frost control, and healing kit; 4 skills total.
-    skills: [RANGED_ATTACK, VOLLEY, ROOT_TARGET, HEAL_OWNER]
-    # [VI] Vũ khí mặc định cho skill bắn tên; mặc định BOW.
-    # [EN] Default weapon for arrow skills; default BOW.
-    starting-weapon: BOW
+    # [VI] Tám kỹ năng băng; snowball ở basic-attack là đòn đánh cơ bản.
+    # [EN] Eight frost skills; the snowball in basic-attack is the basic attack.
+    skills: [ICE_SPIKE, BLIZZARD, FROST_NOVA, ICE_WALL, FROST_SHIELD, FROST_STEP, FROST_WALKER, ICE_AGE]
+    # [VI] Vật phẩm cầm mặc định; đòn đánh cơ bản vẫn là snowball do plugin phóng.
+    # [EN] Default held item; the basic attack remains a plugin-launched snowball.
+    starting-weapon: SNOWBALL
     # [VI] Tầm tìm mục tiêu; mặc định 24 block, hợp lệ 4-64.
     # [EN] Target acquisition radius; default 24 blocks, valid range 4-64.
     target-radius-blocks: 24.0
+    # [VI] Cân bằng theo level riêng cho Pháp Sư Băng; damage cộng mỗi level,
+    # cooldown giảm mỗi level, tầm tăng theo mốc level.
+    # [EN] Frost Mage-only level scaling; add damage/reduce cooldown per level
+    # and increase range at configured level milestones.
+    level-scaling:
+      # [VI] Sát thương cộng mỗi level sau level 1; mặc định 0.1, hợp lệ 0-10.
+      # [EN] Damage added per level after level 1; default 0.1, valid range 0-10.
+      damage-per-level: 0.1
+      # [VI] Giây giảm cooldown mỗi level; mặc định 0.1, hợp lệ 0-10; cooldown tối thiểu 1 giây.
+      # [EN] Seconds removed from cooldown per level; default 0.1, valid range 0-10; minimum cooldown is 1 second.
+      cooldown-reduction-per-level-seconds: 0.1
+      # [VI] Số level mỗi mốc tăng tầm; mặc định 5, hợp lệ 1-30.
+      # [EN] Levels per range milestone; default 5, valid range 1-30.
+      range-increase-every-levels: 5
+      # [VI] Số block tăng mỗi mốc; mặc định 1, hợp lệ 0-16.
+      # [EN] Blocks added at each milestone; default 1, valid range 0-16.
+      range-increase-blocks: 1.0
+    # [VI] Giới hạn block băng tạm đang hoạt động; mặc định 128, hợp lệ 1-512.
+    # [EN] Maximum simultaneous temporary ice blocks; default 128, valid range 1-512.
+    temporary-block-limit: 128
+    # [VI] Snowball tấn công cơ bản; sát thương/cooldown/tầm ban đầu lần lượt 3/2/5.
+    # [EN] Basic snowball attack; initial damage/cooldown/range are 3/2/5.
+    basic-attack:
+      # [VI] Sát thương; mặc định 3, hợp lệ 0-100.
+      # [EN] Damage; default 3, valid range 0-100.
+      damage: 3.0
+      # [VI] Cooldown giây; mặc định 2, hợp lệ 1-3600.
+      # [EN] Cooldown seconds; default 2, valid range 1-3600.
+      cooldown-seconds: 2.0
+      # [VI] Tầm cơ bản; mặc định 5 block, hợp lệ 1-64.
+      # [EN] Base range; default 5 blocks, valid range 1-64.
+      range-blocks: 5.0
+      # [VI] Tốc độ snowball; mặc định 1.65, hợp lệ 0.5-4.
+      # [EN] Snowball speed; default 1.65, valid range 0.5-4.
+      projectile-speed: 1.65
     skill-settings:
-      RANGED_ATTACK:
-        # [VI] Cooldown bắn thường; mặc định 4 giây, hợp lệ 1-3600.
-        # [EN] Ranged cooldown; default 4 seconds, valid range 1-3600.
-        cooldown-seconds: 4
-        # [VI] Sát thương tên; mặc định 3.5, hợp lệ 0-100.
-        # [EN] Arrow damage; default 3.5, valid range 0-100.
-        damage: 3.5
-        # [VI] Tầm giữ vị trí; mặc định 16 block, hợp lệ 4-64.
-        # [EN] Preferred firing distance; default 16 blocks, valid range 4-64.
-        range-blocks: 16.0
-      VOLLEY:
-        # [VI] Cooldown bắn loạt; mặc định 16 giây, hợp lệ 1-3600.
-        # [EN] Volley cooldown; default 16 seconds, valid range 1-3600.
-        cooldown-seconds: 16
-        # [VI] Số đạn mỗi loạt; mặc định 3, hợp lệ 2-5.
-        # [EN] Projectiles per volley; default 3, valid range 2-5.
-        arrow-count: 3
-        # [VI] Tốc độ đạn; mặc định 1.8, hợp lệ 0.5-4.0.
-        # [EN] Projectile velocity; default 1.8, valid range 0.5-4.0.
-        arrow-speed: 1.8
-        # [VI] Góc tỏa; mặc định 5 độ, hợp lệ 0-30.
-        # [EN] Spread angle; default 5 degrees, valid range 0-30.
-        spread-degrees: 5.0
-        # [VI] Sát thương mỗi đạn; mặc định 2, hợp lệ 0-100.
-        # [EN] Damage per projectile; default 2, valid range 0-100.
-        damage: 2.0
-      ROOT_TARGET:
-        # [VI] Cooldown đóng băng; mặc định 14 giây, hợp lệ 1-3600.
-        # [EN] Freeze cooldown; default 14 seconds, valid range 1-3600.
+      ICE_SPIKE:
+        # [VI] Sát thương; mặc định 3, hợp lệ 0-100.
+        # [EN] Damage; default 3, valid range 0-100.
+        damage: 3.0
+        # [VI] Hồi chiêu; mặc định 6 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 6 seconds, valid range 1-3600.
+        cooldown-seconds: 6
+        # [VI] Tầm cơ bản; mặc định 5 block, hợp lệ 1-64.
+        # [EN] Base range; default 5 blocks, valid range 1-64.
+        range-blocks: 5.0
+        # [VI] Tốc độ gai băng; mặc định 2.1, hợp lệ 0.5-4.
+        # [EN] Ice Spike speed; default 2.1, valid range 0.5-4.
+        projectile-speed: 2.1
+      BLIZZARD:
+        # [VI] Sát thương mỗi nhịp; mặc định 3, hợp lệ 0-100.
+        # [EN] Damage per pulse; default 3, valid range 0-100.
+        damage: 3.0
+        # [VI] Hồi chiêu; mặc định 14 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 14 seconds, valid range 1-3600.
         cooldown-seconds: 14
-        # [VI] Hiệu ứng hợp lệ; mặc định SLOWNESS.
-        # [EN] Valid potion effect; default SLOWNESS.
-        effect: SLOWNESS
-        # [VI] Thời lượng; mặc định 5 giây, hợp lệ 1-600.
-        # [EN] Duration; default 5 seconds, valid range 1-600.
-        duration-seconds: 5
-        # [VI] Cấp hiệu ứng; mặc định 2, hợp lệ 0-10.
-        # [EN] Effect amplifier; default 2, valid range 0-10.
-        amplifier: 2
-      HEAL_OWNER:
-        # [VI] Cooldown hồi chủ; mặc định 18 giây, hợp lệ 1-3600.
-        # [EN] Owner heal cooldown; default 18 seconds, valid range 1-3600.
+        # [VI] Tầm kích hoạt cơ bản; mặc định 5 block, hợp lệ 1-64.
+        # [EN] Base cast range; default 5 blocks, valid range 1-64.
+        range-blocks: 5.0
+        # [VI] Bán kính bão tuyết; mặc định 4 block, hợp lệ 1-12.
+        # [EN] Blizzard radius; default 4 blocks, valid range 1-12.
+        radius-blocks: 4.0
+        # [VI] Thời lượng; mặc định 3 giây, hợp lệ 1-12.
+        # [EN] Duration; default 3 seconds, valid range 1-12.
+        duration-seconds: 3
+        # [VI] Nhịp gây sát thương; mặc định 20 tick, hợp lệ 10-100.
+        # [EN] Damage pulse interval; default 20 ticks, valid range 10-100.
+        pulse-interval-ticks: 20
+        # [VI] Số mục tiêu tối đa mỗi nhịp; mặc định 8, hợp lệ 1-32.
+        # [EN] Maximum targets per pulse; default 8, valid range 1-32.
+        max-targets: 8
+        # [VI] Slowness amplifier; mặc định 1, hợp lệ 0-4.
+        # [EN] Slowness amplifier; default 1, valid range 0-4.
+        slowness-amplifier: 1
+        # [VI] Thời lượng Slowness mỗi nhịp; mặc định 40 tick, hợp lệ 10-200.
+        # [EN] Slowness duration per pulse; default 40 ticks, valid range 10-200.
+        slowness-duration-ticks: 40
+      FROST_NOVA:
+        # [VI] Hồi chiêu; mặc định 12 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 12 seconds, valid range 1-3600.
+        cooldown-seconds: 12
+        # [VI] Tầm kích hoạt cơ bản; mặc định 5 block, hợp lệ 1-64.
+        # [EN] Base cast range; default 5 blocks, valid range 1-64.
+        range-blocks: 5.0
+        # [VI] Bán kính làm chậm; mặc định 4 block, hợp lệ 1-12.
+        # [EN] Slowing radius; default 4 blocks, valid range 1-12.
+        radius-blocks: 4.0
+        # [VI] Số mục tiêu tối đa; mặc định 8, hợp lệ 1-32.
+        # [EN] Maximum targets; default 8, valid range 1-32.
+        max-targets: 8
+        # [VI] Slowness amplifier; mặc định 3, hợp lệ 0-6.
+        # [EN] Slowness amplifier; default 3, valid range 0-6.
+        slowness-amplifier: 3
+        # [VI] Thời lượng; mặc định 3 giây, hợp lệ 1-10.
+        # [EN] Duration; default 3 seconds, valid range 1-10.
+        duration-seconds: 3
+        # [VI] Thời gian băng dưới mục tiêu; mặc định 3 giây, hợp lệ 1-30.
+        # [EN] Temporary ice duration under targets; default 3 seconds, valid range 1-30.
+        ice-duration-seconds: 3
+      ICE_WALL:
+        # [VI] Hồi chiêu; mặc định 18 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 18 seconds, valid range 1-3600.
         cooldown-seconds: 18
-        # [VI] Lượng máu hồi; mặc định 4, hợp lệ 0-100.
-        # [EN] Health restored; default 4, valid range 0-100.
-        amount: 4.0
+        # [VI] Tầm kích hoạt cơ bản; mặc định 5 block, hợp lệ 1-64.
+        # [EN] Base cast range; default 5 blocks, valid range 1-64.
+        range-blocks: 5.0
+        # [VI] Chiều rộng hàng băng; mặc định 5 block, hợp lệ 1-9.
+        # [EN] Ice wall width; default 5 blocks, valid range 1-9.
+        width-blocks: 5
+        # [VI] Chiều cao; mặc định 2 block, hợp lệ 2-3.
+        # [EN] Height; default 2 blocks, valid range 2-3.
+        height-blocks: 2
+        # [VI] Thời gian tồn tại; mặc định 6 giây, hợp lệ 1-30.
+        # [EN] Lifetime; default 6 seconds, valid range 1-30.
+        duration-seconds: 6
+      FROST_SHIELD:
+        # [VI] Hồi chiêu; mặc định 24 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 24 seconds, valid range 1-3600.
+        cooldown-seconds: 24
+        # [VI] Thời lượng Absorption; mặc định 6 giây, tăng theo level, hợp lệ 1-30.
+        # [EN] Absorption duration; default 6 seconds, scales with level, valid range 1-30.
+        duration-seconds: 6
+        # [VI] Giây tăng thêm mỗi level; mặc định 0.1, hợp lệ 0-10.
+        # [EN] Extra seconds per level; default 0.1, valid range 0-10.
+        duration-increase-per-level-seconds: 0.1
+        # [VI] Cấp Absorption; mặc định 1, hợp lệ 0-10.
+        # [EN] Absorption amplifier; default 1, valid range 0-10.
+        absorption-amplifier: 1
+        # [VI] Thời gian làm chậm kẻ tấn công; mặc định 3 giây, hợp lệ 1-15.
+        # [EN] Slowness duration applied to attackers; default 3 seconds, valid range 1-15.
+        attacker-slowness-duration-seconds: 3
+        # [VI] Cấp Slowness; mặc định 1, hợp lệ 0-4.
+        # [EN] Slowness amplifier; default 1, valid range 0-4.
+        attacker-slowness-amplifier: 1
+      FROST_STEP:
+        # [VI] Hồi chiêu; mặc định 8 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 8 seconds, valid range 1-3600.
+        cooldown-seconds: 8
+        # [VI] Tầm kích hoạt cơ bản; mặc định 5 block, hợp lệ 1-64.
+        # [EN] Base cast range; default 5 blocks, valid range 1-64.
+        range-blocks: 5.0
+        # [VI] Hệ số tốc độ cú lướt; mặc định 0.7, hợp lệ 0.2-1.5.
+        # [EN] Dash velocity multiplier; default 0.7, valid range 0.2-1.5.
+        dash-speed: 0.7
+      FROST_WALKER:
+        # [VI] Hồi chiêu; mặc định 30 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 30 seconds, valid range 1-3600.
+        cooldown-seconds: 30
+        # [VI] Thời lượng hiệu ứng; mặc định 8 giây, tăng theo level, hợp lệ 1-30.
+        # [EN] Effect duration; default 8 seconds, scales with level, valid range 1-30.
+        duration-seconds: 8
+        # [VI] Giây tăng thêm mỗi level; mặc định 0.1, hợp lệ 0-10.
+        # [EN] Extra seconds per level; default 0.1, valid range 0-10.
+        duration-increase-per-level-seconds: 0.1
+        # [VI] Chu kỳ tạo vệt băng; mặc định 10 tick, hợp lệ 5-40.
+        # [EN] Ice trail interval; default 10 ticks, valid range 5-40.
+        trail-interval-ticks: 10
+        # [VI] Bán kính đóng băng mặt nước quanh lính; mặc định 2 block, hợp lệ 1-5.
+        # [EN] Radius for temporarily freezing water surfaces; default 2 blocks, valid range 1-5.
+        trail-radius-blocks: 2.0
+        # [VI] Thời gian băng tồn tại; mặc định 3 giây, hợp lệ 1-15.
+        # [EN] Temporary ice lifetime; default 3 seconds, valid range 1-15.
+        ice-duration-seconds: 3
+      ICE_AGE:
+        # [VI] Hồi chiêu; mặc định 60 giây, hợp lệ 1-3600.
+        # [EN] Cooldown; default 60 seconds, valid range 1-3600.
+        cooldown-seconds: 60
+        # [VI] Tầm cơ bản để kích hoạt; mặc định 15 block, hợp lệ 1-64.
+        # [EN] Base activation range; default 15 blocks, valid range 1-64.
+        range-blocks: 15.0
+        # [VI] Bán kính cơ bản; mặc định 15 block, hợp lệ 1-64.
+        # [EN] Base radius; default 15 blocks, valid range 1-64.
+        radius-blocks: 15.0
+        # [VI] Số mục tiêu tối đa; mặc định 24, hợp lệ 1-64.
+        # [EN] Maximum targets; default 24, valid range 1-64.
+        max-targets: 24
+        # [VI] Thời lượng đóng băng; mặc định 4 giây, tăng theo level, hợp lệ 1-10.
+        # [EN] Freeze duration; default 4 seconds, scales with level, valid range 1-10.
+        duration-seconds: 4
+        # [VI] Giây tăng thêm mỗi level; mặc định 0.1, hợp lệ 0-10.
+        # [EN] Extra seconds per level; default 0.1, valid range 0-10.
+        duration-increase-per-level-seconds: 0.1
+        # [VI] Slowness amplifier; mặc định 2, hợp lệ 0-6.
+        # [EN] Slowness amplifier; default 2, valid range 0-6.
+        slowness-amplifier: 2
     # [VI] Chi phí nâng bậc; tier đích 2-13, số lượng vật liệu 0-1000000.
     # [EN] Tier-upgrade costs; target tier 2-13, material amount 0-1000000.
     tier-upgrades:

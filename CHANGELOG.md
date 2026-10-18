@@ -1,5 +1,24 @@
 # Changelog
 
+## [v1.41.0] - 2026-10-18
+
+### Added
+- Thiết kế lại Pháp Sư Lửa với sáu kỹ năng Hỏa Cầu, Thiêu Đốt, Hỏa Bão, Hỏa Tường, Thiên Thạch Lửa và Phượng Hoàng Tái Sinh.
+- Thêm cấu hình damage, cooldown, DoT/lây lan, khống chế, tầm, giới hạn mục tiêu và block tường lửa; dọn miễn sát thương, hiệu ứng và block tạm theo thời hạn/reload/disable.
+- Tự di trú bộ skill Pháp Sư Lửa mặc định cũ sang bộ mới mà không ghi đè danh sách kỹ năng đã tùy chỉnh.
+
+## [v1.40.1] - 2026-10-18
+
+### Fixed
+- Tự chuyển cấu hình snowball cũ bị đặt nhầm trong `classes.frost_mage.skill-settings.SNOWBALL` sang `classes.frost_mage.basic-attack`, tránh làm plugin lỗi khi khởi động.
+
+## [v1.40.0] - 2026-10-18
+
+### Added
+- Thiết kế lại Pháp Sư Băng với snowball bay thẳng và tám kỹ năng: Ice Spike, Blizzard, Frost Nova, Ice Wall, Frost Shield, Frost Step, Frost Walker và Ice Age.
+- Thêm cấu hình riêng cho sát thương, cooldown, tầm, thời lượng, bán kính và giới hạn mục tiêu; damage/cooldown/range có scaling riêng theo level, không nhân chồng multiplier skill chung.
+- Hoàn nguyên băng tạm khi hết thời gian, chặn phá/hủy/dịch chuyển block tạm và dọn task, hiệu ứng, block khi reload hoặc tắt plugin; Ice Age không biến đổi địa hình.
+
 ## [v1.39.3] - 2026-10-18
 
 ### Fixed
