@@ -1,5 +1,19 @@
 # Changelog
 
+## [v1.46.1] - 2026-10-19
+
+### Changed
+- Giảm bonus vũ khí tay chính của Vệ Binh xuống 10%; Hộ Vệ chuyển 40% sát thương chủ nhận sang lính.
+- Điều chỉnh Xung Phong lao tối đa 8 block ở cấp thấp và tăng 1 block mỗi 5 Level; đổi tên, làm rõ mô tả Thánh Thể, Vây Hãm và Hộ Giá.
+- Bổ sung di trú cấu hình mặc định Vệ Binh mới, giữ nguyên các giá trị người quản trị đã tùy chỉnh.
+
+## [v1.46.0] - 2026-10-19
+
+### Added
+- Thay bộ skill Vệ Binh bằng sáu kỹ năng tanker tự kích hoạt: Trấn Phạt, Hộ Vệ Liên Kết, Xung Phong Đoạn Hải, Thánh Thể Bảo Hộ, Địa Chấn Giam Hãm và Đại Địa Tuyệt Đối: Hộ Giá.
+- Tách tăng trưởng HP/giáp/damage Vệ Binh theo Bậc và Level; kiếm tay chính tăng damage, khiên tay phụ tăng HP/Absorption; mô tả hiển thị tổng và thành phần chỉ số bằng màu.
+- Thêm cấu hình song ngữ, di trú bộ skill Guardian cũ và tài liệu cơ chế tanker; Địa Chấn chỉ dùng block giả phía client, không thay đổi địa hình thật.
+
 ## [v1.45.0] - 2026-10-19
 
 ### Changed

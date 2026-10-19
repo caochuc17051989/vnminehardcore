@@ -118,10 +118,31 @@ giây); chỉ dùng khi trời tối hoặc ánh sáng tại Trinh Sát không v
 thấp cấu hình (mặc định 7). Số tên tăng thêm mỗi 5 level. Có thể chỉnh điều
 kiện qua `classes.ranger.skill-settings.ILLUMINATION.darkness-only` và
 `low-light-threshold`. Các thông số nằm trong
-`classes.ranger` và `classes.ranger.skill-settings.ILLUMINATION`. Vệ Binh có
-`POWER_STRIKE` (sát thương cộng thêm) và `TAUNT` (bán kính kéo quái khỏi chủ);
-Y Sư có `CLEANSE_OWNER` (cooldown và danh sách hiệu ứng được gỡ). Tất cả thông
-số nằm trong `classes.<class>.skill-settings.<SKILL>` và có thể chỉnh riêng.
+`classes.ranger` và `classes.ranger.skill-settings.ILLUMINATION`. Vệ Binh
+(`guardian`) dùng Husk và có sáu kỹ năng tanker tự kích hoạt: `ATTACK` cộng
+damage bằng 5% HP tối đa ở mỗi đòn thứ ba và làm chậm quái phía trước;
+`GUARDIAN_LINK` (**Hộ Vệ**) là nội tại: Vệ Binh nhận mặc định 40% sát thương
+thay cho chủ nhân trong 5 block; `GUARDIAN_CHARGE` (**Xung Phong**) tự lao
+4–8 block và hất lùi, cự ly tối đa tăng 1 block mỗi 5 Level; `GUARDIAN_SHIELD`
+(**Thánh Thể**) cấp lớp máu hấp thụ sát thương cho Vệ Binh, chủ và đồng đội
+cùng Bukkit Scoreboard Team/lính cùng đội quân, đồng thời giảm sát thương nhận
+vào. `GUARDIAN_QUAKE` (**Vây Hãm**) tạo vòng block giả vây mục tiêu trong 5 giây
+và làm chậm; `GUARDIAN_ULTIMATE` (**Hộ Giá**) tự kích hoạt khi HP chủ còn 50%
+trở xuống để dịch chuyển về bảo vệ, hất lùi/khiêu khích quái và miễn damage cho
+chủ trong 3 giây. Block của Vây Hãm chỉ hiển thị phía client, không sửa địa hình
+thật; hiệu ứng làm chậm được áp dụng phía server.
+
+Chỉ số Vệ Binh tách riêng theo Bậc và Level: mặc định mỗi Bậc thêm 6 HP, 0.5
+giáp và 0.75 damage; mỗi Level thêm 5 HP và 0.75 damage, cứ 5 Level thêm 0.5
+giáp. Cầm vũ khí tay chính tăng 10% damage tổng; cầm khiên tay phụ thêm 8 HP
+và tăng lượng lớp máu hấp thụ của `GUARDIAN_SHIELD`. Mô tả lính hiển thị chỉ số
+tổng cùng các thành phần Bậc/Level/trang bị bằng màu riêng. Tinh chỉnh chỉ số trong
+`classes.guardian`; thiết lập bán kính, thời lượng, cooldown và hiệu ứng từng
+skill trong `classes.guardian.skill-settings.<SKILL>`. Thuê qua menu hoặc
+`/vnarmy hire guardian <bậc>`; dùng quyền hiện có `vnmine.command.army`, không
+có permission mới. Y Sư có `CLEANSE_OWNER` (cooldown và danh sách hiệu ứng được
+gỡ). Các thông số skill khác nằm trong
+`classes.<class>.skill-settings.<SKILL>` và có thể chỉnh riêng.
 Pháp Sư Băng dùng snowball bay thẳng làm đòn đánh cơ bản và tám skill: `ICE_SPIKE`,
 `BLIZZARD`, `FROST_NOVA`, `ICE_WALL`, `FROST_SHIELD`, `FROST_STEP`,
 `FROST_WALKER`, `ICE_AGE`. Tùy chỉnh tại `classes.frost_mage.basic-attack`,
