@@ -17,6 +17,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -107,6 +108,7 @@ public class BossEventManager implements Listener {
     private final Set<BlockPosition> playerModifiedTemporaryBlocks = new HashSet<>();
     private final Map<UUID, Long> phantomRevealedUntil = new HashMap<>();
     private boolean spiderBroodReleased;
+    private static final double ENDERMAN_LOOK_DOT_THRESHOLD = 0.95;
     private static final double MAX_CONFIGURED_BOSS_HEALTH = 1_000_000_000.0;
 
     private record BossProjectileConfig(double damage, double radius, boolean splashOnImpact) { }
@@ -212,7 +214,11 @@ public class BossEventManager implements Listener {
 
         int min = Math.max(1, Math.min(1000, selected.minLevel));
         int max = Math.max(min, Math.min(1000, selected.maxLevel));
-        return random.nextInt(min, max + 1);
+        int level = random.nextInt(min, max + 1);
+        String worldName = Bukkit.getWorlds().isEmpty() ? "<none>" : Bukkit.getWorlds().get(0).getName();
+        logger.info("[BossEvent] Automatic level selection: world=" + worldName + ", day=" + worldDay
+            + ", threshold=" + selected.minDay + ", range=" + min + "-" + max + ", selected=" + level + ".");
+        return level;
     }
 
     private long getCurrentWorldDay() {
@@ -1164,6 +1170,7 @@ public class BossEventManager implements Listener {
     private boolean castVenomPounce(ConfigManager.BossSkillConfig skill, LivingEntity target,
                                     Location targetLoc, Vector direction, double damage,
                                     double radius, double velocity) {
+        if (Math.abs(targetLoc.getY() - currentBoss.getLocation().getY()) > radius) return false;
         Vector leap = direction.clone().normalize().multiply(velocity);
         leap.setY(skillNumber(skill, "jump-y", 0.75, 0.3, 1.5));
         currentBoss.setVelocity(leap);
@@ -1183,7 +1190,7 @@ public class BossEventManager implements Listener {
                         radius, radius, radius)) {
                     if (!(entity instanceof Player player) || player.isDead()
                             || player.getLocation().distanceSquared(currentBoss.getLocation()) > radius * radius) continue;
-                    player.damage(damage, currentBoss);
+                    player.damage(spiderPlayerHitDamage(activeBossConfig, damage), currentBoss);
                     player.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 120, 1, false, true, true));
                     player.addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 120, 2, false, true, true));
                     hit = true;
@@ -1628,7 +1635,17 @@ public class BossEventManager implements Listener {
                 return completeBossSkillCast(skillKey, target, now);
             }
             case SPIDER -> {
-                damageEntitiesInRadius(world, targetLoc, skillRadius, skillDamage);
+                if (bossLoc.distanceSquared(targetLoc) > skillRadius * skillRadius) return false;
+                double radiusSquared = skillRadius * skillRadius;
+                for (Entity entity : world.getNearbyEntities(targetLoc,
+                        skillRadius, skillRadius, skillRadius)) {
+                    if (!(entity instanceof LivingEntity living) || living.equals(currentBoss)
+                            || living.isDead()
+                            || living.getLocation().distanceSquared(targetLoc) > radiusSquared) continue;
+                    double damage = living instanceof Player
+                        ? spiderPlayerHitDamage(bc, skillDamage) : skillDamage;
+                    living.damage(damage, currentBoss);
+                }
                 for (Entity entity : world.getNearbyEntities(targetLoc, skillRadius, skillRadius, skillRadius)) {
                     if (entity instanceof LivingEntity living && !living.equals(currentBoss)
                             && living.getLocation().distanceSquared(targetLoc) <= skillRadius * skillRadius) {
@@ -2287,6 +2304,11 @@ public class BossEventManager implements Listener {
                 keepBossChunkLoaded();
                 tickBossTraits(bc);
                 tickSplitFireballs();
+                if (currentBoss instanceof Enderman enderman
+                        && enderman.getTarget() instanceof Player target
+                        && !isValidEndermanTarget(target)) {
+                    enderman.setTarget(null);
+                }
 
                 double distanceFromAnchorSquared = currentBossSpawnLocation == null
                     ? 0.0 : horizontalDistanceSquared(bossLoc, currentBossSpawnLocation);
@@ -2329,6 +2351,7 @@ public class BossEventManager implements Listener {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     if (!p.getWorld().equals(bossWorld)) continue;
                     if (p.isDead() || !p.isOnline()) continue;
+                    if (currentBoss instanceof Enderman && !isValidEndermanTarget(p)) continue;
                     double d = p.getLocation().distanceSquared(bossLoc);
                     if (!isWithinBossArea(p.getLocation())) continue;
                     if (d < nearestPlayerDist && d < searchRadius * searchRadius) {
@@ -2400,6 +2423,29 @@ public class BossEventManager implements Listener {
             }
         };
         aiTask = aiRunnable.runTaskTimer(plugin, 0L, 10L);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEndermanBossTarget(EntityTargetLivingEntityEvent event) {
+        if (currentBoss == null || !event.getEntity().equals(currentBoss)
+                || !(currentBoss instanceof Enderman)
+                || !(event.getTarget() instanceof Player player)) return;
+        if (!isValidEndermanTarget(player)) event.setCancelled(true);
+    }
+
+    private boolean isValidEndermanTarget(Player player) {
+        if (!(currentBoss instanceof Enderman enderman)
+                || !player.isOnline() || player.isDead()
+                || !player.getWorld().equals(enderman.getWorld())
+                || !enderman.hasLineOfSight(player)
+                || !player.hasLineOfSight(enderman)) {
+            return false;
+        }
+        Vector directionToBoss = enderman.getEyeLocation().toVector()
+            .subtract(player.getEyeLocation().toVector());
+        if (directionToBoss.lengthSquared() < 0.0001) return true;
+        return player.getEyeLocation().getDirection().normalize()
+            .dot(directionToBoss.normalize()) >= ENDERMAN_LOOK_DOT_THRESHOLD;
     }
 
     private void wanderGiant(Location bossLoc) {
@@ -2493,6 +2539,7 @@ public class BossEventManager implements Listener {
         } else if (currentBoss instanceof Mob mob) {
             mob.setAware(true);
             if (mob.getTarget() != target) mob.setTarget(target);
+            if (currentBoss instanceof Spider) return;
         } else if (currentBoss instanceof Flying flying) {
             // Nếu là flying entity (Ghast)
             if (distance > 4.0) {
@@ -2512,6 +2559,13 @@ public class BossEventManager implements Listener {
         if (!(currentBoss instanceof EnderDragon) && !(currentBoss instanceof Giant) && distance <= 4.0) {
             target.damage(8.0 * bc.damageMultiplier, currentBoss);
         }
+    }
+
+    private double spiderPlayerHitDamage(ConfigManager.BossConfig bossConfig, double damage) {
+        if (bossConfig == null || currentBoss == null || currentBoss.getType() != EntityType.SPIDER) {
+            return damage;
+        }
+        return Math.min(damage, bossConfig.maxPlayerHitDamage);
     }
 
     private void updateNativeTarget(LivingEntity target) {
@@ -3087,6 +3141,7 @@ public class BossEventManager implements Listener {
         manualBoss.displayName = bc.displayName;
         manualBoss.hp = bc.hp;
         manualBoss.damageMultiplier = bc.damageMultiplier;
+        manualBoss.maxPlayerHitDamage = bc.maxPlayerHitDamage;
         manualBoss.chance = bc.chance;
         manualBoss.warningSeconds = warningTimeSeconds;
         manualBoss.durationSeconds = durationSeconds;

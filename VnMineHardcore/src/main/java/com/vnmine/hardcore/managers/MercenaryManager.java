@@ -3,12 +3,14 @@ package com.vnmine.hardcore.managers;
 import com.vnmine.hardcore.VnMineHardcore;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,6 +19,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Evoker;
@@ -34,6 +37,9 @@ import org.bukkit.entity.Zombie;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.SpectralArrow;
+import org.bukkit.entity.Snowball;
+import org.bukkit.entity.SmallFireball;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.TippedArrow;
 import io.papermc.paper.event.entity.EntityDamageItemEvent;
 import org.bukkit.event.EventHandler;
@@ -83,6 +89,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
@@ -106,11 +113,24 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 
 public final class MercenaryManager implements CommandExecutor, TabCompleter, Listener {
     private static final String COMMAND_PERMISSION = "vnmine.command.army";
     private static final String ADMIN_PERMISSION = "vnmine.command.army.admin";
+    private static final Set<String> VALID_SKILLS = Set.of(
+        "ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES", "BUFF_OWNER", "BUFF_ALLIES",
+        "SHIELD_OWNER", "VOLLEY", "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
+        "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE", "ILLUMINATION",
+        "FLAME_BOLT", "IGNITE", "FLAME_NOVA", "FIRE_WALL", "METEOR_STRIKE", "PHOENIX_REBIRTH",
+        "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL", "FROST_SHIELD", "FROST_STEP",
+        "FROST_WALKER", "ICE_AGE");
+    private static final Set<String> FROST_MAGE_SKILLS = Set.of(
+        "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL",
+        "FROST_SHIELD", "FROST_STEP", "FROST_WALKER", "ICE_AGE");
+    private static final Set<String> FIRE_MAGE_SKILLS = Set.of(
+        "FLAME_BOLT", "IGNITE", "FLAME_NOVA", "FIRE_WALL", "METEOR_STRIKE", "PHOENIX_REBIRTH");
     private static final List<org.bukkit.inventory.EquipmentSlot> EQUIPMENT_SLOTS = List.of(
         org.bukkit.inventory.EquipmentSlot.HAND,
         org.bukkit.inventory.EquipmentSlot.HEAD,
@@ -134,10 +154,35 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final NamespacedKey tokenLevelKey;
     private final NamespacedKey welcomeGiftKey;
     private final NamespacedKey illuminationArrowKey;
+    private final NamespacedKey frostProjectileDamageKey;
+    private final NamespacedKey flameProjectileKey;
+    private final NamespacedKey flameProjectileDamageKey;
+    private final NamespacedKey meteorFireballKey;
+    private final NamespacedKey meteorFireballDamageKey;
+    private final NamespacedKey meteorFireballRadiusKey;
+    private final NamespacedKey meteorFireballMaxTargetsKey;
+    private final NamespacedKey meteorFireballBurnTicksKey;
+    private final NamespacedKey flameBoltSlowKey;
+    private final NamespacedKey flameBoltSlowExpiryKey;
+    private final NamespacedKey icePrisonSlowKey;
+    private final NamespacedKey icePrisonSlowExpiryKey;
     private final File welcomeGiftFile;
     private final Set<UUID> claimedWelcomeGiftPlayers = new HashSet<>();
     private final Map<UUID, TemporaryTorch> temporaryTorches = new HashMap<>();
     private final Map<UUID, BukkitTask> torchRemovalTasks = new HashMap<>();
+    private final Map<String, TemporaryFrostBlock> temporaryFrostBlocks = new HashMap<>();
+    private final Map<String, TemporaryFrostBlock> temporaryFireBlocks = new HashMap<>();
+    private final Set<BukkitTask> frostSkillTasks = new HashSet<>();
+    private final Set<BukkitTask> fireSkillTasks = new HashSet<>();
+    private final Map<UUID, Set<BukkitTask>> fireTasksByUnit = new HashMap<>();
+    private final Map<UUID, Set<BukkitTask>> frostTasksByUnit = new HashMap<>();
+    private final Map<UUID, Set<UUID>> flameProjectilesByUnit = new HashMap<>();
+    private final Map<UUID, Long> frostShieldExpiries = new HashMap<>();
+    private final Map<UUID, Long> phoenixImmunityExpiries = new HashMap<>();
+    private final Map<UUID, Long> flameBoltSlowExpiries = new HashMap<>();
+    private final Map<UUID, Long> icePrisonSlowExpiries = new HashMap<>();
+    private final Map<UUID, Map<PotionEffectType, FrostEffectSnapshot>> temporaryFrostEffects = new HashMap<>();
+    private final Map<UUID, FrostFreezeSnapshot> temporaryFrostFreezes = new HashMap<>();
     private final MercenaryNamePacketListener namePacketListener;
     private final MercenaryStatusPacketListener statusPacketListener;
     private final Map<UUID, Unit> units = new HashMap<>();
@@ -189,6 +234,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private String vexIdleIcon;
     private BukkitRunnable aiTask;
 
+    private static final class IgniteContext {
+        private final Set<UUID> ignitedTargets = new HashSet<>();
+        private int targetLimit;
+
+        private IgniteContext(int targetLimit) {
+            this.targetLimit = targetLimit;
+        }
+    }
+
     private static final class TemporaryTorch {
         private final UUID id;
         private final String worldName;
@@ -205,6 +259,53 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             this.z = z;
             this.expiresAt = expiresAt;
         }
+
+    }
+
+    private static final class TemporaryFrostBlock {
+        private final String key;
+        private final World world;
+        private final int x;
+        private final int y;
+        private final int z;
+        private final BlockData originalData;
+        private final Material temporaryType;
+        private final UUID ownerUnitId;
+        private BukkitTask removalTask;
+
+        private TemporaryFrostBlock(String key, Block block, Material temporaryType, UUID ownerUnitId) {
+            this.key = key;
+            this.world = block.getWorld();
+            this.x = block.getX();
+            this.y = block.getY();
+            this.z = block.getZ();
+            this.originalData = block.getBlockData().clone();
+            this.temporaryType = temporaryType;
+            this.ownerUnitId = ownerUnitId;
+        }
+    }
+
+    private static final class FrostEffectSnapshot {
+        private final PotionEffect previousEffect;
+        private final long previousExpiresAt;
+        private int appliedAmplifier;
+        private long appliedExpiresAt;
+
+        private FrostEffectSnapshot(PotionEffect previousEffect, long previousExpiresAt) {
+            this.previousEffect = previousEffect;
+            this.previousExpiresAt = previousExpiresAt;
+        }
+    }
+
+    private static final class FrostFreezeSnapshot {
+        private final int originalFreezeTicks;
+        private final long originalExpiresAt;
+        private long appliedExpiresAt;
+
+        private FrostFreezeSnapshot(int originalFreezeTicks, long originalExpiresAt) {
+            this.originalFreezeTicks = originalFreezeTicks;
+            this.originalExpiresAt = originalExpiresAt;
+        }
     }
 
     private enum Mode {
@@ -214,6 +315,121 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     @EventHandler
     public void onOwnerDamage(EntityDamageByEntityEvent event) {
         applyOwnerShield(event);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onFrostShieldDamage(EntityDamageByEntityEvent event) {
+        UUID defenderId = event.getEntity().getUniqueId();
+        Long expiresAt = frostShieldExpiries.get(defenderId);
+        if (expiresAt == null) return;
+        if (expiresAt <= System.currentTimeMillis()) {
+            frostShieldExpiries.remove(defenderId);
+            return;
+        }
+        Entity source = resolveDamageSource(event.getDamager());
+        if (!(source instanceof Monster attacker) || !isValidTarget(attacker)) return;
+        UUID unitId = getUnitId(event.getEntity());
+        Unit unit = unitId == null ? null : units.get(unitId);
+        if (unit == null) return;
+        int duration = (int) skillOptionDouble(unit, "FROST_SHIELD",
+            "attacker-slowness-duration-seconds", 3.0, 1.0, 15.0);
+        int amplifier = (int) skillOptionDouble(unit, "FROST_SHIELD",
+            "attacker-slowness-amplifier", 1.0, 0.0, 4.0);
+        applyFrostPotionEffect(attacker, new PotionEffect(PotionEffectType.SLOWNESS,
+            duration * 20, amplifier, true, true, true));
+        attacker.getWorld().spawnParticle(Particle.SNOWFLAKE,
+            attacker.getLocation().add(0.0, 1.0, 0.0), 8, 0.3, 0.4, 0.3, 0.02);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPhoenixRebirthImmunity(EntityDamageEvent event) {
+        Long expiresAt = phoenixImmunityExpiries.get(event.getEntity().getUniqueId());
+        if (expiresAt == null) return;
+        if (expiresAt <= System.currentTimeMillis()) {
+            phoenixImmunityExpiries.remove(event.getEntity().getUniqueId());
+            return;
+        }
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onFlameMageProjectileHit(ProjectileHitEvent event) {
+        if (!(event.getEntity() instanceof Snowball snowball)
+                || !snowball.getPersistentDataContainer().has(flameProjectileKey, PersistentDataType.BYTE)
+                || !(snowball.getShooter() instanceof Mob shooter)) return;
+        removeTrackedFlameProjectile(shooter, snowball);
+        if (!(event.getHitEntity() instanceof LivingEntity target) || !isActiveFireCaster(shooter)) return;
+        UUID ownerId = getOwnerId(shooter);
+        if (!canMercenaryDamageTarget(ownerId, target)
+                || (!isValidTarget(target) && !isOwnerCommandedPvpTarget(ownerId, target))) return;
+        double damage = snowball.getPersistentDataContainer()
+            .getOrDefault(flameProjectileDamageKey, PersistentDataType.DOUBLE, 0.0);
+        if (damage <= 0.0) return;
+        target.damage(damage, shooter);
+        UUID unitId = getUnitId(shooter);
+        Unit unit = unitId == null ? null : units.get(unitId);
+        if (unit != null) {
+            applyFlameBoltSlow(target,
+                flameOption(unit, "FLAME_BOLT", "slowness-percent", 20.0, 0.0, 80.0),
+                flameOption(unit, "FLAME_BOLT", "slowness-duration-seconds", 3.0, 1.0, 15.0));
+        }
+        target.getWorld().spawnParticle(Particle.FLAME,
+            target.getLocation().add(0.0, 1.0, 0.0), 16, 0.35, 0.4, 0.35, 0.02);
+        target.getWorld().playSound(target.getLocation(), Sound.ITEM_FIRECHARGE_USE, 0.5f, 1.4f);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onMeteorFireballDamage(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof SmallFireball fireball
+                && fireball.getPersistentDataContainer().has(meteorFireballKey, PersistentDataType.BYTE)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onMeteorFireballHit(ProjectileHitEvent event) {
+        if (!(event.getEntity() instanceof SmallFireball fireball)
+                || !fireball.getPersistentDataContainer().has(meteorFireballKey, PersistentDataType.BYTE)
+                || !(fireball.getShooter() instanceof Mob shooter)) return;
+        removeTrackedFlameProjectile(shooter, fireball);
+        if (!isActiveFireCaster(shooter)) {
+            fireball.remove();
+            return;
+        }
+        Location impact = fireball.getLocation().clone();
+        double damage = fireball.getPersistentDataContainer()
+            .getOrDefault(meteorFireballDamageKey, PersistentDataType.DOUBLE, 0.0);
+        double radius = fireball.getPersistentDataContainer()
+            .getOrDefault(meteorFireballRadiusKey, PersistentDataType.DOUBLE, 0.0);
+        int maxTargets = fireball.getPersistentDataContainer()
+            .getOrDefault(meteorFireballMaxTargetsKey, PersistentDataType.INTEGER, 0);
+        int burnTicks = fireball.getPersistentDataContainer()
+            .getOrDefault(meteorFireballBurnTicksKey, PersistentDataType.INTEGER, 0);
+        fireball.remove();
+        if (damage <= 0.0 || radius <= 0.0 || maxTargets <= 0) return;
+        impact.getWorld().spawnParticle(Particle.FLAME, impact, 24, 0.4, 0.3, 0.4, 0.04);
+        impact.getWorld().playSound(impact, Sound.ENTITY_BLAZE_SHOOT, 0.6f, 0.8f);
+        for (LivingEntity victim : flameTargets(shooter, impact, radius, maxTargets)) {
+            victim.damage(damage, shooter);
+            if (burnTicks > 0) victim.setFireTicks(Math.max(victim.getFireTicks(), burnTicks));
+        }
+    }
+
+    @EventHandler
+    public void onFrostProjectileHit(ProjectileHitEvent event) {
+        if (!(event.getEntity() instanceof Snowball snowball)
+                || !snowball.getPersistentDataContainer().has(frostProjectileDamageKey, PersistentDataType.DOUBLE)
+                || !(event.getHitEntity() instanceof LivingEntity target)
+                || !(snowball.getShooter() instanceof Mob shooter)
+                || !canMercenaryDamageTarget(getOwnerId(shooter), target)
+                || (!isValidTarget(target)
+                    && !isOwnerCommandedPvpTarget(getOwnerId(shooter), target))) return;
+        double damage = snowball.getPersistentDataContainer()
+            .getOrDefault(frostProjectileDamageKey, PersistentDataType.DOUBLE, 0.0);
+        if (damage <= 0.0) return;
+        target.damage(damage, shooter);
+        target.getWorld().spawnParticle(Particle.SNOWFLAKE,
+            target.getLocation().add(0.0, 1.0, 0.0), 12, 0.3, 0.4, 0.3, 0.02);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -374,12 +590,26 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         tokenLevelKey = new NamespacedKey(plugin, "army_token_level");
         welcomeGiftKey = new NamespacedKey(plugin, "welcome_gift");
         illuminationArrowKey = new NamespacedKey(plugin, "ranger_illumination_arrow");
+        frostProjectileDamageKey = new NamespacedKey(plugin, "frost_projectile_damage");
+        flameProjectileKey = new NamespacedKey(plugin, "flame_mage_projectile");
+        flameProjectileDamageKey = new NamespacedKey(plugin, "flame_mage_projectile_damage");
+        meteorFireballKey = new NamespacedKey(plugin, "meteor_fireball");
+        meteorFireballDamageKey = new NamespacedKey(plugin, "meteor_fireball_damage");
+        meteorFireballRadiusKey = new NamespacedKey(plugin, "meteor_fireball_radius");
+        meteorFireballMaxTargetsKey = new NamespacedKey(plugin, "meteor_fireball_max_targets");
+        meteorFireballBurnTicksKey = new NamespacedKey(plugin, "meteor_fireball_burn_ticks");
+        flameBoltSlowKey = new NamespacedKey(plugin, "flame_bolt_slow");
+        flameBoltSlowExpiryKey = new NamespacedKey(plugin, "flame_bolt_slow_expires");
+        icePrisonSlowKey = new NamespacedKey(plugin, "ice_prison_slow");
+        icePrisonSlowExpiryKey = new NamespacedKey(plugin, "ice_prison_slow_expires");
         namePacketListener = new MercenaryNamePacketListener(plugin);
         statusPacketListener = new MercenaryStatusPacketListener(plugin);
         loadSettings();
         loadData();
         loadWelcomeGiftClaims();
         loadTemporaryTorches();
+        restoreFlameBoltSlowState();
+        restoreIcePrisonSlowState();
         Bukkit.getPluginManager().registerEvents(this, plugin);
         startAiTask();
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -391,6 +621,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     public boolean reload() {
         try {
             loadSettingsFromDisk();
+            cleanupFrostEffects();
             if (!enabled) despawnAllForReload();
             if (aiTask != null) {
                 aiTask.cancel();
@@ -554,6 +785,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
+        restoreFlameBoltSlowState(event.getPlayer());
+        restoreIcePrisonSlowState(event.getPlayer());
         Bukkit.getScheduler().runTaskLater(plugin, () -> restoreDeployedUnits(event.getPlayer()), 1L);
     }
 
@@ -645,6 +878,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         Unit unit = units.get(id);
         removeStatusDisplay(id);
+        cleanupFireStateForUnit(id);
         activeEntities.remove(id);
         skillCooldowns.remove(id);
         cleanupSummonedMinions(id);
@@ -712,6 +946,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     @EventHandler
     public void onMercenaryEntitiesLoad(EntitiesLoadEvent event) {
         for (Entity entity : event.getEntities()) {
+            if (entity instanceof LivingEntity living) restoreFlameBoltSlowState(living);
+            if (entity instanceof LivingEntity living) restoreIcePrisonSlowState(living);
             if (!(entity instanceof Mob mob) || !isMercenary(mob)) continue;
             String idValue = mob.getPersistentDataContainer().get(unitKey, PersistentDataType.STRING);
             try {
@@ -1123,28 +1359,38 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 throw new InvalidConfigurationException("Entity type for class '" + classId + "' must be an AI mob.");
             }
             for (String skill : loaded.getStringList("classes." + classId + ".skills")) {
-                if (!Set.of("ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES",
-                            "BUFF_OWNER", "BUFF_ALLIES", "SHIELD_OWNER", "VOLLEY",
-                            "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
-                            "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE",
-                            "ILLUMINATION")
-                        .contains(skill.toUpperCase(Locale.ROOT))) {
+                if (!VALID_SKILLS.contains(skill.toUpperCase(Locale.ROOT))) {
                     throw new InvalidConfigurationException(
                         "Unknown skill '" + skill + "' in class '" + classId + "'.");
+                }
+                if (FROST_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
+                        && !"frost_mage".equals(classId)) {
+                    throw new InvalidConfigurationException(
+                        "Frost Mage skill '" + skill + "' can only be used by class 'frost_mage'.");
+                }
+                if (FIRE_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
+                        && !"pyromancer".equals(classId)) {
+                    throw new InvalidConfigurationException(
+                        "Fire Mage skill '" + skill + "' can only be used by class 'pyromancer'.");
                 }
             }
             ConfigurationSection skillSettings =
                 loaded.getConfigurationSection("classes." + classId + ".skill-settings");
             if (skillSettings != null) {
                 for (String skill : skillSettings.getKeys(false)) {
-                    if (!Set.of("ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES",
-                                "BUFF_OWNER", "BUFF_ALLIES", "SHIELD_OWNER", "VOLLEY",
-                                "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
-                                "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE",
-                                "ILLUMINATION")
-                            .contains(skill.toUpperCase(Locale.ROOT))) {
+                    if (!VALID_SKILLS.contains(skill.toUpperCase(Locale.ROOT))) {
                         throw new InvalidConfigurationException(
                             "Unknown skill-settings entry '" + skill + "' in class '" + classId + "'.");
+                    }
+                    if (FROST_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
+                            && !"frost_mage".equals(classId)) {
+                        throw new InvalidConfigurationException(
+                            "Frost Mage skill-settings '" + skill + "' can only be used by class 'frost_mage'.");
+                    }
+                    if (FIRE_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
+                            && !"pyromancer".equals(classId)) {
+                        throw new InvalidConfigurationException(
+                            "Fire Mage skill-settings '" + skill + "' can only be used by class 'pyromancer'.");
                     }
                     String target = loaded.getString("classes." + classId + ".skill-settings." + skill + ".target");
                     if (target != null && !Set.of("OWNER", "ALLIES", "OWNER_AND_ALLIES")
@@ -1171,6 +1417,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                                 effect.toLowerCase(Locale.ROOT))) == null) {
                             throw new InvalidConfigurationException("Unknown potion effect '" + effect
                                 + "' in " + classId + "." + skill + ".effect.");
+                        }
+                    }
+                    if (skill.equalsIgnoreCase("FIRE_WALL")) {
+                        String configuredMaterial = loaded.getString("classes." + classId
+                            + ".skill-settings." + skill + ".block-material", "MAGMA_BLOCK");
+                        Material wallMaterial = Material.matchMaterial(configuredMaterial);
+                        if (wallMaterial == null || wallMaterial.isAir() || !wallMaterial.isSolid()) {
+                            throw new InvalidConfigurationException("Invalid solid block-material '"
+                                + configuredMaterial + "' in " + classId + ".FIRE_WALL.");
                         }
                     }
                 }
@@ -1302,6 +1557,89 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             defaults.load(reader);
         }
         boolean changed = mergeSettingsSection(loaded, defaults, "");
+        if (!loaded.getBoolean("_migrations.mage-prison-and-firestorm-skills", false)) {
+            String iceWallPath = "classes.frost_mage.skill-settings.ICE_WALL";
+            if (loaded.getDouble(iceWallPath + ".duration-seconds", 3.0) == 6.0
+                    && loaded.getInt(iceWallPath + ".width-blocks", 5) == 5
+                    && loaded.getInt(iceWallPath + ".height-blocks", 2) == 2) {
+                loaded.set(iceWallPath + ".duration-seconds", 3.0);
+                loaded.setComments(iceWallPath + ".duration-seconds",
+                    defaults.getComments(iceWallPath + ".duration-seconds"));
+                plugin.getLogger().info("[Army] Updated the default ICE_WALL duration to 3 seconds.");
+            }
+            String flameNovaRadiusPath = "classes.pyromancer.skill-settings.FLAME_NOVA.radius-blocks";
+            if (Double.compare(loaded.getDouble(flameNovaRadiusPath, 3.0), 5.0) == 0) {
+                loaded.set(flameNovaRadiusPath, 3.0);
+                loaded.setComments(flameNovaRadiusPath, defaults.getComments(flameNovaRadiusPath));
+                plugin.getLogger().info("[Army] Updated the default FLAME_NOVA radius to 3 blocks.");
+            }
+            String oldFlameNovaDamagePath = "classes.pyromancer.skill-settings.FLAME_NOVA.damage";
+            double oldFlameNovaDamage = loaded.getDouble(oldFlameNovaDamagePath, 6.0);
+            if (Double.compare(oldFlameNovaDamage, 6.0) != 0) {
+                String newDamagePath = "classes.pyromancer.skill-settings.FLAME_NOVA.damage-per-second";
+                loaded.set(newDamagePath, oldFlameNovaDamage);
+                loaded.setComments(newDamagePath, defaults.getComments(newDamagePath));
+            }
+            String oldMeteorRadiusPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.radius-blocks";
+            double oldMeteorRadius = loaded.getDouble(oldMeteorRadiusPath, 4.0);
+            if (Double.compare(oldMeteorRadius, 4.0) != 0) {
+                String newRadiusPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.area-radius-blocks";
+                loaded.set(newRadiusPath, oldMeteorRadius);
+                loaded.setComments(newRadiusPath, defaults.getComments(newRadiusPath));
+            }
+            String oldMeteorDelayPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.impact-delay-ticks";
+            double oldMeteorDelay = loaded.getDouble(oldMeteorDelayPath, 30.0);
+            if (Double.compare(oldMeteorDelay, 30.0) != 0) {
+                String newDelayPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.warning-delay-seconds";
+                loaded.set(newDelayPath, oldMeteorDelay / 20.0);
+                loaded.setComments(newDelayPath, defaults.getComments(newDelayPath));
+            }
+            String oldMeteorTargetsPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.max-targets";
+            int oldMeteorTargets = loaded.getInt(oldMeteorTargetsPath, 24);
+            if (oldMeteorTargets != 24) {
+                String newTargetsPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.max-targets-per-fireball";
+                loaded.set(newTargetsPath, oldMeteorTargets);
+                loaded.setComments(newTargetsPath, defaults.getComments(newTargetsPath));
+            }
+            loaded.set("_migrations.mage-prison-and-firestorm-skills", true);
+            changed = true;
+        }
+        if (!loaded.getBoolean("_migrations.pyromancer-six-skills", false)) {
+            Set<String> previousDefaults = Set.of("RANGED_ATTACK", "FIRE_BOLT", "ROOT_TARGET", "BUFF_OWNER");
+            List<String> configuredSkills = loaded.getStringList("classes.pyromancer.skills");
+            Set<String> normalizedSkills = configuredSkills.stream()
+                .map(skill -> skill.toUpperCase(Locale.ROOT))
+                .collect(java.util.stream.Collectors.toSet());
+            if (normalizedSkills.equals(previousDefaults)) {
+                String skillPath = "classes.pyromancer.skills";
+                loaded.set(skillPath, defaults.getStringList(skillPath));
+                loaded.setComments(skillPath, defaults.getComments(skillPath));
+                String descriptionPath = "classes.pyromancer.description";
+                if ("Thiêu đốt mục tiêu, làm chậm kẻ địch và kháng lửa cho chủ."
+                        .equals(loaded.getString(descriptionPath))) {
+                    loaded.set(descriptionPath, defaults.getString(descriptionPath));
+                    loaded.setComments(descriptionPath, defaults.getComments(descriptionPath));
+                }
+                plugin.getLogger().info("[Army] Migrated the default Pyromancer skill kit to the six fire skills.");
+            }
+            loaded.set("_migrations.pyromancer-six-skills", true);
+            changed = true;
+        }
+        String legacySnowballSettingsPath = "classes.frost_mage.skill-settings.SNOWBALL";
+        ConfigurationSection legacySnowballSettings = loaded.getConfigurationSection(legacySnowballSettingsPath);
+        if (legacySnowballSettings != null) {
+            String basicAttackPath = "classes.frost_mage.basic-attack";
+            for (String option : legacySnowballSettings.getKeys(false)) {
+                String targetPath = basicAttackPath + "." + option;
+                if (!loaded.contains(targetPath)) {
+                    loaded.set(targetPath, legacySnowballSettings.get(option));
+                }
+            }
+            loaded.set(legacySnowballSettingsPath, null);
+            changed = true;
+            plugin.getLogger().info("[Army] Migrated legacy frost_mage.skill-settings.SNOWBALL "
+                + "settings to frost_mage.basic-attack.");
+        }
         List<String> rangerSkills = new ArrayList<>(loaded.getStringList("classes.ranger.skills"));
         if (!rangerIlluminationMigrationComplete) {
             boolean addedIllumination = false;
@@ -1369,6 +1707,24 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (loaded.getStringList("classes.medic.skills")
                 .equals(List.of("HEAL_OWNER", "HEAL_ALLIES", "BUFF_OWNER", "BUFF_ALLIES"))) {
             loaded.set("classes.medic.skills", defaults.getStringList("classes.medic.skills"));
+            changed = true;
+        }
+        if (loaded.getStringList("classes.frost_mage.skills")
+                .equals(List.of("RANGED_ATTACK", "VOLLEY", "ROOT_TARGET", "HEAL_OWNER"))) {
+            String frostSkillsPath = "classes.frost_mage.skills";
+            loaded.set(frostSkillsPath, defaults.getStringList(frostSkillsPath));
+            loaded.setComments(frostSkillsPath, defaults.getComments(frostSkillsPath));
+            loaded.set("classes.frost_mage.starting-weapon",
+                defaults.getString("classes.frost_mage.starting-weapon", "SNOWBALL"));
+            loaded.setComments("classes.frost_mage.starting-weapon",
+                defaults.getComments("classes.frost_mage.starting-weapon"));
+            if ("Bắn loạt băng, làm chậm quái và hồi máu cho chủ nhân."
+                    .equals(loaded.getString("classes.frost_mage.description"))) {
+                loaded.set("classes.frost_mage.description",
+                    defaults.getString("classes.frost_mage.description"));
+                loaded.setComments("classes.frost_mage.description",
+                    defaults.getComments("classes.frost_mage.description"));
+            }
             changed = true;
         }
         String vexMaximumPath = "classes.druid.skill-settings.SUMMON_VEXES.max-active";
@@ -1501,12 +1857,18 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             @Override
             public void run() {
                 if (!enabled) return;
+                cleanupFrostPotionEffects(false);
+                cleanupFireExpiries(false);
                 for (Unit unit : new ArrayList<>(units.values())) {
-                    if (!unit.deployed) continue;
+                    if (!unit.deployed) {
+                        cleanupFireStateForUnit(unit.id);
+                        continue;
+                    }
                     Player owner = Bukkit.getPlayer(unit.owner);
                     Mob mob = activeEntities.get(unit.id);
                     if (mob != null && mob.isValid()) preventZombification(mob);
                     if (owner == null || !owner.isOnline()) {
+                        cleanupFireStateForUnit(unit.id);
                         cleanupSummonedMinions(unit.id);
                         if (mob != null) {
                             captureEquipment(unit, mob);
@@ -1608,7 +1970,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (target != null) {
             mob.setAware(true);
             mob.setSilent(unit.muted);
-            if (hasSkill(unit, "RANGED_ATTACK") && !hasSkill(unit, "ATTACK")) {
+            if ("frost_mage".equals(unit.unitClass)) {
+                mob.setTarget(null);
+                double range = frostRange(unit, "BASIC_ATTACK", "range-blocks", 5.0);
+                if (mob.getLocation().distanceSquared(target.getLocation()) > range * range
+                        || !mob.hasLineOfSight(target)) {
+                    mob.getPathfinder().moveTo(target, 1.0);
+                } else {
+                    mob.getPathfinder().stopPathfinding();
+                }
+            } else if (hasSkill(unit, "RANGED_ATTACK") && !hasSkill(unit, "ATTACK")) {
                 mob.setTarget(null);
                 double range = preferredRangedPositionRange(unit, mob);
                 if (mob.getLocation().distanceSquared(target.getLocation()) > range * range
@@ -1714,7 +2085,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private LivingEntity findTarget(Unit unit, Mob mob, Player owner) {
         if (!hasSkill(unit, "ATTACK") && !hasSkill(unit, "RANGED_ATTACK")
-            && !hasSkill(unit, "FIRE_BOLT") && !hasSkill(unit, "ROOT_TARGET")) return null;
+            && !hasSkill(unit, "FIRE_BOLT") && !hasSkill(unit, "ROOT_TARGET")
+            && FROST_MAGE_SKILLS.stream().noneMatch(skill -> hasSkill(unit, skill))
+            && FIRE_MAGE_SKILLS.stream().noneMatch(skill -> hasSkill(unit, skill))) return null;
         double classRadius = readBoundedDouble(settings, "classes." + unit.unitClass + ".target-radius-blocks",
             targetRadius, 4.0, 50.0);
         Location center = unit.mode == Mode.ATTACK ? mob.getLocation() : owner.getLocation();
@@ -1969,6 +2342,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             if (mob != null && mob.isValid()) mob.setTarget(null);
             target = null;
         }
+        if ("frost_mage".equals(unit.unitClass)) {
+            useFrostMageSkills(unit, owner, mob, target);
+            return;
+        }
         if (hasSkill(unit, "SUMMON_VEXES") && mob != null && target instanceof Monster hostile
                 && !isMercenary(hostile) && ready(unit, "summon-vexes")) {
             int maximum = maxSummonedMinions(unit);
@@ -2080,6 +2457,498 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
         }
 
+        useSkillsRemaining(unit, owner, target, mob);
+    }
+
+    private void useFrostMageSkills(Unit unit, Player owner, Mob mob, LivingEntity target) {
+        if (mob == null || !mob.isValid()) return;
+        if (target != null && isWithinFrostRange(unit, mob, target, "BASIC_ATTACK")
+                && ready(unit, "basic-attack")) {
+            launchFrostProjectile(mob, target, frostDamage(unit, "BASIC_ATTACK", 3.0),
+                frostOptionDouble("BASIC_ATTACK", "projectile-speed", 1.65, 0.5, 4.0));
+            markUsed(unit, "basic-attack", frostCooldown(unit, "BASIC_ATTACK", 2.0));
+        }
+        if (hasSkill(unit, "ICE_SPIKE") && target != null
+                && isWithinFrostRange(unit, mob, target, "ICE_SPIKE") && ready(unit, "ICE_SPIKE")) {
+            launchFrostProjectile(mob, target, frostDamage(unit, "ICE_SPIKE", 3.0),
+                frostOptionDouble("ICE_SPIKE", "projectile-speed", 2.1, 0.5, 4.0));
+            markUsed(unit, "ICE_SPIKE", frostCooldown(unit, "ICE_SPIKE", 6.0));
+            announceSkillCast(unit, owner, "ICE_SPIKE", Particle.SNOWFLAKE);
+        }
+        if (hasSkill(unit, "BLIZZARD") && target != null
+                && isWithinFrostRange(unit, mob, target, "BLIZZARD") && ready(unit, "BLIZZARD")) {
+            castBlizzard(unit, mob, target);
+            markUsed(unit, "BLIZZARD", frostCooldown(unit, "BLIZZARD", 14.0));
+            announceSkillCast(unit, owner, "BLIZZARD", Particle.SNOWFLAKE);
+        }
+        if (hasSkill(unit, "FROST_NOVA") && target != null
+                && isWithinFrostRange(unit, mob, target, "FROST_NOVA") && ready(unit, "FROST_NOVA")) {
+            castFrostNova(unit, mob);
+            markUsed(unit, "FROST_NOVA", frostCooldown(unit, "FROST_NOVA", 12.0));
+            announceSkillCast(unit, owner, "FROST_NOVA", Particle.SNOWFLAKE);
+        }
+        if (hasSkill(unit, "ICE_WALL") && target != null
+                && isWithinFrostRange(unit, mob, target, "ICE_WALL") && ready(unit, "ICE_WALL")) {
+            if (castIceWall(unit, mob, target)) {
+                markUsed(unit, "ICE_WALL", frostCooldown(unit, "ICE_WALL", 18.0));
+                announceSkillCast(unit, owner, "ICE_WALL", Particle.SNOWFLAKE);
+            }
+        }
+        if (hasSkill(unit, "FROST_SHIELD") && target != null && ready(unit, "FROST_SHIELD")) {
+            castFrostShield(unit, mob);
+            markUsed(unit, "FROST_SHIELD", frostCooldown(unit, "FROST_SHIELD", 24.0));
+            announceSkillCast(unit, owner, "FROST_SHIELD", Particle.WAX_ON);
+        }
+        if (hasSkill(unit, "FROST_STEP") && target != null
+                && isWithinFrostRange(unit, mob, target, "FROST_STEP") && ready(unit, "FROST_STEP")) {
+            castFrostStep(unit, mob, target);
+            markUsed(unit, "FROST_STEP", frostCooldown(unit, "FROST_STEP", 8.0));
+            announceSkillCast(unit, owner, "FROST_STEP", Particle.SNOWFLAKE);
+        }
+        if (hasSkill(unit, "FROST_WALKER") && target != null
+                && isWithinFrostRange(unit, mob, target, "FROST_WALKER") && ready(unit, "FROST_WALKER")) {
+            castFrostWalker(unit, mob);
+            markUsed(unit, "FROST_WALKER", frostCooldown(unit, "FROST_WALKER", 30.0));
+            announceSkillCast(unit, owner, "FROST_WALKER", Particle.SNOWFLAKE);
+        }
+        if (hasSkill(unit, "ICE_AGE") && target != null && ready(unit, "ICE_AGE")
+                && mob.getLocation().distanceSquared(target.getLocation())
+                    <= Math.pow(frostRange(unit, "ICE_AGE", "range-blocks", 15.0), 2)) {
+            castIceAge(unit, mob);
+            markUsed(unit, "ICE_AGE", frostCooldown(unit, "ICE_AGE", 60.0));
+            announceSkillCast(unit, owner, "ICE_AGE", Particle.SNOWFLAKE);
+        }
+    }
+
+    private void launchFrostProjectile(Mob mob, LivingEntity target, double damage, double speed) {
+        Snowball snowball = mob.launchProjectile(Snowball.class);
+        Vector direction = target.getEyeLocation().toVector().subtract(mob.getEyeLocation().toVector());
+        if (direction.lengthSquared() > 0.0001) snowball.setVelocity(direction.normalize().multiply(speed));
+        snowball.setGravity(false);
+        snowball.getPersistentDataContainer().set(frostProjectileDamageKey, PersistentDataType.DOUBLE, damage);
+    }
+
+    private boolean isWithinFrostRange(Unit unit, Mob mob, LivingEntity target, String skill) {
+        double range = frostRange(unit, skill, "range-blocks", 5.0);
+        return mob.getWorld().equals(target.getWorld())
+            && mob.getLocation().distanceSquared(target.getLocation()) <= range * range;
+    }
+
+    private double frostRange(Unit unit, String skill, String option, double fallback) {
+        String basePath = "classes.frost_mage."
+            + (skill.equals("BASIC_ATTACK") ? "basic-attack." : "skill-settings." + skill + ".")
+            + option;
+        double base = readBoundedDouble(settings, basePath, fallback, 1.0, 64.0);
+        int interval = readBoundedInt(settings,
+            "classes.frost_mage.level-scaling.range-increase-every-levels", 5, 1, 30);
+        double increase = readBoundedDouble(settings,
+            "classes.frost_mage.level-scaling.range-increase-blocks", 1.0, 0.0, 16.0);
+        return Math.min(64.0, base + (unit.level / interval) * increase);
+    }
+
+    private double frostDamage(Unit unit, String skill, double fallback) {
+        double base = frostOptionDouble(skill, "damage", fallback, 0.0, 100.0);
+        double increase = readBoundedDouble(settings,
+            "classes.frost_mage.level-scaling.damage-per-level", 0.1, 0.0, 10.0);
+        return Math.min(100.0, base + Math.max(0, unit.level - 1) * increase);
+    }
+
+    private double frostCooldown(Unit unit, String skill, double fallback) {
+        double base = frostOptionDouble(skill, "cooldown-seconds", fallback, 1.0, 3600.0);
+        double reduction = readBoundedDouble(settings,
+            "classes.frost_mage.level-scaling.cooldown-reduction-per-level-seconds", 0.1, 0.0, 10.0);
+        return Math.max(1.0, base - Math.max(0, unit.level - 1) * reduction);
+    }
+
+    private int frostDurationTicks(Unit unit, String skill, double fallback, double min, double max) {
+        double base = skillOptionDouble(unit, skill, "duration-seconds", fallback, min, max);
+        double increase = skillOptionDouble(unit, skill, "duration-increase-per-level-seconds",
+            0.1, 0.0, 10.0);
+        return (int) Math.round(Math.min(max, base + Math.max(0, unit.level - 1) * increase) * 20.0);
+    }
+
+    private void castBlizzard(Unit unit, Mob mob, LivingEntity target) {
+        double radius = skillOptionDouble(unit, "BLIZZARD", "radius-blocks", 4.0, 1.0, 12.0);
+        int durationTicks = frostDurationTicks(unit, "BLIZZARD", 3.0, 1.0, 12.0);
+        int intervalTicks = (int) skillOptionDouble(unit, "BLIZZARD", "pulse-interval-ticks", 20.0, 10.0, 100.0);
+        int maxTargets = (int) skillOptionDouble(unit, "BLIZZARD", "max-targets", 8.0, 1.0, 32.0);
+        int slowTicks = (int) skillOptionDouble(unit, "BLIZZARD", "slowness-duration-ticks", 40.0, 10.0, 200.0);
+        int amplifier = (int) skillOptionDouble(unit, "BLIZZARD", "slowness-amplifier", 1.0, 0.0, 4.0);
+        Location center = target.getLocation().clone();
+        double damage = frostDamage(unit, "BLIZZARD", 3.0);
+        BukkitTask task = new BukkitRunnable() {
+            private int elapsed;
+
+            @Override
+            public void run() {
+                if (!mob.isValid() || mob.isDead() || elapsed >= durationTicks) {
+                    cancel();
+                    return;
+                }
+                mob.getWorld().spawnParticle(Particle.SNOWFLAKE, center.clone().add(0.0, 1.0, 0.0),
+                    24, radius / 2.0, 0.8, radius / 2.0, 0.02);
+                for (LivingEntity victim : frostTargets(mob, center, radius, maxTargets)) {
+                    victim.damage(damage, mob);
+                    applyFrostPotionEffect(victim, new PotionEffect(PotionEffectType.SLOWNESS,
+                        slowTicks, amplifier, true, true, true));
+                }
+                elapsed += intervalTicks;
+            }
+        }.runTaskTimer(plugin, 0L, intervalTicks);
+        trackFrostTask(task);
+    }
+
+    private void castFrostNova(Unit unit, Mob mob) {
+        double radius = skillOptionDouble(unit, "FROST_NOVA", "radius-blocks", 4.0, 1.0, 12.0);
+        int maxTargets = (int) skillOptionDouble(unit, "FROST_NOVA", "max-targets", 8.0, 1.0, 32.0);
+        int amplifier = (int) skillOptionDouble(unit, "FROST_NOVA", "slowness-amplifier", 3.0, 0.0, 6.0);
+        int duration = frostDurationTicks(unit, "FROST_NOVA", 3.0, 1.0, 10.0);
+        Location center = mob.getLocation().clone();
+        mob.getWorld().spawnParticle(Particle.SNOWFLAKE, center.add(0.0, 1.0, 0.0),
+            48, radius / 2.0, 0.8, radius / 2.0, 0.04);
+        for (LivingEntity victim : frostTargets(mob, mob.getLocation(), radius, maxTargets)) {
+            applyFrostPotionEffect(victim, new PotionEffect(PotionEffectType.SLOWNESS,
+                duration, amplifier, true, true, true));
+            Block below = victim.getLocation().getBlock().getRelative(org.bukkit.block.BlockFace.DOWN);
+            placeTemporaryFrostBlock(below, Material.PACKED_ICE,
+                (int) skillOptionDouble(unit, "FROST_NOVA", "ice-duration-seconds", 3.0, 1.0, 30.0));
+        }
+    }
+
+    private boolean castIceWall(Unit unit, Mob mob, LivingEntity target) {
+        long durationTicks = Math.max(1L, Math.round(
+            scaledSkillDurationSeconds(unit, "ICE_WALL", 3.0, 0.0, 30.0) * 20.0));
+        Location center = target.getLocation().clone();
+        int centerY = center.getBlockY();
+        boolean placed = false;
+        for (Block block : enclosureBlocks(center)) {
+            placed |= placeTemporaryFrostBlockForTicks(block, Material.PACKED_ICE,
+                durationTicks, unit.id, block.getY() == centerY - 1);
+        }
+        if (!placed) return false;
+
+        double damage = Math.min(100.0, (
+            skillOptionDouble(unit, "ICE_WALL", "damage-per-second", 1.0, 0.0, 100.0)
+                + Math.max(0, unit.level - 1) * skillOptionDouble(unit, "ICE_WALL",
+                    "damage-increase-per-level", 0.1, 0.0, 10.0)) * skillPowerMultiplier(unit));
+        double slowSeconds = Math.min(30.0,
+            skillOptionDouble(unit, "ICE_WALL", "slowness-duration-seconds", 3.0, 0.1, 30.0)
+                + Math.max(0, unit.level - 1) * skillOptionDouble(unit, "ICE_WALL",
+                    "slowness-duration-increase-per-level-seconds", 0.1, 0.0, 10.0));
+        BukkitTask task = new BukkitRunnable() {
+            private long elapsedTicks;
+
+            @Override
+            public void run() {
+                if (!target.isValid() || target.isDead()) {
+                    cancel();
+                    return;
+                }
+                if (!isActiveFireCaster(mob)) {
+                    applyIcePrisonSlow(target, skillOptionDouble(unit, "ICE_WALL",
+                        "slowness-percent", 50.0, 0.0, 80.0), slowSeconds);
+                    cancel();
+                    return;
+                }
+                if (elapsedTicks >= durationTicks || !isWithinEnclosure(target, center, centerY)) {
+                    applyIcePrisonSlow(target, skillOptionDouble(unit, "ICE_WALL",
+                        "slowness-percent", 50.0, 0.0, 80.0), slowSeconds);
+                    cancel();
+                    return;
+                }
+                elapsedTicks++;
+                if (elapsedTicks % 20L == 0L && damage > 0.0
+                        && canMercenaryDamageTarget(unit.owner, target)
+                        && (isValidTarget(target) || isOwnerCommandedPvpTarget(unit.owner, target))) {
+                    target.damage(damage, mob);
+                    target.getWorld().spawnParticle(Particle.SNOWFLAKE,
+                        target.getLocation().add(0.0, 1.0, 0.0), 8, 0.25, 0.35, 0.25, 0.02);
+                }
+            }
+        }.runTaskTimer(plugin, 1L, 1L);
+        trackFrostTask(unit, task);
+        return true;
+    }
+
+    private List<Block> enclosureBlocks(Location target) {
+        int centerX = target.getBlockX();
+        int baseY = target.getBlockY();
+        int centerZ = target.getBlockZ();
+        World world = target.getWorld();
+        List<Block> blocks = new ArrayList<>(25);
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                addEnclosureBlock(blocks, world, centerX + x, baseY - 1, centerZ + z);
+                if (Math.abs(x) == 1 || Math.abs(z) == 1) {
+                    addEnclosureBlock(blocks, world, centerX + x, baseY, centerZ + z);
+                    addEnclosureBlock(blocks, world, centerX + x, baseY + 1, centerZ + z);
+                }
+            }
+        }
+        return blocks;
+    }
+
+    private void addEnclosureBlock(List<Block> blocks, World world, int x, int y, int z) {
+        if (y >= world.getMinHeight() && y < world.getMaxHeight()) {
+            blocks.add(world.getBlockAt(x, y, z));
+        }
+    }
+
+    private boolean isWithinEnclosure(LivingEntity target, Location center, int baseY) {
+        Location location = target.getLocation();
+        return location.getWorld().equals(center.getWorld())
+            && location.getBlockX() == center.getBlockX()
+            && location.getBlockZ() == center.getBlockZ()
+            && location.getBlockY() >= baseY
+            && location.getBlockY() <= baseY + 1;
+    }
+
+    private double scaledSkillDurationSeconds(Unit unit, String skill,
+                                                double fallback, double increaseFallback, double maximum) {
+        double base = skillOptionDouble(unit, skill, "duration-seconds", fallback, 0.1, maximum);
+        double increase = skillOptionDouble(unit, skill, "duration-increase-per-level-seconds",
+            increaseFallback, 0.0, 10.0);
+        return Math.min(maximum, base + Math.max(0, unit.level - 1) * increase);
+    }
+
+    private void applyIcePrisonSlow(LivingEntity target, double slowPercent, double durationSeconds) {
+        var movementSpeed = target.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (movementSpeed == null || slowPercent <= 0.0) return;
+        if (movementSpeed.getModifier(icePrisonSlowKey) != null) {
+            movementSpeed.removeModifier(icePrisonSlowKey);
+        }
+        movementSpeed.addModifier(new AttributeModifier(
+            icePrisonSlowKey, -Math.min(80.0, slowPercent) / 100.0,
+            AttributeModifier.Operation.MULTIPLY_SCALAR_1));
+        long expiresAt = System.currentTimeMillis() + Math.round(durationSeconds * 1000.0);
+        target.getPersistentDataContainer().set(icePrisonSlowExpiryKey, PersistentDataType.LONG, expiresAt);
+        icePrisonSlowExpiries.put(target.getUniqueId(), expiresAt);
+    }
+
+    private void removeIcePrisonSlow(LivingEntity target) {
+        var movementSpeed = target.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (movementSpeed != null && movementSpeed.getModifier(icePrisonSlowKey) != null) {
+            movementSpeed.removeModifier(icePrisonSlowKey);
+        }
+        target.getPersistentDataContainer().remove(icePrisonSlowExpiryKey);
+        icePrisonSlowExpiries.remove(target.getUniqueId());
+    }
+
+    private void castFrostShield(Unit unit, Mob mob) {
+        int duration = frostDurationTicks(unit, "FROST_SHIELD", 6.0, 1.0, 30.0);
+        int amplifier = (int) skillOptionDouble(unit, "FROST_SHIELD", "absorption-amplifier", 1.0, 0.0, 10.0);
+        applyFrostPotionEffect(mob, new PotionEffect(PotionEffectType.ABSORPTION,
+            duration, amplifier, true, true, true));
+        frostShieldExpiries.entrySet().removeIf(entry -> entry.getValue() <= System.currentTimeMillis());
+        frostShieldExpiries.put(mob.getUniqueId(), System.currentTimeMillis() + duration * 50L);
+    }
+
+    private void castFrostStep(Unit unit, Mob mob, LivingEntity target) {
+        Location start = mob.getLocation().clone().add(0.0, 0.5, 0.0);
+        Vector direction = target.getLocation().toVector().subtract(start.toVector());
+        double distance = direction.length();
+        if (distance < 0.1) return;
+        Vector normalized = direction.clone().normalize();
+        if (mob.getWorld().rayTraceBlocks(start, normalized, Math.min(distance, 6.0),
+                FluidCollisionMode.NEVER, true) != null) return;
+        double speed = skillOptionDouble(unit, "FROST_STEP", "dash-speed", 0.7, 0.2, 1.5);
+        normalized.setY(Math.max(-0.15, Math.min(0.2, normalized.getY())));
+        mob.setVelocity(normalized.multiply(speed));
+    }
+
+    private void castFrostWalker(Unit unit, Mob mob) {
+        int durationTicks = frostDurationTicks(unit, "FROST_WALKER", 8.0, 1.0, 30.0);
+        int intervalTicks = (int) skillOptionDouble(unit, "FROST_WALKER", "trail-interval-ticks", 10.0, 5.0, 40.0);
+        double radius = skillOptionDouble(unit, "FROST_WALKER", "trail-radius-blocks", 2.0, 1.0, 5.0);
+        int blockDuration = (int) skillOptionDouble(unit, "FROST_WALKER", "ice-duration-seconds", 3.0, 1.0, 15.0);
+        BukkitTask task = new BukkitRunnable() {
+            private int elapsed;
+
+            @Override
+            public void run() {
+                if (!mob.isValid() || mob.isDead() || elapsed >= durationTicks) {
+                    cancel();
+                    return;
+                }
+                Location feet = mob.getLocation();
+                mob.getWorld().spawnParticle(Particle.SNOWFLAKE, feet.clone().add(0.0, 0.1, 0.0),
+                    5, 0.35, 0.08, 0.35, 0.01);
+                int search = (int) Math.ceil(radius);
+                for (int x = -search; x <= search; x++) {
+                    for (int z = -search; z <= search; z++) {
+                        if (x * x + z * z > radius * radius) continue;
+                        Block surface = feet.getBlock().getRelative(x, -1, z);
+                        if (surface.getType() == Material.WATER && surface.getRelative(0, 1, 0).getType().isAir()) {
+                            placeTemporaryFrostBlock(surface, Material.PACKED_ICE, blockDuration);
+                        }
+                    }
+                }
+                elapsed += intervalTicks;
+            }
+        }.runTaskTimer(plugin, 0L, intervalTicks);
+        trackFrostTask(task);
+    }
+
+    private void castIceAge(Unit unit, Mob mob) {
+        double radius = frostRange(unit, "ICE_AGE", "radius-blocks", 15.0);
+        int maxTargets = (int) skillOptionDouble(unit, "ICE_AGE", "max-targets", 24.0, 1.0, 64.0);
+        int duration = frostDurationTicks(unit, "ICE_AGE", 4.0, 1.0, 10.0);
+        int amplifier = (int) skillOptionDouble(unit, "ICE_AGE", "slowness-amplifier", 2.0, 0.0, 6.0);
+        Location center = mob.getLocation().clone();
+        mob.getWorld().spawnParticle(Particle.SNOWFLAKE, center.clone().add(0.0, 1.0, 0.0),
+            160, radius / 2.0, 2.0, radius / 2.0, 0.04);
+        for (LivingEntity victim : frostTargets(mob, center, radius, maxTargets)) {
+            applyFrostPotionEffect(victim, new PotionEffect(PotionEffectType.SLOWNESS,
+                duration, amplifier, true, true, true));
+            applyFrostFreeze(victim, duration);
+        }
+    }
+
+    private List<LivingEntity> frostTargets(Mob source, Location center, double radius, int maxTargets) {
+        double radiusSquared = radius * radius;
+        return source.getNearbyEntities(radius, radius, radius).stream()
+            .filter(LivingEntity.class::isInstance)
+            .map(LivingEntity.class::cast)
+            .filter(this::isValidTarget)
+            .filter(target -> source.getWorld().equals(target.getWorld())
+                && target.getLocation().distanceSquared(center) <= radiusSquared
+                && source.hasLineOfSight(target))
+            .sorted(Comparator.comparingDouble(target -> target.getLocation().distanceSquared(center)))
+            .limit(maxTargets)
+            .toList();
+    }
+
+    private void placeTemporaryFrostBlock(Block block, Material type, int durationSeconds) {
+        placeTemporaryFrostBlockForTicks(block, type, Math.max(1L, durationSeconds * 20L), null);
+    }
+
+    private boolean placeTemporaryFrostBlockForTicks(Block block, Material type,
+                                                     long durationTicks, UUID ownerUnitId) {
+        return placeTemporaryFrostBlockForTicks(block, type, durationTicks, ownerUnitId, false);
+    }
+
+    private boolean placeTemporaryFrostBlockForTicks(Block block, Material type,
+                                                     long durationTicks, UUID ownerUnitId,
+                                                     boolean replaceFloor) {
+        if (!block.getType().isAir() && block.getType() != Material.WATER
+                && (!replaceFloor || !block.getType().isSolid()
+                    || block.getState() instanceof org.bukkit.block.TileState)) return false;
+        String key = block.getWorld().getName() + ":" + block.getX() + ":" + block.getY() + ":" + block.getZ();
+        int limit = (int) frostTemporaryBlockLimit();
+        if (temporaryFrostBlocks.containsKey(key) || temporaryFireBlocks.containsKey(key)
+                || temporaryFrostBlocks.size() >= limit) return false;
+        TemporaryFrostBlock temporary = new TemporaryFrostBlock(key, block, type, ownerUnitId);
+        block.setType(type, false);
+        temporaryFrostBlocks.put(key, temporary);
+        temporary.removalTask = Bukkit.getScheduler().runTaskLater(plugin,
+            () -> restoreTemporaryFrostBlock(temporary), Math.max(1L, durationTicks));
+        return true;
+    }
+
+    private double frostTemporaryBlockLimit() {
+        return readBoundedDouble(settings, "classes.frost_mage.temporary-block-limit",
+            128.0, 1.0, 512.0);
+    }
+
+    private double frostOptionDouble(String skill, String option, double fallback, double minimum, double maximum) {
+        String path = "classes.frost_mage."
+            + (skill.equals("BASIC_ATTACK") ? "basic-attack." : "skill-settings." + skill + ".")
+            + option;
+        return readBoundedDouble(settings, path, fallback, minimum, maximum);
+    }
+
+    private void restoreTemporaryFrostBlock(TemporaryFrostBlock temporary) {
+        temporaryFrostBlocks.remove(temporary.key);
+        Block block = temporary.world.getBlockAt(temporary.x, temporary.y, temporary.z);
+        if (block.getType() == temporary.temporaryType) block.setBlockData(temporary.originalData, false);
+    }
+
+    private void trackFrostTask(BukkitTask task) {
+        frostSkillTasks.removeIf(BukkitTask::isCancelled);
+        frostSkillTasks.add(task);
+    }
+
+    private void trackFrostTask(Unit unit, BukkitTask task) {
+        trackFrostTask(task);
+        frostTasksByUnit.values().forEach(tasks -> tasks.removeIf(BukkitTask::isCancelled));
+        frostTasksByUnit.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        frostTasksByUnit.computeIfAbsent(unit.id, ignored -> new HashSet<>()).add(task);
+    }
+
+    private void applyFrostPotionEffect(LivingEntity target, PotionEffect effect) {
+        long now = System.currentTimeMillis();
+        Map<PotionEffectType, FrostEffectSnapshot> snapshots =
+            temporaryFrostEffects.computeIfAbsent(target.getUniqueId(), ignored -> new HashMap<>());
+        FrostEffectSnapshot snapshot = snapshots.computeIfAbsent(effect.getType(), ignored -> {
+            PotionEffect previous = target.getPotionEffect(effect.getType());
+            long previousExpiry = previous == null ? 0L : now + previous.getDuration() * 50L;
+            return new FrostEffectSnapshot(previous, previousExpiry);
+        });
+        snapshot.appliedAmplifier = effect.getAmplifier();
+        snapshot.appliedExpiresAt = now + effect.getDuration() * 50L;
+        target.addPotionEffect(effect);
+    }
+
+    private void applyFrostFreeze(LivingEntity target, int durationTicks) {
+        long now = System.currentTimeMillis();
+        int originalTicks = target.getFreezeTicks();
+        FrostFreezeSnapshot snapshot = temporaryFrostFreezes.computeIfAbsent(target.getUniqueId(),
+            ignored -> new FrostFreezeSnapshot(originalTicks, now + originalTicks * 50L));
+        snapshot.appliedExpiresAt = Math.max(snapshot.appliedExpiresAt, now + durationTicks * 50L);
+        target.setFreezeTicks(Math.max(originalTicks, durationTicks));
+    }
+
+    private void cleanupFrostPotionEffects(boolean force) {
+        long now = System.currentTimeMillis();
+        for (Map.Entry<UUID, Map<PotionEffectType, FrostEffectSnapshot>> targetEntry
+                : new HashMap<>(temporaryFrostEffects).entrySet()) {
+            Entity entity = Bukkit.getEntity(targetEntry.getKey());
+            if (!(entity instanceof LivingEntity target) || !target.isValid()) {
+                temporaryFrostEffects.remove(targetEntry.getKey());
+                continue;
+            }
+            Map<PotionEffectType, FrostEffectSnapshot> snapshots = targetEntry.getValue();
+            for (Map.Entry<PotionEffectType, FrostEffectSnapshot> effectEntry
+                    : new HashMap<>(snapshots).entrySet()) {
+                FrostEffectSnapshot snapshot = effectEntry.getValue();
+                if (!force && snapshot.appliedExpiresAt > now) continue;
+                PotionEffect current = target.getPotionEffect(effectEntry.getKey());
+                long expectedRemainingTicks = Math.max(0L, (snapshot.appliedExpiresAt - now) / 50L);
+                boolean stillOurs = current == null || (current.getAmplifier() == snapshot.appliedAmplifier
+                    && current.getDuration() <= expectedRemainingTicks + 2L);
+                if (stillOurs) {
+                    if (current != null) target.removePotionEffect(effectEntry.getKey());
+                    long previousTicks = Math.max(0L, (snapshot.previousExpiresAt - now) / 50L);
+                    if (snapshot.previousEffect != null && previousTicks > 0L) {
+                        PotionEffect previous = snapshot.previousEffect;
+                        target.addPotionEffect(new PotionEffect(previous.getType(),
+                            (int) Math.min(Integer.MAX_VALUE, previousTicks), previous.getAmplifier(),
+                            previous.isAmbient(), previous.hasParticles(), previous.hasIcon()));
+                    }
+                }
+                snapshots.remove(effectEntry.getKey());
+            }
+            if (snapshots.isEmpty()) temporaryFrostEffects.remove(targetEntry.getKey());
+        }
+        for (Map.Entry<UUID, FrostFreezeSnapshot> entry
+                : new HashMap<>(temporaryFrostFreezes).entrySet()) {
+            Entity entity = Bukkit.getEntity(entry.getKey());
+            if (!(entity instanceof LivingEntity target) || !target.isValid()) {
+                temporaryFrostFreezes.remove(entry.getKey());
+                continue;
+            }
+            FrostFreezeSnapshot snapshot = entry.getValue();
+            if (!force && snapshot.appliedExpiresAt > now) continue;
+            long expectedRemaining = Math.max(0L, (snapshot.appliedExpiresAt - now) / 50L);
+            if (target.getFreezeTicks() <= expectedRemaining + 2L) {
+                long previousRemaining = Math.max(0L, (snapshot.originalExpiresAt - now) / 50L);
+                target.setFreezeTicks((int) Math.min(Integer.MAX_VALUE, previousRemaining));
+            }
+            temporaryFrostFreezes.remove(entry.getKey());
+        }
+    }
+
+    private void useSkillsRemaining(Unit unit, Player owner, LivingEntity target, Mob mob) {
         if (hasSkill(unit, "VOLLEY") && target != null && mob != null
                 && isWithinConfiguredSkillRange(unit, mob, target, "VOLLEY") && ready(unit, "volley")) {
             int arrowCount = (int) skillOptionDouble(unit, "VOLLEY", "arrow-count", 3.0, 2.0, 5.0);
@@ -2271,6 +3140,645 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 announceSkillCast(unit, owner, "BUFF_ALLIES", Particle.ENCHANT);
             }
         }
+        if ("pyromancer".equals(unit.unitClass)) {
+            useFireMageSkills(unit, owner, target, mob);
+        }
+    }
+
+    private void useFireMageSkills(Unit unit, Player owner, LivingEntity target, Mob mob) {
+        if (mob == null || !mob.isValid()) return;
+        boolean targetAvailable = target != null
+            && isAllowedMercenaryTarget(unit.owner, target, isOwnerCommandedPvpTarget(unit.owner, target));
+
+        if (hasSkill(unit, "FLAME_BOLT") && targetAvailable && ready(unit, "FLAME_BOLT")
+                && isWithinFlameRange(unit, mob, target, "FLAME_BOLT", 24.0)) {
+            launchFlameBolt(unit, mob, target);
+            markUsed(unit, "FLAME_BOLT", flameCooldown(unit, "FLAME_BOLT", 2.0));
+            announceSkillCast(unit, owner, "FLAME_BOLT", Particle.FLAME);
+        }
+        if (hasSkill(unit, "IGNITE") && targetAvailable && ready(unit, "IGNITE")
+                && isWithinFlameRange(unit, mob, target, "IGNITE", 24.0)) {
+            castIgnite(unit, mob, target);
+            markUsed(unit, "IGNITE", flameCooldown(unit, "IGNITE", 6.0));
+            announceSkillCast(unit, owner, "IGNITE", Particle.SOUL_FIRE_FLAME);
+        }
+        if (hasSkill(unit, "FLAME_NOVA") && targetAvailable && ready(unit, "FLAME_NOVA")
+                && mob.getWorld().equals(target.getWorld())
+                && mob.getLocation().distanceSquared(target.getLocation())
+                    <= Math.pow(flameOption(unit, "FLAME_NOVA", "trigger-range-blocks", 5.0, 1.0, 12.0), 2)) {
+            castFlameNova(unit, mob);
+            markUsed(unit, "FLAME_NOVA", flameCooldown(unit, "FLAME_NOVA", 10.0));
+            announceSkillCast(unit, owner, "FLAME_NOVA", Particle.FLAME);
+        }
+        if (hasSkill(unit, "FIRE_WALL") && targetAvailable && ready(unit, "FIRE_WALL")
+                && isWithinFlameRange(unit, mob, target, "FIRE_WALL", 16.0)) {
+            if (castFireWall(unit, mob, target)) {
+                markUsed(unit, "FIRE_WALL", flameCooldown(unit, "FIRE_WALL", 12.0));
+                announceSkillCast(unit, owner, "FIRE_WALL", Particle.FLAME);
+            }
+        }
+        if (hasSkill(unit, "METEOR_STRIKE") && targetAvailable && ready(unit, "METEOR_STRIKE")
+                && isWithinFlameRange(unit, mob, target, "METEOR_STRIKE", 32.0)) {
+            castMeteorStrike(unit, mob, target);
+            markUsed(unit, "METEOR_STRIKE", flameCooldown(unit, "METEOR_STRIKE", 25.0));
+            announceSkillCast(unit, owner, "METEOR_STRIKE", Particle.LAVA);
+        }
+        double maximumHealth = maxHealth(mob);
+        double healthPercent = maximumHealth <= 0.0 ? 100.0 : mob.getHealth() / maximumHealth * 100.0;
+        if (hasSkill(unit, "PHOENIX_REBIRTH") && targetAvailable && ready(unit, "PHOENIX_REBIRTH")
+                && healthPercent <= flameOption(unit, "PHOENIX_REBIRTH",
+                    "health-percent-trigger", 65.0, 1.0, 99.0)
+                && isWithinFlameRange(unit, mob, target, "PHOENIX_REBIRTH", 32.0)) {
+            castPhoenixRebirth(unit, mob, target);
+            markUsed(unit, "PHOENIX_REBIRTH", flameCooldown(unit, "PHOENIX_REBIRTH", 90.0));
+            announceSkillCast(unit, owner, "PHOENIX_REBIRTH", Particle.FLAME);
+        }
+    }
+
+    private boolean isWithinFlameRange(Unit unit, Mob mob, LivingEntity target, String skill, double fallback) {
+        double range = flameOption(unit, skill, "range-blocks", fallback, 1.0, 64.0);
+        return mob.getWorld().equals(target.getWorld())
+            && mob.getLocation().distanceSquared(target.getLocation()) <= range * range
+            && mob.hasLineOfSight(target);
+    }
+
+    private double flameOption(Unit unit, String skill, String option,
+                               double fallback, double minimum, double maximum) {
+        return skillOptionDouble(unit, skill, option, fallback, minimum, maximum);
+    }
+
+    private double flameDamage(Unit unit, String skill, String option, double fallback) {
+        return Math.min(100.0, flameOption(unit, skill, option, fallback, 0.0, 100.0)
+            * skillPowerMultiplier(unit));
+    }
+
+    private double flameCooldown(Unit unit, String skill, double fallback) {
+        double configured = flameOption(unit, skill, "cooldown-seconds", fallback, 1.0, 3600.0);
+        double levelProgress = maxLevel <= 1 ? 0.0 : (double) (unit.level - 1) / (maxLevel - 1);
+        return Math.max(1.0, configured - skillCooldownReductionAtMaxLevel * levelProgress);
+    }
+
+    private void launchFlameBolt(Unit unit, Mob mob, LivingEntity target) {
+        Snowball projectile = mob.launchProjectile(Snowball.class);
+        flameProjectilesByUnit.computeIfAbsent(unit.id, ignored -> new HashSet<>())
+            .add(projectile.getUniqueId());
+        Vector direction = target.getEyeLocation().toVector().subtract(mob.getEyeLocation().toVector());
+        if (direction.lengthSquared() > 0.0001) {
+            projectile.setVelocity(direction.normalize()
+                .multiply(flameOption(unit, "FLAME_BOLT", "projectile-speed", 1.8, 0.5, 4.0)));
+        }
+        projectile.setGravity(false);
+        projectile.getPersistentDataContainer().set(flameProjectileKey, PersistentDataType.BYTE, (byte) 1);
+        projectile.getPersistentDataContainer().set(flameProjectileDamageKey, PersistentDataType.DOUBLE,
+            flameDamage(unit, "FLAME_BOLT", "damage", 6.0));
+        double speed = flameOption(unit, "FLAME_BOLT", "projectile-speed", 1.8, 0.5, 4.0);
+        int maxAgeTicks = (int) Math.ceil(
+            flameOption(unit, "FLAME_BOLT", "range-blocks", 24.0, 1.0, 64.0) / speed) + 10;
+        BukkitTask trail = new BukkitRunnable() {
+            private int ageTicks;
+
+            @Override
+            public void run() {
+                if (!projectile.isValid() || projectile.isDead()) {
+                    removeTrackedFlameProjectile(mob, projectile);
+                    cancel();
+                    return;
+                }
+                if (++ageTicks > maxAgeTicks) {
+                    projectile.remove();
+                    removeTrackedFlameProjectile(mob, projectile);
+                    cancel();
+                    return;
+                }
+                projectile.getWorld().spawnParticle(Particle.FLAME, projectile.getLocation(),
+                    2, 0.03, 0.03, 0.03, 0.005);
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        trackFireTask(unit, trail);
+    }
+
+    private void applyFlameBoltSlow(LivingEntity target, double slowPercent, double durationSeconds) {
+        if (slowPercent <= 0.0) return;
+        var movementSpeed = target.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (movementSpeed == null) return;
+        if (movementSpeed.getModifier(flameBoltSlowKey) != null) {
+            movementSpeed.removeModifier(flameBoltSlowKey);
+        }
+        movementSpeed.addModifier(new AttributeModifier(
+            flameBoltSlowKey, -slowPercent / 100.0, AttributeModifier.Operation.MULTIPLY_SCALAR_1));
+        long expiresAt = System.currentTimeMillis() + Math.round(durationSeconds * 1000.0);
+        target.getPersistentDataContainer().set(flameBoltSlowExpiryKey, PersistentDataType.LONG, expiresAt);
+        flameBoltSlowExpiries.put(target.getUniqueId(), expiresAt);
+    }
+
+    private void castIgnite(Unit unit, Mob mob, LivingEntity target) {
+        int targetLimit = (int) flameOption(unit, "IGNITE", "max-spread-targets", 6.0, 1.0, 24.0);
+        IgniteContext context = new IgniteContext(targetLimit);
+        context.ignitedTargets.add(target.getUniqueId());
+        startIgniteTicks(unit, mob, target, context);
+    }
+
+    private void startIgniteTicks(Unit unit, Mob mob, LivingEntity target, IgniteContext context) {
+        int durationSeconds = (int) flameOption(unit, "IGNITE", "duration-seconds", 8.0, 2.0, 30.0);
+        int intervalTicks = (int) Math.min(
+            flameOption(unit, "IGNITE", "pulse-interval-ticks", 40.0, 20.0, 200.0), durationSeconds * 20.0);
+        int pulseCount = Math.max(1, (int) Math.ceil(durationSeconds * 20.0 / intervalTicks));
+        BukkitTask task = new BukkitRunnable() {
+            private int pulses;
+
+            @Override
+            public void run() {
+                if (!isActiveFireCaster(mob) || !target.isValid() || target.isDead()
+                        || !canMercenaryDamageTarget(unit.owner, target)
+                        || (!isValidTarget(target) && !isOwnerCommandedPvpTarget(unit.owner, target))) {
+                    cancel();
+                    return;
+                }
+                target.damage(flameDamage(unit, "IGNITE", "damage-per-pulse", 2.5), mob);
+                target.setFireTicks(Math.max(target.getFireTicks(), intervalTicks));
+                target.getWorld().spawnParticle(Particle.FLAME, target.getLocation().add(0.0, 1.0, 0.0),
+                    8, 0.25, 0.35, 0.25, 0.015);
+                spreadIgnite(unit, mob, target, context);
+                if (++pulses >= pulseCount) cancel();
+            }
+        }.runTaskTimer(plugin, intervalTicks, intervalTicks);
+        trackFireTask(unit, task);
+    }
+
+    private void spreadIgnite(Unit unit, Mob mob, LivingEntity burningTarget, IgniteContext context) {
+        if (context.ignitedTargets.size() >= context.targetLimit) return;
+        double radius = flameOption(unit, "IGNITE", "spread-radius-blocks", 4.0, 1.0, 12.0);
+        for (Entity entity : burningTarget.getNearbyEntities(radius, radius, radius).stream()
+                .filter(LivingEntity.class::isInstance)
+                .sorted(Comparator.comparingDouble(candidate ->
+                    candidate.getLocation().distanceSquared(burningTarget.getLocation())))
+                .toList()) {
+            LivingEntity next = (LivingEntity) entity;
+            if (context.ignitedTargets.contains(next.getUniqueId())
+                    || !isAllowedMercenaryTarget(unit.owner, next,
+                        isOwnerCommandedPvpTarget(unit.owner, next))
+                    || !burningTarget.hasLineOfSight(next)) continue;
+            context.ignitedTargets.add(next.getUniqueId());
+            next.getWorld().spawnParticle(Particle.FLAME, next.getLocation().add(0.0, 1.0, 0.0),
+                10, 0.25, 0.35, 0.25, 0.02);
+            startIgniteTicks(unit, mob, next, context);
+            break;
+        }
+    }
+
+    private void castFlameNova(Unit unit, Mob mob) {
+        double radius = Math.min(16.0,
+            flameOption(unit, "FLAME_NOVA", "radius-blocks", 3.0, 1.0, 12.0)
+                + Math.floor(unit.level / flameOption(unit, "FLAME_NOVA",
+                    "radius-increase-every-levels", 5.0, 1.0, 30.0)));
+        int maxTargets = (int) flameOption(unit, "FLAME_NOVA", "max-targets", 24.0, 1.0, 64.0);
+        int particleCount = (int) Math.min(64.0, Math.floor(
+            flameOption(unit, "FLAME_NOVA", "particle-count", 10.0, 1.0, 64.0)
+                + Math.max(0, unit.level - 1) * flameOption(
+                    unit, "FLAME_NOVA", "particles-increase-per-level", 1.0, 0.0, 10.0)));
+        double orbitRadius = flameOption(unit, "FLAME_NOVA", "particle-orbit-radius-blocks", 1.2, 0.1, 8.0);
+        double rotationSpeed = flameOption(unit, "FLAME_NOVA",
+            "particle-rotation-radians-per-tick", 0.3, 0.01, 3.0);
+        int particleInterval = (int) flameOption(unit, "FLAME_NOVA", "particle-interval-ticks", 2.0, 1.0, 20.0);
+        int pulseInterval = (int) flameOption(unit, "FLAME_NOVA", "damage-interval-ticks", 20.0, 1.0, 100.0);
+        long durationTicks = Math.max(1L, Math.round(
+            scaledSkillDurationSeconds(unit, "FLAME_NOVA", 3.0, 0.1, 30.0) * 20.0));
+        double damage = Math.min(100.0,
+            flameDamage(unit, "FLAME_NOVA", "damage-per-second", 1.0)
+                + Math.max(0, unit.level - 1) * flameOption(unit, "FLAME_NOVA",
+                    "damage-increase-per-level", 0.1, 0.0, 10.0) * skillPowerMultiplier(unit));
+        Location origin = mob.getLocation().clone();
+        mob.getWorld().playSound(origin, Sound.ENTITY_BLAZE_SHOOT, 0.8f, 0.7f);
+        BukkitTask task = new BukkitRunnable() {
+            private long elapsedTicks;
+            private long nextDamageTicks = pulseInterval;
+
+            @Override
+            public void run() {
+                if (!isActiveFireCaster(mob) || elapsedTicks > durationTicks) {
+                    cancel();
+                    return;
+                }
+                if (elapsedTicks < durationTicks && elapsedTicks % particleInterval == 0L) {
+                    Location center = mob.getLocation().clone().add(0.0, 0.2, 0.0);
+                    double angleOffset = elapsedTicks * rotationSpeed;
+                    for (int index = 0; index < particleCount; index++) {
+                        double angle = angleOffset + Math.PI * 2.0 * index / particleCount;
+                        Location particle = center.clone().add(
+                            Math.cos(angle) * orbitRadius, 0.8 + Math.sin(angle * 2.0) * 0.25,
+                            Math.sin(angle) * orbitRadius);
+                        mob.getWorld().spawnParticle(Particle.FLAME, particle,
+                            1, 0.02, 0.02, 0.02, 0.005);
+                    }
+                }
+                if (elapsedTicks >= nextDamageTicks && damage > 0.0) {
+                    for (LivingEntity victim : flameTargets(mob, mob.getLocation(), radius, maxTargets)) {
+                        victim.damage(damage, mob);
+                    }
+                    nextDamageTicks += pulseInterval;
+                }
+                if (elapsedTicks >= durationTicks) {
+                    cancel();
+                    return;
+                }
+                elapsedTicks++;
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
+        trackFireTask(unit, task);
+    }
+
+    private boolean castFireWall(Unit unit, Mob mob, LivingEntity target) {
+        long durationTicks = Math.max(1L, Math.round(
+            scaledSkillDurationSeconds(unit, "FIRE_WALL", 3.0, 0.1, 30.0) * 20.0));
+        Material wallMaterial = Material.matchMaterial(skillOptionString(unit,
+            "FIRE_WALL", "block-material", "MAGMA_BLOCK"));
+        if (wallMaterial == null || !wallMaterial.isSolid() || wallMaterial.isAir()) return false;
+        int placed = 0;
+        int floorY = target.getLocation().getBlockY() - 1;
+        for (Block block : enclosureBlocks(target.getLocation())) {
+            if (placeTemporaryFireBlock(unit, block, wallMaterial, durationTicks, block.getY() == floorY)) {
+                placed++;
+            }
+        }
+        return placed > 0;
+    }
+
+    private boolean placeTemporaryFireBlock(Unit unit, Block block, Material type,
+                                            long durationTicks, boolean replaceFloor) {
+        if (!block.getType().isAir() && block.getType() != Material.WATER
+                && (!replaceFloor || !block.getType().isSolid()
+                    || block.getState() instanceof org.bukkit.block.TileState)) return false;
+        String key = block.getWorld().getName() + ":" + block.getX() + ":" + block.getY() + ":" + block.getZ();
+        int limit = (int) flameOptionForClass("FIRE_WALL", "temporary-block-limit", 96.0, 1.0, 512.0);
+        if (temporaryFireBlocks.containsKey(key) || temporaryFrostBlocks.containsKey(key)
+                || temporaryFireBlocks.size() >= limit) return false;
+        TemporaryFrostBlock temporary = new TemporaryFrostBlock(key, block, type, unit.id);
+        block.setType(type, false);
+        temporaryFireBlocks.put(key, temporary);
+        temporary.removalTask = Bukkit.getScheduler().runTaskLater(plugin,
+            () -> restoreTemporaryFireBlock(temporary), Math.max(1L, durationTicks));
+        return true;
+    }
+
+    private double flameOptionForClass(String skill, String option,
+                                       double fallback, double minimum, double maximum) {
+        return readBoundedDouble(settings, "classes.pyromancer.skill-settings." + skill + "." + option,
+            fallback, minimum, maximum);
+    }
+
+    private void restoreTemporaryFireBlock(TemporaryFrostBlock temporary) {
+        temporaryFireBlocks.remove(temporary.key);
+        Block block = temporary.world.getBlockAt(temporary.x, temporary.y, temporary.z);
+        if (block.getType() == temporary.temporaryType) block.setBlockData(temporary.originalData, false);
+    }
+
+    private List<LivingEntity> flameTargets(Mob source, Location center, double radius, int maxTargets) {
+        return flameTargets(source, center, radius, maxTargets, true);
+    }
+
+    private List<LivingEntity> flameTargets(Mob source, Location center, double radius,
+                                            int maxTargets, boolean requireLineOfSight) {
+        double radiusSquared = radius * radius;
+        return center.getWorld().getNearbyEntities(center, radius, radius, radius).stream()
+            .filter(LivingEntity.class::isInstance)
+            .map(LivingEntity.class::cast)
+            .filter(target -> isAllowedMercenaryTarget(getOwnerId(source), target,
+                isOwnerCommandedPvpTarget(getOwnerId(source), target)))
+            .filter(target -> source.getWorld().equals(target.getWorld())
+                && target.getLocation().distanceSquared(center) <= radiusSquared
+                && (!requireLineOfSight || source.hasLineOfSight(target)))
+            .sorted(Comparator.comparingDouble(target -> target.getLocation().distanceSquared(center)))
+            .limit(maxTargets)
+            .toList();
+    }
+
+    private void castMeteorStrike(Unit unit, Mob mob, LivingEntity target) {
+        Location impact = target.getLocation().clone();
+        World world = impact.getWorld();
+        int count = Math.min(32, (int) flameOption(unit, "METEOR_STRIKE",
+            "fireball-count", 3.0, 1.0, 32.0)
+            + (int) (unit.level / flameOption(unit, "METEOR_STRIKE",
+                "fireballs-increase-every-levels", 3.0, 1.0, 30.0)));
+        double areaRadius = Math.min(16.0, flameOption(unit, "METEOR_STRIKE",
+            "area-radius-blocks", 3.0, 1.0, 12.0)
+            + Math.floor(unit.level / flameOption(unit, "METEOR_STRIKE",
+                "area-radius-increase-every-levels", 5.0, 1.0, 30.0)));
+        int warningTicks = (int) Math.round(flameOption(unit, "METEOR_STRIKE",
+            "warning-delay-seconds", 2.0, 0.1, 30.0) * 20.0);
+        int particleCount = (int) flameOption(unit, "METEOR_STRIKE",
+            "warning-particle-count", 32.0, 8.0, 128.0);
+        int particleInterval = (int) flameOption(unit, "METEOR_STRIKE",
+            "warning-particle-interval-ticks", 5.0, 1.0, 40.0);
+        List<Location> impacts = meteorImpactLocations(impact, areaRadius, count);
+        int fireballInterval = (int) flameOption(unit, "METEOR_STRIKE",
+            "fireball-interval-ticks", 10.0, 1.0, 100.0);
+        double height = flameOption(unit, "METEOR_STRIKE",
+            "fall-height-blocks", 16.0, 4.0, 80.0);
+        double speed = flameOption(unit, "METEOR_STRIKE", "fall-speed", 1.2, 0.2, 4.0);
+        double damage = flameDamage(unit, "METEOR_STRIKE", "damage", 12.0);
+        double hitRadius = flameOption(unit, "METEOR_STRIKE", "impact-radius-blocks", 1.5, 0.5, 8.0);
+        int maxTargets = (int) flameOption(unit, "METEOR_STRIKE", "max-targets-per-fireball", 8.0, 1.0, 64.0);
+        int burnTicks = (int) flameOption(unit, "METEOR_STRIKE",
+            "burn-duration-seconds", 2.0, 0.0, 15.0) * 20;
+        world.playSound(impact, Sound.ENTITY_BLAZE_SHOOT, 0.8f, 0.6f);
+
+        BukkitTask markerTask = new BukkitRunnable() {
+            private int elapsedTicks;
+
+            @Override
+            public void run() {
+                if (!isActiveFireCaster(mob) || elapsedTicks >= warningTicks) {
+                    cancel();
+                    return;
+                }
+                drawMeteorWarning(world, impact, areaRadius, particleCount);
+                elapsedTicks += particleInterval;
+            }
+        }.runTaskTimer(plugin, 0L, particleInterval);
+        trackFireTask(unit, markerTask);
+        scheduleFireTask(unit, warningTicks, () -> launchMeteorFireball(unit, mob, impacts, 0,
+            fireballInterval, height, speed, hitRadius, maxTargets, damage, burnTicks));
+    }
+
+    private List<Location> meteorImpactLocations(Location center, double radius, int count) {
+        List<Location> locations = new ArrayList<>(count);
+        locations.add(center.clone());
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        for (int index = 1; index < count; index++) {
+            double angle = random.nextDouble(Math.PI * 2.0);
+            double distance = Math.sqrt(random.nextDouble()) * radius;
+            locations.add(center.clone().add(Math.cos(angle) * distance, 0.0,
+                Math.sin(angle) * distance));
+        }
+        for (int index = locations.size() - 1; index > 0; index--) {
+            int swapIndex = random.nextInt(index + 1);
+            Location current = locations.get(index);
+            locations.set(index, locations.get(swapIndex));
+            locations.set(swapIndex, current);
+        }
+        return locations;
+    }
+
+    private void drawMeteorWarning(World world, Location center, double radius, int count) {
+        Particle.DustOptions redFire = new Particle.DustOptions(Color.fromRGB(255, 45, 0), 1.2f);
+        for (int index = 0; index < count; index++) {
+            double angle = Math.PI * 2.0 * index / count;
+            Location point = center.clone().add(Math.cos(angle) * radius, 0.15,
+                Math.sin(angle) * radius);
+            world.spawnParticle(Particle.DUST, point, 1, 0.03, 0.02, 0.03, 0.0, redFire);
+            world.spawnParticle(Particle.FLAME, point, 1, 0.02, 0.02, 0.02, 0.005);
+        }
+    }
+
+    private void launchMeteorFireball(Unit unit, Mob mob, List<Location> impacts, int index,
+                                      int intervalTicks, double height, double speed, double hitRadius,
+                                      int maxTargets, double damage, int burnTicks) {
+        if (!isActiveFireCaster(mob) || index >= impacts.size()) return;
+        Location impact = impacts.get(index);
+        double spawnY = Math.min(impact.getWorld().getMaxHeight() - 1.0, impact.getY() + height);
+        if (spawnY <= impact.getY()) return;
+        Location spawn = impact.clone();
+        spawn.setY(spawnY);
+        SmallFireball fireball = impact.getWorld().spawn(spawn, SmallFireball.class);
+        fireball.setShooter(mob);
+        fireball.setIsIncendiary(false);
+        fireball.setYield(0.0f);
+        fireball.setGravity(false);
+        fireball.setDirection(new Vector(0.0, -1.0, 0.0));
+        fireball.setVelocity(new Vector(0.0, -speed, 0.0));
+        fireball.getPersistentDataContainer().set(meteorFireballKey, PersistentDataType.BYTE, (byte) 1);
+        fireball.getPersistentDataContainer().set(meteorFireballDamageKey, PersistentDataType.DOUBLE, damage);
+        fireball.getPersistentDataContainer().set(meteorFireballRadiusKey, PersistentDataType.DOUBLE, hitRadius);
+        fireball.getPersistentDataContainer().set(meteorFireballMaxTargetsKey,
+            PersistentDataType.INTEGER, maxTargets);
+        fireball.getPersistentDataContainer().set(meteorFireballBurnTicksKey,
+            PersistentDataType.INTEGER, burnTicks);
+        flameProjectilesByUnit.computeIfAbsent(unit.id, ignored -> new HashSet<>())
+            .add(fireball.getUniqueId());
+        if (index + 1 < impacts.size()) {
+            scheduleFireTask(unit, intervalTicks, () -> launchMeteorFireball(unit, mob, impacts,
+                index + 1, intervalTicks, height, speed, hitRadius, maxTargets, damage, burnTicks));
+        }
+    }
+
+    private void castPhoenixRebirth(Unit unit, Mob mob, LivingEntity target) {
+        double maximumHealth = maxHealth(mob);
+        if (maximumHealth > 0.0) {
+            double healPercent = flameOption(unit, "PHOENIX_REBIRTH", "heal-percent", 30.0, 1.0, 100.0);
+            mob.setHealth(Math.min(maximumHealth, mob.getHealth() + maximumHealth * healPercent / 100.0));
+        }
+        int immunitySeconds = (int) flameOption(unit, "PHOENIX_REBIRTH",
+            "immunity-duration-seconds", 2.0, 1.0, 5.0);
+        phoenixImmunityExpiries.put(mob.getUniqueId(),
+            System.currentTimeMillis() + immunitySeconds * 1000L);
+        Location start = mob.getLocation().clone();
+        mob.getWorld().spawnParticle(Particle.FLAME, start.add(0.0, 1.0, 0.0),
+            50, 0.7, 0.8, 0.7, 0.08);
+        int immunityTicks = immunitySeconds * 20;
+        scheduleFireTask(unit, immunityTicks, () -> {
+            if (!isActiveFireCaster(mob)) return;
+            LivingEntity currentTarget = target.isValid() && !target.isDead() ? target : null;
+            if (currentTarget == null || !isAllowedMercenaryTarget(unit.owner, currentTarget,
+                    isOwnerCommandedPvpTarget(unit.owner, currentTarget))) return;
+            Vector charge = currentTarget.getLocation().toVector().subtract(mob.getLocation().toVector());
+            charge.setY(Math.max(-0.1, Math.min(0.5, charge.getY())));
+            if (charge.lengthSquared() > 0.0001) {
+                mob.setVelocity(charge.normalize().multiply(
+                    flameOption(unit, "PHOENIX_REBIRTH", "dash-speed", 1.8, 0.5, 3.5)));
+            }
+            mob.getWorld().spawnParticle(Particle.FLAME, mob.getLocation().add(0.0, 1.0, 0.0),
+                35, 0.5, 0.6, 0.5, 0.06);
+            scheduleFireTask(unit, (long) flameOption(unit, "PHOENIX_REBIRTH",
+                "dash-impact-delay-ticks", 10.0, 1.0, 40.0), () -> {
+                if (!isActiveFireCaster(mob)) return;
+                Location impact = mob.getLocation().clone();
+                double radius = flameOption(unit, "PHOENIX_REBIRTH", "radius-blocks", 8.0, 1.0, 16.0);
+                int maxTargets = (int) flameOption(unit, "PHOENIX_REBIRTH", "max-targets", 32.0, 1.0, 64.0);
+                mob.getWorld().spawnParticle(Particle.EXPLOSION, impact, 4,
+                    radius / 3.0, 0.5, radius / 3.0, 0.0);
+                mob.getWorld().spawnParticle(Particle.FLAME, impact, 120,
+                    radius / 2.0, 1.0, radius / 2.0, 0.08);
+                mob.getWorld().playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1.5f, 0.55f);
+                for (LivingEntity victim : flameTargets(mob, impact, radius, maxTargets)) {
+                    victim.damage(flameDamage(unit, "PHOENIX_REBIRTH", "damage", 18.0), mob);
+                    int burnSeconds = (int) flameOption(unit, "PHOENIX_REBIRTH",
+                        "burn-duration-seconds", 5.0, 1.0, 15.0);
+                    victim.setFireTicks(Math.max(victim.getFireTicks(), burnSeconds * 20));
+                }
+            });
+        });
+    }
+
+    private void trackFireTask(Unit unit, BukkitTask task) {
+        if (task == null) return;
+        fireSkillTasks.removeIf(BukkitTask::isCancelled);
+        fireTasksByUnit.values().forEach(tasks -> tasks.removeIf(BukkitTask::isCancelled));
+        fireSkillTasks.add(task);
+        fireTasksByUnit.computeIfAbsent(unit.id, ignored -> new HashSet<>()).add(task);
+    }
+
+    private void scheduleFireTask(Unit unit, long delayTicks, Runnable action) {
+        BukkitTask[] scheduledTask = new BukkitTask[1];
+        BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    action.run();
+                } finally {
+                    cancel();
+                    forgetFireTask(unit.id, scheduledTask[0]);
+                }
+            }
+        }.runTaskLater(plugin, delayTicks);
+        scheduledTask[0] = task;
+        trackFireTask(unit, task);
+    }
+
+    private void forgetFireTask(UUID unitId, BukkitTask task) {
+        if (task == null) return;
+        fireSkillTasks.remove(task);
+        Set<BukkitTask> unitTasks = fireTasksByUnit.get(unitId);
+        if (unitTasks == null) return;
+        unitTasks.remove(task);
+        if (unitTasks.isEmpty()) fireTasksByUnit.remove(unitId);
+    }
+
+    private void removeTrackedFlameProjectile(Mob mob, Projectile projectile) {
+        UUID unitId = getUnitId(mob);
+        if (unitId == null) return;
+        Set<UUID> projectiles = flameProjectilesByUnit.get(unitId);
+        if (projectiles == null) return;
+        projectiles.remove(projectile.getUniqueId());
+        if (projectiles.isEmpty()) flameProjectilesByUnit.remove(unitId);
+    }
+
+    private boolean isActiveFireCaster(Mob mob) {
+        UUID unitId = getUnitId(mob);
+        Unit unit = unitId == null ? null : units.get(unitId);
+        return unit != null && unit.deployed && activeEntities.get(unit.id) == mob
+            && mob.isValid() && !mob.isDead();
+    }
+
+    private void restoreFlameBoltSlowState() {
+        for (World world : Bukkit.getWorlds()) {
+            for (LivingEntity entity : world.getLivingEntities()) restoreFlameBoltSlowState(entity);
+        }
+    }
+
+    private void restoreFlameBoltSlowState(LivingEntity entity) {
+        Long expiresAt = entity.getPersistentDataContainer()
+            .get(flameBoltSlowExpiryKey, PersistentDataType.LONG);
+        if (expiresAt == null) return;
+        if (expiresAt <= System.currentTimeMillis()) {
+            removeFlameBoltSlow(entity);
+            return;
+        }
+        flameBoltSlowExpiries.put(entity.getUniqueId(), expiresAt);
+    }
+
+    private void restoreIcePrisonSlowState() {
+        for (World world : Bukkit.getWorlds()) {
+            for (LivingEntity entity : world.getLivingEntities()) restoreIcePrisonSlowState(entity);
+        }
+    }
+
+    private void restoreIcePrisonSlowState(LivingEntity entity) {
+        Long expiresAt = entity.getPersistentDataContainer()
+            .get(icePrisonSlowExpiryKey, PersistentDataType.LONG);
+        if (expiresAt == null) return;
+        if (expiresAt <= System.currentTimeMillis()) {
+            removeIcePrisonSlow(entity);
+            return;
+        }
+        icePrisonSlowExpiries.put(entity.getUniqueId(), expiresAt);
+    }
+
+    private void cleanupFireExpiries(boolean force) {
+        long now = System.currentTimeMillis();
+        for (Map.Entry<UUID, Long> entry : new HashMap<>(phoenixImmunityExpiries).entrySet()) {
+            Entity entity = Bukkit.getEntity(entry.getKey());
+            if (force || entry.getValue() <= now || entity == null || !entity.isValid()) {
+                phoenixImmunityExpiries.remove(entry.getKey());
+            }
+        }
+        for (Map.Entry<UUID, Long> entry : new HashMap<>(flameBoltSlowExpiries).entrySet()) {
+            Entity entity = Bukkit.getEntity(entry.getKey());
+            if (!force && entry.getValue() > now) {
+                continue;
+            }
+            if (entity instanceof LivingEntity living) removeFlameBoltSlow(living);
+            flameBoltSlowExpiries.remove(entry.getKey());
+        }
+        for (Map.Entry<UUID, Long> entry : new HashMap<>(icePrisonSlowExpiries).entrySet()) {
+            Entity entity = Bukkit.getEntity(entry.getKey());
+            if (!force && entry.getValue() > now) continue;
+            if (entity instanceof LivingEntity living) removeIcePrisonSlow(living);
+            icePrisonSlowExpiries.remove(entry.getKey());
+        }
+    }
+
+    private void removeFlameBoltSlow(LivingEntity target) {
+        var movementSpeed = target.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (movementSpeed != null && movementSpeed.getModifier(flameBoltSlowKey) != null) {
+            movementSpeed.removeModifier(flameBoltSlowKey);
+        }
+        target.getPersistentDataContainer().remove(flameBoltSlowExpiryKey);
+        flameBoltSlowExpiries.remove(target.getUniqueId());
+    }
+
+    private void cleanupFireEffects() {
+        for (BukkitTask task : fireSkillTasks) task.cancel();
+        fireSkillTasks.clear();
+        fireTasksByUnit.clear();
+        for (Set<UUID> projectileIds : flameProjectilesByUnit.values()) {
+            for (UUID projectileId : projectileIds) {
+                Entity projectile = Bukkit.getEntity(projectileId);
+                if (projectile != null) projectile.remove();
+            }
+        }
+        flameProjectilesByUnit.clear();
+        for (TemporaryFrostBlock temporary : new ArrayList<>(temporaryFireBlocks.values())) {
+            if (temporary.removalTask != null) temporary.removalTask.cancel();
+            restoreTemporaryFireBlock(temporary);
+        }
+        cleanupFireExpiries(true);
+    }
+
+    private void cleanupFireStateForUnit(UUID unitId) {
+        Set<BukkitTask> frostTasks = frostTasksByUnit.remove(unitId);
+        if (frostTasks != null) {
+            for (BukkitTask task : frostTasks) {
+                task.cancel();
+                frostSkillTasks.remove(task);
+            }
+        }
+        Set<BukkitTask> tasks = fireTasksByUnit.remove(unitId);
+        if (tasks != null) {
+            for (BukkitTask task : tasks) {
+                task.cancel();
+                fireSkillTasks.remove(task);
+            }
+        }
+        Set<UUID> projectileIds = flameProjectilesByUnit.remove(unitId);
+        if (projectileIds != null) {
+            for (UUID projectileId : projectileIds) {
+                Entity projectile = Bukkit.getEntity(projectileId);
+                if (projectile != null) projectile.remove();
+            }
+        }
+        for (TemporaryFrostBlock temporary : new ArrayList<>(temporaryFireBlocks.values())) {
+            if (!unitId.equals(temporary.ownerUnitId)) continue;
+            if (temporary.removalTask != null) temporary.removalTask.cancel();
+            restoreTemporaryFireBlock(temporary);
+        }
+        for (TemporaryFrostBlock temporary : new ArrayList<>(temporaryFrostBlocks.values())) {
+            if (!unitId.equals(temporary.ownerUnitId)) continue;
+            if (temporary.removalTask != null) temporary.removalTask.cancel();
+            restoreTemporaryFrostBlock(temporary);
+        }
+        Unit unit = units.get(unitId);
+        Mob mob = unit == null ? null : activeEntities.get(unitId);
+        if (mob != null) phoenixImmunityExpiries.remove(mob.getUniqueId());
     }
 
     private ItemStack findStoredArrow(Unit unit) {
@@ -2470,6 +3978,46 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (event.getBlocks().stream().anyMatch(this::isTemporaryTorchOrSupport)) event.setCancelled(true);
     }
 
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryFrostBlockBreak(BlockBreakEvent event) {
+        if (isTemporaryFrostBlock(event.getBlock())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTemporaryFrostBlockPhysics(BlockPhysicsEvent event) {
+        if (isTemporaryFrostBlock(event.getBlock())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTemporaryFrostBlockWaterFlow(BlockFromToEvent event) {
+        if (isTemporaryFrostBlock(event.getToBlock())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryFrostBlockEntityExplosion(EntityExplodeEvent event) {
+        event.blockList().removeIf(this::isTemporaryFrostBlock);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryFrostBlockBlockExplosion(BlockExplodeEvent event) {
+        event.blockList().removeIf(this::isTemporaryFrostBlock);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryFrostBlockPistonExtend(BlockPistonExtendEvent event) {
+        if (event.getBlocks().stream().anyMatch(this::isTemporaryFrostBlock)) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onTemporaryFrostBlockPistonRetract(BlockPistonRetractEvent event) {
+        if (event.getBlocks().stream().anyMatch(this::isTemporaryFrostBlock)) event.setCancelled(true);
+    }
+
+    private boolean isTemporaryFrostBlock(Block block) {
+        String key = block.getWorld().getName() + ":" + block.getX() + ":" + block.getY() + ":" + block.getZ();
+        return temporaryFrostBlocks.containsKey(key) || temporaryFireBlocks.containsKey(key);
+    }
+
     private boolean isTemporaryTorch(Block block) {
         return temporaryTorches.values().stream().anyMatch(torch ->
             torch.worldName.equals(block.getWorld().getName())
@@ -2637,12 +4185,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private boolean ready(Unit unit, String skill) {
         return skillCooldowns.computeIfAbsent(unit.id, ignored -> new HashMap<>())
-            .getOrDefault(skill, 0L) <= System.currentTimeMillis();
+            .getOrDefault(skillCooldownKey(skill), 0L) <= System.currentTimeMillis();
     }
 
     private void markUsed(Unit unit, String skill, double cooldownSeconds) {
         skillCooldowns.computeIfAbsent(unit.id, ignored -> new HashMap<>())
-            .put(skill, System.currentTimeMillis() + Math.round(cooldownSeconds * 1000.0));
+            .put(skillCooldownKey(skill), System.currentTimeMillis() + Math.round(cooldownSeconds * 1000.0));
     }
 
     private boolean hasSkill(Unit unit, String skill) {
@@ -4063,6 +5611,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         details.add("§cHP: §f" + formatStat(health) + "/" + formatStat(maxHealth)
             + " §7| Giáp: §f" + formatStat(armor));
         details.add("§6Sát thương: §f" + formatStat(damage));
+        if ("frost_mage".equals(unit.unitClass)) {
+            details.add("§7Đòn cơ bản: §fSnowball gây "
+                + formatStat(frostDamage(unit, "BASIC_ATTACK", 3.0)) + " sát thương, tầm "
+                + formatStat(frostRange(unit, "BASIC_ATTACK", "range-blocks", 5.0))
+                + " block §8| §7Hồi chiêu: §f"
+                + formatStat(frostCooldown(unit, "BASIC_ATTACK", 2.0)) + " giây");
+        }
         details.add("§8Skill:");
         for (String skill : settings.getStringList("classes." + unit.unitClass + ".skills")) {
             String normalized = skill.toUpperCase(Locale.ROOT);
@@ -4070,7 +5625,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             long remaining = Math.max(0L, skillCooldowns.getOrDefault(unit.id, Map.of())
                 .getOrDefault(cooldownKey, 0L) - System.currentTimeMillis());
             double cooldownSeconds = normalized.equals("ILLUMINATION")
-                ? illuminationCooldownSeconds(unit) : skillCooldownSeconds(unit, normalized);
+                ? illuminationCooldownSeconds(unit)
+                : FROST_MAGE_SKILLS.contains(normalized)
+                    ? frostCooldown(unit, normalized, 1.0)
+                    : FIRE_MAGE_SKILLS.contains(normalized)
+                        ? flameCooldown(unit, normalized, 1.0) : skillCooldownSeconds(unit, normalized);
             String cooldown = formatStat(cooldownSeconds) + " giây";
             if (remaining > 0L) cooldown += " (còn " + formatStat(remaining / 1000.0) + " giây)";
             details.add("§7" + skillDisplayName(normalized) + ": §f"
@@ -4118,6 +5677,49 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             case "FIRE_BOLT" -> "Gây " + formatStat(skillOptionDouble(unit, skill, "damage", 6.0,
                 0.0, 100.0) * power) + " sát thương và đốt mục tiêu trong "
                 + (int) skillOptionDouble(unit, skill, "fire-seconds", 3.0, 0.0, 15.0) + " giây";
+            case "FLAME_BOLT" -> "Phóng hỏa cầu gây "
+                + formatStat(flameDamage(unit, skill, "damage", 6.0))
+                + " sát thương và giảm 20% tốc độ trong 3 giây";
+            case "IGNITE" -> "Thiêu đốt gây "
+                + formatStat(flameDamage(unit, skill, "damage-per-pulse", 2.5))
+                + " sát thương mỗi 2 giây trong "
+                + (int) flameOption(unit, skill, "duration-seconds", 8.0, 2.0, 30.0)
+                + " giây, lây tối đa "
+                + (int) flameOption(unit, skill, "max-spread-targets", 6.0, 1.0, 24.0) + " mục tiêu";
+            case "FLAME_NOVA" -> "Xoáy lửa gây "
+                + formatStat(Math.min(100.0, flameDamage(unit, skill, "damage-per-second", 1.0)
+                    + Math.max(0, unit.level - 1) * flameOption(unit, skill,
+                        "damage-increase-per-level", 0.1, 0.0, 10.0) * skillPowerMultiplier(unit)))
+                + " sát thương/giây với "
+                + (int) Math.min(64.0, Math.floor(
+                    flameOption(unit, skill, "particle-count", 10.0, 1.0, 64.0)
+                        + Math.max(0, unit.level - 1) * flameOption(unit, skill,
+                            "particles-increase-per-level", 1.0, 0.0, 10.0)))
+                + " hạt lửa trong "
+                + formatStat(scaledSkillDurationSeconds(unit, skill, 3.0, 0.1, 30.0))
+                + " giây, bán kính "
+                + formatStat(Math.min(16.0, flameOption(unit, skill, "radius-blocks", 3.0, 1.0, 12.0)
+                    + Math.floor(unit.level / flameOption(unit, skill,
+                        "radius-increase-every-levels", 5.0, 1.0, 30.0)))) + " block";
+            case "FIRE_WALL" -> "Lồng 3×3, cao 2 block, tồn tại "
+                + formatStat(scaledSkillDurationSeconds(unit, skill, 3.0, 0.1, 30.0)) + " giây";
+            case "METEOR_STRIKE" -> "Gọi "
+                + Math.min(32, (int) flameOption(unit, skill, "fireball-count", 3.0, 1.0, 32.0)
+                    + (int) (unit.level / flameOption(unit, skill,
+                        "fireballs-increase-every-levels", 3.0, 1.0, 30.0)))
+                + " fireball trong bán kính "
+                + formatStat(Math.min(16.0, flameOption(unit, skill,
+                    "area-radius-blocks", 3.0, 1.0, 12.0)
+                    + Math.floor(unit.level / flameOption(unit, skill,
+                        "area-radius-increase-every-levels", 5.0, 1.0, 30.0))))
+                + " block sau " + formatStat(flameOption(unit, skill,
+                    "warning-delay-seconds", 2.0, 0.1, 30.0)) + " giây cảnh báo";
+            case "PHOENIX_REBIRTH" -> "Hồi "
+                + formatStat(flameOption(unit, skill, "heal-percent", 30.0, 1.0, 100.0))
+                + "% máu, miễn sát thương 2 giây rồi gây "
+                + formatStat(flameDamage(unit, skill, "damage", 18.0))
+                + " sát thương AoE trong bán kính "
+                + formatStat(flameOption(unit, skill, "radius-blocks", 8.0, 1.0, 16.0)) + " block";
             case "ROOT_TARGET" -> "Gây " + localizedEffectName(skillOptionString(unit, skill,
                 "effect", "SLOWNESS")) + " lên mục tiêu trong " + scaledDuration(unit, skill, 5.0) + " giây";
             case "LIFESTEAL" -> "Gây " + formatStat(skillOptionDouble(unit, skill, "damage", 8.0,
@@ -4139,6 +5741,38 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 + (int) skillOptionDouble(unit, skill, "torch-duration-seconds", 30.0, 1.0, 600.0)
                 + " giây, tầm " + formatStat(skillOptionDouble(unit, skill,
                     "range-blocks", 20.8, 4.0, 64.0)) + " block";
+            case "ICE_SPIKE" -> "Phóng gai băng gây " + formatStat(frostDamage(unit, skill, 3.0))
+                + " sát thương, tầm " + formatStat(frostRange(unit, skill, "range-blocks", 5.0)) + " block";
+            case "BLIZZARD" -> "Bão tuyết gây " + formatStat(frostDamage(unit, skill, 3.0))
+                + " sát thương mỗi nhịp trong bán kính "
+                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0))
+                + " block, kéo dài " + frostDurationTicks(unit, skill, 3.0, 1.0, 12.0) / 20 + " giây";
+            case "FROST_NOVA" -> "Làm chậm mục tiêu quanh lính trong "
+                + frostDurationTicks(unit, skill, 3.0, 1.0, 10.0) / 20 + " giây, bán kính "
+                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0)) + " block";
+            case "ICE_WALL" -> "Lồng băng gây "
+                + formatStat(Math.min(100.0, (skillOptionDouble(unit, skill,
+                    "damage-per-second", 1.0, 0.0, 100.0)
+                    + Math.max(0, unit.level - 1) * skillOptionDouble(unit, skill,
+                        "damage-increase-per-level", 0.1, 0.0, 10.0)) * skillPowerMultiplier(unit)))
+                + " sát thương/giây; sau khi thoát giảm tốc "
+                + formatStat(skillOptionDouble(unit, skill, "slowness-percent", 50.0, 0.0, 80.0))
+                + "% trong "
+                + formatStat(Math.min(30.0, skillOptionDouble(unit, skill,
+                    "slowness-duration-seconds", 3.0, 0.1, 30.0)
+                    + Math.max(0, unit.level - 1) * skillOptionDouble(unit, skill,
+                        "slowness-duration-increase-per-level-seconds", 0.1, 0.0, 10.0)))
+                + " giây";
+            case "FROST_SHIELD" -> "Nhận Absorption và làm chậm kẻ tấn công trong "
+                + frostDurationTicks(unit, skill, 6.0, 1.0, 30.0) / 20 + " giây";
+            case "FROST_STEP" -> "Lướt áp sát mục tiêu, tầm "
+                + formatStat(frostRange(unit, skill, "range-blocks", 5.0)) + " block";
+            case "FROST_WALKER" -> "Tạo băng tạm trên mặt nước trong "
+                + frostDurationTicks(unit, skill, 8.0, 1.0, 30.0) / 20 + " giây";
+            case "ICE_AGE" -> "Đóng băng tối đa "
+                + (int) skillOptionDouble(unit, skill, "max-targets", 24.0, 1.0, 64.0)
+                + " mục tiêu trong bán kính "
+                + formatStat(frostRange(unit, skill, "radius-blocks", 15.0)) + " block";
             default -> "Chiến đấu với mục tiêu";
         };
     }
@@ -4176,6 +5810,20 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             case "SUMMON_VEXES" -> "Triệu hồi Vex";
             case "LANCE_CHARGE" -> "Lao giáo";
             case "ILLUMINATION" -> "Soi Sáng";
+            case "FLAME_BOLT" -> "Hỏa Cầu";
+            case "IGNITE" -> "Thiêu Đốt";
+            case "FLAME_NOVA" -> "Bão Lửa";
+            case "FIRE_WALL" -> "Hỏa Ngục";
+            case "METEOR_STRIKE" -> "Mưa Lửa";
+            case "PHOENIX_REBIRTH" -> "Phượng Hoàng Tái Sinh";
+            case "ICE_SPIKE" -> "Gai Băng";
+            case "BLIZZARD" -> "Bão Tuyết";
+            case "FROST_NOVA" -> "Băng Kích";
+            case "ICE_WALL" -> "Băng Ngục";
+            case "FROST_SHIELD" -> "Khiên Băng";
+            case "FROST_STEP" -> "Băng Bộ";
+            case "FROST_WALKER" -> "Băng Hành";
+            case "ICE_AGE" -> "Kỷ Băng Hà";
             default -> "Kỹ năng chiến đấu";
         };
     }
@@ -5868,11 +7516,25 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             + " §8| §7Triệu hồi: §f" + maxDeployedUnits);
     }
 
+    private void cleanupFrostEffects() {
+        for (BukkitTask task : frostSkillTasks) task.cancel();
+        frostSkillTasks.clear();
+        frostTasksByUnit.clear();
+        for (TemporaryFrostBlock temporary : new ArrayList<>(temporaryFrostBlocks.values())) {
+            if (temporary.removalTask != null) temporary.removalTask.cancel();
+            restoreTemporaryFrostBlock(temporary);
+        }
+        cleanupFrostPotionEffects(true);
+        frostShieldExpiries.clear();
+        cleanupFireEffects();
+    }
+
     public void stop() {
         if (aiTask != null) {
             aiTask.cancel();
             aiTask = null;
         }
+        cleanupFrostEffects();
         for (BukkitTask task : torchRemovalTasks.values()) task.cancel();
         torchRemovalTasks.clear();
         for (Unit unit : units.values()) {

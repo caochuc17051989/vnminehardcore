@@ -1,40 +1,51 @@
-# Kế hoạch: Nâng bậc lính và thiết kế lại Pháp Sư Băng
+# Kế hoạch: Rework Pháp Sư Lửa
 
 ## Mục tiêu
 
-- Khi lính đánh thuê nâng bậc, đặt level về 1 và EXP về 0; chỉ số được tính lại theo bậc mới ở level 1. Nếu lưu thất bại, hoàn tác bậc, level, EXP, vật phẩm và chỉ số.
-- Thiết kế lại `frost_mage` với snowball bay ổn định làm đòn cơ bản và tám kỹ năng: Ice Spike, Blizzard, Frost Nova, Ice Wall, Frost Shield, Frost Step, Frost Walker và Ice Age.
-- Cấu hình tất cả thông số trong `armies.yml`; giữ nguyên các class lính khác.
-- Block do kỹ năng tạo ra chỉ tồn tại tạm thời và phải được hoàn nguyên. Ice Age không biến đổi địa hình.
+Thay bộ kỹ năng mặc định hiện tại của `pyromancer` bằng sáu kỹ năng theo tài liệu: Hỏa Cầu, Thiêu Đốt, Hỏa Bão, Hỏa Tường, Thiên Thạch Lửa và Phượng Hoàng Tái Sinh. Tận dụng hệ AI, cooldown, scaling, bảo vệ mục tiêu và GUI hiện có; mọi tham số mới có thể tùy chỉnh trong `armies.yml`.
 
-## Triển khai
+## Hiện trạng và quyết định
 
-1. **Nâng bậc:** cập nhật `upgradeTier` để snapshot/rollback `tier`, `level`, `experience` và inventory. Khi thành công, đặt level 1/EXP 0, xóa cooldown cũ, cập nhật chỉ số và hiển thị. Giữ nguyên `originalTier`, trang bị và trạng thái triển khai.
-2. **Đăng ký kỹ năng:** mở rộng xác thực cấu hình, luồng cast, tên và mô tả GUI; thêm cấu hình riêng cho từng kỹ năng. Chỉ đổi bộ mặc định của `frost_mage`.
-3. **Tấn công/khống chế:** snowball bay thẳng có damage khi trúng; Ice Spike phóng đòn băng; Blizzard gây damage theo nhịp và Slowness trong vùng; Frost Nova làm chậm mạnh và đặt băng tạm dưới mục tiêu; Ice Wall tạo hàng băng tạm cao 2–3 block ở vị trí trống. Không ghi đè block rắn hoặc block do người chơi đặt.
-4. **Phòng thủ/tiện ích/tối thượng:** Frost Shield cấp Absorption và làm chậm kẻ tấn công trong thời gian hiệu lực; Frost Step cho NPC lướt áp sát mục tiêu mà không xuyên vật cản; Frost Walker dùng enchant trên boots nếu mob hỗ trợ, nếu không thì mô phỏng bằng băng tạm có hoàn nguyên; Ice Age áp hiệu ứng đóng băng và particles trên vùng rộng, không đổi block bề mặt. Hủy task và dọn hiệu ứng/block tạm khi hết giờ hoặc plugin dừng.
-5. **Cân bằng/cấu hình:** damage mặc định 3.0 ở level 1, tăng 0.1 mỗi level; cooldown giảm 0.1 giây mỗi level, tối thiểu 1 giây; range mặc định 5 block, tăng 1 block tại level 5, 10, 15, 20, 25 và 30. Ice Age bắt đầu bán kính 15 block và tăng theo cùng nhịp. Duration tăng theo level cho hiệu ứng phù hợp; duration của block/cooldown ngắn giữ giới hạn cân bằng. Tách scaling riêng khỏi multiplier skill chung để tránh nhân chồng. Mọi khóa mới có chú thích VI/EN về công dụng, mặc định và giới hạn.
-6. **Tài liệu/version:** cập nhật README và CHANGELOG; nâng version minor từ `1.39.2` lên `1.40.0` trong `pom.xml` và kiểm tra metadata version liên quan. Không đóng gói JAR nếu chưa được yêu cầu.
+- `pyromancer` hiện dùng `RANGED_ATTACK`, `FIRE_BOLT`, `ROOT_TARGET`, `BUFF_OWNER`; `FIRE_BOLT` là đòn gây sát thương tức thời và đốt, chưa phải projectile.
+- Skill được khai báo/xác thực và thi triển trong `MercenaryManager`; GUI đọc mô tả và cooldown từ cùng cấu hình.
+- Đã có kỹ năng đặc thù Pháp Sư Băng cùng hệ thống block/hiệu ứng/task tạm thời, nhưng phải giữ nguyên hành vi và các thay đổi chưa commit hiện có cho Frost Mage.
+- Thay bộ mặc định bằng đúng sáu skill riêng (`FLAME_BOLT`, `IGNITE`, `FLAME_NOVA`, `FIRE_WALL`, `METEOR_STRIKE`, `PHOENIX_REBIRTH`); giữ nguyên `FIRE_BOLT` và các skill tổng quát để tương thích với class/cấu hình khác.
+- Hỏa Tường dùng hàng block rắn tạm thời, có hoàn nguyên; chỉ đặt tại ô an toàn, không ghi đè block hiện hữu. Mặc định dùng MAGMA_BLOCK có hiệu ứng lửa, hàng ngắn 5 block, cao 3 block và tồn tại 3 giây.
+- Thiên Thạch và Phượng Hoàng tự nhắm quanh mục tiêu AI hiện tại. Giá trị damage, nhịp/tổng sát thương DoT, bán kính lây và kích thước AoE chưa có trong tài liệu sẽ dùng mặc định cân bằng, cấu hình được và scaling cấp lính hiện có; cooldown mặc định theo tài liệu.
+- Dùng kiểm tra mục tiêu PvE/PvP và quan hệ đồng minh hiện có; skill không được làm tổn thương chủ nhân, lính cùng chủ hay mục tiêu bị bảo vệ.
+- Cấu hình cũ được di trú an toàn: chỉ đổi bộ skill nếu khớp bộ mặc định cũ, không ghi đè tùy chỉnh của quản trị viên.
+
+## Các bước thực hiện
+
+1. **Định nghĩa skill và di trú cấu hình**
+   - Bổ sung sáu ID mới vào whitelist skills/settings; giới hạn các skill này cho `pyromancer`.
+   - Cập nhật cấu hình mặc định trong `armies.yml`, đầy đủ chú thích VI/EN, cooldown lần lượt 2/6/10/12/25/90 giây và các giá trị cân bằng/cấu hình được.
+   - Thêm di trú idempotent cho file `armies.yml` đang dùng, giữ nguyên thiết lập tùy chỉnh và legacy `FIRE_BOLT` ở class khác.
+2. **Cài đặt hành vi kỹ năng**
+   - Hỏa Cầu: projectile bay đến mục tiêu, gây damage phép và Slowness tương đương 20% trong 3 giây.
+   - Thiêu Đốt: DoT theo nhịp 2 giây trong 8 giây; mỗi lần gây damage kiểm tra lại mục tiêu hợp lệ, hiệu ứng lây giới hạn theo bán kính/số mục tiêu cấu hình để tránh vòng lây vô hạn.
+   - Hỏa Bão: damage AoE và knockback quanh pháp sư, có giới hạn bán kính/số mục tiêu.
+   - Hỏa Tường: tạo hàng block lửa tạm theo hướng giữa pháp sư và mục tiêu, gây damage có giới hạn theo nhịp; chặn phá, đặt, piston và các thay đổi block liên quan theo cơ chế bảo vệ block tạm; khôi phục block gốc khi hết hạn/reload/disable.
+   - Thiên Thạch Lửa: cảnh báo/hiệu ứng rơi tại vị trí mục tiêu AI lúc thi triển, gây damage AoE và hiệu ứng giữ chân 2 giây.
+   - Phượng Hoàng Tái Sinh: hồi 30% máu tối đa; áp dụng miễn sát thương 2 giây bằng cơ chế có thời hạn/dọn dẹp; sau đó lao về phía mục tiêu AI và gây damage AoE bán kính 8 block cùng hiệu ứng đốt.
+3. **Hoàn thiện UX và vòng đời**
+   - Thêm tên tiếng Việt, mô tả, damage/range/duration/cooldown vào GUI và thông báo cast theo pattern hiện hành.
+   - Dọn task, hiệu ứng miễn sát thương, DoT và block tạm an toàn khi lính nghỉ/chết, reload hoặc plugin tắt; không để trạng thái miễn sát thương tồn tại ngoài thời gian cấu hình.
+4. **Tài liệu và phiên bản**
+   - Cập nhật hướng dẫn mercenary trong `VnMineHardcore/README.md` và `CHANGELOG.md`.
+   - Nâng phiên bản patch hiện tại `1.40.1` lên minor kế tiếp `1.41.0` trong `pom.xml`; không đóng gói JAR nếu chưa được yêu cầu.
+   - Không chỉnh sửa hoặc hoàn tác các thay đổi chưa commit liên quan đến Pháp Sư Băng/mercenary đang có trong worktree.
 
 ## File dự kiến
 
-- `VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/MercenaryManager.java`: nâng bậc, cấu hình/validate/cast skill, projectile và damage handler, scaling, GUI, cleanup.
-- `VnMineHardcore/src/main/resources/armies.yml`: bộ skill và tham số mặc định của `frost_mage`.
-- `VnMineHardcore/README.md`: hướng dẫn nâng bậc, kỹ năng và đường dẫn cấu hình.
-- `CHANGELOG.md`, `VnMineHardcore/pom.xml`: ghi nhận feature và version.
+- `VnMineHardcore/src/main/java/com/vnmine/hardcore/managers/MercenaryManager.java`: đăng ký, validate, thi triển, damage/DoT/khống chế, dọn trạng thái và GUI.
+- `VnMineHardcore/src/main/resources/armies.yml`: sáu skill và thông số mặc định có chú thích song ngữ.
+- `VnMineHardcore/README.md`: hướng dẫn cấu hình Pháp Sư Lửa.
+- `CHANGELOG.md`, `VnMineHardcore/pom.xml`: ghi nhận tính năng và version.
 
-## Kiểm tra
+## Kiểm chứng
 
-1. Biên dịch Maven bằng `mvn -q -DskipTests compile`; chưa thấy thư mục test trong dự án.
-2. Kiểm tra YAML và tải lại cấu hình; khóa thiếu dùng default, giá trị ngoài giới hạn được xử lý/log đúng.
-3. Thử nâng lính level 30 lên bậc mới: level 1, EXP 0, chỉ số đúng; xác minh rollback nếu lưu thất bại.
-4. Kiểm tra Pháp Sư Băng tại level 1/5/6/30 về đường bay snowball, damage, range, cooldown, thời lượng và giới hạn mục tiêu.
-5. Xác minh block tạm hoàn nguyên đúng, không ghi đè block người chơi; reload/disable không để task hoặc block sót; xác nhận Frost Walker vanilla hoặc fallback NPC.
-
-## Quyết định
-
-- Triển khai đủ tám kỹ năng; snowball là đòn đánh cơ bản.
-- Frost Step được chuyển thành cú lướt NPC áp sát mục tiêu.
-- Block tạo ra chỉ tạm thời, có snapshot và hoàn nguyên; Ice Age chỉ gây hiệu ứng, không thay đổi địa hình.
-- Dùng Bukkit/Paper API, không thực thi lệnh console hay dùng `/setblock`.
-- Cooldown, damage, range, duration và giới hạn AoE đều cấu hình được; AoE và hiệu ứng có giới hạn để chống cộng dồn quá mức.
+1. Biên dịch Maven bằng `mvn -q -DskipTests compile`; không tạo JAR.
+2. Kiểm tra cấu hình mặc định và di trú file cũ: skill mới hợp lệ, giá trị tùy chỉnh được giữ, skill `FIRE_BOLT` cũ ở class khác không đổi.
+3. Kiểm tra từng skill về cooldown, damage, tầm/bán kính, DoT, Slowness, knockback, root, hồi máu và miễn sát thương.
+4. Xác minh mục tiêu đồng minh/PvP vẫn tuân thủ luật hiện có; block tạm hoàn nguyên, không ghi đè địa hình; task/trạng thái được dọn khi nghỉ lính, reload và disable.

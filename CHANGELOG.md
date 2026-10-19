@@ -1,5 +1,57 @@
 # Changelog
 
+## [v1.42.1] - 2026-10-19
+
+### Fixed
+- Buộc build sạch để JAR chứa đúng bytecode mới nhất; khắc phục lỗi khởi động khi cấu hình `FLAME_BOLT` bị nhận nhầm là skill không hợp lệ.
+
+## [v1.42.0] - 2026-10-19
+
+### Changed
+- Chỉ cho Enderman boss nhắm và tấn công người chơi đang nhìn thấy boss, đồng thời yêu cầu tầm nhìn trực tiếp.
+- Giới hạn nóng/lạnh/mưa axit và sát thương nước theo danh sách biome có thể cấu hình; mưa axit chỉ tác động khi mưa ngoài trời ở biome rừng, Nether luôn nóng.
+- Ghi log ngày/world/ngưỡng/level boss tự nhiên đã chọn và đồng bộ hướng dẫn tiến trình level với cấu hình hiện hành.
+- Đổi tên và thiết kế lại skill pháp sư: Hỏa Ngục/Băng Ngục là lồng tạm quanh mục tiêu, Mưa Lửa thả Fireball theo lượt và Bão Lửa gây sát thương theo thời gian.
+- Bão Lửa tạo 10 hạt lửa ở level 1 và tăng thêm 1 hạt mỗi level.
+- Hoàn nguyên block lồng sau khi kết thúc hoặc khi lính bị thu hồi/hạ; cấu hình mới của các skill có chú thích tiếng Việt và tiếng Anh.
+
+### Fixed
+- Chặn kỹ năng nhện gây damage tại vị trí người chơi ngoài tầm; bỏ đòn đánh thủ công lặp song song với AI gốc và giới hạn damage tối đa mỗi hit lên người chơi.
+
+## [v1.41.3] - 2026-10-18
+
+### Fixed
+- Cho Pháp Sư Lửa tìm mục tiêu dựa trên bộ kỹ năng lửa, để AI tấn công và kích hoạt kỹ năng.
+
+## [v1.41.2] - 2026-10-18
+
+### Fixed
+- Build lại từ mã nguồn mới nhất để JAR chứa danh sách skill hợp lệ đã đồng bộ, không đóng gói lớp biên dịch cũ.
+
+## [v1.41.1] - 2026-10-18
+
+### Fixed
+- Đồng bộ danh sách skill hợp lệ dùng để kiểm tra cấu hình lính, tránh JAR cũ từ chối `ICE_SPIKE` trong cấu hình Pháp Sư Băng.
+
+## [v1.41.0] - 2026-10-18
+
+### Added
+- Thiết kế lại Pháp Sư Lửa với sáu kỹ năng Hỏa Cầu, Thiêu Đốt, Hỏa Bão, Hỏa Tường, Thiên Thạch Lửa và Phượng Hoàng Tái Sinh.
+- Thêm cấu hình damage, cooldown, DoT/lây lan, khống chế, tầm, giới hạn mục tiêu và block tường lửa; dọn miễn sát thương, hiệu ứng và block tạm theo thời hạn/reload/disable.
+- Tự di trú bộ skill Pháp Sư Lửa mặc định cũ sang bộ mới mà không ghi đè danh sách kỹ năng đã tùy chỉnh.
+
+## [v1.40.1] - 2026-10-18
+
+### Fixed
+- Tự chuyển cấu hình snowball cũ bị đặt nhầm trong `classes.frost_mage.skill-settings.SNOWBALL` sang `classes.frost_mage.basic-attack`, tránh làm plugin lỗi khi khởi động.
+
+## [v1.40.0] - 2026-10-18
+
+### Added
+- Thiết kế lại Pháp Sư Băng với snowball bay thẳng và tám kỹ năng: Ice Spike, Blizzard, Frost Nova, Ice Wall, Frost Shield, Frost Step, Frost Walker và Ice Age.
+- Thêm cấu hình riêng cho sát thương, cooldown, tầm, thời lượng, bán kính và giới hạn mục tiêu; damage/cooldown/range có scaling riêng theo level, không nhân chồng multiplier skill chung.
+- Hoàn nguyên băng tạm khi hết thời gian, chặn phá/hủy/dịch chuyển block tạm và dọn task, hiệu ứng, block khi reload hoặc tắt plugin; Ice Age không biến đổi địa hình.
+
 ## [v1.39.3] - 2026-10-18
 
 ### Fixed

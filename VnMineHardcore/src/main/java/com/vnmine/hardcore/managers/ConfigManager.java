@@ -15,10 +15,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 
@@ -140,6 +142,9 @@ public class ConfigManager {
     public int coldExposureDelaySeconds;
     public double waterDamage;
     public double acidRainDamage;
+    public Set<String> hotBiomeKeys = Set.of();
+    public Set<String> coldBiomeKeys = Set.of();
+    public Set<String> acidRainBiomeKeys = Set.of();
     public long waterDamageIntervalMs;
     public long acidRainIntervalMs;
     public boolean rainControlEnabled;
@@ -303,6 +308,7 @@ public class ConfigManager {
         public String armyTokenClass = "guardian";
         public double hp = 100.0;
         public double damageMultiplier = 1.0;
+        public double maxPlayerHitDamage = 10.0;
         public int chance = 10;
         public int experience = 100;
         public int durationSeconds = 1200;
@@ -517,6 +523,19 @@ public class ConfigManager {
         coldExposureDelaySeconds = config.getInt("environment.temperature.cold-exposure-delay-seconds", 10);
         waterDamage = config.getDouble("environment.temperature.water-damage", 1.0);
         acidRainDamage = config.getDouble("environment.temperature.acid-rain-damage", 1.0);
+        hotBiomeKeys = loadBiomeKeys("environment.temperature.biomes.hot", List.of(
+            "desert", "badlands", "wooded_badlands", "eroded_badlands",
+            "savanna", "savanna_plateau", "windswept_savanna"));
+        coldBiomeKeys = loadBiomeKeys("environment.temperature.biomes.cold", List.of(
+            "snowy_plains", "snowy_taiga", "snowy_slopes", "snowy_beach",
+            "frozen_ocean", "frozen_river", "ice_spikes", "frozen_peaks",
+            "jagged_peaks", "grove", "taiga", "old_growth_taiga",
+            "old_growth_pine_taiga", "old_growth_spruce_taiga",
+            "cold_ocean", "deep_cold_ocean"));
+        acidRainBiomeKeys = loadBiomeKeys("environment.temperature.biomes.acid-rain", List.of(
+            "forest", "flower_forest", "birch_forest", "old_growth_birch_forest",
+            "dark_forest", "jungle", "sparse_jungle", "bamboo_jungle",
+            "taiga", "old_growth_pine_taiga", "old_growth_spruce_taiga"));
         waterDamageIntervalMs = config.getLong("environment.temperature.water-damage-interval-ms",
             config.getLong("environment.temperature.water-damage-interval-seconds", 10) * 1000L);
         acidRainIntervalMs = config.getLong("environment.temperature.acid-rain-interval-ms",
@@ -736,6 +755,18 @@ public class ConfigManager {
             worldConfig.nightDurationMinutes = minutes;
         }
         return true;
+    }
+
+    private Set<String> loadBiomeKeys(String path, List<String> fallbackBiomeKeys) {
+        List<String> configuredBiomeKeys = config.isList(path)
+            ? config.getStringList(path) : fallbackBiomeKeys;
+        Set<String> normalizedKeys = new HashSet<>();
+        for (String configuredKey : configuredBiomeKeys) {
+            if (configuredKey == null || configuredKey.isBlank()) continue;
+            String key = configuredKey.trim().toLowerCase(Locale.ROOT);
+            normalizedKeys.add(key.contains(":") ? key : "minecraft:" + key);
+        }
+        return Set.copyOf(normalizedKeys);
     }
 
     private void loadBlockMiningRules() {
@@ -1333,6 +1364,14 @@ public class ConfigManager {
             }
             bc.hp = section.getDouble("hp", 100.0);
             bc.damageMultiplier = section.getDouble("damage-multiplier", 1.0);
+            bc.maxPlayerHitDamage = section.getDouble("max-player-hit-damage", 10.0);
+            if (!Double.isFinite(bc.maxPlayerHitDamage)
+                    || bc.maxPlayerHitDamage < 0.0 || bc.maxPlayerHitDamage > 100.0) {
+                plugin.getLogger().warning("[Boss] Invalid max-player-hit-damage in " + fileName
+                    + "; clamping to 0-100.");
+                bc.maxPlayerHitDamage = Double.isFinite(bc.maxPlayerHitDamage)
+                    ? Math.max(0.0, Math.min(100.0, bc.maxPlayerHitDamage)) : 10.0;
+            }
             bc.chance = section.getInt("chance", 10);
             bc.experience = section.getInt("experience", defaultBossExperience(bossId));
             if (bc.experience < 1 || bc.experience > 1_000_000) {
