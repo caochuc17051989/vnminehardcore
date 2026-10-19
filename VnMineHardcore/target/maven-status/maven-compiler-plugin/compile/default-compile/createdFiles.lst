@@ -5,6 +5,7 @@ com/vnmine/hardcore/managers/MercenaryManager$GearHolder.class
 com/vnmine/hardcore/listeners/OreControlListener.class
 com/vnmine/hardcore/managers/DisasterAction.class
 com/vnmine/hardcore/managers/BossLeaderboardManager$1.class
+com/vnmine/hardcore/managers/MercenaryManager$4.class
 com/vnmine/hardcore/managers/ThirstManager.class
 com/vnmine/hardcore/managers/BossEventManager$1.class
 com/vnmine/hardcore/managers/BossEventManager.class
@@ -39,9 +40,11 @@ com/vnmine/hardcore/listeners/VillagerTradeManager.class
 com/vnmine/hardcore/managers/ConfigManager$BossConfig.class
 com/vnmine/hardcore/listeners/EnvironmentListener$3.class
 com/vnmine/hardcore/managers/DeathHistoryManager$HistoryMenuHolder.class
+com/vnmine/hardcore/managers/MercenaryManager$9.class
 com/vnmine/hardcore/managers/BossEventManager$6.class
 com/vnmine/hardcore/managers/DisasterManager$WorldState.class
 com/vnmine/hardcore/listeners/WaterListener.class
+com/vnmine/hardcore/managers/MercenaryManager$3.class
 com/vnmine/hardcore/managers/LogManager$1.class
 com/vnmine/hardcore/managers/DisasterManager.class
 com/vnmine/hardcore/managers/MercenaryNamePacketListener$NameEntry.class
@@ -67,6 +70,7 @@ com/vnmine/hardcore/managers/VillagerDataManager.class
 com/vnmine/hardcore/managers/ConfigManager$BlockMiningRule.class
 com/vnmine/hardcore/managers/SpawnProtectionManager.class
 com/vnmine/hardcore/managers/GraveManager.class
+com/vnmine/hardcore/managers/MercenaryManager$8.class
 com/vnmine/hardcore/managers/TimeControlManager.class
 com/vnmine/hardcore/managers/DisasterAction$MobSpawnData.class
 com/vnmine/hardcore/managers/DisasterManager$9.class
@@ -79,6 +83,7 @@ com/vnmine/hardcore/managers/ConfigManager$BossArmorPieceStory.class
 com/vnmine/hardcore/managers/ConfigManager$DisasterConfig.class
 com/vnmine/hardcore/listeners/WaterListener$1.class
 com/vnmine/hardcore/managers/SpawnProtectionManager$Protection.class
+com/vnmine/hardcore/managers/MercenaryManager$5.class
 com/vnmine/hardcore/managers/DisasterManager$3.class
 com/vnmine/hardcore/listeners/EnvironmentListener$2.class
 com/vnmine/hardcore/managers/BossEventManager$BossProjectileConfig.class
@@ -101,9 +106,13 @@ com/vnmine/hardcore/managers/LogManager$PlayerStats.class
 com/vnmine/hardcore/VnMineHardcore.class
 com/vnmine/hardcore/managers/BossEventManager$TemporaryBlock.class
 com/vnmine/hardcore/managers/DeathRenameManager.class
+com/vnmine/hardcore/managers/MercenaryManager$IgniteContext.class
+com/vnmine/hardcore/managers/MercenaryManager$FrostFreezeSnapshot.class
 com/vnmine/hardcore/managers/PermissionManager$UserTarget.class
 com/vnmine/hardcore/managers/ConfigManager$DisasterSuccessThreshold.class
+com/vnmine/hardcore/managers/MercenaryManager$6.class
 com/vnmine/hardcore/managers/DisasterManager$1.class
+com/vnmine/hardcore/managers/MercenaryManager$FrostEffectSnapshot.class
 com/vnmine/hardcore/managers/BossEventManager$12.class
 com/vnmine/hardcore/managers/MercenaryManager.class
 com/vnmine/hardcore/managers/DeathHistoryManager$DeathSnapshot.class
@@ -113,7 +122,10 @@ com/vnmine/hardcore/managers/DisasterManager$8.class
 com/vnmine/hardcore/managers/BossEventManager$BlockPosition.class
 com/vnmine/hardcore/managers/MercenaryNamePacketListener.class
 com/vnmine/hardcore/managers/DisasterManager$2.class
+com/vnmine/hardcore/managers/MercenaryManager$7.class
 com/vnmine/hardcore/managers/BossEventManager$2.class
 com/vnmine/hardcore/listeners/EnvironmentListener$1.class
+com/vnmine/hardcore/managers/MercenaryManager$10.class
+com/vnmine/hardcore/managers/MercenaryManager$TemporaryFrostBlock.class
 com/vnmine/hardcore/listeners/GraveListener.class
 com/vnmine/hardcore/managers/DisasterAction$PotionEffectData.class

@@ -10,6 +10,11 @@ enabled: true
 pvp:
   allow-owner-commanded-targets: true
 
+# [VI] Hệ số sát thương khi lính có vũ khí hợp lệ ở tay chính; mặc định 1.3 (+30%), hợp lệ 1-3.
+# [EN] Damage multiplier while a mercenary holds a valid main-hand weapon; default 1.3 (+30%), valid range 1-3.
+combat:
+  main-hand-damage-multiplier: 1.3
+
 # [VI] Số lính tối đa mỗi chủ; mặc định 10, hợp lệ 1-100.
 # [EN] Maximum units per owner; default 10, valid range 1-100.
 max-units-per-player: 10
@@ -239,9 +244,9 @@ classes:
     # [VI] Mô tả chức năng hiện trong GUI.
     # [EN] Short role description shown in the GUI.
     description: "Chiến đấu cận chiến và bảo vệ chủ nhân."
-    # [VI] Entity; mặc định VINDICATOR.
-    # [EN] Entity type; default VINDICATOR.
-    entity-type: VINDICATOR
+    # [VI] Entity; mặc định HUSK để model hiển thị item ở cả hai tay.
+    # [EN] Entity type; default HUSK so the model displays items in both hands.
+    entity-type: HUSK
     # [VI] Máu cấp 1; mặc định 32, phải lớn hơn 0.
     # [EN] Level-1 health; default 32, must be positive.
     base-health: 32
@@ -266,9 +271,18 @@ classes:
     # [VI] Skill Vệ Binh; danh sách ID hợp lệ giống mô tả của Xạ Thủ.
     # [EN] Guardian skills; valid IDs are listed in the Archer description.
     skills: [ATTACK, SHIELD_OWNER, HEAL_OWNER, POWER_STRIKE, TAUNT]
-    # [VI] Vũ khí mặc định khi thuê; mặc định IRON_SWORD, phải là Material hợp lệ.
-    # [EN] Starting weapon on hire; default IRON_SWORD, must be a valid material.
-    starting-weapon: IRON_SWORD
+    # [VI] Kiếm mặc định khi không có kiếm phù hợp; mặc định WOODEN_SWORD.
+    # [EN] Default sword when no compatible sword is available; WOODEN_SWORD.
+    starting-weapon: WOODEN_SWORD
+    # [VI] Không tự tạo khiên; tay phụ trống nếu kho không có khiên.
+    # [EN] Do not create a shield; offhand stays empty if inventory has none.
+    starting-offhand: AIR
+    # [VI] Ưu tiên item tay chính theo thứ tự mạnh đến yếu; chỉ nhận vật liệu trong danh sách.
+    # [EN] Main-hand item priority, strongest to weakest; only listed materials are selected.
+    preferred-main-hand-items: [NETHERITE_SWORD, DIAMOND_SWORD, IRON_SWORD, GOLDEN_SWORD, STONE_SWORD, WOODEN_SWORD]
+    # [VI] Ưu tiên khiên tay phụ nếu có trong kho; mặc định SHIELD.
+    # [EN] Prefer a shield in offhand when present in inventory; default SHIELD.
+    preferred-offhand-items: [SHIELD]
     # [VI] Tầm tìm mục tiêu; mặc định 20 block, hợp lệ 4-64.
     # [EN] Target acquisition range; default 20 blocks, valid range 4-64.
     target-radius-blocks: 20.0
@@ -352,9 +366,25 @@ classes:
     # [VI] Skill Y Sư; mục tiêu hỗ trợ: OWNER, ALLIES hoặc OWNER_AND_ALLIES.
     # [EN] Medic skills; support targets: OWNER, ALLIES, or OWNER_AND_ALLIES.
     skills: [HEAL_OWNER, HEAL_ALLIES, BUFF_OWNER, BUFF_ALLIES, CLEANSE_OWNER]
-    # [VI] Vũ khí mặc định khi thuê; mặc định GOLDEN_HOE, phải là Material hợp lệ.
-    # [EN] Starting weapon on hire; default GOLDEN_HOE, must be a valid material.
-    starting-weapon: GOLDEN_HOE
+    # [VI] Không tự tạo vũ khí; tự chọn potion hồi máu trong kho nếu có, nếu không tay chính trống.
+    # [EN] Do not create a weapon; select a healing potion from inventory if present, otherwise keep main hand empty.
+    starting-weapon: AIR
+    # [VI] Không tự tạo potion; ưu tiên potion ném có hiệu ứng có lợi trong kho.
+    # [EN] Do not create a potion; prefer beneficial throwable potions from inventory.
+    starting-offhand: AIR
+    # [VI] Potion hồi máu phù hợp được ưu tiên ở tay chính.
+    # [EN] Matching healing potions are preferred in the main hand.
+    preferred-main-hand-items: [POTION]
+    # [VI] Chỉ potion ném có hiệu ứng BENEFICIAL được chọn; ưu tiên splash rồi lingering.
+    # [EN] Only throwable potions with BENEFICIAL effects are selected; splash before lingering.
+    preferred-offhand-items: [SPLASH_POTION, LINGERING_POTION]
+    # [VI] Thời gian giữa các lần ném; mặc định 12 giây, hợp lệ 1-3600.
+    # [EN] Delay between throws; default 12 seconds, valid range 1-3600.
+    potion-support:
+      cooldown-seconds: 12
+      # [VI] Tầm tìm đồng đội; mặc định 12 block, hợp lệ 1-32.
+      # [EN] Ally search range; default 12 blocks, valid range 1-32.
+      range-blocks: 12.0
     # [VI] Tùy chỉnh hồi/buff; mọi cooldown tính bằng giây, hợp lệ 1-3600.
     # [EN] Heal/buff tuning; cooldowns are seconds, valid range 1-3600.
     skill-settings:
@@ -464,9 +494,16 @@ classes:
     # [VI] Bộ skill cận chiến: đánh thường, cường kích, khiêu khích và chắn chủ.
     # [EN] Melee kit: basic attack, power strike, taunt, and owner shield.
     skills: [ATTACK, POWER_STRIKE, TAUNT, SHIELD_OWNER]
-    # [VI] Vũ khí mặc định khi triệu hồi; mặc định IRON_AXE.
-    # [EN] Default weapon on summon; default IRON_AXE.
-    starting-weapon: IRON_AXE
+    # [VI] Rìu gỗ mặc định nếu kho không có rìu chính.
+    # [EN] Default wooden axe when inventory has no main-hand axe.
+    starting-weapon: WOODEN_AXE
+    # [VI] Ưu tiên rìu từ mạnh đến yếu ở tay chính; danh sách hợp lệ là Material rìu.
+    # [EN] Main-hand axe priority, strongest to weakest; entries must be axe materials.
+    preferred-main-hand-items: [NETHERITE_AXE, DIAMOND_AXE, IRON_AXE, GOLDEN_AXE, STONE_AXE, WOODEN_AXE]
+    # [VI] Không tự tạo rìu thứ hai; tự chọn rìu trong kho vào tay phụ nếu có.
+    # [EN] Do not create a second axe; select one from inventory for offhand if present.
+    starting-offhand: AIR
+    preferred-offhand-items: [NETHERITE_AXE, DIAMOND_AXE, IRON_AXE, GOLDEN_AXE, STONE_AXE, WOODEN_AXE]
     # [VI] Bán kính tìm mục tiêu; mặc định 50 block, hợp lệ 4-50.
     # [EN] Target acquisition radius; default 50 blocks, valid range 4-50.
     target-radius-blocks: 50.0
@@ -554,6 +591,9 @@ classes:
     # [VI] Vũ khí mặc định khi triệu hồi; mặc định CROSSBOW.
     # [EN] Default weapon on summon; default CROSSBOW.
     starting-weapon: CROSSBOW
+    # [VI] Ưu tiên nỏ trong kho, không thay bằng cung.
+    # [EN] Prefer a crossbow from inventory; do not replace it with a bow.
+    preferred-main-hand-items: [CROSSBOW]
     # [VI] Tầm tìm mục tiêu; mặc định 48 block, gấp đôi Xạ Thủ, hợp lệ 4-50.
     # [EN] Target acquisition radius; default 48 blocks, twice the Archer, valid range 4-50.
     target-radius-blocks: 48.0
@@ -688,15 +728,18 @@ classes:
     # [VI] Sát thương tăng mỗi cấp; mặc định 0.6, không âm.
     # [EN] Damage per level; default 0.6, must be nonnegative.
     damage-per-level: 0.6
-    # [VI] Biểu tượng GUI; mặc định TRIDENT nếu server không hỗ trợ giáo.
-    # [EN] GUI icon; defaults to TRIDENT if the server does not support spears.
-    menu-icon: TRIDENT
+    # [VI] Biểu tượng GUI; mặc định IRON_SPEAR.
+    # [EN] GUI icon; default IRON_SPEAR.
+    menu-icon: IRON_SPEAR
     # [VI] Bộ skill đỡ đòn, tấn công, hỗ trợ và lao giáo khi cưỡi ngựa.
     # [EN] Tank, attack, support, and mounted lance charge.
     skills: [ATTACK, SHIELD_OWNER, HEAL_ALLIES, BUFF_ALLIES, POWER_STRIKE, LANCE_CHARGE]
-    # [VI] Vũ khí mặc định khi triệu hồi; dùng IRON_SPEAR nếu server hỗ trợ, nếu không tự dùng TRIDENT.
-    # [EN] Default weapon on summon; uses IRON_SPEAR when supported, otherwise falls back to TRIDENT.
-    starting-weapon: IRON_SPEAR
+    # [VI] Giáo gỗ mặc định nếu kho không có giáo; STICK là fallback khi server chưa hỗ trợ giáo gỗ.
+    # [EN] Default wooden spear when inventory has no spear; STICK fallback on servers without wooden spears.
+    starting-weapon: WOODEN_SPEAR
+    # [VI] Ưu tiên giáo sắt rồi giáo gỗ trong kho; chỉ dùng vật liệu có hỗ trợ.
+    # [EN] Prefer iron then wooden spears from inventory; only use supported materials.
+    preferred-main-hand-items: [IRON_SPEAR, WOODEN_SPEAR]
     # [VI] Tầm tìm mục tiêu; mặc định 18 block, hợp lệ 4-64.
     # [EN] Target acquisition radius; default 18 blocks, valid range 4-64.
     target-radius-blocks: 18.0
@@ -814,9 +857,12 @@ classes:
     # [VI] Sáu kỹ năng Pháp Sư Lửa; cấu hình từng kỹ năng trong skill-settings.
     # [EN] Six Fire Mage skills; configure each skill under skill-settings.
     skills: [FLAME_BOLT, IGNITE, FLAME_NOVA, FIRE_WALL, METEOR_STRIKE, PHOENIX_REBIRTH]
-    # [VI] Vũ khí mặc định; mặc định BLAZE_ROD.
-    # [EN] Default weapon; default BLAZE_ROD.
-    starting-weapon: BLAZE_ROD
+    # [VI] Không tự tạo vũ khí; tay chính trống nếu kho không có Fire Charge.
+    # [EN] Do not create a weapon; main hand stays empty if inventory has no Fire Charge.
+    starting-weapon: AIR
+    # [VI] Ưu tiên Fire Charge trong kho để phóng Fireball.
+    # [EN] Prefer a Fire Charge from inventory to launch a Fireball.
+    preferred-main-hand-items: [FIRE_CHARGE]
     # [VI] Tầm tìm mục tiêu; mặc định 24 block, hợp lệ 4-64.
     # [EN] Target acquisition radius; default 24 blocks, valid range 4-64.
     target-radius-blocks: 24.0
@@ -912,12 +958,21 @@ classes:
         # [VI] Tầm mục tiêu kích hoạt; mặc định 5 block, hợp lệ 1-12.
         # [EN] Target trigger distance; default 5 blocks, valid range 1-12.
         trigger-range-blocks: 5.0
-        # [VI] Bán kính gây sát thương; mặc định 3 block, tăng 1 block mỗi 5 level, giới hạn 1-12.
-        # [EN] Damage radius; default 3 blocks, adds 1 block every 5 levels, valid range 1-12.
-        radius-blocks: 3.0
+        # [VI] Bán kính đáy của Bão Lửa; mặc định 5 block, tăng 1 block mỗi 5 level, giá trị gốc hợp lệ 1-12.
+        # [EN] Firestorm base radius; default 5 blocks, adds 1 block every 5 levels, valid base range 1-12.
+        radius-blocks: 5.0
         # [VI] Số level cho mỗi lần tăng bán kính; mặc định 5, hợp lệ 1-30.
         # [EN] Levels per radius increase; default 5, valid range 1-30.
         radius-increase-every-levels: 5
+        # [VI] Chiều cao cơ sở của nón; mặc định 3 block, hợp lệ 1-16.
+        # [EN] Base cone height; default 3 blocks, valid range 1-16.
+        height-blocks: 3.0
+        # [VI] Bán kính giảm mỗi block lên cao; mặc định 1, hợp lệ 0.1-4.
+        # [EN] Radius reduction per block upward; default 1, valid range 0.1-4.
+        radius-reduction-per-block-up: 1.0
+        # [VI] Chiều cao tăng thêm cho mỗi block bán kính tăng; mặc định 0.5, hợp lệ 0-4.
+        # [EN] Extra height per block of radius increase; default 0.5, valid range 0-4.
+        height-increase-per-radius-block: 0.5
         # [VI] Sát thương mỗi giây; mặc định 1, hợp lệ 0-100.
         # [EN] Damage per second; default 1, valid range 0-100.
         damage-per-second: 1.0
@@ -936,9 +991,6 @@ classes:
         # [VI] Số hạt cộng thêm mỗi level sau level 1; mặc định 1, hợp lệ 0-10.
         # [EN] Extra particles per level after level 1; default 1, valid range 0-10.
         particles-increase-per-level: 1.0
-        # [VI] Bán kính quỹ đạo hạt; mặc định 1.2 block, hợp lệ 0.1-8.
-        # [EN] Particle orbit radius; default 1.2 blocks, valid range 0.1-8.
-        particle-orbit-radius-blocks: 1.2
         # [VI] Góc xoay mỗi tick; mặc định 0.3 radian, hợp lệ 0.01-3.
         # [EN] Rotation per tick; default 0.3 radians, valid range 0.01-3.
         particle-rotation-radians-per-tick: 0.3
@@ -1097,15 +1149,18 @@ classes:
     # [VI] Sát thương tăng mỗi cấp; mặc định 0.25, không âm.
     # [EN] Damage per level; default 0.25, must be nonnegative.
     damage-per-level: 0.25
-    # [VI] Biểu tượng GUI; mặc định OAK_SAPLING.
-    # [EN] GUI icon; default OAK_SAPLING.
-    menu-icon: OAK_SAPLING
+    # [VI] Biểu tượng GUI; mặc định ENCHANTED_BOOK.
+    # [EN] GUI icon; default ENCHANTED_BOOK.
+    menu-icon: ENCHANTED_BOOK
     # [VI] Skill: bắn xa, trói, hồi/buff, thanh tẩy và triệu hồi đồng minh; tổng 6.
     # [EN] Ranged control, healing, buffs, cleanse, and ally summons; 6 skills total.
     skills: [RANGED_ATTACK, ROOT_TARGET, HEAL_ALLIES, BUFF_ALLIES, CLEANSE_OWNER, SUMMON_VEXES]
-    # [VI] Vũ khí mặc định; mặc định STICK.
-    # [EN] Default weapon; default STICK.
-    starting-weapon: STICK
+    # [VI] Không tự tạo vũ khí; tự chọn EMERALD từ kho nếu có, nếu không tay chính trống.
+    # [EN] Do not create a weapon; select an EMERALD from inventory if present, otherwise keep main hand empty.
+    starting-weapon: AIR
+    # [VI] Ưu tiên EMERALD làm vật phẩm cầm tay chính.
+    # [EN] Prefer EMERALD as the main-hand item.
+    preferred-main-hand-items: [EMERALD]
     # [VI] Tầm tìm mục tiêu; mặc định 20 block, hợp lệ 4-64.
     # [EN] Target acquisition radius; default 20 blocks, valid range 4-64.
     target-radius-blocks: 20.0
@@ -1235,15 +1290,18 @@ classes:
     # [VI] Sát thương tăng mỗi cấp; mặc định 0.8, không âm.
     # [EN] Damage per level; default 0.8, must be nonnegative.
     damage-per-level: 0.8
-    # [VI] Biểu tượng GUI; mặc định DIAMOND_SWORD.
-    # [EN] GUI icon; default DIAMOND_SWORD.
-    menu-icon: DIAMOND_SWORD
+    # [VI] Biểu tượng GUI; mặc định IRON_SWORD.
+    # [EN] GUI icon; default IRON_SWORD.
+    menu-icon: IRON_SWORD
     # [VI] Skill: cận chiến, cường kích, hút máu và cuồng nộ; tổng 4.
     # [EN] Melee, power strike, lifesteal, and low-health rage kit; 4 skills total.
     skills: [ATTACK, POWER_STRIKE, LIFESTEAL, BERSERK]
-    # [VI] Vũ khí mặc định; mặc định IRON_SWORD.
-    # [EN] Default weapon; default IRON_SWORD.
-    starting-weapon: IRON_SWORD
+    # [VI] Kiếm gỗ mặc định nếu kho không có kiếm phù hợp.
+    # [EN] Default wooden sword when inventory has no compatible sword.
+    starting-weapon: WOODEN_SWORD
+    # [VI] Ưu tiên kiếm từ mạnh đến yếu trong kho.
+    # [EN] Prefer swords from strongest to weakest in inventory.
+    preferred-main-hand-items: [NETHERITE_SWORD, DIAMOND_SWORD, IRON_SWORD, GOLDEN_SWORD, STONE_SWORD, WOODEN_SWORD]
     # [VI] Tầm tìm mục tiêu; mặc định 18 block, hợp lệ 4-64.
     # [EN] Target acquisition radius; default 18 blocks, valid range 4-64.
     target-radius-blocks: 18.0
@@ -1335,9 +1393,12 @@ classes:
     # [VI] Tám kỹ năng băng; snowball ở basic-attack là đòn đánh cơ bản.
     # [EN] Eight frost skills; the snowball in basic-attack is the basic attack.
     skills: [ICE_SPIKE, BLIZZARD, FROST_NOVA, ICE_WALL, FROST_SHIELD, FROST_STEP, FROST_WALKER, ICE_AGE]
-    # [VI] Vật phẩm cầm mặc định; đòn đánh cơ bản vẫn là snowball do plugin phóng.
-    # [EN] Default held item; the basic attack remains a plugin-launched snowball.
-    starting-weapon: SNOWBALL
+    # [VI] Không tự tạo vũ khí; tay chính trống nếu kho không có Snowball.
+    # [EN] Do not create a weapon; main hand stays empty if inventory has no Snowball.
+    starting-weapon: AIR
+    # [VI] Ưu tiên Snowball trong kho để cầm tay chính.
+    # [EN] Prefer a Snowball from inventory for the main hand.
+    preferred-main-hand-items: [SNOWBALL]
     # [VI] Tầm tìm mục tiêu; mặc định 24 block, hợp lệ 4-64.
     # [EN] Target acquisition radius; default 24 blocks, valid range 4-64.
     target-radius-blocks: 24.0
