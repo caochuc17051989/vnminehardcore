@@ -127,6 +127,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private static final Set<String> VALID_SKILLS = Set.of(
         "ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES", "BUFF_OWNER", "BUFF_ALLIES",
         "SHIELD_OWNER", "VOLLEY", "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
+        "GUARDIAN_LINK", "GUARDIAN_CHARGE", "GUARDIAN_SHIELD", "GUARDIAN_QUAKE", "GUARDIAN_ULTIMATE",
         "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE", "ILLUMINATION",
         "FLAME_BOLT", "IGNITE", "FLAME_NOVA", "FIRE_WALL", "METEOR_STRIKE", "PHOENIX_REBIRTH",
         "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL", "FROST_SHIELD", "FROST_STEP",
@@ -134,6 +135,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private static final Set<String> FROST_MAGE_SKILLS = Set.of(
         "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL",
         "FROST_SHIELD", "FROST_STEP", "FROST_WALKER", "ICE_AGE");
+    private static final Set<String> GUARDIAN_SKILLS = Set.of(
+        "GUARDIAN_LINK", "GUARDIAN_CHARGE", "GUARDIAN_SHIELD",
+        "GUARDIAN_QUAKE", "GUARDIAN_ULTIMATE");
     private static final Set<String> FIRE_MAGE_SKILLS = Set.of(
         "FLAME_BOLT", "IGNITE", "FLAME_NOVA", "FIRE_WALL", "METEOR_STRIKE", "PHOENIX_REBIRTH");
     private static final List<org.bukkit.inventory.EquipmentSlot> EQUIPMENT_SLOTS = List.of(
@@ -194,6 +198,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private final Map<UUID, Mob> activeEntities = new HashMap<>();
     private final Map<UUID, Map<String, Long>> skillCooldowns = new HashMap<>();
     private final Map<UUID, Set<UUID>> summonedMinions = new HashMap<>();
+    private final Map<UUID, Integer> guardianHitCounters = new HashMap<>();
+    private final Map<UUID, Long> guardianOwnerImmunityExpiries = new HashMap<>();
+    private final Map<UUID, Set<BukkitTask>> guardianTasksByUnit = new HashMap<>();
+    private final Map<String, GuardianFakeBlockOverlay> guardianFakeBlockOverlays = new HashMap<>();
     private final Map<UUID, UUID> ownerAttackTargets = new HashMap<>();
     private final Map<UUID, Long> ownerAttackTargetExpiries = new HashMap<>();
     private final Map<UUID, Map<UUID, Long>> ownerThreats = new HashMap<>();
@@ -290,6 +298,28 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
+    private static final class GuardianFakeBlockOverlay {
+        private final World world;
+        private final int x;
+        private final int y;
+        private final int z;
+        private final Map<UUID, Long> unitExpiries = new HashMap<>();
+        private final Set<UUID> viewers = new HashSet<>();
+        private long expiresAtMillis;
+        private BukkitTask removalTask;
+
+        private GuardianFakeBlockOverlay(Block block) {
+            this.world = block.getWorld();
+            this.x = block.getX();
+            this.y = block.getY();
+            this.z = block.getZ();
+        }
+
+        private Location location() {
+            return new Location(world, x, y, z);
+        }
+    }
+
     private static final class FrostEffectSnapshot {
         private final PotionEffect previousEffect;
         private final long previousExpiresAt;
@@ -317,9 +347,19 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         ATTACK, DEFEND, PROTECT
     }
 
-    @EventHandler
-    public void onOwnerDamage(EntityDamageByEntityEvent event) {
-        applyOwnerShield(event);
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onOwnerDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player owner)) return;
+        Long immunityExpiresAt = guardianOwnerImmunityExpiries.get(owner.getUniqueId());
+        if (immunityExpiresAt != null) {
+            if (immunityExpiresAt > System.currentTimeMillis()) {
+                event.setCancelled(true);
+                return;
+            }
+            guardianOwnerImmunityExpiries.remove(owner.getUniqueId(), immunityExpiresAt);
+        }
+        applyGuardianLink(event, owner);
+        if (event instanceof EntityDamageByEntityEvent byEntity) applyOwnerShield(byEntity);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -545,6 +585,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
+    private record GuardianStats(
+        double baseHealth, double tierHealth, double levelHealth, double equipmentHealth, double maxHealth,
+        double baseArmor, double tierArmor, double levelArmor, double armor,
+        double baseDamage, double tierDamage, double levelDamage, double damage) {
+    }
+
     private static final class GearHolder implements InventoryHolder {
         private final UUID owner;
         private final UUID unit;
@@ -643,6 +689,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         try {
             loadSettingsFromDisk();
             cleanupFrostEffects();
+            cleanupGuardianTransientEffects();
             if (!enabled) despawnAllForReload();
             if (aiTask != null) {
                 aiTask.cancel();
@@ -881,6 +928,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     public void onPlayerQuit(PlayerQuitEvent event) {
         ownerAttackTargets.remove(event.getPlayer().getUniqueId());
         ownerAttackTargetExpiries.remove(event.getPlayer().getUniqueId());
+        guardianOwnerImmunityExpiries.remove(event.getPlayer().getUniqueId());
         awaitingGroupName.remove(event.getPlayer().getUniqueId());
         despawnForOwner(event.getPlayer().getUniqueId());
     }
@@ -900,6 +948,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         Unit unit = units.get(id);
         removeStatusDisplay(id);
         cleanupFireStateForUnit(id);
+        cleanupGuardianStateForUnit(id);
         activeEntities.remove(id);
         skillCooldowns.remove(id);
         cleanupSummonedMinions(id);
@@ -1200,7 +1249,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (isMercenary(event.getEntity())) event.setCancelled(true);
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onMercenaryCombat(EntityDamageByEntityEvent event) {
         Entity source = resolveDamageSource(event.getDamager());
         if (isMercenary(source) && event.getEntity() instanceof LivingEntity victim
@@ -1209,9 +1258,20 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             return;
         }
         if (event.isCancelled()) return;
-        if (source instanceof Mob mob && isMercenary(mob) && hasMainHandWeapon(mob)) {
-            event.setDamage(event.getDamage()
-                * readBoundedDouble(settings, "combat.main-hand-damage-multiplier", 1.3, 1.0, 3.0));
+        Unit attackingUnit = null;
+        if (source instanceof Mob mob && isMercenary(mob)) {
+            UUID unitId = getUnitId(mob);
+            attackingUnit = unitId == null ? null : units.get(unitId);
+            if (hasMainHandWeapon(mob)) {
+                double multiplier = attackingUnit == null
+                    ? readBoundedDouble(settings, "combat.main-hand-damage-multiplier", 1.3, 1.0, 3.0)
+                    : mainHandDamageMultiplier(attackingUnit);
+                event.setDamage(event.getDamage() * multiplier);
+            }
+        }
+        if (attackingUnit != null && "guardian".equals(attackingUnit.unitClass)
+                && event.getEntity() instanceof LivingEntity target && isHostileMob(target)) {
+            handleGuardianBasicHit(attackingUnit, (Mob) source, target, event);
         }
         if (event.getEntity() instanceof Player player) {
             registerOwnerThreat(player.getUniqueId(), source);
@@ -1281,7 +1341,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         captureGearInventory(player, unit, inventory);
         unit.gearCustomized = true;
         Mob mob = activeEntities.get(unit.id);
-        if (mob != null && mob.isValid()) applyEquipment(unit, mob);
+        if (mob != null && mob.isValid()) {
+            applyEquipment(unit, mob);
+            applyStats(unit, mob, false);
+        }
         applyHorseArmorToMount(unit);
         if (!saveData()) {
             unit.equipment.clear();
@@ -1289,7 +1352,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             System.arraycopy(previousInventory, 0, unit.inventory, 0, unit.inventory.length);
             unit.gearCustomized = previousCustomized;
             unit.horseArmor = previousHorseArmor;
-            if (mob != null && mob.isValid()) applyEquipment(unit, mob);
+            if (mob != null && mob.isValid()) {
+                applyEquipment(unit, mob);
+                applyStats(unit, mob, false);
+            }
             applyHorseArmorToMount(unit);
             plugin.getLogger().severe("[Army] Could not save gear changes for mercenary " + unit.id + ".");
             player.sendMessage("§cKhông thể lưu trang bị lính vào mercenaries.yml; giữ lính hiện tại và thử lưu lại.");
@@ -1429,6 +1495,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     throw new InvalidConfigurationException(
                         "Fire Mage skill '" + skill + "' can only be used by class 'pyromancer'.");
                 }
+                if (GUARDIAN_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
+                        && !"guardian".equals(classId)) {
+                    throw new InvalidConfigurationException(
+                        "Guardian skill '" + skill + "' can only be used by class 'guardian'.");
+                }
             }
             ConfigurationSection skillSettings =
                 loaded.getConfigurationSection("classes." + classId + ".skill-settings");
@@ -1447,6 +1518,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                             && !"pyromancer".equals(classId)) {
                         throw new InvalidConfigurationException(
                             "Fire Mage skill-settings '" + skill + "' can only be used by class 'pyromancer'.");
+                    }
+                    if (GUARDIAN_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
+                            && !"guardian".equals(classId)) {
+                        throw new InvalidConfigurationException(
+                            "Guardian skill-settings '" + skill + "' can only be used by class 'guardian'.");
                     }
                     String target = loaded.getString("classes." + classId + ".skill-settings." + skill + ".target");
                     if (target != null && !Set.of("OWNER", "ALLIES", "OWNER_AND_ALLIES")
@@ -1484,6 +1560,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                                 + configuredMaterial + "' in " + classId + ".FIRE_WALL.");
                         }
                     }
+                    if (skill.equalsIgnoreCase("GUARDIAN_QUAKE")) {
+                        String configuredMaterial = loaded.getString("classes." + classId
+                            + ".skill-settings." + skill + ".fake-block-material", "COBBLESTONE");
+                        Material fakeMaterial = Material.matchMaterial(configuredMaterial);
+                        if (fakeMaterial == null || fakeMaterial.isAir() || !fakeMaterial.isSolid()) {
+                            throw new InvalidConfigurationException("Invalid solid fake-block-material '"
+                                + configuredMaterial + "' in " + classId + ".GUARDIAN_QUAKE.");
+                        }
+                    }
                 }
             }
             double baseHealth = loaded.getDouble("classes." + classId + ".base-health", 24.0);
@@ -1502,6 +1587,33 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     || baseDamage + damageGrowth * (configuredMaxLevel + 12.0) > 1024.0
                     || baseArmor + armorGrowth * (configuredMaxLevel + 12.0) > 100.0) {
                 throw new InvalidConfigurationException("Invalid stats for class '" + classId + "'.");
+            }
+            if ("guardian".equals(classId)) {
+                double healthPerTier = loaded.getDouble("classes.guardian.health-per-tier", 6.0);
+                double armorPerTier = loaded.getDouble("classes.guardian.armor-per-tier", 0.5);
+                int armorStepLevels = loaded.getInt("classes.guardian.armor-level-step-levels", 5);
+                double armorPerLevelStep = loaded.getDouble("classes.guardian.armor-per-level-step", 0.5);
+                double damagePerTier = loaded.getDouble("classes.guardian.damage-per-tier", 0.75);
+                double shieldHealthBonus = loaded.getDouble(
+                    "classes.guardian.shield-offhand-health-bonus", 8.0);
+                double swordMultiplier = loaded.getDouble("classes.guardian.sword-damage-multiplier", 1.5);
+                if (!Double.isFinite(healthPerTier) || healthPerTier < 0.0 || healthPerTier > 100.0
+                        || !Double.isFinite(armorPerTier) || armorPerTier < 0.0 || armorPerTier > 10.0
+                        || armorStepLevels < 1 || armorStepLevels > 30
+                        || !Double.isFinite(armorPerLevelStep) || armorPerLevelStep < 0.0
+                            || armorPerLevelStep > 10.0
+                        || !Double.isFinite(damagePerTier) || damagePerTier < 0.0 || damagePerTier > 10.0
+                        || !Double.isFinite(shieldHealthBonus) || shieldHealthBonus < 0.0
+                            || shieldHealthBonus > 100.0
+                        || !Double.isFinite(swordMultiplier) || swordMultiplier < 1.0 || swordMultiplier > 3.0
+                        || baseHealth + healthPerTier * 12.0 + healthGrowth * (configuredMaxLevel - 1.0)
+                            + shieldHealthBonus > 1024.0
+                        || baseArmor + armorPerTier * 12.0
+                            + armorPerLevelStep * (configuredMaxLevel / (double) armorStepLevels) > 100.0
+                        || baseDamage + damagePerTier * 12.0
+                            + damageGrowth * (configuredMaxLevel - 1.0) > 1024.0) {
+                    throw new InvalidConfigurationException("Invalid tier/level/equipment stats for class 'guardian'.");
+                }
             }
             ConfigurationSection upgrades = loaded.getConfigurationSection(
                 "classes." + classId + ".tier-upgrades");
@@ -1810,6 +1922,30 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             loaded.set("classes.archer.skills", defaults.getStringList("classes.archer.skills"));
             changed = true;
         }
+        if (!loaded.getBoolean("_migrations.guardian-six-skills-v1", false)) {
+            String guardianSkillsPath = "classes.guardian.skills";
+            loaded.set(guardianSkillsPath, defaults.getStringList(guardianSkillsPath));
+            loaded.setComments(guardianSkillsPath, defaults.getComments(guardianSkillsPath));
+            for (String legacySkill : List.of("SHIELD_OWNER", "HEAL_OWNER", "POWER_STRIKE", "TAUNT")) {
+                loaded.set("classes.guardian.skill-settings." + legacySkill, null);
+            }
+            String ultimateCooldownPath = "classes.guardian.skill-settings.GUARDIAN_ULTIMATE.cooldown-seconds";
+            if (loaded.getInt(ultimateCooldownPath, 90) == 8) {
+                loaded.set(ultimateCooldownPath, 90);
+                loaded.setComments(ultimateCooldownPath, defaults.getComments(ultimateCooldownPath));
+            }
+            loaded.set("classes.guardian.skill-settings.GUARDIAN_ULTIMATE.radius-blocks", null);
+            loaded.set("classes.guardian.skill-settings.GUARDIAN_ULTIMATE.damage-reduction", null);
+            String guardianDescriptionPath = "classes.guardian.description";
+            if ("Chiến đấu cận chiến và bảo vệ chủ nhân."
+                    .equals(loaded.getString(guardianDescriptionPath))) {
+                loaded.set(guardianDescriptionPath, defaults.getString(guardianDescriptionPath));
+                loaded.setComments(guardianDescriptionPath, defaults.getComments(guardianDescriptionPath));
+            }
+            loaded.set("_migrations.guardian-six-skills-v1", true);
+            changed = true;
+            plugin.getLogger().info("[Army] Migrated the Guardian to its six tank skills.");
+        }
         if (loaded.getStringList("classes.guardian.skills").equals(List.of("ATTACK", "SHIELD_OWNER"))) {
             loaded.set("classes.guardian.skills", defaults.getStringList("classes.guardian.skills"));
             changed = true;
@@ -1991,11 +2127,14 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             @Override
             public void run() {
                 if (!enabled) return;
+                guardianOwnerImmunityExpiries.entrySet().removeIf(
+                    entry -> entry.getValue() <= System.currentTimeMillis());
                 cleanupFrostPotionEffects(false);
                 cleanupFireExpiries(false);
                 for (Unit unit : new ArrayList<>(units.values())) {
                     if (!unit.deployed) {
                         cleanupFireStateForUnit(unit.id);
+                        cleanupGuardianStateForUnit(unit.id);
                         continue;
                     }
                     Player owner = Bukkit.getPlayer(unit.owner);
@@ -2003,6 +2142,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     if (mob != null && mob.isValid()) preventZombification(mob);
                     if (owner == null || !owner.isOnline()) {
                         cleanupFireStateForUnit(unit.id);
+                        cleanupGuardianStateForUnit(unit.id);
                         cleanupSummonedMinions(unit.id);
                         if (mob != null) {
                             captureEquipment(unit, mob);
@@ -2468,6 +2608,344 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return icon;
     }
 
+    private void useGuardianSkills(Unit unit, Player owner, Mob guardian, LivingEntity target) {
+        if (guardian == null || !guardian.isValid() || !owner.isOnline()
+                || !guardian.getWorld().equals(owner.getWorld())) return;
+
+        if (target != null && isHostileMob(target)) {
+            double targetDistance = guardian.getLocation().distance(target.getLocation());
+            double chargeMinimum = skillOptionDouble(unit, "GUARDIAN_CHARGE",
+                "minimum-range-blocks", 4.0, 1.0, 16.0);
+            double chargeMaximum = skillOptionDouble(unit, "GUARDIAN_CHARGE",
+                "maximum-range-blocks", 12.0, 2.0, 32.0);
+            if (hasSkill(unit, "GUARDIAN_CHARGE") && targetDistance >= chargeMinimum
+                    && targetDistance <= chargeMaximum && ready(unit, "GUARDIAN_CHARGE")) {
+                startGuardianCharge(unit, owner, guardian, target);
+            }
+            double quakeRadius = skillOptionDouble(unit, "GUARDIAN_QUAKE",
+                "radius-blocks", 3.0, 1.0, 8.0);
+            if (hasSkill(unit, "GUARDIAN_QUAKE") && targetDistance <= quakeRadius + 1.0
+                    && ready(unit, "GUARDIAN_QUAKE")) {
+                activateGuardianQuake(unit, owner, target.getLocation());
+            }
+        }
+
+        double shieldRadius = skillOptionDouble(unit, "GUARDIAN_SHIELD", "radius-blocks", 10.0, 1.0, 32.0);
+        boolean underThreat = target != null || hasGuardianHostileNear(owner, shieldRadius);
+        if (hasSkill(unit, "GUARDIAN_SHIELD") && underThreat && ready(unit, "GUARDIAN_SHIELD")) {
+            activateGuardianShield(unit, owner, guardian);
+        }
+
+        double tauntRadius = skillOptionDouble(unit, "GUARDIAN_ULTIMATE",
+            "taunt-radius-blocks", 8.0, 1.0, 32.0);
+        double ownerHealthPercent = owner.getHealth() / Math.max(1.0, maxHealth(owner)) * 100.0;
+        double ultimateThreshold = skillOptionDouble(unit, "GUARDIAN_ULTIMATE",
+            "owner-health-threshold-percent", 50.0, 1.0, 99.0);
+        if (hasSkill(unit, "GUARDIAN_ULTIMATE") && ownerHealthPercent <= ultimateThreshold
+                && hasGuardianHostileNear(owner, tauntRadius) && ready(unit, "GUARDIAN_ULTIMATE")) {
+            activateGuardianUltimate(unit, owner, guardian, tauntRadius);
+        }
+    }
+
+    private boolean hasGuardianHostileNear(Player owner, double radius) {
+        return owner.getNearbyEntities(radius, radius, radius).stream()
+            .filter(LivingEntity.class::isInstance)
+            .map(LivingEntity.class::cast)
+            .anyMatch(this::isHostileMob);
+    }
+
+    private void startGuardianCharge(Unit unit, Player owner, Mob guardian, LivingEntity target) {
+        Vector direction = target.getLocation().toVector().subtract(guardian.getLocation().toVector());
+        direction.setY(0.0);
+        if (direction.lengthSquared() <= 0.0001) return;
+        direction.normalize();
+        double speed = skillOptionDouble(unit, "GUARDIAN_CHARGE", "speed", 1.5, 0.1, 4.0);
+        int maximumTicks = (int) skillOptionDouble(unit, "GUARDIAN_CHARGE",
+            "duration-ticks", 20.0, 1.0, 100.0);
+        double sweepRadius = skillOptionDouble(unit, "GUARDIAN_CHARGE",
+            "sweep-radius-blocks", 2.0, 1.0, 6.0);
+        double horizontalKnockback = skillOptionDouble(unit, "GUARDIAN_CHARGE",
+            "knockback-strength", 0.8, 0.0, 4.0);
+        double verticalKnockback = skillOptionDouble(unit, "GUARDIAN_CHARGE",
+            "knockback-y", 0.5, 0.0, 2.0);
+        Set<UUID> hitTargets = new HashSet<>();
+        guardian.setVelocity(direction.clone().multiply(speed));
+        markUsed(unit, "GUARDIAN_CHARGE", skillCooldownSeconds(unit, "GUARDIAN_CHARGE"));
+        announceSkillCast(unit, owner, "GUARDIAN_CHARGE", Particle.CRIT);
+
+        BukkitRunnable chargeTask = new BukkitRunnable() {
+            private int elapsedTicks;
+
+            @Override
+            public void run() {
+                if (!guardian.isValid() || guardian.isDead() || !owner.isOnline()
+                        || !target.isValid() || target.isDead() || !isHostileMob(target)
+                        || !guardian.getWorld().equals(target.getWorld())
+                        || !guardian.getWorld().equals(owner.getWorld())) {
+                    finish();
+                    return;
+                }
+                Location nextLocation = guardian.getLocation().clone().add(direction.clone().multiply(0.9));
+                if (nextLocation.getBlock().getType().isSolid()) {
+                    finish();
+                    return;
+                }
+                for (Entity nearby : guardian.getNearbyEntities(sweepRadius, 2.0, sweepRadius)) {
+                    if (!(nearby instanceof LivingEntity hostile) || !isHostileMob(hostile)
+                            || !hitTargets.add(hostile.getUniqueId())) continue;
+                    Vector push = hostile.getLocation().toVector().subtract(guardian.getLocation().toVector());
+                    push.setY(0.0);
+                    if (push.lengthSquared() <= 0.0001) push = direction.clone();
+                    else push.normalize();
+                    hostile.setVelocity(push.multiply(horizontalKnockback).setY(verticalKnockback));
+                }
+                elapsedTicks++;
+                if (elapsedTicks >= maximumTicks) {
+                    finish();
+                    return;
+                }
+                guardian.setVelocity(direction.clone().multiply(speed));
+            }
+
+            private void finish() {
+                guardian.getWorld().spawnParticle(Particle.EXPLOSION,
+                    guardian.getLocation().add(0.0, 0.8, 0.0), 1, 0.0, 0.0, 0.0, 0.0);
+                cancel();
+                forgetGuardianTask(unit.id, getTaskId());
+            }
+        };
+        BukkitTask task = chargeTask.runTaskTimer(plugin, 1L, 1L);
+        guardianTasksByUnit.computeIfAbsent(unit.id, ignored -> new HashSet<>()).add(task);
+    }
+
+    private void activateGuardianShield(Unit unit, Player owner, Mob guardian) {
+        int durationTicks = (int) skillOptionDouble(unit, "GUARDIAN_SHIELD",
+            "duration-seconds", 5.0, 1.0, 60.0) * 20;
+        int resistanceAmplifier = (int) skillOptionDouble(unit, "GUARDIAN_SHIELD",
+            "resistance-amplifier", 0.0, 0.0, 4.0);
+        double shieldAmount = guardianAbsorptionAmount(unit);
+        applyGuardianDefensiveEffects(guardian, shieldAmount, durationTicks, resistanceAmplifier);
+
+        double radius = skillOptionDouble(unit, "GUARDIAN_SHIELD", "radius-blocks", 10.0, 1.0, 32.0);
+        double allyRatio = skillOptionDouble(unit, "GUARDIAN_SHIELD",
+            "ally-absorption-ratio", 0.5, 0.0, 1.0);
+        for (LivingEntity recipient : guardianShieldRecipients(unit, owner, radius)) {
+            applyGuardianDefensiveEffects(recipient, shieldAmount * allyRatio,
+                durationTicks, resistanceAmplifier);
+            recipient.getWorld().spawnParticle(Particle.WAX_ON,
+                recipient.getLocation().add(0.0, 1.0, 0.0), 8, 0.35, 0.45, 0.35, 0.02);
+        }
+        markUsed(unit, "GUARDIAN_SHIELD", skillCooldownSeconds(unit, "GUARDIAN_SHIELD"));
+        announceSkillCast(unit, owner, "GUARDIAN_SHIELD", Particle.WAX_ON);
+    }
+
+    private double guardianAbsorptionAmount(Unit unit) {
+        GuardianStats stats = guardianStats(unit);
+        double base = skillOptionDouble(unit, "GUARDIAN_SHIELD", "absorption-base", 6.0, 0.0, 40.0);
+        double perLevel = skillOptionDouble(unit, "GUARDIAN_SHIELD", "absorption-per-level", 0.5, 0.0, 2.0);
+        double perArmor = skillOptionDouble(unit, "GUARDIAN_SHIELD", "absorption-per-armor", 0.5, 0.0, 2.0);
+        double offhandBonus = isGuardianHoldingOffhandShield(unit)
+            ? skillOptionDouble(unit, "GUARDIAN_SHIELD", "shield-absorption-bonus", 4.0, 0.0, 20.0)
+            : 0.0;
+        return Math.min(40.0, Math.max(0.0,
+            base + Math.max(0, unit.level - 1) * perLevel + stats.armor() * perArmor + offhandBonus));
+    }
+
+    private void applyGuardianDefensiveEffects(LivingEntity recipient, double absorption,
+                                              int durationTicks, int resistanceAmplifier) {
+        if (!recipient.isValid() || recipient.isDead()) return;
+        int absorptionAmplifier = absorptionEffectAmplifier(absorption);
+        if (absorptionAmplifier >= 0) {
+            recipient.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION,
+                durationTicks, absorptionAmplifier, true, true, true));
+        }
+        recipient.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE,
+            durationTicks, resistanceAmplifier, true, true, true));
+    }
+
+    private int absorptionEffectAmplifier(double absorptionAmount) {
+        if (absorptionAmount <= 0.0) return -1;
+        return Math.max(0, Math.min(9, (int) Math.ceil(absorptionAmount / 4.0) - 1));
+    }
+
+    private List<LivingEntity> guardianShieldRecipients(Unit unit, Player owner, double radius) {
+        List<LivingEntity> recipients = new ArrayList<>();
+        Set<UUID> added = new HashSet<>();
+        double radiusSquared = radius * radius;
+        if (added.add(owner.getUniqueId())) recipients.add(owner);
+        org.bukkit.scoreboard.Team team = owner.getScoreboard().getEntryTeam(owner.getName());
+        if (team != null) {
+            for (Player teammate : Bukkit.getOnlinePlayers()) {
+                if (teammate == owner || !teammate.getWorld().equals(owner.getWorld())
+                        || !team.hasEntry(teammate.getName())
+                        || teammate.getLocation().distanceSquared(owner.getLocation()) > radiusSquared) continue;
+                if (added.add(teammate.getUniqueId())) recipients.add(teammate);
+            }
+        }
+        for (Unit sibling : getOwnerUnits(unit.owner)) {
+            if (sibling.id.equals(unit.id)) continue;
+            Mob ally = activeEntities.get(sibling.id);
+            if (!sibling.deployed || ally == null || !ally.isValid() || ally.isDead()
+                    || !ally.getWorld().equals(owner.getWorld())
+                    || ally.getLocation().distanceSquared(owner.getLocation()) > radiusSquared) continue;
+            if (added.add(ally.getUniqueId())) recipients.add(ally);
+        }
+        return recipients;
+    }
+
+    private void activateGuardianQuake(Unit unit, Player owner, Location center) {
+        Mob guardian = activeEntities.get(unit.id);
+        if (guardian == null || !guardian.isValid() || center.getWorld() == null
+                || !guardian.getWorld().equals(center.getWorld())) return;
+        double radius = skillOptionDouble(unit, "GUARDIAN_QUAKE", "radius-blocks", 3.0, 1.0, 8.0);
+        int durationSeconds = (int) skillOptionDouble(unit, "GUARDIAN_QUAKE",
+            "duration-seconds", 5.0, 1.0, 15.0);
+        int slowSeconds = (int) skillOptionDouble(unit, "GUARDIAN_QUAKE",
+            "slowness-duration-seconds", 3.0, 1.0, 10.0);
+        int slowAmplifier = (int) skillOptionDouble(unit, "GUARDIAN_QUAKE",
+            "slowness-amplifier", 4.0, 0.0, 10.0);
+        String fakeMaterialName = skillOptionString(unit, "GUARDIAN_QUAKE",
+            "fake-block-material", "COBBLESTONE");
+        Material fakeMaterial = Material.matchMaterial(fakeMaterialName);
+        if (fakeMaterial == null || fakeMaterial.isAir() || !fakeMaterial.isSolid()) {
+            plugin.getLogger().warning("[Army] Invalid fake block material '" + fakeMaterialName
+                + "' for GUARDIAN_QUAKE; skipping fake block display.");
+        } else {
+            displayGuardianQuakeBlocks(unit, center, radius, fakeMaterial.createBlockData(),
+                durationSeconds * 20);
+        }
+
+        for (Entity nearby : center.getWorld().getNearbyEntities(center, radius, 2.0, radius)) {
+            if (!(nearby instanceof LivingEntity hostile) || !isHostileMob(hostile)) continue;
+            hostile.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
+                slowSeconds * 20, slowAmplifier, true, true, true));
+            hostile.setVelocity(new Vector(0.0, Math.max(0.0, hostile.getVelocity().getY()), 0.0));
+        }
+        center.getWorld().spawnParticle(Particle.EXPLOSION, center.clone().add(0.0, 0.2, 0.0),
+            1, 0.0, 0.0, 0.0, 0.0);
+        markUsed(unit, "GUARDIAN_QUAKE", skillCooldownSeconds(unit, "GUARDIAN_QUAKE"));
+        announceSkillCast(unit, owner, "GUARDIAN_QUAKE", Particle.WAX_ON);
+    }
+
+    private void displayGuardianQuakeBlocks(Unit unit, Location center, double radius,
+                                            BlockData fakeBlockData, int durationTicks) {
+        World world = center.getWorld();
+        if (world == null) return;
+        int blockRadius = (int) Math.ceil(radius);
+        Set<UUID> viewers = new HashSet<>();
+        double viewerRadius = radius + 8.0;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.getWorld().equals(world)
+                    && player.getLocation().distanceSquared(center) <= viewerRadius * viewerRadius) {
+                viewers.add(player.getUniqueId());
+            }
+        }
+        int centerX = center.getBlockX();
+        int centerY = center.getBlockY();
+        int centerZ = center.getBlockZ();
+        long expiresAt = System.currentTimeMillis() + durationTicks * 50L;
+        for (int dx = -blockRadius; dx <= blockRadius; dx++) {
+            for (int dz = -blockRadius; dz <= blockRadius; dz++) {
+                if (Math.abs(Math.sqrt(dx * dx + dz * dz) - radius) > 0.6) continue;
+                for (int dy = 0; dy <= 1; dy++) {
+                    int y = centerY + dy;
+                    if (y < world.getMinHeight() || y >= world.getMaxHeight()) continue;
+                    Block block = world.getBlockAt(centerX + dx, y, centerZ + dz);
+                    if (!block.getType().isAir()) continue;
+                    String key = guardianFakeBlockKey(block);
+                    GuardianFakeBlockOverlay overlay = guardianFakeBlockOverlays.computeIfAbsent(
+                        key, ignored -> new GuardianFakeBlockOverlay(block));
+                    overlay.unitExpiries.put(unit.id, expiresAt);
+                    overlay.viewers.addAll(viewers);
+                    overlay.expiresAtMillis = Math.max(overlay.expiresAtMillis, expiresAt);
+                    for (UUID viewerId : viewers) {
+                        Player viewer = Bukkit.getPlayer(viewerId);
+                        if (viewer != null && viewer.isOnline()) {
+                            viewer.sendBlockChange(block.getLocation(), fakeBlockData);
+                        }
+                    }
+                    scheduleGuardianFakeBlockRestore(key, overlay);
+                }
+            }
+        }
+    }
+
+    private String guardianFakeBlockKey(Block block) {
+        return block.getWorld().getUID() + ":" + block.getX() + ":" + block.getY() + ":" + block.getZ();
+    }
+
+    private void scheduleGuardianFakeBlockRestore(String key, GuardianFakeBlockOverlay overlay) {
+        if (overlay.removalTask != null) overlay.removalTask.cancel();
+        long delayTicks = Math.max(1L,
+            (overlay.expiresAtMillis - System.currentTimeMillis() + 49L) / 50L);
+        overlay.removalTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (guardianFakeBlockOverlays.get(key) != overlay) return;
+            long now = System.currentTimeMillis();
+            overlay.unitExpiries.entrySet().removeIf(entry -> entry.getValue() <= now);
+            if (!overlay.unitExpiries.isEmpty()) {
+                overlay.expiresAtMillis = overlay.unitExpiries.values().stream()
+                    .mapToLong(Long::longValue).max().orElse(now);
+                scheduleGuardianFakeBlockRestore(key, overlay);
+                return;
+            }
+            restoreGuardianFakeBlock(key, overlay);
+        }, delayTicks);
+    }
+
+    private void restoreGuardianFakeBlock(String key, GuardianFakeBlockOverlay overlay) {
+        if (overlay.removalTask != null) {
+            overlay.removalTask.cancel();
+            overlay.removalTask = null;
+        }
+        if (overlay.world.isChunkLoaded(overlay.x >> 4, overlay.z >> 4)) {
+            Location location = overlay.location();
+            BlockData currentData = overlay.world.getBlockAt(overlay.x, overlay.y, overlay.z).getBlockData();
+            for (UUID viewerId : overlay.viewers) {
+                Player viewer = Bukkit.getPlayer(viewerId);
+                if (viewer != null && viewer.isOnline() && viewer.getWorld().equals(overlay.world)) {
+                    viewer.sendBlockChange(location, currentData);
+                }
+            }
+        }
+        guardianFakeBlockOverlays.remove(key, overlay);
+    }
+
+    private void activateGuardianUltimate(Unit unit, Player owner, Mob guardian, double tauntRadius) {
+        Location destination = safeLocation(owner.getLocation().clone().add(1.0, 0.0, 1.0));
+        if (!guardian.teleport(destination)) return;
+        int protectionSeconds = (int) skillOptionDouble(unit, "GUARDIAN_ULTIMATE",
+            "protection-duration-seconds", 3.0, 1.0, 10.0);
+        guardianOwnerImmunityExpiries.merge(owner.getUniqueId(),
+            System.currentTimeMillis() + protectionSeconds * 1000L, Math::max);
+        double horizontalKnockback = skillOptionDouble(unit, "GUARDIAN_ULTIMATE",
+            "knockback-strength", 1.8, 0.0, 5.0);
+        double verticalKnockback = skillOptionDouble(unit, "GUARDIAN_ULTIMATE",
+            "knockback-y", 0.65, 0.0, 2.0);
+        for (Entity nearby : owner.getNearbyEntities(tauntRadius, 3.0, tauntRadius)) {
+            if (!(nearby instanceof LivingEntity hostile) || !isHostileMob(hostile)) continue;
+            Vector push = hostile.getLocation().toVector().subtract(owner.getLocation().toVector());
+            push.setY(0.0);
+            if (push.lengthSquared() <= 0.0001) {
+                push = owner.getLocation().getDirection().setY(0.0);
+            }
+            if (push.lengthSquared() <= 0.0001) push = new Vector(1.0, 0.0, 0.0);
+            push.normalize().multiply(horizontalKnockback).setY(verticalKnockback);
+            hostile.setVelocity(push);
+            if (hostile instanceof Mob hostileMob) hostileMob.setTarget(guardian);
+        }
+        owner.getWorld().spawnParticle(Particle.WAX_ON,
+            owner.getLocation().add(0.0, 1.0, 0.0), 32, 0.8, 0.8, 0.8, 0.08);
+        markUsed(unit, "GUARDIAN_ULTIMATE", skillCooldownSeconds(unit, "GUARDIAN_ULTIMATE"));
+        announceSkillCast(unit, owner, "GUARDIAN_ULTIMATE", Particle.WAX_ON);
+    }
+
+    private void forgetGuardianTask(UUID unitId, int taskId) {
+        Set<BukkitTask> tasks = guardianTasksByUnit.get(unitId);
+        if (tasks == null) return;
+        tasks.removeIf(task -> task.getTaskId() == taskId);
+        if (tasks.isEmpty()) guardianTasksByUnit.remove(unitId);
+    }
+
     private void useSkills(Unit unit, Player owner, LivingEntity target) {
         Mob mob = activeEntities.get(unit.id);
         if (target != null && (mob == null || !mob.isValid() || !target.isValid() || target.isDead()
@@ -2478,6 +2956,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         if ("frost_mage".equals(unit.unitClass)) {
             useFrostMageSkills(unit, owner, mob, target);
+            return;
+        }
+        if ("guardian".equals(unit.unitClass)) {
+            useGuardianSkills(unit, owner, mob, target);
             return;
         }
         if (hasSkill(unit, "SUMMON_VEXES") && mob != null && target instanceof Monster hostile
@@ -4426,6 +4908,81 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return value.toUpperCase(Locale.ROOT);
     }
 
+    private void applyGuardianLink(EntityDamageEvent event, Player owner) {
+        double damage = event.getDamage();
+        if (damage <= 0.0) return;
+        for (Unit unit : getOwnerUnits(owner.getUniqueId())) {
+            Mob guardian = activeEntities.get(unit.id);
+            if (!unit.deployed || !"guardian".equals(unit.unitClass) || guardian == null
+                    || !guardian.isValid() || guardian.isDead()
+                    || !hasSkill(unit, "GUARDIAN_LINK")
+                    || !guardian.getWorld().equals(owner.getWorld())) continue;
+            double radius = skillOptionDouble(unit, "GUARDIAN_LINK", "radius-blocks", 5.0, 1.0, 16.0);
+            if (guardian.getLocation().distanceSquared(owner.getLocation()) > radius * radius) continue;
+            double redirected = damage * skillOptionDouble(unit, "GUARDIAN_LINK",
+                "redirected-damage-fraction", 0.2, 0.0, 0.9);
+            if (redirected <= 0.0) continue;
+            event.setDamage(Math.max(0.0, damage - redirected));
+            guardian.damage(redirected);
+            spawnGuardianLinkParticles(owner.getLocation(), guardian.getLocation());
+            return;
+        }
+    }
+
+    private void spawnGuardianLinkParticles(Location ownerLocation, Location guardianLocation) {
+        Vector path = guardianLocation.toVector().subtract(ownerLocation.toVector());
+        double distance = path.length();
+        if (distance <= 0.0) return;
+        Vector step = path.normalize().multiply(0.5);
+        Location particle = ownerLocation.clone().add(0.0, 1.0, 0.0);
+        Location end = guardianLocation.clone().add(0.0, 1.0, 0.0);
+        for (double traveled = 0.0; traveled < distance; traveled += 0.5) {
+            ownerLocation.getWorld().spawnParticle(Particle.WAX_ON, particle, 1, 0.0, 0.0, 0.0, 0.0);
+            particle.add(step);
+        }
+        ownerLocation.getWorld().spawnParticle(Particle.WAX_ON, end, 1, 0.0, 0.0, 0.0, 0.0);
+    }
+
+    private void handleGuardianBasicHit(Unit unit, Mob guardian, LivingEntity target,
+                                        EntityDamageByEntityEvent event) {
+        if (!hasSkill(unit, "ATTACK")) return;
+        int hitCount = guardianHitCounters.getOrDefault(unit.id, 0) + 1;
+        if (hitCount < 3) {
+            guardianHitCounters.put(unit.id, hitCount);
+            return;
+        }
+        guardianHitCounters.remove(unit.id);
+        double maximumHealth = guardian.getAttribute(Attribute.MAX_HEALTH) == null
+            ? guardian.getHealth() : guardian.getAttribute(Attribute.MAX_HEALTH).getValue();
+        double extraDamage = maximumHealth * skillOptionDouble(unit, "ATTACK",
+            "third-hit-max-health-damage", 0.05, 0.0, 1.0);
+        event.setDamage(event.getDamage() + extraDamage);
+
+        double coneThreshold = skillOptionDouble(unit, "ATTACK", "cone-dot-threshold", 0.7, 0.0, 1.0);
+        Vector forward = guardian.getLocation().getDirection().setY(0.0);
+        if (forward.lengthSquared() <= 0.0001) return;
+        forward.normalize();
+        int duration = (int) skillOptionDouble(unit, "ATTACK",
+            "slowness-duration-seconds", 2.0, 1.0, 10.0);
+        int amplifier = (int) skillOptionDouble(unit, "ATTACK", "slowness-amplifier", 0.0, 0.0, 4.0);
+        double frontalRadius = skillOptionDouble(unit, "ATTACK",
+            "frontal-radius-blocks", 4.0, 1.0, 12.0);
+        double frontalHeight = skillOptionDouble(unit, "ATTACK",
+            "frontal-height-blocks", 2.0, 1.0, 8.0);
+        for (Entity nearby : guardian.getNearbyEntities(frontalRadius, frontalHeight, frontalRadius)) {
+            if (!(nearby instanceof LivingEntity hostile) || !isHostileMob(hostile)) continue;
+            Vector targetDirection = hostile.getLocation().toVector()
+                .subtract(guardian.getLocation().toVector()).setY(0.0);
+            if (targetDirection.lengthSquared() <= 0.0001) continue;
+            if (forward.dot(targetDirection.normalize()) < coneThreshold) continue;
+            hostile.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
+                duration * 20, amplifier, true, true, true));
+        }
+        guardian.getWorld().spawnParticle(Particle.SWEEP_ATTACK,
+            guardian.getLocation().add(0.0, 1.0, 0.0), 1, 0.0, 0.0, 0.0, 0.0);
+        guardian.getWorld().playSound(guardian.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.75f);
+    }
+
     private void applyOwnerShield(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player owner)) return;
         boolean hostile = event.getDamager() instanceof Monster;
@@ -4836,6 +5393,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             plugin.getLogger().severe("[Army] Could not save deployment-limit rest for unit " + unit.id + ".");
             return false;
         }
+        cleanupGuardianStateForUnit(unit.id);
         cleanupSummonedMinions(unit.id);
         removeMount(unit.id, mob);
         if (mob != null && mob.isValid()) mob.remove();
@@ -4872,6 +5430,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                         + "§c; lính vẫn được giữ nguyên.");
                     continue;
                 }
+                cleanupGuardianStateForUnit(unit.id);
                 cleanupSummonedMinions(unit.id);
                 removeMount(unit.id, mob);
                 mob.remove();
@@ -4883,6 +5442,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 unit.deployed = false;
                 unit.entityId = null;
                 if (saveData()) {
+                    cleanupGuardianStateForUnit(unit.id);
                     cleanupSummonedMinions(unit.id);
                     removeMount(unit.id, null);
                     rested++;
@@ -4915,6 +5475,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private void despawnForOwner(UUID ownerId) {
         boolean changed = false;
         for (Unit unit : getOwnerUnits(ownerId)) {
+            cleanupGuardianStateForUnit(unit.id);
             Mob mob = activeEntities.remove(unit.id);
             if (mob == null || !mob.isValid()) mob = findExistingEntity(unit);
             if (mob == null || !mob.isValid()) continue;
@@ -5725,7 +6286,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         lore.add("§7Skill:");
         for (String skill : settings.getStringList("classes." + classId + ".skills")) {
             lore.add("§f• " + skillDisplayName(skill) + ": " + skillDescription(preview, skill));
-            lore.add("  §7Hồi chiêu: §f" + formatStat(skillCooldownSeconds(preview, skill)) + " giây");
+            boolean guardianBasicAttack = "guardian".equals(classId) && skill.equalsIgnoreCase("ATTACK");
+            boolean guardianPassive = skill.equalsIgnoreCase("GUARDIAN_LINK");
+            String status = guardianBasicAttack ? "Đòn cơ bản"
+                : guardianPassive ? "Nội tại"
+                : "Hồi chiêu: §f" + formatStat(skillCooldownSeconds(preview, skill)) + " giây";
+            lore.add("  §7" + status);
         }
         lore.add("§eNhấn để chọn Bậc.");
         return lore;
@@ -5749,12 +6315,18 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private List<String> tierSummary(String classId, int tier, String itemType) {
         List<String> lore = new ArrayList<>();
         Unit preview = new Unit(new UUID(0L, 0L), new UUID(0L, 1L), classId, tier, Mode.PROTECT, false);
-        double health = settings.getDouble("classes." + classId + ".base-health", 24.0)
-            + Math.max(0, tier - 1) * settings.getDouble("classes." + classId + ".health-per-level", 4.0);
-        double armor = settings.getDouble("classes." + classId + ".base-armor", 0.0)
-            + Math.max(0, tier - 1) * settings.getDouble("classes." + classId + ".armor-per-level", 0.0);
         lore.add("§7Bậc triệu hồi: §f" + tier + " §8| §7Level ban đầu: §f1");
-        lore.add("§cHP: §f" + formatStat(health) + " §7| §bGiáp: §f" + formatStat(armor));
+        if ("guardian".equals(classId)) {
+            GuardianStats stats = guardianStats(preview);
+            lore.add(guardianHealthBreakdown(stats));
+            lore.add(guardianArmorBreakdown(stats));
+        } else {
+            double health = settings.getDouble("classes." + classId + ".base-health", 24.0)
+                + Math.max(0, tier - 1) * settings.getDouble("classes." + classId + ".health-per-level", 4.0);
+            double armor = settings.getDouble("classes." + classId + ".base-armor", 0.0)
+                + Math.max(0, tier - 1) * settings.getDouble("classes." + classId + ".armor-per-level", 0.0);
+            lore.add("§cHP: §f" + formatStat(health) + " §7| §bGiáp: §f" + formatStat(armor));
+        }
         lore.addAll(classEquipmentSummary(classId));
         String damageSummary = basicDamageSummary(preview);
         if (damageSummary != null) lore.add("§7" + damageSummary);
@@ -5778,11 +6350,21 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private List<String> classEquipmentSummary(String classId) {
-        return List.of(
+        List<String> summary = new ArrayList<>(List.of(
             "§7Vũ khí tay chính: §f" + configuredHandCategories(classId,
                 "preferred-main-hand-items", "starting-weapon"),
             "§7Vũ khí/vật phẩm tay phụ: §f" + configuredHandCategories(classId,
-                "preferred-offhand-items", "starting-offhand"));
+                "preferred-offhand-items", "starting-offhand")));
+        if ("guardian".equals(classId)) {
+            summary.add("§7Bonus Vệ Binh: kiếm §a×"
+                + formatStat(readBoundedDouble(settings,
+                    "classes.guardian.sword-damage-multiplier", 1.5, 1.0, 3.0))
+                + " sát thương; khiên §b+"
+                + formatStat(readBoundedDouble(settings,
+                    "classes.guardian.shield-offhand-health-bonus", 8.0, 0.0, 100.0))
+                + " HP và tăng Absorption");
+        }
+        return summary;
     }
 
     private String configuredHandCategories(String classId, String preferenceKey, String startingKey) {
@@ -5873,15 +6455,39 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private String basicDamageSummary(Unit unit) {
         if (!hasSkill(unit, "ATTACK")) return null;
+        if ("guardian".equals(unit.unitClass)) return guardianBasicAttackDescription(unit);
         return "Sát thương đòn cận chiến: " + meleeDamageDescription(unit);
     }
 
+    private String guardianBasicAttackDescription(Unit unit) {
+        GuardianStats stats = guardianStats(unit);
+        ItemStack weapon = displayedMainHand(unit);
+        double weaponBonus = itemDamageBonus(weapon, stats.damage());
+        double handMultiplier = mainHandDamageMultiplier(unit);
+        double normalDamage = (stats.baseDamage() + weaponBonus + stats.tierDamage() + stats.levelDamage())
+            * handMultiplier;
+        double thirdHitBonus = stats.maxHealth() * skillOptionDouble(unit, "ATTACK",
+            "third-hit-max-health-damage", 0.05, 0.0, 1.0);
+        return "Sát thương đòn thường: " + meleeDamageDescription(unit)
+            + " §8| §7đòn thứ 3: Tổng §6" + formatStat(normalDamage + thirdHitBonus)
+            + " §8(§f" + formatStat(normalDamage) + " §7+ §a" + formatStat(thirdHitBonus)
+            + " (" + formatStat(skillOptionDouble(unit, "ATTACK",
+                "third-hit-max-health-damage", 0.05, 0.0, 1.0) * 100.0)
+            + "% max HP)§8)";
+    }
+
     private String meleeDamageDescription(Unit unit) {
+        if ("guardian".equals(unit.unitClass)) {
+            GuardianStats stats = guardianStats(unit);
+            double weaponBonus = itemDamageBonus(displayedMainHand(unit), stats.damage());
+            return damageBreakdown(stats.baseDamage(), weaponBonus, stats.tierDamage(),
+                stats.levelDamage(), 1.0, mainHandDamageMultiplier(unit), Double.POSITIVE_INFINITY);
+        }
         double base = settings.getDouble("classes." + unit.unitClass + ".base-damage", 4.0);
         double levelBonus = Math.max(0, statRank(unit) - 1)
             * settings.getDouble("classes." + unit.unitClass + ".damage-per-level", 0.5);
         double weaponBonus = itemDamageBonus(displayedMainHand(unit), base + levelBonus);
-        return damageBreakdown(base, weaponBonus, levelBonus, 1.0,
+        return damageBreakdown(base, weaponBonus, 0.0, levelBonus, 1.0,
             mainHandDamageMultiplier(unit), Double.POSITIVE_INFINITY);
     }
 
@@ -5900,17 +6506,25 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private String skillDamageDescription(Unit unit, double base, double levelBonus,
                                           double skillMultiplier, double cap, boolean applyHandBonus) {
-        return damageBreakdown(base, 0.0, levelBonus, skillMultiplier,
+        return damageBreakdown(base, 0.0, 0.0, levelBonus, skillMultiplier,
             applyHandBonus ? mainHandDamageMultiplier(unit) : 1.0, cap);
     }
 
     private String damageBreakdown(double base, double weaponBonus, double levelBonus,
                                    double skillMultiplier, double handMultiplier, double cap) {
-        double skillBonus = Math.max(0.0, base + weaponBonus + levelBonus) * (skillMultiplier - 1.0);
-        double uncapped = base + weaponBonus + levelBonus + skillBonus;
+        return damageBreakdown(base, weaponBonus, 0.0, levelBonus,
+            skillMultiplier, handMultiplier, cap);
+    }
+
+    private String damageBreakdown(double base, double weaponBonus, double tierBonus, double levelBonus,
+                                   double skillMultiplier, double handMultiplier, double cap) {
+        double skillBonus = Math.max(0.0, base + weaponBonus + tierBonus + levelBonus)
+            * (skillMultiplier - 1.0);
+        double uncapped = base + weaponBonus + tierBonus + levelBonus + skillBonus;
         double total = Math.min(cap, uncapped) * handMultiplier;
         StringBuilder formula = new StringBuilder("§f").append(formatStat(base));
         if (weaponBonus > 0.0) formula.append(" §7+ §b").append(formatStat(weaponBonus)).append(" vũ khí");
+        if (tierBonus > 0.0) formula.append(" §7+ §d").append(formatStat(tierBonus)).append(" Bậc");
         if (levelBonus > 0.0) formula.append(" §7+ §c").append(formatStat(levelBonus)).append(" tăng theo cấp");
         if (skillBonus > 0.0) {
             formula.append(" §7+ §c").append(formatStat(skillBonus))
@@ -5925,7 +6539,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private double mainHandDamageMultiplier(Unit unit) {
-        if (!isWeaponItem(displayedMainHand(unit))) return 1.0;
+        ItemStack mainHand = displayedMainHand(unit);
+        if (!isWeaponItem(mainHand)) return 1.0;
+        if ("guardian".equals(unit.unitClass) && isGuardianHoldingMainHandSword(unit)) {
+            return readBoundedDouble(settings,
+                "classes.guardian.sword-damage-multiplier", 1.5, 1.0, 3.0);
+        }
         return readBoundedDouble(settings, "combat.main-hand-damage-multiplier", 1.3, 1.0, 3.0);
     }
 
@@ -6059,13 +6678,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private List<String> unitDetails(Unit unit) {
         List<String> details = new ArrayList<>();
         Mob mob = activeEntities.get(unit.id);
+        boolean guardianClass = "guardian".equals(unit.unitClass);
+        GuardianStats guardianStats = guardianClass ? guardianStats(unit) : null;
         double maxHealth = mob != null && mob.isValid() ? maxHealth(mob)
+            : guardianClass ? guardianStats.maxHealth()
             : settings.getDouble("classes." + unit.unitClass + ".base-health", 24.0)
                 + Math.max(0, statRank(unit) - 1)
                     * settings.getDouble("classes." + unit.unitClass + ".health-per-level", 4.0);
         double health = mob != null && mob.isValid() ? mob.getHealth() : maxHealth;
         double armor = mob != null && mob.getAttribute(Attribute.ARMOR) != null
             ? mob.getAttribute(Attribute.ARMOR).getValue()
+            : guardianClass ? guardianStats.armor()
             : settings.getDouble("classes." + unit.unitClass + ".base-armor", 0.0)
                 + Math.max(0, statRank(unit) - 1)
                     * settings.getDouble("classes." + unit.unitClass + ".armor-per-level", 0.0);
@@ -6078,6 +6701,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             displayedOffhand(unit), "preferred-offhand-items", "starting-offhand"));
         details.add("§cHP: §f" + formatStat(health) + "/" + formatStat(maxHealth)
             + " §7| Giáp: §f" + formatStat(armor));
+        if (guardianClass) {
+            details.add(guardianHealthBreakdown(guardianStats));
+            details.add(guardianArmorBreakdown(guardianStats));
+        }
         String damageSummary = basicDamageSummary(unit);
         if (damageSummary != null) details.add("§7" + damageSummary);
         if ("frost_mage".equals(unit.unitClass)) {
@@ -6090,6 +6717,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         details.add("§8Skill:");
         for (String skill : settings.getStringList("classes." + unit.unitClass + ".skills")) {
             String normalized = skill.toUpperCase(Locale.ROOT);
+            if (guardianClass && normalized.equals("ATTACK")) {
+                details.add("§7" + skillDisplayName(normalized) + ": §f"
+                    + skillDescription(unit, normalized) + " §8| §7Đòn cơ bản");
+                continue;
+            }
+            if (normalized.equals("GUARDIAN_LINK")) {
+                details.add("§7" + skillDisplayName(normalized) + ": §f"
+                    + skillDescription(unit, normalized) + " §8| §7Nội tại");
+                continue;
+            }
             String cooldownKey = skillCooldownKey(normalized);
             long remaining = Math.max(0L, skillCooldowns.getOrDefault(unit.id, Map.of())
                 .getOrDefault(cooldownKey, 0L) - System.currentTimeMillis());
@@ -6107,10 +6744,25 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return details;
     }
 
+    private String guardianHealthBreakdown(GuardianStats stats) {
+        return "§7HP tối đa Tổng §6" + formatStat(stats.maxHealth()) + " §8(§f"
+            + formatStat(stats.baseHealth()) + " nền §7+ §d" + formatStat(stats.tierHealth())
+            + " Bậc §7+ §c" + formatStat(stats.levelHealth()) + " Level §7+ §b"
+            + formatStat(stats.equipmentHealth()) + " khiên tay phụ§8)";
+    }
+
+    private String guardianArmorBreakdown(GuardianStats stats) {
+        return "§7Giáp Tổng §6" + formatStat(stats.armor()) + " §8(§f"
+            + formatStat(stats.baseArmor()) + " nền §7+ §d" + formatStat(stats.tierArmor())
+            + " Bậc §7+ §c" + formatStat(stats.levelArmor()) + " Level§8)";
+    }
+
     private String skillDescription(Unit unit, String skill) {
         double power = skillPowerMultiplier(unit);
         return switch (skill.toUpperCase(Locale.ROOT)) {
-            case "ATTACK" -> "Sát thương mỗi đòn cận chiến: " + meleeDamageDescription(unit);
+            case "ATTACK" -> "guardian".equals(unit.unitClass)
+                ? guardianBasicAttackDescription(unit) + "; làm chậm mục tiêu trong góc phía trước"
+                : "Sát thương mỗi đòn cận chiến: " + meleeDamageDescription(unit);
             case "RANGED_ATTACK" -> "Sát thương mỗi tên: " + skillDamageDescription(unit,
                 skillOptionDouble(unit, skill, "damage", 4.0, 0.0, 100.0), 0.0, power, 100.0, true)
                 + ", tầm " + formatStat(skillOptionDouble(unit, skill,
@@ -6141,6 +6793,32 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 skillOptionDouble(unit, skill, "damage", 8.0, 0.0, 100.0), 0.0, power, 100.0, true);
             case "TAUNT" -> "Khiêu khích quái trong bán kính "
                 + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 8.0, 1.0, 32.0)) + " block";
+            case "GUARDIAN_LINK" -> "Trong "
+                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 5.0, 1.0, 16.0))
+                + " block: chủ nhận §6"
+                + formatStat((1.0 - skillOptionDouble(unit, skill,
+                    "redirected-damage-fraction", 0.2, 0.0, 0.9)) * 100.0)
+                + "%§f sát thương, Vệ Binh nhận §c"
+                + formatStat(skillOptionDouble(unit, skill,
+                    "redirected-damage-fraction", 0.2, 0.0, 0.9) * 100.0) + "%";
+            case "GUARDIAN_CHARGE" -> "Tự lao " + formatStat(skillOptionDouble(unit, skill,
+                "minimum-range-blocks", 4.0, 1.0, 16.0)) + "-"
+                + formatStat(skillOptionDouble(unit, skill, "maximum-range-blocks", 12.0, 2.0, 32.0))
+                + " block, hất lùi kẻ địch trong bán kính "
+                + formatStat(skillOptionDouble(unit, skill, "sweep-radius-blocks", 2.0, 1.0, 6.0))
+                + " block";
+            case "GUARDIAN_SHIELD" -> guardianShieldDescription(unit);
+            case "GUARDIAN_QUAKE" -> "Tạo vòng block giả bán kính "
+                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 3.0, 1.0, 8.0))
+                + " block trong "
+                + formatStat(skillOptionDouble(unit, skill, "duration-seconds", 5.0, 1.0, 15.0))
+                + " giây; làm chậm mạnh quái phía server";
+            case "GUARDIAN_ULTIMATE" -> "Tự kích hoạt khi chủ dưới "
+                + formatStat(skillOptionDouble(unit, skill,
+                    "owner-health-threshold-percent", 50.0, 1.0, 99.0))
+                + "% HP: dịch chuyển đến chủ, hất lùi/khiêu khích quái, miễn sát thương "
+                + formatStat(skillOptionDouble(unit, skill,
+                    "protection-duration-seconds", 3.0, 1.0, 10.0)) + " giây";
             case "CLEANSE_OWNER" -> "Gỡ hiệu ứng " + settings.getStringList("classes." + unit.unitClass
                 + ".skill-settings.CLEANSE_OWNER.effects").stream().map(MercenaryManager::localizedEffectName)
                 .reduce((left, right) -> left + ", " + right).orElse("bất lợi") + " khỏi chủ nhân";
@@ -6255,6 +6933,32 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         };
     }
 
+    private String guardianShieldDescription(Unit unit) {
+        GuardianStats stats = guardianStats(unit);
+        double base = skillOptionDouble(unit, "GUARDIAN_SHIELD", "absorption-base", 6.0, 0.0, 40.0);
+        double level = Math.max(0, unit.level - 1)
+            * skillOptionDouble(unit, "GUARDIAN_SHIELD", "absorption-per-level", 0.5, 0.0, 2.0);
+        double armor = stats.armor()
+            * skillOptionDouble(unit, "GUARDIAN_SHIELD", "absorption-per-armor", 0.5, 0.0, 2.0);
+        double offhand = isGuardianHoldingOffhandShield(unit)
+            ? skillOptionDouble(unit, "GUARDIAN_SHIELD", "shield-absorption-bonus", 4.0, 0.0, 20.0)
+            : 0.0;
+        double raw = Math.min(40.0, base + level + armor + offhand);
+        double actualGuardian = absorptionEffectAmplifier(raw) < 0
+            ? 0.0 : (absorptionEffectAmplifier(raw) + 1) * 4.0;
+        double allyRatio = skillOptionDouble(unit, "GUARDIAN_SHIELD",
+            "ally-absorption-ratio", 0.5, 0.0, 1.0);
+        double rawAlly = raw * allyRatio;
+        int allyAmplifier = absorptionEffectAmplifier(rawAlly);
+        double actualAlly = allyAmplifier < 0 ? 0.0 : (allyAmplifier + 1) * 4.0;
+        return "Absorption Vệ Binh Tổng §6" + formatStat(actualGuardian) + " HP §8(§f"
+            + formatStat(base) + " nền §7+ §c" + formatStat(level) + " Level §7+ §b"
+            + formatStat(armor) + " từ giáp §7+ §e" + formatStat(offhand) + " khiên§8); chủ/đồng đội Tổng §6"
+            + formatStat(actualAlly) + " HP, Resistance, bán kính "
+            + formatStat(skillOptionDouble(unit, "GUARDIAN_SHIELD", "radius-blocks", 10.0, 1.0, 32.0))
+            + " block";
+    }
+
     private double scaledDuration(Unit unit, String skill, double fallback) {
         return Math.min(600.0, Math.round(skillOptionDouble(unit, skill, "duration-seconds",
             fallback, 1.0, 600.0) * skillPowerMultiplier(unit)));
@@ -6280,6 +6984,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             case "VOLLEY" -> "Bắn loạt tên";
             case "POWER_STRIKE" -> "Cường kích";
             case "TAUNT" -> "Khiêu khích";
+            case "GUARDIAN_LINK" -> "Hộ Vệ Liên Kết";
+            case "GUARDIAN_CHARGE" -> "Xung Phong Đoạn Hải";
+            case "GUARDIAN_SHIELD" -> "Thánh Thể Bảo Hộ";
+            case "GUARDIAN_QUAKE" -> "Địa Chấn Giam Hãm";
+            case "GUARDIAN_ULTIMATE" -> "Đại Địa Tuyệt Đối: Hộ Giá!";
             case "CLEANSE_OWNER" -> "Thanh tẩy chủ nhân";
             case "FIRE_BOLT" -> "Hỏa cầu";
             case "ROOT_TARGET" -> "Trói chân mục tiêu";
@@ -7407,26 +8116,86 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
+    private GuardianStats guardianStats(Unit unit) {
+        double tierProgress = Math.max(0, unit.tier - 1);
+        double levelProgress = Math.max(0, unit.level - 1);
+        double baseHealth = settings.getDouble("classes.guardian.base-health", 32.0);
+        double tierHealth = tierProgress
+            * readBoundedDouble(settings, "classes.guardian.health-per-tier", 6.0, 0.0, 100.0);
+        double levelHealth = levelProgress
+            * readBoundedDouble(settings, "classes.guardian.health-per-level", 5.0, 0.0, 100.0);
+        double equipmentHealth = isGuardianHoldingOffhandShield(unit)
+            ? readBoundedDouble(settings,
+                "classes.guardian.shield-offhand-health-bonus", 8.0, 0.0, 100.0)
+            : 0.0;
+        double baseArmor = settings.getDouble("classes.guardian.base-armor", 0.0);
+        double tierArmor = tierProgress
+            * readBoundedDouble(settings, "classes.guardian.armor-per-tier", 0.5, 0.0, 10.0);
+        int armorStepLevels = readBoundedInt(settings,
+            "classes.guardian.armor-level-step-levels", 5, 1, 30);
+        double levelArmor = unit.level / (double) armorStepLevels
+            * readBoundedDouble(settings, "classes.guardian.armor-per-level-step", 0.5, 0.0, 10.0);
+        double baseDamage = settings.getDouble("classes.guardian.base-damage", 7.0);
+        double tierDamage = tierProgress
+            * readBoundedDouble(settings, "classes.guardian.damage-per-tier", 0.75, 0.0, 10.0);
+        double levelDamage = levelProgress
+            * readBoundedDouble(settings, "classes.guardian.damage-per-level", 0.75, 0.0, 10.0);
+        return new GuardianStats(
+            baseHealth, tierHealth, levelHealth, equipmentHealth,
+            Math.min(1024.0, Math.max(1.0, baseHealth + tierHealth + levelHealth + equipmentHealth)),
+            baseArmor, tierArmor, levelArmor, Math.min(100.0, baseArmor + tierArmor + levelArmor),
+            baseDamage, tierDamage, levelDamage,
+            Math.max(0.0, baseDamage + tierDamage + levelDamage));
+    }
+
+    private boolean isGuardianHoldingOffhandShield(Unit unit) {
+        ItemStack offhand = displayedOffhand(unit);
+        return offhand != null && offhand.getType() == Material.SHIELD;
+    }
+
+    private boolean isGuardianHoldingMainHandSword(Unit unit) {
+        ItemStack mainHand = displayedMainHand(unit);
+        return mainHand != null && mainHand.getType().name().endsWith("_SWORD");
+    }
+
     private void applyStats(Unit unit, Mob mob) {
+        applyStats(unit, mob, true);
+    }
+
+    private void applyStats(Unit unit, Mob mob, boolean refillHealth) {
         double baseHealth = settings.getDouble("classes." + unit.unitClass + ".base-health", 24.0);
         double healthPerLevel = settings.getDouble("classes." + unit.unitClass + ".health-per-level", 4.0);
         int statRank = statRank(unit);
-        double maxHealth = Math.max(1.0, baseHealth + Math.max(0, statRank - 1) * healthPerLevel);
-        if (mob.getAttribute(Attribute.MAX_HEALTH) != null) {
-            mob.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth);
-            mob.setHealth(maxHealth);
-        }
-        if (mob.getAttribute(Attribute.ATTACK_DAMAGE) != null) {
+        double oldMaximumHealth = maxHealth(mob);
+        double oldHealth = mob.getHealth();
+        double maxHealth;
+        double damage;
+        double armor;
+        if ("guardian".equals(unit.unitClass)) {
+            GuardianStats stats = guardianStats(unit);
+            maxHealth = stats.maxHealth();
+            damage = stats.damage();
+            armor = stats.armor();
+        } else {
+            maxHealth = Math.max(1.0, baseHealth + Math.max(0, statRank - 1) * healthPerLevel);
             double baseDamage = settings.getDouble("classes." + unit.unitClass + ".base-damage", 4.0);
             double damagePerLevel = settings.getDouble("classes." + unit.unitClass + ".damage-per-level", 0.5);
-            mob.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(
-                Math.max(0.0, baseDamage + Math.max(0, statRank - 1) * damagePerLevel));
-        }
-        if (mob.getAttribute(Attribute.ARMOR) != null) {
+            damage = Math.max(0.0, baseDamage + Math.max(0, statRank - 1) * damagePerLevel);
             double baseArmor = settings.getDouble("classes." + unit.unitClass + ".base-armor", 0.0);
             double armorPerLevel = settings.getDouble("classes." + unit.unitClass + ".armor-per-level", 0.0);
-            mob.getAttribute(Attribute.ARMOR).setBaseValue(
-                Math.max(0.0, baseArmor + Math.max(0, statRank - 1) * armorPerLevel));
+            armor = Math.max(0.0, baseArmor + Math.max(0, statRank - 1) * armorPerLevel);
+        }
+        if (mob.getAttribute(Attribute.MAX_HEALTH) != null) {
+            mob.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth);
+            double updatedHealth = refillHealth || oldMaximumHealth <= 0.0
+                ? maxHealth : Math.min(maxHealth, oldHealth * maxHealth / oldMaximumHealth);
+            mob.setHealth(Math.max(0.0, updatedHealth));
+        }
+        if (mob.getAttribute(Attribute.ATTACK_DAMAGE) != null) {
+            mob.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(damage);
+        }
+        if (mob.getAttribute(Attribute.ARMOR) != null) {
+            mob.getAttribute(Attribute.ARMOR).setBaseValue(armor);
         }
     }
 
@@ -7811,6 +8580,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private void removeUnitData(Unit unit) {
+        cleanupGuardianStateForUnit(unit.id);
         cleanupSummonedMinions(unit.id);
         data.set("units." + unit.id, null);
     }
@@ -8088,12 +8858,43 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         cleanupFireEffects();
     }
 
+    private void cleanupGuardianStateForUnit(UUID unitId) {
+        Set<BukkitTask> tasks = guardianTasksByUnit.remove(unitId);
+        if (tasks != null) tasks.forEach(BukkitTask::cancel);
+        guardianHitCounters.remove(unitId);
+        for (Map.Entry<String, GuardianFakeBlockOverlay> entry
+                : new ArrayList<>(guardianFakeBlockOverlays.entrySet())) {
+            GuardianFakeBlockOverlay overlay = entry.getValue();
+            if (overlay.unitExpiries.remove(unitId) == null) continue;
+            if (overlay.unitExpiries.isEmpty()) {
+                restoreGuardianFakeBlock(entry.getKey(), overlay);
+            } else {
+                overlay.expiresAtMillis = overlay.unitExpiries.values().stream()
+                    .mapToLong(Long::longValue).max().orElse(System.currentTimeMillis());
+                scheduleGuardianFakeBlockRestore(entry.getKey(), overlay);
+            }
+        }
+    }
+
+    private void cleanupGuardianTransientEffects() {
+        for (UUID unitId : new ArrayList<>(guardianTasksByUnit.keySet())) {
+            cleanupGuardianStateForUnit(unitId);
+        }
+        for (Map.Entry<String, GuardianFakeBlockOverlay> entry
+                : new ArrayList<>(guardianFakeBlockOverlays.entrySet())) {
+            restoreGuardianFakeBlock(entry.getKey(), entry.getValue());
+        }
+        guardianHitCounters.clear();
+        guardianOwnerImmunityExpiries.clear();
+    }
+
     public void stop() {
         if (aiTask != null) {
             aiTask.cancel();
             aiTask = null;
         }
         cleanupFrostEffects();
+        cleanupGuardianTransientEffects();
         for (BukkitTask task : torchRemovalTasks.values()) task.cancel();
         torchRemovalTasks.clear();
         for (Unit unit : units.values()) {
