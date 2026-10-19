@@ -121,20 +121,22 @@ kiện qua `classes.ranger.skill-settings.ILLUMINATION.darkness-only` và
 `classes.ranger` và `classes.ranger.skill-settings.ILLUMINATION`. Vệ Binh
 (`guardian`) dùng Husk và có sáu kỹ năng tanker tự kích hoạt: `ATTACK` cộng
 damage bằng 5% HP tối đa ở mỗi đòn thứ ba và làm chậm quái phía trước;
-`GUARDIAN_LINK` chuyển mặc định 20% damage chủ nhận sang Vệ Binh trong 5 block;
-`GUARDIAN_CHARGE` lao vào mục tiêu và hất lùi; `GUARDIAN_SHIELD` cấp Absorption
-và Resistance cho Vệ Binh, chủ, đồng đội cùng Bukkit Scoreboard Team và lính
-cùng đội quân; `GUARDIAN_QUAKE` tạo vòng cobblestone giả để hiển thị, đồng thời
-làm chậm quái bằng hiệu ứng server; `GUARDIAN_ULTIMATE` tự kích hoạt khi HP chủ
-còn 50% trở xuống để dịch chuyển về bảo vệ, hất lùi/khiêu khích quái và miễn
-damage cho chủ trong 3 giây. Địa Chấn chỉ gửi block giả tới client, không sửa
-địa hình thật; việc giữ chân mục tiêu do hiệu ứng Slowness phía server đảm nhiệm.
+`GUARDIAN_LINK` (**Hộ Vệ**) là nội tại: Vệ Binh nhận mặc định 40% sát thương
+thay cho chủ nhân trong 5 block; `GUARDIAN_CHARGE` (**Xung Phong**) tự lao
+4–8 block và hất lùi, cự ly tối đa tăng 1 block mỗi 5 Level; `GUARDIAN_SHIELD`
+(**Thánh Thể**) cấp lớp máu hấp thụ sát thương cho Vệ Binh, chủ và đồng đội
+cùng Bukkit Scoreboard Team/lính cùng đội quân, đồng thời giảm sát thương nhận
+vào. `GUARDIAN_QUAKE` (**Vây Hãm**) tạo vòng block giả vây mục tiêu trong 5 giây
+và làm chậm; `GUARDIAN_ULTIMATE` (**Hộ Giá**) tự kích hoạt khi HP chủ còn 50%
+trở xuống để dịch chuyển về bảo vệ, hất lùi/khiêu khích quái và miễn damage cho
+chủ trong 3 giây. Block của Vây Hãm chỉ hiển thị phía client, không sửa địa hình
+thật; hiệu ứng làm chậm được áp dụng phía server.
 
 Chỉ số Vệ Binh tách riêng theo Bậc và Level: mặc định mỗi Bậc thêm 6 HP, 0.5
 giáp và 0.75 damage; mỗi Level thêm 5 HP và 0.75 damage, cứ 5 Level thêm 0.5
-giáp. Cầm kiếm tay chính nhân damage tổng với 1.5; cầm khiên tay phụ thêm 8 HP
-và tăng Absorption của `GUARDIAN_SHIELD`. Mô tả lính hiển thị chỉ số tổng cùng
-các thành phần Bậc/Level/trang bị bằng màu riêng. Tinh chỉnh chỉ số trong
+giáp. Cầm vũ khí tay chính tăng 10% damage tổng; cầm khiên tay phụ thêm 8 HP
+và tăng lượng lớp máu hấp thụ của `GUARDIAN_SHIELD`. Mô tả lính hiển thị chỉ số
+tổng cùng các thành phần Bậc/Level/trang bị bằng màu riêng. Tinh chỉnh chỉ số trong
 `classes.guardian`; thiết lập bán kính, thời lượng, cooldown và hiệu ứng từng
 skill trong `classes.guardian.skill-settings.<SKILL>`. Thuê qua menu hoặc
 `/vnarmy hire guardian <bậc>`; dùng quyền hiện có `vnmine.command.army`, không

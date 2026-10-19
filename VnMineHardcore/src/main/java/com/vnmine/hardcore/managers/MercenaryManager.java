@@ -1596,7 +1596,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 double damagePerTier = loaded.getDouble("classes.guardian.damage-per-tier", 0.75);
                 double shieldHealthBonus = loaded.getDouble(
                     "classes.guardian.shield-offhand-health-bonus", 8.0);
-                double swordMultiplier = loaded.getDouble("classes.guardian.sword-damage-multiplier", 1.5);
+                double swordMultiplier = loaded.getDouble("classes.guardian.sword-damage-multiplier", 1.1);
                 if (!Double.isFinite(healthPerTier) || healthPerTier < 0.0 || healthPerTier > 100.0
                         || !Double.isFinite(armorPerTier) || armorPerTier < 0.0 || armorPerTier > 10.0
                         || armorStepLevels < 1 || armorStepLevels > 30
@@ -1945,6 +1945,27 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             loaded.set("_migrations.guardian-six-skills-v1", true);
             changed = true;
             plugin.getLogger().info("[Army] Migrated the Guardian to its six tank skills.");
+        }
+        if (!loaded.getBoolean("_migrations.guardian-balance-v2", false)) {
+            String swordMultiplierPath = "classes.guardian.sword-damage-multiplier";
+            if (Double.compare(loaded.getDouble(swordMultiplierPath, 1.5), 1.5) == 0) {
+                loaded.set(swordMultiplierPath, 1.1);
+                loaded.setComments(swordMultiplierPath, defaults.getComments(swordMultiplierPath));
+            }
+            String redirectedDamagePath =
+                "classes.guardian.skill-settings.GUARDIAN_LINK.redirected-damage-fraction";
+            if (Double.compare(loaded.getDouble(redirectedDamagePath, 0.2), 0.2) == 0) {
+                loaded.set(redirectedDamagePath, 0.4);
+                loaded.setComments(redirectedDamagePath, defaults.getComments(redirectedDamagePath));
+            }
+            String chargeRangePath = "classes.guardian.skill-settings.GUARDIAN_CHARGE.maximum-range-blocks";
+            if (Double.compare(loaded.getDouble(chargeRangePath, 12.0), 12.0) == 0) {
+                loaded.set(chargeRangePath, 8.0);
+                loaded.setComments(chargeRangePath, defaults.getComments(chargeRangePath));
+            }
+            loaded.set("_migrations.guardian-balance-v2", true);
+            changed = true;
+            plugin.getLogger().info("[Army] Updated Guardian weapon damage, owner protection, and charge defaults.");
         }
         if (loaded.getStringList("classes.guardian.skills").equals(List.of("ATTACK", "SHIELD_OWNER"))) {
             loaded.set("classes.guardian.skills", defaults.getStringList("classes.guardian.skills"));
@@ -2616,8 +2637,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             double targetDistance = guardian.getLocation().distance(target.getLocation());
             double chargeMinimum = skillOptionDouble(unit, "GUARDIAN_CHARGE",
                 "minimum-range-blocks", 4.0, 1.0, 16.0);
-            double chargeMaximum = skillOptionDouble(unit, "GUARDIAN_CHARGE",
-                "maximum-range-blocks", 12.0, 2.0, 32.0);
+            double chargeMaximum = guardianChargeMaximumRange(unit);
             if (hasSkill(unit, "GUARDIAN_CHARGE") && targetDistance >= chargeMinimum
                     && targetDistance <= chargeMaximum && ready(unit, "GUARDIAN_CHARGE")) {
                 startGuardianCharge(unit, owner, guardian, target);
@@ -2659,6 +2679,8 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         direction.setY(0.0);
         if (direction.lengthSquared() <= 0.0001) return;
         direction.normalize();
+        Location chargeOrigin = guardian.getLocation().clone();
+        double maximumRange = guardianChargeMaximumRange(unit);
         double speed = skillOptionDouble(unit, "GUARDIAN_CHARGE", "speed", 1.5, 0.1, 4.0);
         int maximumTicks = (int) skillOptionDouble(unit, "GUARDIAN_CHARGE",
             "duration-ticks", 20.0, 1.0, 100.0);
@@ -2685,6 +2707,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     finish();
                     return;
                 }
+                double traveled = guardian.getLocation().distance(chargeOrigin);
+                double remainingRange = maximumRange - traveled;
+                if (remainingRange <= 0.05) {
+                    finish();
+                    return;
+                }
                 Location nextLocation = guardian.getLocation().clone().add(direction.clone().multiply(0.9));
                 if (nextLocation.getBlock().getType().isSolid()) {
                     finish();
@@ -2704,7 +2732,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     finish();
                     return;
                 }
-                guardian.setVelocity(direction.clone().multiply(speed));
+                guardian.setVelocity(direction.clone().multiply(Math.min(speed, remainingRange)));
             }
 
             private void finish() {
@@ -2716,6 +2744,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         };
         BukkitTask task = chargeTask.runTaskTimer(plugin, 1L, 1L);
         guardianTasksByUnit.computeIfAbsent(unit.id, ignored -> new HashSet<>()).add(task);
+    }
+
+    private double guardianChargeMaximumRange(Unit unit) {
+        double baseRange = skillOptionDouble(unit, "GUARDIAN_CHARGE",
+            "maximum-range-blocks", 8.0, 2.0, 32.0);
+        double rangePerStep = skillOptionDouble(unit, "GUARDIAN_CHARGE",
+            "maximum-range-per-level-step-blocks", 1.0, 0.0, 10.0);
+        int levelsPerStep = readBoundedInt(settings, "classes.guardian.skill-settings.GUARDIAN_CHARGE."
+            + "maximum-range-step-levels", 5, 1, 30);
+        return Math.min(32.0, baseRange + Math.max(0, unit.level / levelsPerStep) * rangePerStep);
     }
 
     private void activateGuardianShield(Unit unit, Player owner, Mob guardian) {
@@ -4920,7 +4958,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             double radius = skillOptionDouble(unit, "GUARDIAN_LINK", "radius-blocks", 5.0, 1.0, 16.0);
             if (guardian.getLocation().distanceSquared(owner.getLocation()) > radius * radius) continue;
             double redirected = damage * skillOptionDouble(unit, "GUARDIAN_LINK",
-                "redirected-damage-fraction", 0.2, 0.0, 0.9);
+                "redirected-damage-fraction", 0.4, 0.0, 0.9);
             if (redirected <= 0.0) continue;
             event.setDamage(Math.max(0.0, damage - redirected));
             guardian.damage(redirected);
@@ -6287,11 +6325,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         for (String skill : settings.getStringList("classes." + classId + ".skills")) {
             lore.add("§f• " + skillDisplayName(skill) + ": " + skillDescription(preview, skill));
             boolean guardianBasicAttack = "guardian".equals(classId) && skill.equalsIgnoreCase("ATTACK");
-            boolean guardianPassive = skill.equalsIgnoreCase("GUARDIAN_LINK");
+            boolean guardianPassive = "guardian".equals(classId) && skill.equalsIgnoreCase("GUARDIAN_LINK");
             String status = guardianBasicAttack ? "Đòn cơ bản"
-                : guardianPassive ? "Nội tại"
+                : guardianPassive ? ""
                 : "Hồi chiêu: §f" + formatStat(skillCooldownSeconds(preview, skill)) + " giây";
-            lore.add("  §7" + status);
+            if (!status.isEmpty()) lore.add("  §7" + status);
         }
         lore.add("§eNhấn để chọn Bậc.");
         return lore;
@@ -6356,13 +6394,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             "§7Vũ khí/vật phẩm tay phụ: §f" + configuredHandCategories(classId,
                 "preferred-offhand-items", "starting-offhand")));
         if ("guardian".equals(classId)) {
-            summary.add("§7Bonus Vệ Binh: kiếm §a×"
+            summary.add("§7Bonus Vệ Binh: vũ khí tay chính §a+"
                 + formatStat(readBoundedDouble(settings,
-                    "classes.guardian.sword-damage-multiplier", 1.5, 1.0, 3.0))
+                    "classes.guardian.sword-damage-multiplier", 1.1, 1.0, 3.0) * 100.0 - 100.0)
                 + " sát thương; khiên §b+"
                 + formatStat(readBoundedDouble(settings,
                     "classes.guardian.shield-offhand-health-bonus", 8.0, 0.0, 100.0))
-                + " HP và tăng Absorption");
+                + " HP và tăng lớp máu hấp thụ sát thương");
         }
         return summary;
     }
@@ -6541,9 +6579,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private double mainHandDamageMultiplier(Unit unit) {
         ItemStack mainHand = displayedMainHand(unit);
         if (!isWeaponItem(mainHand)) return 1.0;
-        if ("guardian".equals(unit.unitClass) && isGuardianHoldingMainHandSword(unit)) {
+        if ("guardian".equals(unit.unitClass)) {
             return readBoundedDouble(settings,
-                "classes.guardian.sword-damage-multiplier", 1.5, 1.0, 3.0);
+                "classes.guardian.sword-damage-multiplier", 1.1, 1.0, 3.0);
         }
         return readBoundedDouble(settings, "combat.main-hand-damage-multiplier", 1.3, 1.0, 3.0);
     }
@@ -6722,9 +6760,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     + skillDescription(unit, normalized) + " §8| §7Đòn cơ bản");
                 continue;
             }
-            if (normalized.equals("GUARDIAN_LINK")) {
+            if (guardianClass && normalized.equals("GUARDIAN_LINK")) {
                 details.add("§7" + skillDisplayName(normalized) + ": §f"
-                    + skillDescription(unit, normalized) + " §8| §7Nội tại");
+                    + skillDescription(unit, normalized));
                 continue;
             }
             String cooldownKey = skillCooldownKey(normalized);
@@ -6793,26 +6831,25 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 skillOptionDouble(unit, skill, "damage", 8.0, 0.0, 100.0), 0.0, power, 100.0, true);
             case "TAUNT" -> "Khiêu khích quái trong bán kính "
                 + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 8.0, 1.0, 32.0)) + " block";
-            case "GUARDIAN_LINK" -> "Trong "
-                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 5.0, 1.0, 16.0))
-                + " block: chủ nhận §6"
-                + formatStat((1.0 - skillOptionDouble(unit, skill,
-                    "redirected-damage-fraction", 0.2, 0.0, 0.9)) * 100.0)
-                + "%§f sát thương, Vệ Binh nhận §c"
+            case "GUARDIAN_LINK" -> "§7(Nội tại) Nhận §c"
                 + formatStat(skillOptionDouble(unit, skill,
-                    "redirected-damage-fraction", 0.2, 0.0, 0.9) * 100.0) + "%";
-            case "GUARDIAN_CHARGE" -> "Tự lao " + formatStat(skillOptionDouble(unit, skill,
+                    "redirected-damage-fraction", 0.4, 0.0, 0.9) * 100.0)
+                + "%§f sát thương thay cho chủ nhân trong "
+                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 5.0, 1.0, 16.0))
+                + " block";
+            case "GUARDIAN_CHARGE" -> "Tự lao "
+                + formatStat(skillOptionDouble(unit, skill,
                 "minimum-range-blocks", 4.0, 1.0, 16.0)) + "-"
-                + formatStat(skillOptionDouble(unit, skill, "maximum-range-blocks", 12.0, 2.0, 32.0))
-                + " block, hất lùi kẻ địch trong bán kính "
+                + formatStat(guardianChargeMaximumRange(unit))
+                + " block (tăng 1 block mỗi 5 Level), hất lùi kẻ địch trong bán kính "
                 + formatStat(skillOptionDouble(unit, skill, "sweep-radius-blocks", 2.0, 1.0, 6.0))
                 + " block";
             case "GUARDIAN_SHIELD" -> guardianShieldDescription(unit);
-            case "GUARDIAN_QUAKE" -> "Tạo vòng block giả bán kính "
-                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 3.0, 1.0, 8.0))
-                + " block trong "
+            case "GUARDIAN_QUAKE" -> "Tạo vòng đá giả vây mục tiêu trong "
                 + formatStat(skillOptionDouble(unit, skill, "duration-seconds", 5.0, 1.0, 15.0))
-                + " giây; làm chậm mạnh quái phía server";
+                + " giây và làm chậm mục tiêu (bán kính "
+                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 3.0, 1.0, 8.0))
+                + " block)";
             case "GUARDIAN_ULTIMATE" -> "Tự kích hoạt khi chủ dưới "
                 + formatStat(skillOptionDouble(unit, skill,
                     "owner-health-threshold-percent", 50.0, 1.0, 99.0))
@@ -6951,10 +6988,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         double rawAlly = raw * allyRatio;
         int allyAmplifier = absorptionEffectAmplifier(rawAlly);
         double actualAlly = allyAmplifier < 0 ? 0.0 : (allyAmplifier + 1) * 4.0;
-        return "Absorption Vệ Binh Tổng §6" + formatStat(actualGuardian) + " HP §8(§f"
+        int resistanceAmplifier = (int) skillOptionDouble(unit, "GUARDIAN_SHIELD",
+            "resistance-amplifier", 0.0, 0.0, 4.0);
+        double resistancePercent = (resistanceAmplifier + 1) * 20.0;
+        return "Lớp máu hấp thụ sát thương của Vệ Binh Tổng §6" + formatStat(actualGuardian)
+            + " HP §8(§f"
             + formatStat(base) + " nền §7+ §c" + formatStat(level) + " Level §7+ §b"
             + formatStat(armor) + " từ giáp §7+ §e" + formatStat(offhand) + " khiên§8); chủ/đồng đội Tổng §6"
-            + formatStat(actualAlly) + " HP, Resistance, bán kính "
+            + formatStat(actualAlly) + " HP lớp máu hấp thụ, kháng "
+            + formatStat(resistancePercent) + "% sát thương, bán kính "
             + formatStat(skillOptionDouble(unit, "GUARDIAN_SHIELD", "radius-blocks", 10.0, 1.0, 32.0))
             + " block";
     }
@@ -6984,11 +7026,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             case "VOLLEY" -> "Bắn loạt tên";
             case "POWER_STRIKE" -> "Cường kích";
             case "TAUNT" -> "Khiêu khích";
-            case "GUARDIAN_LINK" -> "Hộ Vệ Liên Kết";
-            case "GUARDIAN_CHARGE" -> "Xung Phong Đoạn Hải";
-            case "GUARDIAN_SHIELD" -> "Thánh Thể Bảo Hộ";
-            case "GUARDIAN_QUAKE" -> "Địa Chấn Giam Hãm";
-            case "GUARDIAN_ULTIMATE" -> "Đại Địa Tuyệt Đối: Hộ Giá!";
+            case "GUARDIAN_LINK" -> "Hộ Vệ";
+            case "GUARDIAN_CHARGE" -> "Xung Phong";
+            case "GUARDIAN_SHIELD" -> "Thánh Thể";
+            case "GUARDIAN_QUAKE" -> "Vây Hãm";
+            case "GUARDIAN_ULTIMATE" -> "Hộ Giá";
             case "CLEANSE_OWNER" -> "Thanh tẩy chủ nhân";
             case "FIRE_BOLT" -> "Hỏa cầu";
             case "ROOT_TARGET" -> "Trói chân mục tiêu";
@@ -8151,11 +8193,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean isGuardianHoldingOffhandShield(Unit unit) {
         ItemStack offhand = displayedOffhand(unit);
         return offhand != null && offhand.getType() == Material.SHIELD;
-    }
-
-    private boolean isGuardianHoldingMainHandSword(Unit unit) {
-        ItemStack mainHand = displayedMainHand(unit);
-        return mainHand != null && mainHand.getType().name().endsWith("_SWORD");
     }
 
     private void applyStats(Unit unit, Mob mob) {

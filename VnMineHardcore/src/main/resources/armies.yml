@@ -277,9 +277,9 @@ classes:
     # [VI] Sát thương cộng mỗi Level sau Level 1; mặc định 0.75, hợp lệ 0-10.
     # [EN] Damage added per level after level 1; default 0.75, valid range 0-10.
     damage-per-level: 0.75
-    # [VI] Hệ số sát thương tổng khi cầm kiếm tay chính; mặc định 1.5 lần, hợp lệ 1-3.
-    # [EN] Total damage multiplier while holding a sword in the main hand; default 1.5x, valid range 1-3.
-    sword-damage-multiplier: 1.5
+    # [VI] Hệ số sát thương tổng khi cầm vũ khí tay chính; mặc định 1.1 lần (+10%), hợp lệ 1-3.
+    # [EN] Total damage multiplier while holding a main-hand weapon; default 1.1x (+10%), valid range 1-3.
+    sword-damage-multiplier: 1.1
     # [VI] HP cộng khi đang cầm khiên tay phụ; mặc định 8, hợp lệ 0-100.
     # [EN] Health added while holding a shield in the offhand; default 8, valid range 0-100.
     shield-offhand-health-bonus: 8.0
@@ -330,9 +330,9 @@ classes:
         # [VI] Khoảng cách tối đa bảo vệ chủ; mặc định 5 block, hợp lệ 1-16.
         # [EN] Maximum owner-protection distance; default 5 blocks, valid range 1-16.
         radius-blocks: 5.0
-        # [VI] Phần sát thương chủ chuyển sang Vệ Binh; mặc định 20%, hợp lệ 0-0.9.
-        # [EN] Fraction of owner damage redirected to the Guardian; default 20%, valid range 0-0.9.
-        redirected-damage-fraction: 0.2
+        # [VI] Phần sát thương Vệ Binh nhận thay chủ; mặc định 40%, hợp lệ 0-0.9.
+        # [EN] Fraction of owner damage taken by the Guardian; default 40%, valid range 0-0.9.
+        redirected-damage-fraction: 0.4
       GUARDIAN_CHARGE:
         # [VI] Cooldown Xung Phong; mặc định 15 giây, hợp lệ 1-3600.
         # [EN] Charge cooldown; default 15 seconds, valid range 1-3600.
@@ -340,9 +340,15 @@ classes:
         # [VI] Cự ly kích hoạt tối thiểu; mặc định 4 block, hợp lệ 1-16.
         # [EN] Minimum trigger distance; default 4 blocks, valid range 1-16.
         minimum-range-blocks: 4.0
-        # [VI] Cự ly kích hoạt tối đa; mặc định 12 block, hợp lệ 2-32.
-        # [EN] Maximum trigger distance; default 12 blocks, valid range 2-32.
-        maximum-range-blocks: 12.0
+        # [VI] Cự ly lao tối đa ban đầu; mặc định 8 block, hợp lệ 2-32.
+        # [EN] Base maximum charge distance; default 8 blocks, valid range 2-32.
+        maximum-range-blocks: 8.0
+        # [VI] Cự ly tối đa cộng thêm mỗi mốc Level; mặc định 1 block, hợp lệ 0-10.
+        # [EN] Maximum charge distance added per level step; default 1 block, valid range 0-10.
+        maximum-range-per-level-step-blocks: 1.0
+        # [VI] Số Level mỗi mốc tăng cự ly; mặc định 5 Level, hợp lệ 1-30.
+        # [EN] Levels per charge-distance increase; default 5, valid range 1-30.
+        maximum-range-step-levels: 5
         # [VI] Vận tốc lao; mặc định 1.5, hợp lệ 0.1-4.
         # [EN] Charge velocity; default 1.5, valid range 0.1-4.
         speed: 1.5
@@ -365,26 +371,26 @@ classes:
         # [VI] Bán kính nhận khiên cho đồng đội; mặc định 10 block, hợp lệ 1-32.
         # [EN] Shield radius for allies; default 10 blocks, valid range 1-32.
         radius-blocks: 10.0
-        # [VI] Thời lượng Absorption và Resistance; mặc định 5 giây, hợp lệ 1-60.
-        # [EN] Absorption and Resistance duration; default 5 seconds, valid range 1-60.
+        # [VI] Thời lượng lớp máu hấp thụ sát thương và kháng sát thương; mặc định 5 giây, hợp lệ 1-60.
+        # [EN] Duration of the damage-absorbing health and damage resistance; default 5 seconds, valid range 1-60.
         duration-seconds: 5
-        # [VI] Absorption nền cho Vệ Binh; mặc định 6 HP, hợp lệ 0-40.
-        # [EN] Guardian base absorption; default 6 HP, valid range 0-40.
+        # [VI] Lượng lớp máu hấp thụ sát thương nền cho Vệ Binh; mặc định 6 HP, hợp lệ 0-40.
+        # [EN] Guardian base damage-absorbing health; default 6 HP, valid range 0-40.
         absorption-base: 6.0
-        # [VI] Absorption thêm mỗi Level; mặc định 0.5 HP, hợp lệ 0-2.
-        # [EN] Absorption added per level; default 0.5 HP, valid range 0-2.
+        # [VI] Lớp máu hấp thụ sát thương cộng mỗi Level; mặc định 0.5 HP, hợp lệ 0-2.
+        # [EN] Damage-absorbing health added per level; default 0.5 HP, valid range 0-2.
         absorption-per-level: 0.5
-        # [VI] Absorption thêm mỗi điểm giáp; mặc định 0.5 HP, hợp lệ 0-2.
-        # [EN] Absorption added per armor point; default 0.5 HP, valid range 0-2.
+        # [VI] Lớp máu hấp thụ sát thương cộng mỗi điểm giáp; mặc định 0.5 HP, hợp lệ 0-2.
+        # [EN] Damage-absorbing health added per armor point; default 0.5 HP, valid range 0-2.
         absorption-per-armor: 0.5
-        # [VI] Absorption cộng thêm khi đang cầm khiên tay phụ; mặc định 4 HP, hợp lệ 0-20.
-        # [EN] Extra absorption while holding an offhand shield; default 4 HP, valid range 0-20.
+        # [VI] Lớp máu hấp thụ sát thương cộng khi cầm khiên tay phụ; mặc định 4 HP, hợp lệ 0-20.
+        # [EN] Damage-absorbing health added while holding an offhand shield; default 4 HP, valid range 0-20.
         shield-absorption-bonus: 4.0
-        # [VI] Tỉ lệ Absorption của chủ/đồng đội so với Vệ Binh; mặc định 0.5, hợp lệ 0-1.
-        # [EN] Owner/ally absorption ratio relative to the Guardian; default 0.5, valid range 0-1.
+        # [VI] Tỉ lệ lớp máu hấp thụ sát thương của chủ/đồng đội so với Vệ Binh; mặc định 0.5, hợp lệ 0-1.
+        # [EN] Owner/ally damage-absorbing health ratio relative to the Guardian; default 0.5, valid range 0-1.
         ally-absorption-ratio: 0.5
-        # [VI] Cấp Resistance; mặc định 0, hợp lệ 0-4.
-        # [EN] Resistance amplifier; default 0, valid range 0-4.
+        # [VI] Cấp kháng sát thương; mỗi cấp giảm thêm 20%, mặc định cấp 1 (20%), hợp lệ 0-4.
+        # [EN] Damage resistance level; each level reduces 20% more damage, default level I (20%), valid range 0-4.
         resistance-amplifier: 0
       GUARDIAN_QUAKE:
         # [VI] Cooldown Địa Chấn; mặc định 35 giây, hợp lệ 1-3600.

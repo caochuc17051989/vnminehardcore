@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.46.1] - 2026-10-19
+
+### Changed
+- Giảm bonus vũ khí tay chính của Vệ Binh xuống 10%; Hộ Vệ chuyển 40% sát thương chủ nhận sang lính.
+- Điều chỉnh Xung Phong lao tối đa 8 block ở cấp thấp và tăng 1 block mỗi 5 Level; đổi tên, làm rõ mô tả Thánh Thể, Vây Hãm và Hộ Giá.
+- Bổ sung di trú cấu hình mặc định Vệ Binh mới, giữ nguyên các giá trị người quản trị đã tùy chỉnh.
+
 ## [v1.46.0] - 2026-10-19
 
 ### Added
