@@ -1,5 +1,17 @@
 # Changelog
 
+## [v1.44.0] - 2026-10-19
+
+### Changed
+- Ngăn Pháp Sư Lửa/Băng ném potion; trang bị Snowball/Fire Charge đúng class và cho Fire Charge ưu tiên Fireball.
+- Tăng 30% damage cho đòn của lính có vũ khí hợp lệ ở tay chính; hệ số có thể cấu hình trong `armies.yml`.
+- Cập nhật icon/vũ khí mặc định và ưu tiên tự chọn vật phẩm cho tay chính/tay phụ của các class; Y Sư ném potion có lợi từ tay phụ mà không tiêu hao bình.
+
+## [v1.43.0] - 2026-10-19
+
+### Changed
+- Chuyển Bão Lửa thành hình nón 3D xoay ngược chiều kim đồng hồ quanh caster; particle và sát thương dùng chung thể tích, bán kính mặc định 5 block tăng theo level.
+
 ## [v1.42.1] - 2026-10-19
 
 ### Fixed

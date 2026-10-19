@@ -90,9 +90,15 @@ thời gian hồi phục, vũ khí ban đầu và vật phẩm nâng bậc. Mư�
 Xạ Thủ (`archer`), Vệ Binh (`guardian`), Y Sư (`medic`), Cuồng Chiến
 (`berserker`), Trinh Sát (`ranger`), Thánh Kỵ (`paladin`), Pháp Sư Lửa
 (`pyromancer`), Tu sĩ rừng (`druid`), Sát Thủ (`assassin`) và Pháp Sư Băng
-(`frost_mage`); mỗi class có bộ skill được cấu hình riêng. Lính chọn vũ khí tốt nhất giữa tay chính và 36 ô
-kho; chỉ dùng vũ khí mặc định nếu kho không có món dùng được. Gear được giữ qua
-nghỉ, chết và triệu hồi lại. Mô tả skill và action bar dùng tên tiếng Việt.
+(`frost_mage`); mỗi class có bộ skill được cấu hình riêng. Lính tự chọn vật phẩm
+tay chính/tay phụ theo danh sách ưu tiên từng class trong `armies.yml`, rồi dùng
+vũ khí mặc định nếu không tìm thấy món phù hợp; trang bị được giữ qua nghỉ, chết
+và triệu hồi lại. Vệ Binh tìm khiên, Cuồng Chiến có thể lấy rìu thứ hai cho tay
+phụ. Kỵ Sĩ dùng giáo, Tu Sĩ Rừng cầm emerald; Pháp Sư Băng/Lửa không tự tạo vũ
+khí. Y Sư ưu tiên potion hồi máu ở tay chính và có thể ném splash/lingering
+potion có lợi từ tay phụ cho đồng đội cần hiệu ứng/hồi máu mà không tiêu hao bình.
+Gear GUI dùng ô riêng cho tay chính và tay phụ. Mô tả skill và action bar dùng
+tên tiếng Việt.
 AI dùng danh sách ưu tiên theo từng chế độ trong `ai.priorities`; mặc định chỉ
 chọn và tấn công mục tiêu trong tầm nhìn (`ai.require-line-of-sight`); kỹ năng
 đánh mục tiêu kiểm tra lại tầm nhìn ngay lúc thi triển để tránh gây sát thương/
@@ -132,10 +138,13 @@ Pháp Sư Lửa (`pyromancer`) dùng sáu skill `FLAME_BOLT`, `IGNITE`, `FLAME_N
 `FIRE_WALL`, `METEOR_STRIKE`, `PHOENIX_REBIRTH`; cấu hình tại
 `classes.pyromancer.skill-settings` trong `armies.yml`. Hỏa Cầu gây sát thương
 và giảm tốc độ đúng 20% trong 3 giây; Thiêu Đốt gây DoT mỗi 2 giây trong 8 giây
-và lây có giới hạn; Bão Lửa (`FLAME_NOVA`) tạo 10 hạt lửa xoáy ở level 1
-(cộng 1 hạt mỗi level) và gây 1 sát
-thương mỗi giây trong 3 giây quanh pháp sư (sát thương/thời gian tăng 0.1 mỗi
-level, bán kính tăng 1 block mỗi 5 level); Hỏa Ngục (`FIRE_WALL`) dựng lồng
+và lây có giới hạn; Bão Lửa (`FLAME_NOVA`) tạo hình nón lửa 3D xoay ngược chiều
+kim đồng hồ quanh pháp sư, với bán kính đáy 5 block và chiều cao 3 block ở level 1.
+Bán kính tăng 1 block mỗi 5 level và chiều cao tăng thêm 0.5 block cho mỗi block
+bán kính tăng; khi lên cao, bán kính nón giảm 1 block mỗi block. Skill tạo 10 hạt
+lửa ở level 1 (cộng 1 hạt mỗi level) và gây 1 sát thương mỗi giây trong 3 giây
+lên mọi mục tiêu hợp lệ trong thể tích nón (sát thương/thời gian tăng 0.1 mỗi
+level); Hỏa Ngục (`FIRE_WALL`) dựng lồng
 MAGMA_BLOCK 3×3, cao 2 block quanh mục tiêu; Mưa Lửa (`METEOR_STRIKE`) đánh dấu
 vòng lửa đỏ 2 giây rồi thả 3 fireball lần lượt theo thứ tự ngẫu nhiên, tăng 1
 quả mỗi 3 level và tăng bán kính khu vực 1 block mỗi 5 level. Fireball gây
@@ -144,9 +153,12 @@ hoạt khi máu còn 65% trở xuống: hồi 30% máu tối đa, miễn sát th
 rồi lao vào mục tiêu gây sát thương AoE và đốt. Damage, cooldown, tầm, kích
 thước vùng, mục tiêu tối đa, delay, số lượng/tốc độ fireball và thời lượng đều
 chỉnh riêng theo từng skill; cooldown mặc định lần lượt là 2/6/10/12/25/90 giây.
+Pháp Sư Lửa và Pháp Sư Băng không ném potion; Pháp Sư Băng dùng snowball, còn
+Pháp Sư Lửa cầm Fire Charge để phóng Fireball và ưu tiên Fire Charge trong kho.
 Các lồng hoàn nguyên block sau khi hết hạn, khi lính bị thu hồi/hạ hoặc khi
 plugin reload/stop; các skill chỉ gây sát thương lên mục tiêu hợp lệ theo luật
-PvP/đồng minh hiện hành.
+PvP/đồng minh hiện hành. Lính có vũ khí hợp lệ ở tay chính gây thêm 30% damage;
+chỉnh hệ số tại `combat.main-hand-damage-multiplier` trong `armies.yml`.
 Mặc định lính và VEX không gây sát thương lên người chơi hoặc quân của người
 chơi khác chỉ vì phát hiện họ hay bị họ tấn công. Ngoại lệ: sau khi chủ nhân
 trực tiếp đánh đúng mục tiêu, lính có thể tấn công mục tiêu đó trong 15 giây.

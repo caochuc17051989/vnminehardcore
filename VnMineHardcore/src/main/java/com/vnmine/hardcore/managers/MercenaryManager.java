@@ -40,6 +40,9 @@ import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.Snowball;
 import org.bukkit.entity.SmallFireball;
 import org.bukkit.entity.Projectile;
+import org.bukkit.entity.ThrownPotion;
+import org.bukkit.entity.SplashPotion;
+import org.bukkit.entity.LingeringPotion;
 import org.bukkit.entity.TippedArrow;
 import io.papermc.paper.event.entity.EntityDamageItemEvent;
 import org.bukkit.event.EventHandler;
@@ -65,6 +68,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -83,6 +87,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionType;
+import org.bukkit.potion.PotionEffectTypeCategory;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -354,16 +359,20 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     @EventHandler
     public void onFlameMageProjectileHit(ProjectileHitEvent event) {
-        if (!(event.getEntity() instanceof Snowball snowball)
-                || !snowball.getPersistentDataContainer().has(flameProjectileKey, PersistentDataType.BYTE)
-                || !(snowball.getShooter() instanceof Mob shooter)) return;
-        removeTrackedFlameProjectile(shooter, snowball);
-        if (!(event.getHitEntity() instanceof LivingEntity target) || !isActiveFireCaster(shooter)) return;
+        if (!(event.getEntity() instanceof Projectile projectile)
+            || !projectile.getPersistentDataContainer().has(flameProjectileKey, PersistentDataType.BYTE)
+            || !(projectile.getShooter() instanceof Mob shooter)) return;
+        removeTrackedFlameProjectile(shooter, projectile);
+        if (!(event.getHitEntity() instanceof LivingEntity target) || !isActiveFireCaster(shooter)) {
+            projectile.remove();
+            return;
+        }
         UUID ownerId = getOwnerId(shooter);
         if (!canMercenaryDamageTarget(ownerId, target)
                 || (!isValidTarget(target) && !isOwnerCommandedPvpTarget(ownerId, target))) return;
-        double damage = snowball.getPersistentDataContainer()
+        double damage = projectile.getPersistentDataContainer()
             .getOrDefault(flameProjectileDamageKey, PersistentDataType.DOUBLE, 0.0);
+        projectile.remove();
         if (damage <= 0.0) return;
         target.damage(damage, shooter);
         UUID unitId = getUnitId(shooter);
@@ -381,7 +390,19 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onMeteorFireballDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof SmallFireball fireball
-                && fireball.getPersistentDataContainer().has(meteorFireballKey, PersistentDataType.BYTE)) {
+                && (fireball.getPersistentDataContainer().has(meteorFireballKey, PersistentDataType.BYTE)
+                    || fireball.getPersistentDataContainer().has(flameProjectileKey, PersistentDataType.BYTE))) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onMagePotionLaunch(ProjectileLaunchEvent event) {
+        if (!(event.getEntity() instanceof ThrownPotion potion)
+                || !(potion.getShooter() instanceof Mob shooter)) return;
+        UUID unitId = getUnitId(shooter);
+        Unit unit = unitId == null ? null : units.get(unitId);
+        if (unit != null && ("pyromancer".equals(unit.unitClass) || "frost_mage".equals(unit.unitClass))) {
             event.setCancelled(true);
         }
     }
@@ -1188,6 +1209,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             return;
         }
         if (event.isCancelled()) return;
+        if (source instanceof Mob mob && isMercenary(mob) && hasMainHandWeapon(mob)) {
+            event.setDamage(event.getDamage()
+                * readBoundedDouble(settings, "combat.main-hand-damage-multiplier", 1.3, 1.0, 3.0));
+        }
         if (event.getEntity() instanceof Player player) {
             registerOwnerThreat(player.getUniqueId(), source);
             registerThreat(ownerAttackers, player.getUniqueId(), source);
@@ -1334,6 +1359,10 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
             Material menuIcon = Material.matchMaterial(
                 loaded.getString("classes." + classId + ".menu-icon", "IRON_SWORD"));
+            if (menuIcon == null && "paladin".equals(classId)
+                    && "IRON_SPEAR".equalsIgnoreCase(loaded.getString("classes." + classId + ".menu-icon", ""))) {
+                menuIcon = Material.TRIDENT;
+            }
             if (menuIcon == null || menuIcon.isAir()) {
                 throw new InvalidConfigurationException("Invalid menu-icon for class '" + classId + "'.");
             }
@@ -1341,9 +1370,36 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 loaded.getString("classes." + classId + ".starting-weapon", "IRON_SWORD"));
             String startingWeaponName = loaded.getString("classes." + classId + ".starting-weapon", "IRON_SWORD");
             boolean deferredSpear = "paladin".equals(classId)
-                && "IRON_SPEAR".equalsIgnoreCase(startingWeaponName);
-            if ((startingWeapon == null || startingWeapon.isAir()) && !deferredSpear) {
+                && ("IRON_SPEAR".equalsIgnoreCase(startingWeaponName)
+                    || "WOODEN_SPEAR".equalsIgnoreCase(startingWeaponName));
+            boolean unarmed = "AIR".equalsIgnoreCase(startingWeaponName)
+                && startingWeapon != null && startingWeapon.isAir();
+            if ((startingWeapon == null || startingWeapon.isAir()) && !deferredSpear && !unarmed) {
                 throw new InvalidConfigurationException("Invalid starting-weapon for class '" + classId + "'.");
+            }
+            String offhandName = loaded.getString("classes." + classId + ".starting-offhand", "AIR");
+            Material startingOffhand = Material.matchMaterial(offhandName);
+            if (startingOffhand == null || (startingOffhand.isAir()
+                    && !"AIR".equalsIgnoreCase(offhandName))) {
+                throw new InvalidConfigurationException("Invalid starting-offhand for class '" + classId + "'.");
+            }
+            for (String preferenceKey : List.of("preferred-main-hand-items", "preferred-offhand-items")) {
+                String preferencePath = "classes." + classId + "." + preferenceKey;
+                Object configuredPreferences = loaded.get(preferencePath);
+                if (configuredPreferences == null) continue;
+                if (!(configuredPreferences instanceof List<?> preferences)
+                        || preferences.stream().anyMatch(item -> !(item instanceof String))) {
+                    throw new InvalidConfigurationException(preferencePath + " must be a list of materials.");
+                }
+                for (Object preference : preferences) {
+                    String materialName = (String) preference;
+                    boolean spearAlias = "paladin".equals(classId)
+                        && Set.of("IRON_SPEAR", "WOODEN_SPEAR").contains(materialName.toUpperCase(Locale.ROOT));
+                    if (Material.matchMaterial(materialName) == null && !spearAlias) {
+                        throw new InvalidConfigurationException("Unknown material '" + materialName
+                            + "' in " + preferencePath + ".");
+                    }
+                }
             }
             String skillsPath = "classes." + classId + ".skills";
             Object skillsValue = loaded.get(skillsPath);
@@ -1567,12 +1623,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     defaults.getComments(iceWallPath + ".duration-seconds"));
                 plugin.getLogger().info("[Army] Updated the default ICE_WALL duration to 3 seconds.");
             }
-            String flameNovaRadiusPath = "classes.pyromancer.skill-settings.FLAME_NOVA.radius-blocks";
-            if (Double.compare(loaded.getDouble(flameNovaRadiusPath, 3.0), 5.0) == 0) {
-                loaded.set(flameNovaRadiusPath, 3.0);
-                loaded.setComments(flameNovaRadiusPath, defaults.getComments(flameNovaRadiusPath));
-                plugin.getLogger().info("[Army] Updated the default FLAME_NOVA radius to 3 blocks.");
-            }
             String oldFlameNovaDamagePath = "classes.pyromancer.skill-settings.FLAME_NOVA.damage";
             double oldFlameNovaDamage = loaded.getDouble(oldFlameNovaDamagePath, 6.0);
             if (Double.compare(oldFlameNovaDamage, 6.0) != 0) {
@@ -1604,6 +1654,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             loaded.set("_migrations.mage-prison-and-firestorm-skills", true);
             changed = true;
         }
+        if (!loaded.getBoolean("_migrations.pyromancer-flame-nova-cone", false)) {
+            String flameNovaRadiusPath = "classes.pyromancer.skill-settings.FLAME_NOVA.radius-blocks";
+            if (Double.compare(loaded.getDouble(flameNovaRadiusPath, 3.0), 3.0) == 0) {
+                loaded.set(flameNovaRadiusPath, 5.0);
+                loaded.setComments(flameNovaRadiusPath, defaults.getComments(flameNovaRadiusPath));
+                plugin.getLogger().info("[Army] Updated the default FLAME_NOVA radius to 5 blocks.");
+            }
+            loaded.set("_migrations.pyromancer-flame-nova-cone", true);
+            changed = true;
+        }
         if (!loaded.getBoolean("_migrations.pyromancer-six-skills", false)) {
             Set<String> previousDefaults = Set.of("RANGED_ATTACK", "FIRE_BOLT", "ROOT_TARGET", "BUFF_OWNER");
             List<String> configuredSkills = loaded.getStringList("classes.pyromancer.skills");
@@ -1623,6 +1683,50 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 plugin.getLogger().info("[Army] Migrated the default Pyromancer skill kit to the six fire skills.");
             }
             loaded.set("_migrations.pyromancer-six-skills", true);
+            changed = true;
+        }
+        if (!loaded.getBoolean("_migrations.pyromancer-fire-charge-weapon", false)) {
+            String weaponPath = "classes.pyromancer.starting-weapon";
+            if ("BLAZE_ROD".equalsIgnoreCase(loaded.getString(weaponPath, "BLAZE_ROD"))) {
+                loaded.set(weaponPath, "FIRE_CHARGE");
+                loaded.setComments(weaponPath, defaults.getComments(weaponPath));
+            }
+            loaded.set("_migrations.pyromancer-fire-charge-weapon", true);
+            changed = true;
+        }
+        if (!loaded.getBoolean("_migrations.class-weapons-and-icons-2026", false)) {
+            Map<String, String> oldDefaults = Map.ofEntries(
+                Map.entry("classes.guardian.starting-weapon", "IRON_SWORD"),
+                Map.entry("classes.medic.starting-weapon", "GOLDEN_HOE"),
+                Map.entry("classes.paladin.starting-weapon", "IRON_SPEAR"),
+                Map.entry("classes.berserker.starting-weapon", "IRON_AXE"),
+                Map.entry("classes.assassin.starting-weapon", "IRON_SWORD"),
+                Map.entry("classes.druid.starting-weapon", "STICK"),
+                Map.entry("classes.frost_mage.starting-weapon", "SNOWBALL"),
+                Map.entry("classes.pyromancer.starting-weapon", "FIRE_CHARGE"),
+                Map.entry("classes.paladin.menu-icon", "TRIDENT"),
+                Map.entry("classes.assassin.menu-icon", "DIAMOND_SWORD"),
+                Map.entry("classes.druid.menu-icon", "OAK_SAPLING"));
+            Map<String, String> newDefaults = Map.ofEntries(
+                Map.entry("classes.guardian.starting-weapon", "WOODEN_SWORD"),
+                Map.entry("classes.medic.starting-weapon", "AIR"),
+                Map.entry("classes.paladin.starting-weapon", "WOODEN_SPEAR"),
+                Map.entry("classes.berserker.starting-weapon", "WOODEN_AXE"),
+                Map.entry("classes.assassin.starting-weapon", "WOODEN_SWORD"),
+                Map.entry("classes.druid.starting-weapon", "AIR"),
+                Map.entry("classes.frost_mage.starting-weapon", "AIR"),
+                Map.entry("classes.pyromancer.starting-weapon", "AIR"),
+                Map.entry("classes.paladin.menu-icon", "IRON_SPEAR"),
+                Map.entry("classes.assassin.menu-icon", "IRON_SWORD"),
+                Map.entry("classes.druid.menu-icon", "ENCHANTED_BOOK"));
+            for (Map.Entry<String, String> migration : oldDefaults.entrySet()) {
+                String path = migration.getKey();
+                if (migration.getValue().equalsIgnoreCase(loaded.getString(path, migration.getValue()))) {
+                    loaded.set(path, newDefaults.get(path));
+                    loaded.setComments(path, defaults.getComments(path));
+                }
+            }
+            loaded.set("_migrations.class-weapons-and-icons-2026", true);
             changed = true;
         }
         String legacySnowballSettingsPath = "classes.frost_mage.skill-settings.SNOWBALL";
@@ -1837,6 +1941,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                         ItemStack item = loaded.getItemStack(path);
                         if (item != null && !item.getType().isAir()) unit.equipment.put(slot, item.clone());
                     }
+                    clearLegacyGeneratedMainHand(unit);
                     for (int slot = 0; slot < unit.inventory.length; slot++) {
                         ItemStack item = loaded.getItemStack("units." + idText + ".inventory." + slot);
                         if (item != null && !item.getType().isAir()) unit.inventory[slot] = item.clone();
@@ -1848,6 +1953,24 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
         }
         data = loaded;
+    }
+
+    private void clearLegacyGeneratedMainHand(Unit unit) {
+        if (unit.gearCustomized) return;
+        Set<String> previousDefaults = switch (unit.unitClass) {
+            case "guardian", "assassin" -> Set.of("IRON_SWORD");
+            case "medic" -> Set.of("GOLDEN_HOE");
+            case "paladin" -> Set.of("TRIDENT", "IRON_SPEAR");
+            case "berserker" -> Set.of("IRON_AXE");
+            case "druid" -> Set.of("STICK");
+            case "frost_mage" -> Set.of("SNOWBALL");
+            case "pyromancer" -> Set.of("BLAZE_ROD", "FIRE_CHARGE");
+            default -> Set.of();
+        };
+        ItemStack saved = unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HAND);
+        if (saved != null && previousDefaults.contains(saved.getType().name())) {
+            unit.equipment.remove(org.bukkit.inventory.EquipmentSlot.HAND);
+        }
     }
 
     private void startAiTask() {
@@ -2949,6 +3072,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private void useSkillsRemaining(Unit unit, Player owner, LivingEntity target, Mob mob) {
+        if ("medic".equals(unit.unitClass) && mob != null) {
+            useMedicPotion(unit, owner, mob);
+        }
         if (hasSkill(unit, "VOLLEY") && target != null && mob != null
                 && isWithinConfiguredSkillRange(unit, mob, target, "VOLLEY") && ready(unit, "volley")) {
             int arrowCount = (int) skillOptionDouble(unit, "VOLLEY", "arrow-count", 3.0, 2.0, 5.0);
@@ -3145,6 +3271,80 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
+    private void useMedicPotion(Unit unit, Player owner, Mob mob) {
+        ItemStack potionItem = unit.equipment.get(org.bukkit.inventory.EquipmentSlot.OFF_HAND);
+        if (!isBeneficialThrowablePotion(potionItem) || !ready(unit, "medic-potion")) return;
+        double range = readBoundedDouble(settings,
+            "classes.medic.potion-support.range-blocks", 12.0, 1.0, 32.0);
+        double rangeSquared = range * range;
+        List<LivingEntity> allies = new ArrayList<>();
+        allies.add(owner);
+        for (Unit sibling : getOwnerUnits(unit.owner)) {
+            Mob ally = activeEntities.get(sibling.id);
+            if (sibling.deployed && ally != null && ally.isValid() && ally != mob) allies.add(ally);
+        }
+        LivingEntity recipient = allies.stream()
+            .filter(ally -> ally.isValid() && !ally.isDead() && ally.getWorld().equals(mob.getWorld()))
+            .filter(ally -> ally.getLocation().distanceSquared(mob.getLocation()) <= rangeSquared
+                && mob.hasLineOfSight(ally))
+            .filter(ally -> potionWouldBenefit(potionItem, ally))
+            .sorted(Comparator.comparingDouble(ally -> ally.getLocation().distanceSquared(mob.getLocation())))
+            .findFirst().orElse(null);
+        if (recipient == null) return;
+
+        ThrownPotion projectile = potionItem.getType() == Material.LINGERING_POTION
+            ? mob.launchProjectile(LingeringPotion.class)
+            : mob.launchProjectile(SplashPotion.class);
+        projectile.setItem(potionItem.clone());
+        Vector direction = recipient.getEyeLocation().toVector().subtract(mob.getEyeLocation().toVector());
+        direction.setY(direction.getY() + 0.2);
+        if (direction.lengthSquared() > 0.0001) projectile.setVelocity(direction.normalize().multiply(0.75));
+        markUsed(unit, "medic-potion", readBoundedDouble(settings,
+            "classes.medic.potion-support.cooldown-seconds", 12.0, 1.0, 3600.0));
+        mob.getWorld().spawnParticle(Particle.HEART, mob.getLocation().add(0.0, 1.0, 0.0),
+            6, 0.25, 0.3, 0.25, 0.02);
+    }
+
+    private boolean potionWouldBenefit(ItemStack potionItem, LivingEntity target) {
+        double maximumHealth = maxHealth(target);
+        for (PotionEffect effect : potionEffects(potionItem)) {
+            String effectKey = effect.getType().getKey().getKey();
+            if ("instant_health".equals(effectKey)) {
+                if (maximumHealth > target.getHealth()) return true;
+                continue;
+            }
+            PotionEffect active = target.getPotionEffect(effect.getType());
+            if (active == null || active.getAmplifier() < effect.getAmplifier()
+                    || active.getDuration() < effect.getDuration() / 2) return true;
+        }
+        return false;
+    }
+
+    private boolean isHealingPotionItem(ItemStack item) {
+        return isBeneficialPotion(item) && potionEffects(item).stream()
+            .anyMatch(effect -> "instant_health".equals(effect.getType().getKey().getKey()));
+    }
+
+    private boolean isBeneficialThrowablePotion(ItemStack item) {
+        if (item == null || (item.getType() != Material.SPLASH_POTION
+                && item.getType() != Material.LINGERING_POTION)) return false;
+        return isBeneficialPotion(item);
+    }
+
+    private boolean isBeneficialPotion(ItemStack item) {
+        List<PotionEffect> effects = potionEffects(item);
+        return !effects.isEmpty() && effects.stream()
+            .allMatch(effect -> effect.getType().getCategory() == PotionEffectTypeCategory.BENEFICIAL);
+    }
+
+    private List<PotionEffect> potionEffects(ItemStack item) {
+        if (item == null || !(item.getItemMeta() instanceof PotionMeta meta)) return List.of();
+        List<PotionEffect> effects = new ArrayList<>(meta.getCustomEffects());
+        PotionType baseType = meta.getBasePotionType();
+        if (baseType != null) effects.addAll(baseType.getPotionEffects());
+        return effects;
+    }
+
     private void useFireMageSkills(Unit unit, Player owner, LivingEntity target, Mob mob) {
         if (mob == null || !mob.isValid()) return;
         boolean targetAvailable = target != null
@@ -3219,7 +3419,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private void launchFlameBolt(Unit unit, Mob mob, LivingEntity target) {
-        Snowball projectile = mob.launchProjectile(Snowball.class);
+        Projectile projectile;
+        if (mob.getEquipment() != null
+                && mob.getEquipment().getItemInMainHand().getType() == Material.FIRE_CHARGE) {
+            SmallFireball fireball = mob.launchProjectile(SmallFireball.class);
+            fireball.setIsIncendiary(false);
+            fireball.setYield(0.0f);
+            projectile = fireball;
+        } else {
+            projectile = mob.launchProjectile(Snowball.class);
+        }
         flameProjectilesByUnit.computeIfAbsent(unit.id, ignored -> new HashSet<>())
             .add(projectile.getUniqueId());
         Vector direction = target.getEyeLocation().toVector().subtract(mob.getEyeLocation().toVector());
@@ -3327,16 +3536,23 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     }
 
     private void castFlameNova(Unit unit, Mob mob) {
+        double baseRadius = flameOption(unit, "FLAME_NOVA", "radius-blocks", 5.0, 1.0, 12.0);
         double radius = Math.min(16.0,
-            flameOption(unit, "FLAME_NOVA", "radius-blocks", 3.0, 1.0, 12.0)
+            baseRadius
                 + Math.floor(unit.level / flameOption(unit, "FLAME_NOVA",
                     "radius-increase-every-levels", 5.0, 1.0, 30.0)));
+        double baseHeight = flameOption(unit, "FLAME_NOVA", "height-blocks", 3.0, 1.0, 16.0);
+        double heightIncreasePerRadiusBlock = flameOption(unit, "FLAME_NOVA",
+            "height-increase-per-radius-block", 0.5, 0.0, 4.0);
+        double coneHeight = Math.min(32.0,
+            baseHeight + Math.max(0.0, radius - baseRadius) * heightIncreasePerRadiusBlock);
+        double radiusReductionPerBlockUp = flameOption(unit, "FLAME_NOVA",
+            "radius-reduction-per-block-up", 1.0, 0.1, 4.0);
         int maxTargets = (int) flameOption(unit, "FLAME_NOVA", "max-targets", 24.0, 1.0, 64.0);
         int particleCount = (int) Math.min(64.0, Math.floor(
             flameOption(unit, "FLAME_NOVA", "particle-count", 10.0, 1.0, 64.0)
                 + Math.max(0, unit.level - 1) * flameOption(
                     unit, "FLAME_NOVA", "particles-increase-per-level", 1.0, 0.0, 10.0)));
-        double orbitRadius = flameOption(unit, "FLAME_NOVA", "particle-orbit-radius-blocks", 1.2, 0.1, 8.0);
         double rotationSpeed = flameOption(unit, "FLAME_NOVA",
             "particle-rotation-radians-per-tick", 0.3, 0.01, 3.0);
         int particleInterval = (int) flameOption(unit, "FLAME_NOVA", "particle-interval-ticks", 2.0, 1.0, 20.0);
@@ -3363,16 +3579,22 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                     Location center = mob.getLocation().clone().add(0.0, 0.2, 0.0);
                     double angleOffset = elapsedTicks * rotationSpeed;
                     for (int index = 0; index < particleCount; index++) {
-                        double angle = angleOffset + Math.PI * 2.0 * index / particleCount;
+                        double verticalFraction = particleCount <= 1
+                            ? 0.0 : (double) index / (particleCount - 1);
+                        double verticalOffset = coneHeight * verticalFraction;
+                        double particleRadius = Math.max(0.0,
+                            radius - verticalOffset * radiusReductionPerBlockUp);
+                        double angle = -angleOffset + Math.PI * 2.0 * index / particleCount;
                         Location particle = center.clone().add(
-                            Math.cos(angle) * orbitRadius, 0.8 + Math.sin(angle * 2.0) * 0.25,
-                            Math.sin(angle) * orbitRadius);
+                            Math.cos(angle) * particleRadius, verticalOffset,
+                            Math.sin(angle) * particleRadius);
                         mob.getWorld().spawnParticle(Particle.FLAME, particle,
                             1, 0.02, 0.02, 0.02, 0.005);
                     }
                 }
                 if (elapsedTicks >= nextDamageTicks && damage > 0.0) {
-                    for (LivingEntity victim : flameTargets(mob, mob.getLocation(), radius, maxTargets)) {
+                    for (LivingEntity victim : flameConeTargets(mob, mob.getLocation(), radius,
+                            coneHeight, radiusReductionPerBlockUp, maxTargets)) {
                         victim.damage(damage, mob);
                     }
                     nextDamageTicks += pulseInterval;
@@ -3450,6 +3672,38 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             .sorted(Comparator.comparingDouble(target -> target.getLocation().distanceSquared(center)))
             .limit(maxTargets)
             .toList();
+    }
+
+    private List<LivingEntity> flameConeTargets(Mob source, Location base, double radius,
+                                                double height, double radiusReductionPerBlockUp,
+                                                int maxTargets) {
+        Location queryCenter = base.clone().add(0.0, height / 2.0, 0.0);
+        UUID ownerId = getOwnerId(source);
+        return base.getWorld().getNearbyEntities(queryCenter, radius, height / 2.0, radius).stream()
+            .filter(LivingEntity.class::isInstance)
+            .map(LivingEntity.class::cast)
+            .filter(target -> target != source && !target.getUniqueId().equals(ownerId)
+                && isAllowedMercenaryTarget(ownerId, target,
+                    isOwnerCommandedPvpTarget(ownerId, target)))
+            .filter(target -> source.getWorld().equals(target.getWorld())
+                && isInsideFlameCone(base, target.getLocation(), radius, height,
+                    radiusReductionPerBlockUp)
+                && source.hasLineOfSight(target))
+            .sorted(Comparator.comparingDouble(target ->
+                target.getLocation().distanceSquared(base)))
+            .limit(maxTargets)
+            .toList();
+    }
+
+    private boolean isInsideFlameCone(Location base, Location target, double radius,
+                                      double height, double radiusReductionPerBlockUp) {
+        double verticalOffset = target.getY() - base.getY();
+        if (verticalOffset < 0.0 || verticalOffset > height) return false;
+        double radiusAtHeight = radius - verticalOffset * radiusReductionPerBlockUp;
+        if (radiusAtHeight < 0.0) return false;
+        double offsetX = target.getX() - base.getX();
+        double offsetZ = target.getZ() - base.getZ();
+        return offsetX * offsetX + offsetZ * offsetZ <= radiusAtHeight * radiusAtHeight;
     }
 
     private void castMeteorStrike(Unit unit, Mob mob, LivingEntity target) {
@@ -6646,6 +6900,19 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 }
                 continue;
             }
+            org.bukkit.inventory.EquipmentSlot equipmentSlot = switch (slot) {
+                case 45 -> org.bukkit.inventory.EquipmentSlot.HAND;
+                case 46 -> org.bukkit.inventory.EquipmentSlot.HEAD;
+                case 47 -> org.bukkit.inventory.EquipmentSlot.CHEST;
+                case 48 -> org.bukkit.inventory.EquipmentSlot.LEGS;
+                case 49 -> org.bukkit.inventory.EquipmentSlot.FEET;
+                case 50 -> org.bukkit.inventory.EquipmentSlot.OFF_HAND;
+                default -> null;
+            };
+            if (equipmentSlot != null) {
+                if (item != null && !item.getType().isAir()) equipment.put(equipmentSlot, item.clone());
+                continue;
+            }
             addGearItem(stored, equipment, item);
         }
         unit.horseArmor = bestHorseArmor;
@@ -6686,15 +6953,20 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private org.bukkit.inventory.EquipmentSlot detectedEquipmentSlot(Material material) {
         String name = material.name();
+        if (material == Material.SPLASH_POTION || material == Material.LINGERING_POTION
+            || material == Material.SHIELD) return org.bukkit.inventory.EquipmentSlot.OFF_HAND;
         if (name.endsWith("_HELMET") || material == Material.TURTLE_HELMET
                 || material == Material.CARVED_PUMPKIN) return org.bukkit.inventory.EquipmentSlot.HEAD;
         if (name.endsWith("_CHESTPLATE") || material == Material.ELYTRA) return org.bukkit.inventory.EquipmentSlot.CHEST;
         if (name.endsWith("_LEGGINGS")) return org.bukkit.inventory.EquipmentSlot.LEGS;
         if (name.endsWith("_BOOTS")) return org.bukkit.inventory.EquipmentSlot.FEET;
-        if (material == Material.SHIELD) return org.bukkit.inventory.EquipmentSlot.OFF_HAND;
+        if (material == Material.EMERALD || material == Material.POTION) {
+            return org.bukkit.inventory.EquipmentSlot.HAND;
+        }
         if (name.endsWith("_SWORD") || name.endsWith("_AXE") || name.equals("BOW")
                 || name.equals("CROSSBOW") || name.equals("TRIDENT") || name.endsWith("_SPEAR")
-                || name.equals("MACE")) {
+            || name.equals("MACE") || name.equals("BLAZE_ROD") || name.equals("SNOWBALL")
+            || name.equals("FIRE_CHARGE")) {
             return org.bukkit.inventory.EquipmentSlot.HAND;
         }
         return null;
@@ -6939,13 +7211,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (equipment == null) return;
         ItemStack mainHand = selectBestWeapon(unit,
             unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HAND), configuredStartingWeapon(unit));
+        ItemStack offHand = selectOffhandItem(unit,
+            unit.equipment.get(org.bukkit.inventory.EquipmentSlot.OFF_HAND));
         unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HAND, cloneOrNull(mainHand));
+        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.OFF_HAND, cloneOrNull(offHand));
         equipment.setItemInMainHand(mainHand);
         equipment.setHelmet(cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HEAD)));
         equipment.setChestplate(cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.CHEST)));
         equipment.setLeggings(cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.LEGS)));
         equipment.setBoots(cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.FEET)));
-        equipment.setItemInOffHand(cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.OFF_HAND)));
+        equipment.setItemInOffHand(offHand);
         equipment.setItemInMainHandDropChance(0.0f);
         equipment.setHelmetDropChance(0.0f);
         equipment.setChestplateDropChance(0.0f);
@@ -6961,10 +7236,18 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 && "IRON_SPEAR".equalsIgnoreCase(configuredWeapon)) {
             material = Material.TRIDENT;
         }
+        if (material == null && "paladin".equals(unit.unitClass)
+                && "WOODEN_SPEAR".equalsIgnoreCase(configuredWeapon)) {
+            material = Material.STICK;
+        }
         return material == null || material.isAir() ? null : new ItemStack(material);
     }
 
     private ItemStack selectBestWeapon(Unit unit, ItemStack current, ItemStack starting) {
+        ItemStack preferred = selectPreferredHandItem(unit, current, "preferred-main-hand-items");
+        if (preferred != null) return preferred;
+        if (!settings.getStringList("classes." + unit.unitClass + ".preferred-main-hand-items").isEmpty()
+                && (starting == null || starting.getType().isAir())) return cloneOrNull(current);
         ItemStack best = isCompatibleWeapon(current, starting) ? current : null;
         int bestInventorySlot = -1;
         if (isWeaponItem(starting) && (best == null || weaponScore(starting) > weaponScore(best))) best = starting;
@@ -6985,6 +7268,47 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return best == null ? cloneOrNull(current) : best.clone();
     }
 
+    private ItemStack selectOffhandItem(Unit unit, ItemStack current) {
+        ItemStack preferred = selectPreferredHandItem(unit, current, "preferred-offhand-items");
+        if (preferred != null) return preferred;
+        ItemStack fallback = configuredStartingOffhand(unit);
+        if (fallback != null) return fallback;
+        return cloneOrNull(current);
+    }
+
+    private ItemStack selectPreferredHandItem(Unit unit, ItemStack current, String preferenceKey) {
+        List<String> preferences = settings.getStringList(
+            "classes." + unit.unitClass + "." + preferenceKey);
+        if (preferences.isEmpty()) return null;
+        for (String preference : preferences) {
+            if (matchesPreferredItem(current, preference)) return current.clone();
+            for (int slot = 0; slot < unit.inventory.length; slot++) {
+                ItemStack candidate = unit.inventory[slot];
+                if (!matchesPreferredItem(candidate, preference)) continue;
+                unit.inventory[slot] = cloneOrNull(current);
+                return candidate.clone();
+            }
+        }
+        return null;
+    }
+
+    private boolean matchesPreferredItem(ItemStack item, String preference) {
+        if (item == null || item.getType().isAir()) return false;
+        Material preferred = Material.matchMaterial(preference);
+        if (preferred == null || item.getType() != preferred) return false;
+        if (preferred == Material.POTION) return isHealingPotionItem(item);
+        if (preferred == Material.SPLASH_POTION || preferred == Material.LINGERING_POTION) {
+            return isBeneficialThrowablePotion(item);
+        }
+        return true;
+    }
+
+    private ItemStack configuredStartingOffhand(Unit unit) {
+        Material material = Material.matchMaterial(
+            settings.getString("classes." + unit.unitClass + ".starting-offhand", "AIR"));
+        return material == null || material.isAir() ? null : new ItemStack(material);
+    }
+
     private boolean isCompatibleWeapon(ItemStack candidate, ItemStack starting) {
         if (!isWeaponItem(candidate)) return false;
         return starting == null || starting.getType().isAir()
@@ -6996,6 +7320,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (name.equals("BOW") || name.equals("CROSSBOW")) return "ranged";
         if (name.equals("TRIDENT") || name.endsWith("_SPEAR")) return "spear";
         if (name.endsWith("_HOE")) return "hoe";
+        if (name.equals("SNOWBALL")) return "snowball";
+        if (name.equals("FIRE_CHARGE")) return "fireball";
+        if (name.equals("BLAZE_ROD")) return "magic";
         if (name.equals("STICK") || name.endsWith("_SWORD") || name.endsWith("_AXE")
                 || name.equals("MACE")) return "melee";
         return name;
@@ -7004,8 +7331,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
     private boolean isWeaponItem(ItemStack item) {
         if (item == null || item.getType().isAir()) return false;
         String material = item.getType().name();
+        if (item.getType() == Material.EMERALD || item.getType() == Material.POTION) return false;
         return detectedEquipmentSlot(item.getType()) == org.bukkit.inventory.EquipmentSlot.HAND
-            || material.endsWith("_HOE") || material.equals("STICK");
+            || material.endsWith("_HOE") || material.equals("STICK")
+            || material.equals("BLAZE_ROD") || material.equals("SNOWBALL")
+            || material.equals("FIRE_CHARGE");
+    }
+
+    private boolean hasMainHandWeapon(Mob mob) {
+        EntityEquipment equipment = mob.getEquipment();
+        return equipment != null && isWeaponItem(equipment.getItemInMainHand());
     }
 
     private boolean storeInUnitInventory(Unit unit, ItemStack item) {
