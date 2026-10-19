@@ -244,9 +244,9 @@ classes:
     # [VI] Mô tả chức năng hiện trong GUI.
     # [EN] Short role description shown in the GUI.
     description: "Chiến đấu cận chiến và bảo vệ chủ nhân."
-    # [VI] Entity; mặc định VINDICATOR.
-    # [EN] Entity type; default VINDICATOR.
-    entity-type: VINDICATOR
+    # [VI] Entity; mặc định HUSK để model hiển thị item ở cả hai tay.
+    # [EN] Entity type; default HUSK so the model displays items in both hands.
+    entity-type: HUSK
     # [VI] Máu cấp 1; mặc định 32, phải lớn hơn 0.
     # [EN] Level-1 health; default 32, must be positive.
     base-health: 32

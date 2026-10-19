@@ -1783,6 +1783,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             loaded.setComments(weaponPath, defaults.getComments(weaponPath));
             changed = true;
         }
+        if (!loaded.getBoolean("_migrations.guardian-husk-model", false)) {
+            String guardianEntityPath = "classes.guardian.entity-type";
+            if ("VINDICATOR".equalsIgnoreCase(loaded.getString(guardianEntityPath, ""))) {
+                loaded.set(guardianEntityPath, defaults.getString(guardianEntityPath, "HUSK"));
+                loaded.setComments(guardianEntityPath, defaults.getComments(guardianEntityPath));
+                plugin.getLogger().info("[Army] Updated the default Guardian entity to HUSK "
+                    + "to display items in both hands.");
+            }
+            loaded.set("_migrations.guardian-husk-model", true);
+            changed = true;
+        }
         String berserkerEntityPath = "classes.berserker.entity-type";
         if ("PIGLIN_BRUTE".equalsIgnoreCase(loaded.getString(berserkerEntityPath, ""))) {
             loaded.set(berserkerEntityPath, defaults.getString(berserkerEntityPath, "ZOMBIFIED_PIGLIN"));
@@ -5708,9 +5719,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         List<String> lore = new ArrayList<>();
         Unit preview = new Unit(new UUID(0L, 0L), new UUID(0L, 1L), classId, 1, Mode.PROTECT, false);
         lore.add("§7" + settings.getString("classes." + classId + ".description", "Lính " + classDisplay(classId)));
+        lore.addAll(classEquipmentSummary(classId));
+        String damageSummary = basicDamageSummary(preview);
+        if (damageSummary != null) lore.add("§7" + damageSummary);
         lore.add("§7Skill:");
         for (String skill : settings.getStringList("classes." + classId + ".skills")) {
-            lore.add("§f• " + skillDisplayName(skill) + ": " + skillDescription(preview, skill, 0.0));
+            lore.add("§f• " + skillDisplayName(skill) + ": " + skillDescription(preview, skill));
             lore.add("  §7Hồi chiêu: §f" + formatStat(skillCooldownSeconds(preview, skill)) + " giây");
         }
         lore.add("§eNhấn để chọn Bậc.");
@@ -5734,15 +5748,16 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
 
     private List<String> tierSummary(String classId, int tier, String itemType) {
         List<String> lore = new ArrayList<>();
+        Unit preview = new Unit(new UUID(0L, 0L), new UUID(0L, 1L), classId, tier, Mode.PROTECT, false);
         double health = settings.getDouble("classes." + classId + ".base-health", 24.0)
             + Math.max(0, tier - 1) * settings.getDouble("classes." + classId + ".health-per-level", 4.0);
-        double damage = settings.getDouble("classes." + classId + ".base-damage", 4.0)
-            + Math.max(0, tier - 1) * settings.getDouble("classes." + classId + ".damage-per-level", 0.5);
         double armor = settings.getDouble("classes." + classId + ".base-armor", 0.0)
             + Math.max(0, tier - 1) * settings.getDouble("classes." + classId + ".armor-per-level", 0.0);
         lore.add("§7Bậc triệu hồi: §f" + tier + " §8| §7Level ban đầu: §f1");
         lore.add("§cHP: §f" + formatStat(health) + " §7| §bGiáp: §f" + formatStat(armor));
-        lore.add("§6Sát thương: §f" + formatStat(damage));
+        lore.addAll(classEquipmentSummary(classId));
+        String damageSummary = basicDamageSummary(preview);
+        if (damageSummary != null) lore.add("§7" + damageSummary);
         if (itemType.equals("hire")) {
             lore.add("§7Token: §f" + classDisplay(classId) + " Bậc " + tier);
             lore.add("§7XP người chơi: §f" + settings.getInt("tiers." + tier + ".experience-levels", 0) + " level");
@@ -5754,9 +5769,217 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         } else {
             lore.add("§7Loại item: §f" + itemType.toUpperCase(Locale.ROOT));
         }
-        lore.add("§7Skill: §f" + String.join(", ", settings.getStringList("classes." + classId + ".skills")));
+        for (String skill : settings.getStringList("classes." + classId + ".skills")) {
+            lore.add("§7" + skillDisplayName(skill) + ": "
+                + skillDescription(preview, skill));
+        }
         lore.add("§eNhấn để " + (itemType.equals("hire") ? "thuê" : "cấp") + ".");
         return lore;
+    }
+
+    private List<String> classEquipmentSummary(String classId) {
+        return List.of(
+            "§7Vũ khí tay chính: §f" + configuredHandCategories(classId,
+                "preferred-main-hand-items", "starting-weapon"),
+            "§7Vũ khí/vật phẩm tay phụ: §f" + configuredHandCategories(classId,
+                "preferred-offhand-items", "starting-offhand"));
+    }
+
+    private String configuredHandCategories(String classId, String preferenceKey, String startingKey) {
+        List<String> configured = settings.getStringList("classes." + classId + "." + preferenceKey);
+        if (configured.isEmpty()) {
+            String starting = settings.getString("classes." + classId + "." + startingKey, "AIR");
+            if (starting.equalsIgnoreCase("AIR")) return "Không trang bị";
+            configured = List.of(starting);
+        }
+        List<String> categories = configured.stream()
+            .map(MercenaryManager::itemCategory)
+            .filter(category -> !category.equals("Không cầm"))
+            .distinct()
+            .toList();
+        return categories.isEmpty() ? "Không trang bị" : String.join(", ", categories);
+    }
+
+    private static String itemCategory(String itemName) {
+        if (itemName == null || itemName.isBlank() || itemName.equalsIgnoreCase("AIR")) return "Không cầm";
+        String name = itemName.toUpperCase(Locale.ROOT);
+        if (name.contains("SPEAR") || name.equals("TRIDENT")) return "Giáo";
+        if (name.contains("SWORD")) return "Kiếm";
+        if (name.contains("AXE")) return "Rìu";
+        if (name.equals("BOW")) return "Cung";
+        if (name.equals("CROSSBOW")) return "Nỏ";
+        if (name.equals("SHIELD")) return "Khiên";
+        if (name.equals("MACE")) return "Chùy";
+        if (name.endsWith("_HOE")) return "Cuốc";
+        if (name.equals("SNOWBALL")) return "Cầu tuyết";
+        if (name.equals("FIRE_CHARGE")) return "Cầu lửa";
+        if (name.contains("POTION")) return "Thuốc";
+        if (name.equals("EMERALD")) return "Ngọc lục bảo";
+        if (name.equals("STICK") || name.equals("BLAZE_ROD")) return "Trượng";
+        return "Vật phẩm hỗ trợ";
+    }
+
+    private static String itemCategory(ItemStack item) {
+        return item == null ? "Không cầm" : itemCategory(item.getType().name());
+    }
+
+    private String unitHandDescription(Unit unit, ItemStack item, String preferenceKey, String startingKey) {
+        String actual = itemCategory(item);
+        if (!actual.equals("Không cầm")) return actual;
+        String preferred = configuredHandCategories(unit.unitClass, preferenceKey, startingKey);
+        return preferred.equals("Không trang bị") ? actual : "Trống (ưu tiên " + preferred + " nếu có)";
+    }
+
+    private ItemStack displayedMainHand(Unit unit) {
+        Mob mob = activeEntities.get(unit.id);
+        if (mob != null && mob.isValid() && mob.getEquipment() != null) {
+            return mob.getEquipment().getItemInMainHand();
+        }
+        ItemStack current = unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HAND);
+        List<String> preferences = settings.getStringList(
+            "classes." + unit.unitClass + ".preferred-main-hand-items");
+        for (String preference : preferences) {
+            if (matchesPreferredItem(current, preference)) return current;
+            for (ItemStack candidate : unit.inventory) {
+                if (matchesPreferredItem(candidate, preference)) return candidate;
+            }
+        }
+        ItemStack starting = configuredStartingWeapon(unit);
+        if (isCompatibleWeapon(current, starting)) return current;
+        ItemStack best = isWeaponItem(starting) ? starting : null;
+        for (ItemStack candidate : unit.inventory) {
+            if (isCompatibleWeapon(candidate, starting)
+                    && (best == null || weaponScore(candidate) > weaponScore(best))) best = candidate;
+        }
+        return best == null ? current : best;
+    }
+
+    private ItemStack displayedOffhand(Unit unit) {
+        Mob mob = activeEntities.get(unit.id);
+        if (mob != null && mob.isValid() && mob.getEquipment() != null) {
+            return mob.getEquipment().getItemInOffHand();
+        }
+        ItemStack current = unit.equipment.get(org.bukkit.inventory.EquipmentSlot.OFF_HAND);
+        for (String preference : settings.getStringList(
+                "classes." + unit.unitClass + ".preferred-offhand-items")) {
+            if (matchesPreferredItem(current, preference)) return current;
+            for (ItemStack candidate : unit.inventory) {
+                if (matchesPreferredItem(candidate, preference)) return candidate;
+            }
+        }
+        ItemStack starting = configuredStartingOffhand(unit);
+        return starting == null ? current : starting;
+    }
+
+    private String basicDamageSummary(Unit unit) {
+        if (!hasSkill(unit, "ATTACK")) return null;
+        return "Sát thương đòn cận chiến: " + meleeDamageDescription(unit);
+    }
+
+    private String meleeDamageDescription(Unit unit) {
+        double base = settings.getDouble("classes." + unit.unitClass + ".base-damage", 4.0);
+        double levelBonus = Math.max(0, statRank(unit) - 1)
+            * settings.getDouble("classes." + unit.unitClass + ".damage-per-level", 0.5);
+        double weaponBonus = itemDamageBonus(displayedMainHand(unit), base + levelBonus);
+        return damageBreakdown(base, weaponBonus, levelBonus, 1.0,
+            mainHandDamageMultiplier(unit), Double.POSITIVE_INFINITY);
+    }
+
+    private String frostDamageDescription(Unit unit, String skill, double fallback) {
+        double base = frostOptionDouble(skill, "damage", fallback, 0.0, 100.0);
+        double levelBonus = Math.max(0, unit.level - 1) * readBoundedDouble(settings,
+            "classes.frost_mage.level-scaling.damage-per-level", 0.1, 0.0, 10.0);
+        return skillDamageDescription(unit, base, levelBonus, 1.0, 100.0, true);
+    }
+
+    private String flameDamageDescription(Unit unit, String skill, String option, double fallback) {
+        return skillDamageDescription(unit,
+            flameOption(unit, skill, option, fallback, 0.0, 100.0),
+            0.0, skillPowerMultiplier(unit), 100.0, true);
+    }
+
+    private String skillDamageDescription(Unit unit, double base, double levelBonus,
+                                          double skillMultiplier, double cap, boolean applyHandBonus) {
+        return damageBreakdown(base, 0.0, levelBonus, skillMultiplier,
+            applyHandBonus ? mainHandDamageMultiplier(unit) : 1.0, cap);
+    }
+
+    private String damageBreakdown(double base, double weaponBonus, double levelBonus,
+                                   double skillMultiplier, double handMultiplier, double cap) {
+        double skillBonus = Math.max(0.0, base + weaponBonus + levelBonus) * (skillMultiplier - 1.0);
+        double uncapped = base + weaponBonus + levelBonus + skillBonus;
+        double total = Math.min(cap, uncapped) * handMultiplier;
+        StringBuilder formula = new StringBuilder("§f").append(formatStat(base));
+        if (weaponBonus > 0.0) formula.append(" §7+ §b").append(formatStat(weaponBonus)).append(" vũ khí");
+        if (levelBonus > 0.0) formula.append(" §7+ §c").append(formatStat(levelBonus)).append(" tăng theo cấp");
+        if (skillBonus > 0.0) {
+            formula.append(" §7+ §c").append(formatStat(skillBonus))
+                .append(" cấp kỹ năng (§a+").append(formatStat((skillMultiplier - 1.0) * 100.0))
+                .append("%§c)");
+        }
+        if (handMultiplier > 1.0) {
+            formula.append(" §a×").append(formatStat(handMultiplier))
+                .append(" tay chính (+").append(formatStat((handMultiplier - 1.0) * 100.0)).append("%)");
+        }
+        return "Tổng: §6" + formatStat(total) + " §8(" + formula + "§8)";
+    }
+
+    private double mainHandDamageMultiplier(Unit unit) {
+        if (!isWeaponItem(displayedMainHand(unit))) return 1.0;
+        return readBoundedDouble(settings, "combat.main-hand-damage-multiplier", 1.3, 1.0, 3.0);
+    }
+
+    private double itemDamageBonus(ItemStack item, double baseDamage) {
+        if (item == null || item.getType().isAir()) return 0.0;
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            var modifiers = meta.getAttributeModifiers(Attribute.ATTACK_DAMAGE);
+            if (modifiers != null && !modifiers.isEmpty()) {
+                boolean hasMainHandModifier = false;
+                double addNumber = 0.0;
+                double addScalar = 0.0;
+                double multiplyScalar = 1.0;
+                for (AttributeModifier modifier : modifiers) {
+                    if (!modifier.getSlotGroup().test(org.bukkit.inventory.EquipmentSlot.HAND)) continue;
+                    hasMainHandModifier = true;
+                    switch (modifier.getOperation()) {
+                        case ADD_NUMBER -> addNumber += modifier.getAmount();
+                        case ADD_SCALAR -> addScalar += modifier.getAmount();
+                        case MULTIPLY_SCALAR_1 -> multiplyScalar *= 1.0 + modifier.getAmount();
+                    }
+                }
+                if (!hasMainHandModifier) return 0.0;
+                return Math.max(0.0,
+                    (baseDamage + addNumber) * (1.0 + addScalar) * multiplyScalar - baseDamage);
+            }
+        }
+        return defaultItemDamageBonus(item.getType());
+    }
+
+    private static double defaultItemDamageBonus(Material material) {
+        String name = material.name();
+        if (name.endsWith("_SWORD")) {
+            if (name.startsWith("WOODEN_") || name.startsWith("GOLDEN_")) return 3.0;
+            if (name.startsWith("STONE_")) return 4.0;
+            if (name.startsWith("IRON_")) return 5.0;
+            if (name.startsWith("DIAMOND_")) return 6.0;
+            if (name.startsWith("NETHERITE_")) return 7.0;
+        }
+        if (name.endsWith("_AXE")) {
+            if (name.startsWith("WOODEN_") || name.startsWith("GOLDEN_")) return 6.0;
+            if (name.startsWith("STONE_")) return 8.0;
+            if (name.startsWith("IRON_") || name.startsWith("DIAMOND_")) return 9.0;
+            if (name.startsWith("NETHERITE_")) return 10.0;
+        }
+        if (name.endsWith("_HOE")) {
+            if (name.startsWith("STONE_")) return 1.0;
+            if (name.startsWith("IRON_")) return 2.0;
+            if (name.startsWith("DIAMOND_")) return 3.0;
+            if (name.startsWith("NETHERITE_")) return 4.0;
+        }
+        if (material == Material.TRIDENT) return 8.0;
+        if (material == Material.MACE) return 5.0;
+        return 0.0;
     }
 
     private void openArmyMenu(Player player, int page) {
@@ -5841,33 +6064,25 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 + Math.max(0, statRank(unit) - 1)
                     * settings.getDouble("classes." + unit.unitClass + ".health-per-level", 4.0);
         double health = mob != null && mob.isValid() ? mob.getHealth() : maxHealth;
-        double damage = mob != null && mob.getAttribute(Attribute.ATTACK_DAMAGE) != null
-            ? mob.getAttribute(Attribute.ATTACK_DAMAGE).getValue()
-            : settings.getDouble("classes." + unit.unitClass + ".base-damage", 4.0)
-                + Math.max(0, statRank(unit) - 1)
-                    * settings.getDouble("classes." + unit.unitClass + ".damage-per-level", 0.5);
         double armor = mob != null && mob.getAttribute(Attribute.ARMOR) != null
             ? mob.getAttribute(Attribute.ARMOR).getValue()
             : settings.getDouble("classes." + unit.unitClass + ".base-armor", 0.0)
                 + Math.max(0, statRank(unit) - 1)
                     * settings.getDouble("classes." + unit.unitClass + ".armor-per-level", 0.0);
-        String configuredWeapon = settings.getString("classes." + unit.unitClass + ".starting-weapon", "");
-        Material recommendedWeapon = Material.matchMaterial(configuredWeapon);
-        if (recommendedWeapon == null && "IRON_SPEAR".equalsIgnoreCase(configuredWeapon)) {
-            recommendedWeapon = Material.TRIDENT;
-        }
-        String weaponName = recommendedWeapon == null || recommendedWeapon.isAir()
-            ? "Chưa cấu hình" : recommendedWeapon.name().replace('_', ' ');
         details.add("§7Bậc: §f" + unit.tier + " (gốc " + unit.originalTier + ") §8| §7Cấp: §f" + unit.level
             + " §8| §7XP: §f" + unit.experience + "/" + nextLevelExperience(unit));
         details.add("§7Trạng thái: " + unitStatus(unit));
-        details.add("§7Vũ khí phù hợp nhất: §f" + weaponName);
+        details.add("§7Vũ khí tay chính: §f" + unitHandDescription(unit,
+            displayedMainHand(unit), "preferred-main-hand-items", "starting-weapon"));
+        details.add("§7Vũ khí/vật phẩm tay phụ: §f" + unitHandDescription(unit,
+            displayedOffhand(unit), "preferred-offhand-items", "starting-offhand"));
         details.add("§cHP: §f" + formatStat(health) + "/" + formatStat(maxHealth)
             + " §7| Giáp: §f" + formatStat(armor));
-        details.add("§6Sát thương: §f" + formatStat(damage));
+        String damageSummary = basicDamageSummary(unit);
+        if (damageSummary != null) details.add("§7" + damageSummary);
         if ("frost_mage".equals(unit.unitClass)) {
-            details.add("§7Đòn cơ bản: §fSnowball gây "
-                + formatStat(frostDamage(unit, "BASIC_ATTACK", 3.0)) + " sát thương, tầm "
+            details.add("§7Đòn cơ bản (cầu tuyết): "
+                + frostDamageDescription(unit, "BASIC_ATTACK", 3.0) + ", tầm "
                 + formatStat(frostRange(unit, "BASIC_ATTACK", "range-blocks", 5.0))
                 + " block §8| §7Hồi chiêu: §f"
                 + formatStat(frostCooldown(unit, "BASIC_ATTACK", 2.0)) + " giây");
@@ -5887,18 +6102,19 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             String cooldown = formatStat(cooldownSeconds) + " giây";
             if (remaining > 0L) cooldown += " (còn " + formatStat(remaining / 1000.0) + " giây)";
             details.add("§7" + skillDisplayName(normalized) + ": §f"
-                + skillDescription(unit, normalized, damage) + " §8| §7Hồi chiêu: §f" + cooldown);
+                + skillDescription(unit, normalized) + " §8| §7Hồi chiêu: §f" + cooldown);
         }
         return details;
     }
 
-    private String skillDescription(Unit unit, String skill, double meleeDamage) {
+    private String skillDescription(Unit unit, String skill) {
         double power = skillPowerMultiplier(unit);
         return switch (skill.toUpperCase(Locale.ROOT)) {
-            case "ATTACK" -> "Gây " + formatStat(meleeDamage) + " sát thương cận chiến mỗi đòn";
-            case "RANGED_ATTACK" -> "Bắn gây " + formatStat(skillOptionDouble(unit, skill, "damage", 4.0,
-                0.0, 100.0) * power) + " sát thương, tầm " + formatStat(skillOptionDouble(unit,
-                skill, "range-blocks", 16.0, 4.0, 64.0)) + " block";
+            case "ATTACK" -> "Sát thương mỗi đòn cận chiến: " + meleeDamageDescription(unit);
+            case "RANGED_ATTACK" -> "Sát thương mỗi tên: " + skillDamageDescription(unit,
+                skillOptionDouble(unit, skill, "damage", 4.0, 0.0, 100.0), 0.0, power, 100.0, true)
+                + ", tầm " + formatStat(skillOptionDouble(unit, skill,
+                    "range-blocks", 16.0, 4.0, 64.0)) + " block";
             case "HEAL_OWNER" -> "Hồi " + formatStat(skillOptionDouble(unit, skill, "amount",
                 healAmount, 0.0, 100.0) * power) + " HP cho chủ nhân";
             case "HEAL_ALLIES" -> "Hồi " + formatStat(skillOptionDouble(unit, skill, "amount",
@@ -5917,34 +6133,37 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 + scaledDuration(unit, skill, ownerBuffTicks / 20.0) + " giây, bán kính "
                 + formatStat(skillOptionDouble(unit, skill, "radius-blocks", healRadius, 1.0, 32.0)) + " block";
             case "VOLLEY" -> "Bắn " + (int) skillOptionDouble(unit, skill, "arrow-count", 3.0, 2.0, 5.0)
-                + " mũi tên, mỗi mũi gây " + formatStat(skillOptionDouble(unit, skill, "damage", 3.0,
-                0.0, 100.0) * power) + " sát thương"
+                + " mũi tên, sát thương mỗi mũi: " + skillDamageDescription(unit,
+                    skillOptionDouble(unit, skill, "damage", 3.0, 0.0, 100.0), 0.0, power, 100.0, true)
                 + ("ranger".equals(unit.unitClass) ? ", tầm " + formatStat(skillOptionDouble(unit, skill,
                 "range-blocks", 20.8, 4.0, 64.0)) + " block" : "");
-            case "POWER_STRIKE" -> "Cộng " + formatStat(skillOptionDouble(unit, skill, "damage", 8.0,
-                0.0, 100.0) * power) + " sát thương cho đòn đánh mạnh";
+            case "POWER_STRIKE" -> "Sát thương đòn cường kích: " + skillDamageDescription(unit,
+                skillOptionDouble(unit, skill, "damage", 8.0, 0.0, 100.0), 0.0, power, 100.0, true);
             case "TAUNT" -> "Khiêu khích quái trong bán kính "
                 + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 8.0, 1.0, 32.0)) + " block";
             case "CLEANSE_OWNER" -> "Gỡ hiệu ứng " + settings.getStringList("classes." + unit.unitClass
                 + ".skill-settings.CLEANSE_OWNER.effects").stream().map(MercenaryManager::localizedEffectName)
                 .reduce((left, right) -> left + ", " + right).orElse("bất lợi") + " khỏi chủ nhân";
-            case "FIRE_BOLT" -> "Gây " + formatStat(skillOptionDouble(unit, skill, "damage", 6.0,
-                0.0, 100.0) * power) + " sát thương và đốt mục tiêu trong "
+            case "FIRE_BOLT" -> skillDamageDescription(unit,
+                skillOptionDouble(unit, skill, "damage", 6.0, 0.0, 100.0), 0.0, power, 100.0, true)
+                + " và đốt mục tiêu trong "
                 + (int) skillOptionDouble(unit, skill, "fire-seconds", 3.0, 0.0, 15.0) + " giây";
             case "FLAME_BOLT" -> "Phóng hỏa cầu gây "
-                + formatStat(flameDamage(unit, skill, "damage", 6.0))
-                + " sát thương và giảm 20% tốc độ trong 3 giây";
+                + flameDamageDescription(unit, skill, "damage", 6.0)
+                + "; giảm 20% tốc độ trong 3 giây";
             case "IGNITE" -> "Thiêu đốt gây "
-                + formatStat(flameDamage(unit, skill, "damage-per-pulse", 2.5))
-                + " sát thương mỗi 2 giây trong "
+                + flameDamageDescription(unit, skill, "damage-per-pulse", 2.5)
+                + " mỗi 2 giây trong "
                 + (int) flameOption(unit, skill, "duration-seconds", 8.0, 2.0, 30.0)
                 + " giây, lây tối đa "
                 + (int) flameOption(unit, skill, "max-spread-targets", 6.0, 1.0, 24.0) + " mục tiêu";
             case "FLAME_NOVA" -> "Xoáy lửa gây "
-                + formatStat(Math.min(100.0, flameDamage(unit, skill, "damage-per-second", 1.0)
-                    + Math.max(0, unit.level - 1) * flameOption(unit, skill,
-                        "damage-increase-per-level", 0.1, 0.0, 10.0) * skillPowerMultiplier(unit)))
-                + " sát thương/giây với "
+                + skillDamageDescription(unit,
+                    flameOption(unit, skill, "damage-per-second", 1.0, 0.0, 100.0),
+                    Math.max(0, unit.level - 1) * flameOption(unit, skill,
+                        "damage-increase-per-level", 0.1, 0.0, 10.0),
+                    power, 100.0, true)
+                + "/giây với "
                 + (int) Math.min(64.0, Math.floor(
                     flameOption(unit, skill, "particle-count", 10.0, 1.0, 64.0)
                         + Math.max(0, unit.level - 1) * flameOption(unit, skill,
@@ -5961,7 +6180,9 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 + Math.min(32, (int) flameOption(unit, skill, "fireball-count", 3.0, 1.0, 32.0)
                     + (int) (unit.level / flameOption(unit, skill,
                         "fireballs-increase-every-levels", 3.0, 1.0, 30.0)))
-                + " fireball trong bán kính "
+                + " fireball; mỗi quả gây " + flameDamageDescription(unit, skill, "damage", 12.0)
+                + ", tối đa " + (int) flameOption(unit, skill,
+                    "max-targets-per-fireball", 8.0, 1.0, 64.0) + " mục tiêu trong bán kính "
                 + formatStat(Math.min(16.0, flameOption(unit, skill,
                     "area-radius-blocks", 3.0, 1.0, 12.0)
                     + Math.floor(unit.level / flameOption(unit, skill,
@@ -5971,22 +6192,24 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             case "PHOENIX_REBIRTH" -> "Hồi "
                 + formatStat(flameOption(unit, skill, "heal-percent", 30.0, 1.0, 100.0))
                 + "% máu, miễn sát thương 2 giây rồi gây "
-                + formatStat(flameDamage(unit, skill, "damage", 18.0))
-                + " sát thương AoE trong bán kính "
+                + flameDamageDescription(unit, skill, "damage", 18.0)
+                + " AoE trong bán kính "
                 + formatStat(flameOption(unit, skill, "radius-blocks", 8.0, 1.0, 16.0)) + " block";
             case "ROOT_TARGET" -> "Gây " + localizedEffectName(skillOptionString(unit, skill,
                 "effect", "SLOWNESS")) + " lên mục tiêu trong " + scaledDuration(unit, skill, 5.0) + " giây";
-            case "LIFESTEAL" -> "Gây " + formatStat(skillOptionDouble(unit, skill, "damage", 8.0,
-                0.0, 100.0) * power) + " sát thương và hồi " + formatStat(skillOptionDouble(unit, skill,
+            case "LIFESTEAL" -> skillDamageDescription(unit,
+                skillOptionDouble(unit, skill, "damage", 8.0, 0.0, 100.0), 0.0, power, 100.0, true)
+                + " và hồi " + formatStat(skillOptionDouble(unit, skill,
                 "heal", 4.0, 0.0, 100.0) * power) + " HP";
             case "BERSERK" -> "Kích hoạt dưới " + formatStat(skillOptionDouble(unit, skill,
                 "health-percent", 50.0, 1.0, 99.0)) + "% HP, tăng sức mạnh trong "
                 + scaledDuration(unit, skill, 8.0) + " giây";
             case "SUMMON_VEXES" -> "Triệu hồi tối đa " + maxSummonedMinions(unit)
-                + " Vex, mỗi lần gọi thêm một con, mỗi con gây " + formatStat(skillOptionDouble(
-                unit, skill, "damage", 4.0, 0.0, 100.0) * power) + " sát thương";
-            case "LANCE_CHARGE" -> "Khi cưỡi ngựa gây " + formatStat(skillOptionDouble(unit, skill,
-                "damage", 12.0, 0.0, 100.0) * power) + " sát thương trong bán kính "
+                + " Vex, mỗi lần gọi thêm một con; mỗi Vex: " + skillDamageDescription(unit,
+                    skillOptionDouble(unit, skill, "damage", 4.0, 0.0, 100.0), 0.0, power, 100.0, false);
+            case "LANCE_CHARGE" -> "Khi cưỡi ngựa: " + skillDamageDescription(unit,
+                skillOptionDouble(unit, skill, "damage", 12.0, 0.0, 100.0), 0.0, power, 100.0, true)
+                + " trong bán kính "
                 + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0)) + " block";
             case "ILLUMINATION" -> "Bắn " + Math.min(20, (int) skillOptionDouble(unit, skill,
                 "base-arrow-count", 1.0, 1.0, 20.0) + unit.level / (int) skillOptionDouble(unit, skill,
@@ -5995,21 +6218,22 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
                 + (int) skillOptionDouble(unit, skill, "torch-duration-seconds", 30.0, 1.0, 600.0)
                 + " giây, tầm " + formatStat(skillOptionDouble(unit, skill,
                     "range-blocks", 20.8, 4.0, 64.0)) + " block";
-            case "ICE_SPIKE" -> "Phóng gai băng gây " + formatStat(frostDamage(unit, skill, 3.0))
-                + " sát thương, tầm " + formatStat(frostRange(unit, skill, "range-blocks", 5.0)) + " block";
-            case "BLIZZARD" -> "Bão tuyết gây " + formatStat(frostDamage(unit, skill, 3.0))
-                + " sát thương mỗi nhịp trong bán kính "
+            case "ICE_SPIKE" -> "Phóng gai băng gây " + frostDamageDescription(unit, skill, 3.0)
+                + ", tầm " + formatStat(frostRange(unit, skill, "range-blocks", 5.0)) + " block";
+            case "BLIZZARD" -> "Bão tuyết gây " + frostDamageDescription(unit, skill, 3.0)
+                + " mỗi nhịp trong bán kính "
                 + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0))
                 + " block, kéo dài " + frostDurationTicks(unit, skill, 3.0, 1.0, 12.0) / 20 + " giây";
             case "FROST_NOVA" -> "Làm chậm mục tiêu quanh lính trong "
                 + frostDurationTicks(unit, skill, 3.0, 1.0, 10.0) / 20 + " giây, bán kính "
                 + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0)) + " block";
             case "ICE_WALL" -> "Lồng băng gây "
-                + formatStat(Math.min(100.0, (skillOptionDouble(unit, skill,
-                    "damage-per-second", 1.0, 0.0, 100.0)
-                    + Math.max(0, unit.level - 1) * skillOptionDouble(unit, skill,
-                        "damage-increase-per-level", 0.1, 0.0, 10.0)) * skillPowerMultiplier(unit)))
-                + " sát thương/giây; sau khi thoát giảm tốc "
+                + skillDamageDescription(unit, skillOptionDouble(unit, skill,
+                    "damage-per-second", 1.0, 0.0, 100.0),
+                    Math.max(0, unit.level - 1) * skillOptionDouble(unit, skill,
+                        "damage-increase-per-level", 0.1, 0.0, 10.0),
+                    power, 100.0, true)
+                + "/giây; sau khi thoát giảm tốc "
                 + formatStat(skillOptionDouble(unit, skill, "slowness-percent", 50.0, 0.0, 80.0))
                 + "% trong "
                 + formatStat(Math.min(30.0, skillOptionDouble(unit, skill,

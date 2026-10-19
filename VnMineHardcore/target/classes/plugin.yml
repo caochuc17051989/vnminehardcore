@@ -1,5 +1,5 @@
 name: VnMineHardcore
-version: 1.39.3
+version: 1.45.0
 main: com.vnmine.hardcore.VnMineHardcore
 depend: [ProtocolLib]
 api-version: '26.3'

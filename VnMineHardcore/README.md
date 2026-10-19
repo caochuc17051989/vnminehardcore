@@ -93,8 +93,9 @@ Xạ Thủ (`archer`), Vệ Binh (`guardian`), Y Sư (`medic`), Cuồng Chiến
 (`frost_mage`); mỗi class có bộ skill được cấu hình riêng. Lính tự chọn vật phẩm
 tay chính/tay phụ theo danh sách ưu tiên từng class trong `armies.yml`, rồi dùng
 vũ khí mặc định nếu không tìm thấy món phù hợp; trang bị được giữ qua nghỉ, chết
-và triệu hồi lại. Vệ Binh tìm khiên, Cuồng Chiến có thể lấy rìu thứ hai cho tay
-phụ. Kỵ Sĩ dùng giáo, Tu Sĩ Rừng cầm emerald; Pháp Sư Băng/Lửa không tự tạo vũ
+và triệu hồi lại. Vệ Binh dùng model Husk để hiển thị item ở cả hai tay và tìm
+khiên; Cuồng Chiến có thể lấy rìu thứ hai cho tay phụ. Kỵ Sĩ dùng giáo, Tu Sĩ
+Rừng cầm emerald; Pháp Sư Băng/Lửa không tự tạo vũ
 khí. Y Sư ưu tiên potion hồi máu ở tay chính và có thể ném splash/lingering
 potion có lợi từ tay phụ cho đồng đội cần hiệu ứng/hồi máu mà không tiêu hao bình.
 Gear GUI dùng ô riêng cho tay chính và tay phụ. Mô tả skill và action bar dùng
@@ -225,8 +226,13 @@ thể chỉnh; mặc định chỉ chọn mục tiêu nhìn thấy, và không c
 thực thể thụ động, người chơi, lính hoặc đệ của chủ khác.
 
 GUI cho phép chọn lớp và bậc trước khi thuê; tooltip nêu mô tả skill tiếng Việt,
-thông số/cooldown, yêu cầu XP/vật liệu và chỉ số HP/giáp/sát thương. Hai thanh
-Thanh hiển thị ba dòng chỉ dành cho chủ nhân: vạch HP, `❤: HP hiện tại/tối đa ✦ EXP: hiện tại/yêu cầu`, rồi `[Tên chủ] Tên lính [Bậc X] [Level: Y]`; người chơi khác vẫn
+thông số/cooldown, yêu cầu XP/vật liệu, loại vũ khí/vật phẩm ở tay chính và tay
+phụ, cùng sát thương tổng và từng thành phần. Công thức dùng màu trắng cho sát
+thương cơ bản, xanh dương cho phần từ vũ khí, đỏ cho phần tăng theo cấp và xanh
+lá cho hệ số phần trăm; sát thương hiển thị là trước khi trừ giáp/kháng của mục tiêu.
+Thanh trạng thái hiển thị ba dòng chỉ dành cho chủ nhân: vạch HP,
+`❤: HP hiện tại/tối đa ✦ EXP: hiện tại/yêu cầu`, rồi
+`[Tên chủ] Tên lính [Bậc X] [Level: Y]`; người chơi khác vẫn
 chỉ thấy tên lính. Bật/tắt tại `status-display.enabled`, độ dài vạch HP chỉnh tại
 `status-display.bar-length`; `status-display.see-through` điều khiển khả năng nhìn xuyên tường.
 `experience-orb-pickup.enabled` và

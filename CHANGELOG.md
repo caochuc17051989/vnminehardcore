@@ -1,5 +1,15 @@
 # Changelog
 
+## [v1.45.0] - 2026-10-19
+
+### Changed
+- Hiển thị tên loại vũ khí/vật phẩm ở tay chính và tay phụ thay cho ID vật phẩm; tách sát thương đòn đánh và kỹ năng thành các phần cơ bản, vũ khí, tăng theo cấp và hệ số phần trăm bằng màu.
+
+## [v1.44.1] - 2026-10-19
+
+### Changed
+- Đổi model mặc định của Vệ Binh sang Husk để hiển thị vật phẩm ở cả hai tay; tự cập nhật cấu hình cũ còn dùng Vindicator.
+
 ## [v1.44.0] - 2026-10-19
 
 ### Changed
