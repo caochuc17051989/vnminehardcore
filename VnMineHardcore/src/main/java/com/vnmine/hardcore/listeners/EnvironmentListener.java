@@ -45,20 +45,6 @@ public class EnvironmentListener implements Listener {
     private int fogEffectDurationTicks;
     private final Map<UUID, Long> rainEndsAt = new HashMap<>();
 
-    // Biomes for temperature system
-    private static final Set<String> HOT_BIOMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-        "desert", "badlands", "wooded_badlands", "eroded_badlands",
-        "nether_wastes", "soul_sand_valley", "crimson_forest", "warped_forest",
-        "basalt_deltas", "savanna", "savanna_plateau", "windswept_savanna"
-    )));
-
-    private static final Set<String> COLD_BIOMES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-        "snowy_plains", "snowy_taiga", "snowy_slopes", "snowy_beach",
-        "frozen_ocean", "frozen_river", "ice_spikes", "frozen_peaks",
-        "jagged_peaks", "grove", "taiga", "old_growth_taiga",
-        "cold_ocean", "deep_cold_ocean"
-    )));
-
     // Các loại đuốc giúp giảm sợ hầm
     private static final Set<Material> TORCH_ITEMS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
         Material.TORCH, Material.SOUL_TORCH, Material.LANTERN, Material.SOUL_LANTERN,
@@ -201,10 +187,11 @@ public class EnvironmentListener implements Listener {
                     }
 
                     Location loc = player.getLocation();
-                    String biome = loc.getBlock().getBiome().getKey().toString().toLowerCase();
+                    String biome = loc.getBlock().getBiome().getKey().toString().toLowerCase(Locale.ROOT);
 
-                    boolean inHotBiome = HOT_BIOMES.stream().anyMatch(b -> biome.contains(b));
-                    boolean inColdBiome = COLD_BIOMES.stream().anyMatch(b -> biome.contains(b));
+                    boolean inHotBiome = config.hotBiomeKeys.contains(biome);
+                    boolean inColdBiome = config.coldBiomeKeys.contains(biome);
+                    boolean inAcidRainBiome = config.acidRainBiomeKeys.contains(biome);
                     boolean inNether = player.getWorld().getEnvironment() == World.Environment.NETHER;
                     boolean inWater = (loc.getBlock().getType() == Material.WATER ||
                                      loc.getBlock().getType() == Material.BUBBLE_COLUMN) &&
@@ -217,7 +204,8 @@ public class EnvironmentListener implements Listener {
                     // ===== HEAT LOGIC =====
                     // NETHER: luôn nóng (bỏ qua mọi điều kiện)
                     // OVERWORLD: chỉ nóng khi ban ngày, không có mái che, không ở dưới nước
-                    boolean shouldBeHot = inHotBiome && (inNether || (isDaytime && !hasBlockAbove && !inWater));
+                    boolean shouldBeHot = inNether
+                        || (inHotBiome && isDaytime && !hasBlockAbove && !inWater);
 
                     if (checkTemperature && shouldBeHot) {
                         // Track exposure time
@@ -298,7 +286,7 @@ public class EnvironmentListener implements Listener {
                     }
 
                     // Water damage (cold water)
-                    if (inWater) {
+                    if (inColdBiome && inWater) {
                         Long lastWater = lastWaterDamage.get(uuid);
                         if (lastWater == null || now - lastWater > config.waterDamageIntervalMs) {
                             if (config.waterDamage > 0) player.damage(config.waterDamage);
@@ -308,7 +296,7 @@ public class EnvironmentListener implements Listener {
                     }
 
                     // Acid rain damage
-                    if (player.getWorld().hasStorm() && !hasBlockAbove) {
+                    if (inAcidRainBiome && player.getWorld().hasStorm() && !hasBlockAbove) {
                         Long lastAcid = lastAcidRainDamage.get(uuid);
                         if (lastAcid == null || now - lastAcid > config.acidRainIntervalMs) {
                             if (config.acidRainDamage > 0) player.damage(config.acidRainDamage);

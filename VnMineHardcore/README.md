@@ -11,7 +11,7 @@ Yêu cầu runtime: Java 25+ và ProtocolLib `5.5.0-SNAPSHOT` dev-build có hỗ
 - ⚔ **Sát thương nhân hệ số** (quái, ngã, lửa, nổ, PvP...)
 - 🍔 **Hệ thống đói** (hao hụt nhanh, ngộ độc thức ăn sống, nghẹn khi ăn nhanh)
 - 💧 **Hệ thống khát nước** (uống từ nguồn, chai, xô; nước tự nhiên gây độc)
-- 🌍 **Môi trường khắc nghiệt** (nhiệt độ, sương mù, chặn ngủ, chóng mặt, sợ hầm, giới hạn mưa)
+- 🌍 **Môi trường khắc nghiệt** (nóng/lạnh/mưa axit theo biome, sương mù, chặn ngủ, chóng mặt, sợ hầm, giới hạn mưa)
 - 🌋 **Thiên tai tự động** (Blood Moon, Meteor, Storm, Solar Flare, Plague, Tornado, Earthquake, Eclipse và các thiên tai theo dimension)
 - ☀️🌙 **Điều khiển ngày/đêm** (cấu hình riêng thời lượng ban ngày và ban đêm)
 - ⛏️💥 **Kiểm soát đào quặng** (thay vật phẩm rơi, gãy cúp và nổ theo block/cúp)
@@ -121,24 +121,32 @@ Pháp Sư Băng dùng snowball bay thẳng làm đòn đánh cơ bản và tám 
 `classes.frost_mage.skill-settings` và `classes.frost_mage.level-scaling` trong
 `armies.yml`. Mặc định sát thương snowball/gai băng là 3.0, cộng 0.1 mỗi level;
 cooldown giảm 0.1 giây mỗi level (tối thiểu 1 giây), tầm tăng 1 block tại mỗi
-mốc 5 level. Blizzard gây sát thương và Slowness theo nhịp; Ice Wall, Frost
-Nova và Frost Walker chỉ dùng băng tạm, hoàn nguyên theo thời gian. Băng chỉ
-được đặt trong không gian trống hoặc trên mặt nước, không thay thế block rắn;
-Ice Age chỉ đóng băng/làm chậm mục tiêu và tạo particle, không đổi địa hình.
-Frost Step chỉ lướt khi đường phía trước không bị block che.
+mốc 5 level. Blizzard gây sát thương và Slowness theo nhịp; Băng Ngục
+(`ICE_WALL`) dựng lồng PACKED_ICE 3×3, cao 2 block quanh mục tiêu, gây 1 sát
+thương mỗi giây (+0.1 mỗi level) khi mục tiêu còn bên trong và giảm 50% tốc độ
+sau khi thoát. Thời gian lồng và làm chậm mặc định 3 giây, tăng 0.1 giây mỗi
+level. Frost Nova và Frost Walker tiếp tục dùng băng tạm. Ice Age chỉ đóng
+băng/làm chậm mục tiêu và tạo particle, không đổi địa hình. Frost Step chỉ
+lướt khi đường phía trước không bị block che.
 Pháp Sư Lửa (`pyromancer`) dùng sáu skill `FLAME_BOLT`, `IGNITE`, `FLAME_NOVA`,
 `FIRE_WALL`, `METEOR_STRIKE`, `PHOENIX_REBIRTH`; cấu hình tại
 `classes.pyromancer.skill-settings` trong `armies.yml`. Hỏa Cầu gây sát thương
 và giảm tốc độ đúng 20% trong 3 giây; Thiêu Đốt gây DoT mỗi 2 giây trong 8 giây
-và lây có giới hạn; Hỏa Bão gây sát thương/đẩy lùi quanh pháp sư; Hỏa Tường
-dựng block tạm 3 giây, chặn đường và gây sát thương theo nhịp; Thiên Thạch Lửa
-rơi tại vị trí mục tiêu AI, gây AoE và chôn chân 2 giây. Phượng Hoàng tự kích
+và lây có giới hạn; Bão Lửa (`FLAME_NOVA`) tạo 10 hạt lửa xoáy ở level 1
+(cộng 1 hạt mỗi level) và gây 1 sát
+thương mỗi giây trong 3 giây quanh pháp sư (sát thương/thời gian tăng 0.1 mỗi
+level, bán kính tăng 1 block mỗi 5 level); Hỏa Ngục (`FIRE_WALL`) dựng lồng
+MAGMA_BLOCK 3×3, cao 2 block quanh mục tiêu; Mưa Lửa (`METEOR_STRIKE`) đánh dấu
+vòng lửa đỏ 2 giây rồi thả 3 fireball lần lượt theo thứ tự ngẫu nhiên, tăng 1
+quả mỗi 3 level và tăng bán kính khu vực 1 block mỗi 5 level. Fireball gây
+damage cấu hình nhưng không phá block. Phượng Hoàng tự kích
 hoạt khi máu còn 65% trở xuống: hồi 30% máu tối đa, miễn sát thương 2 giây,
 rồi lao vào mục tiêu gây sát thương AoE và đốt. Damage, cooldown, tầm, kích
-thước vùng, mục tiêu tối đa và thời lượng đều chỉnh riêng theo từng skill;
-cooldown mặc định lần lượt là 2/6/10/12/25/90 giây. Hỏa Tường chỉ đặt block ở
-khoảng trống, không ghi đè địa hình và tự hoàn nguyên; các skill chỉ gây sát
-thương lên mục tiêu hợp lệ theo luật PvP/đồng minh hiện hành.
+thước vùng, mục tiêu tối đa, delay, số lượng/tốc độ fireball và thời lượng đều
+chỉnh riêng theo từng skill; cooldown mặc định lần lượt là 2/6/10/12/25/90 giây.
+Các lồng hoàn nguyên block sau khi hết hạn, khi lính bị thu hồi/hạ hoặc khi
+plugin reload/stop; các skill chỉ gây sát thương lên mục tiêu hợp lệ theo luật
+PvP/đồng minh hiện hành.
 Mặc định lính và VEX không gây sát thương lên người chơi hoặc quân của người
 chơi khác chỉ vì phát hiện họ hay bị họ tấn công. Ngoại lệ: sau khi chủ nhân
 trực tiếp đánh đúng mục tiêu, lính có thể tấn công mục tiêu đó trong 15 giây.
@@ -275,6 +283,16 @@ ngẫu nhiên từ 1 đến 5 phút để mưa có thể tạnh sớm. Có thể
 `chance-percent`, `max-duration-minutes`,
 `random-duration.enabled` và `random-duration.minimum-minutes`.
 
+Sát thương môi trường được lọc theo biome trong
+`environment.temperature.biomes`: `hot` mặc định gồm sa mạc, badlands và
+savanna; `cold` gồm biome tuyết/băng, taiga và ocean lạnh; `acid-rain` gồm
+rừng, jungle và taiga. Nether luôn nóng. Mưa axit chỉ gây sát thương khi đang
+mưa, người chơi ở biome trong danh sách `acid-rain` và không có mái che; sát
+thương nước chỉ áp dụng ở biome trong danh sách `cold`. Có thể tùy chỉnh các
+danh sách bằng tên biome vanilla hoặc khóa `namespace:key`; danh sách rỗng sẽ
+tắt nhóm tương ứng. Biome thuộc nhiều danh sách có thể nhận đồng thời các loại
+sát thương tương ứng.
+
 ### Rename - Đổi tên hiển thị sau khi chết
 
 ```yaml
@@ -397,10 +415,15 @@ chỉ cho phép thiên tai này ảnh hưởng `world_the_end`.
 ### Boss level & skills
 
 `bosses/_settings.yml` configures level ranges and spawn success chance by
-in-game day. The default success chance grows from 15% on day 0 to 100% on day
-400; boss levels progress from 1 to 10 over the same period. The applicable
-threshold is the last `min-day` not greater than the current day, and the boss
-randomly chooses a level inside that threshold's range. In each boss file,
+in-game day. The default spawn success chance grows from 15% on day 0 to 100%
+on day 1000. Boss level thresholds are day 0 (level 1), 100 (levels 1-2),
+200 (1-3), 400 (1-4), 600 (2-5), 900 (2-6), 1200 (2-7), 1500 (3-8),
+1800 (3-9), and 2500 (3-10). The applicable threshold is the last `min-day`
+not greater than the current day, and the boss randomly chooses a level inside
+that threshold's range. The day is read from the first loaded world; at day 500,
+an automatically spawned boss can therefore be at most level 4 with these
+settings. `/vnboss <id> <level> ...` deliberately uses the requested level.
+In each boss file,
 `hp-by-level` maps levels to explicit maximum HP; missing levels use the nearest
 lower configured level, then scale the base `hp` by 1.5 per additional level.
 Skill sections under `skills` can be enabled individually and tune their
@@ -431,6 +454,11 @@ Terrain-changing skills are controlled by `terrain-enabled`, and temporary
 blocks are restored after their configured duration or when the encounter ends.
 Ravager block breaking uses the `break-blocks`, `max-break-blocks`, and
 `breakable-blocks` allowlist settings.
+Spider skill damage is limited to the configured skill radius from the spider;
+`max-player-hit-damage` in `spider_boss.yml` caps each skill hit to a player
+before armor and the global mob-damage multiplier (default 5, valid 0-100).
+Spider melee uses native mob attacks rather than an additional repeated
+scripted hit.
 
 `reward-damage-threshold-percent` in `bosses/_settings.yml` defaults to 50.
 Each player's actual damage is accumulated against the boss's maximum HP; only
@@ -455,9 +483,15 @@ level-progression:
   enabled: true
   thresholds:
     - {min-day: 0, min-level: 1, max-level: 1}
-    - {min-day: 25, min-level: 1, max-level: 2}
-    - {min-day: 50, min-level: 2, max-level: 3}
-    - {min-day: 400, min-level: 9, max-level: 10}
+    - {min-day: 100, min-level: 1, max-level: 2}
+    - {min-day: 200, min-level: 1, max-level: 3}
+    - {min-day: 400, min-level: 1, max-level: 4}
+    - {min-day: 600, min-level: 2, max-level: 5}
+    - {min-day: 900, min-level: 2, max-level: 6}
+    - {min-day: 1200, min-level: 2, max-level: 7}
+    - {min-day: 1500, min-level: 3, max-level: 8}
+    - {min-day: 1800, min-level: 3, max-level: 9}
+    - {min-day: 2500, min-level: 3, max-level: 10}
 
 # Example in an individual bosses/<boss>.yml
 hp-by-level:
@@ -501,9 +535,9 @@ Infinity I; xác suất rơi 65%, Infinity vẫn cần mang ít nhất một mũ
 trong file boss có thể tùy chỉnh `material`, `name`,
 `min-amount`, `max-amount`, `chance`, `enchantments` (hỗ trợ over-enchant)
 hoặc `book-enchantments` (sách có enchant để áp dụng vào item). Boss tự nhiên
-có thể lên level 10 từ ngày 400 theo `bosses/_settings.yml`; `/vnboss` vẫn cho
-phép gọi boss ở level được chọn. Khi boss xuất hiện, server broadcast loot có
-thể rơi ở level đó và tỉ lệ từng món. Mọi boss tồn tại mặc định 20 phút;
+chỉ lên level theo ngưỡng đang cấu hình trong `bosses/_settings.yml`;
+`/vnboss` vẫn cho phép gọi boss ở level được chọn. Khi boss xuất hiện, server
+broadcast loot có thể rơi ở level đó và tỉ lệ từng món. Mọi boss tồn tại mặc định 20 phút;
 bộ đếm roll boss kế tiếp tạm dừng trong khi cảnh báo hoặc boss đang hoạt động.
 
 `scoreboard.yml` cấu hình chu kỳ reset (`reset.every-game-days`, mặc định 100
@@ -632,7 +666,8 @@ sát thương người chơi, thông báo và tỷ lệ. Chạy `/vnreload` sau 
   thế giới được tạo.
 - Mỗi boss có loot quý riêng cho level 1–10, lore truyền thuyết tối đa 4 dòng
   và số dòng enchant tăng dần theo level; HP cũng được cấu hình đến level 10.
-  Boss tự nhiên có thể đạt level 10 từ ngày 400.
+  Ở cấu hình mặc định của phiên bản v1.7, boss tự nhiên có thể đạt level 10 từ
+  ngày 400.
 - Thời gian tồn tại mặc định của mọi boss là 20 phút; không roll boss mới trong
   thời gian đang cảnh báo hoặc boss khác còn hoạt động.
 

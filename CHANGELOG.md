@@ -1,5 +1,23 @@
 # Changelog
 
+## [v1.42.1] - 2026-10-19
+
+### Fixed
+- Buộc build sạch để JAR chứa đúng bytecode mới nhất; khắc phục lỗi khởi động khi cấu hình `FLAME_BOLT` bị nhận nhầm là skill không hợp lệ.
+
+## [v1.42.0] - 2026-10-19
+
+### Changed
+- Chỉ cho Enderman boss nhắm và tấn công người chơi đang nhìn thấy boss, đồng thời yêu cầu tầm nhìn trực tiếp.
+- Giới hạn nóng/lạnh/mưa axit và sát thương nước theo danh sách biome có thể cấu hình; mưa axit chỉ tác động khi mưa ngoài trời ở biome rừng, Nether luôn nóng.
+- Ghi log ngày/world/ngưỡng/level boss tự nhiên đã chọn và đồng bộ hướng dẫn tiến trình level với cấu hình hiện hành.
+- Đổi tên và thiết kế lại skill pháp sư: Hỏa Ngục/Băng Ngục là lồng tạm quanh mục tiêu, Mưa Lửa thả Fireball theo lượt và Bão Lửa gây sát thương theo thời gian.
+- Bão Lửa tạo 10 hạt lửa ở level 1 và tăng thêm 1 hạt mỗi level.
+- Hoàn nguyên block lồng sau khi kết thúc hoặc khi lính bị thu hồi/hạ; cấu hình mới của các skill có chú thích tiếng Việt và tiếng Anh.
+
+### Fixed
+- Chặn kỹ năng nhện gây damage tại vị trí người chơi ngoài tầm; bỏ đòn đánh thủ công lặp song song với AI gốc và giới hạn damage tối đa mỗi hit lên người chơi.
+
 ## [v1.41.3] - 2026-10-18
 
 ### Fixed

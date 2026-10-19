@@ -906,80 +906,119 @@ classes:
         # [EN] Maximum targets per spread chain; default 6, valid range 1-24.
         max-spread-targets: 6
       FLAME_NOVA:
-        # [VI] Hồi chiêu Hỏa Bão; mặc định 10 giây, hợp lệ 1-3600.
-        # [EN] Flame Nova cooldown; default 10 seconds, valid range 1-3600.
+        # [VI] Hồi chiêu Bão Lửa; mặc định 10 giây, hợp lệ 1-3600.
+        # [EN] Firestorm cooldown; default 10 seconds, valid range 1-3600.
         cooldown-seconds: 10
         # [VI] Tầm mục tiêu kích hoạt; mặc định 5 block, hợp lệ 1-12.
         # [EN] Target trigger distance; default 5 blocks, valid range 1-12.
         trigger-range-blocks: 5.0
-        # [VI] Bán kính nổ quanh pháp sư; mặc định 5 block, hợp lệ 1-12.
-        # [EN] Explosion radius around the mage; default 5 blocks, valid range 1-12.
-        radius-blocks: 5.0
-        # [VI] Sát thương; mặc định 6, hợp lệ 0-100.
-        # [EN] Damage; default 6, valid range 0-100.
-        damage: 6.0
-        # [VI] Cường độ đẩy lùi; mặc định 1.2, hợp lệ 0.1-4.
-        # [EN] Knockback strength; default 1.2, valid range 0.1-4.
-        knockback-strength: 1.2
+        # [VI] Bán kính gây sát thương; mặc định 3 block, tăng 1 block mỗi 5 level, giới hạn 1-12.
+        # [EN] Damage radius; default 3 blocks, adds 1 block every 5 levels, valid range 1-12.
+        radius-blocks: 3.0
+        # [VI] Số level cho mỗi lần tăng bán kính; mặc định 5, hợp lệ 1-30.
+        # [EN] Levels per radius increase; default 5, valid range 1-30.
+        radius-increase-every-levels: 5
+        # [VI] Sát thương mỗi giây; mặc định 1, hợp lệ 0-100.
+        # [EN] Damage per second; default 1, valid range 0-100.
+        damage-per-second: 1.0
+        # [VI] Sát thương tăng mỗi level sau level 1; mặc định 0.1, hợp lệ 0-10.
+        # [EN] Damage added per level after level 1; default 0.1, valid range 0-10.
+        damage-increase-per-level: 0.1
+        # [VI] Thời lượng Bão Lửa; mặc định 3 giây, tăng 0.1 giây mỗi level, hợp lệ 0.1-30.
+        # [EN] Firestorm duration; default 3 seconds, adds 0.1 second per level, valid range 0.1-30.
+        duration-seconds: 3.0
+        # [VI] Thời gian cộng thêm mỗi level sau level 1; mặc định 0.1 giây, hợp lệ 0-10.
+        # [EN] Extra duration per level after level 1; default 0.1 second, valid range 0-10.
+        duration-increase-per-level-seconds: 0.1
+        # [VI] Số hạt lửa xoáy ở level 1; mặc định 10, hợp lệ 1-64.
+        # [EN] Number of swirling flame particles at level 1; default 10, valid range 1-64.
+        particle-count: 10
+        # [VI] Số hạt cộng thêm mỗi level sau level 1; mặc định 1, hợp lệ 0-10.
+        # [EN] Extra particles per level after level 1; default 1, valid range 0-10.
+        particles-increase-per-level: 1.0
+        # [VI] Bán kính quỹ đạo hạt; mặc định 1.2 block, hợp lệ 0.1-8.
+        # [EN] Particle orbit radius; default 1.2 blocks, valid range 0.1-8.
+        particle-orbit-radius-blocks: 1.2
+        # [VI] Góc xoay mỗi tick; mặc định 0.3 radian, hợp lệ 0.01-3.
+        # [EN] Rotation per tick; default 0.3 radians, valid range 0.01-3.
+        particle-rotation-radians-per-tick: 0.3
+        # [VI] Nhịp cập nhật hạt; mặc định 2 tick, hợp lệ 1-20.
+        # [EN] Particle update interval; default 2 ticks, valid range 1-20.
+        particle-interval-ticks: 2
+        # [VI] Nhịp gây sát thương; mặc định 20 tick (1 giây), hợp lệ 1-100.
+        # [EN] Damage interval; default 20 ticks (1 second), valid range 1-100.
+        damage-interval-ticks: 20
         # [VI] Số mục tiêu tối đa; mặc định 24, hợp lệ 1-64.
         # [EN] Maximum targets; default 24, valid range 1-64.
         max-targets: 24
       FIRE_WALL:
-        # [VI] Hồi chiêu Hỏa Tường; mặc định 12 giây, hợp lệ 1-3600.
-        # [EN] Fire Wall cooldown; default 12 seconds, valid range 1-3600.
+        # [VI] Hồi chiêu Hỏa Ngục; mặc định 12 giây, hợp lệ 1-3600.
+        # [EN] Hell Cage cooldown; default 12 seconds, valid range 1-3600.
         cooldown-seconds: 12
         # [VI] Tầm mục tiêu; mặc định 16 block, hợp lệ 1-64.
         # [EN] Target range; default 16 blocks, valid range 1-64.
         range-blocks: 16.0
-        # [VI] Chiều dài tường; mặc định 5 block, hợp lệ 1-9.
-        # [EN] Wall width; default 5 blocks, valid range 1-9.
-        width-blocks: 5
-        # [VI] Chiều cao tường; mặc định 3 block, hợp lệ 1-5.
-        # [EN] Wall height; default 3 blocks, valid range 1-5.
-        height-blocks: 3
-        # [VI] Thời gian tồn tại; mặc định 3 giây, hợp lệ 1-15.
-        # [EN] Wall duration; default 3 seconds, valid range 1-15.
-        duration-seconds: 3
-        # [VI] Block đặc tạo tường; mặc định MAGMA_BLOCK.
-        # [EN] Solid wall block material; default MAGMA_BLOCK.
+        # [VI] Thời gian Hỏa Ngục; mặc định 3 giây, tăng 0.1 giây mỗi level, hợp lệ 0.1-30.
+        # [EN] Hell Cage duration; default 3 seconds, adds 0.1 second per level, valid range 0.1-30.
+        duration-seconds: 3.0
+        # [VI] Thời gian cộng thêm mỗi level sau level 1; mặc định 0.1 giây, hợp lệ 0-10.
+        # [EN] Extra duration per level after level 1; default 0.1 second, valid range 0-10.
+        duration-increase-per-level-seconds: 0.1
+        # [VI] Block đặc tạo sàn và tường lồng; mặc định MAGMA_BLOCK.
+        # [EN] Solid block for the enclosure floor and walls; default MAGMA_BLOCK.
         block-material: MAGMA_BLOCK
-        # [VI] Giới hạn block tường lửa tạm đồng thời; mặc định 96, hợp lệ 1-512.
-        # [EN] Maximum simultaneous temporary wall blocks; default 96, valid range 1-512.
+        # [VI] Giới hạn block Hỏa Ngục tạm đồng thời; mặc định 96, hợp lệ 1-512.
+        # [EN] Maximum simultaneous temporary Hell Cage blocks; default 96, valid range 1-512.
         temporary-block-limit: 96
-        # [VI] Khoảng cách giữa các lần gây sát thương; mặc định 10 tick, hợp lệ 5-40.
-        # [EN] Damage interval; default 10 ticks, valid range 5-40.
-        damage-interval-ticks: 10
-        # [VI] Sát thương mỗi nhịp chạm tường; mặc định 2, hợp lệ 0-100.
-        # [EN] Damage per wall pulse; default 2, valid range 0-100.
-        damage-per-pulse: 2.0
-        # [VI] Số mục tiêu tối đa mỗi nhịp; mặc định 12, hợp lệ 1-32.
-        # [EN] Maximum targets per pulse; default 12, valid range 1-32.
-        max-targets: 12
       METEOR_STRIKE:
-        # [VI] Hồi chiêu Thiên Thạch Lửa; mặc định 25 giây, hợp lệ 1-3600.
-        # [EN] Meteor Strike cooldown; default 25 seconds, valid range 1-3600.
+        # [VI] Hồi chiêu Mưa Lửa; mặc định 25 giây, hợp lệ 1-3600.
+        # [EN] Fire Rain cooldown; default 25 seconds, valid range 1-3600.
         cooldown-seconds: 25
         # [VI] Tầm chọn mục tiêu; mặc định 32 block, hợp lệ 1-64.
         # [EN] Target selection range; default 32 blocks, valid range 1-64.
         range-blocks: 32.0
-        # [VI] Bán kính nổ; mặc định 4 block, hợp lệ 1-12.
-        # [EN] Impact radius; default 4 blocks, valid range 1-12.
-        radius-blocks: 4.0
-        # [VI] Sát thương; mặc định 12, hợp lệ 0-100.
-        # [EN] Damage; default 12, valid range 0-100.
+        # [VI] Thời gian vẽ cảnh báo trước khi fireball rơi; mặc định 2 giây, hợp lệ 0.1-30.
+        # [EN] Warning duration before fireballs fall; default 2 seconds, valid range 0.1-30.
+        warning-delay-seconds: 2.0
+        # [VI] Số fireball cơ bản; mặc định 3, hợp lệ 1-32.
+        # [EN] Base fireball count; default 3, valid range 1-32.
+        fireball-count: 3
+        # [VI] Số level cho mỗi fireball cộng thêm; mặc định 3 (level 3 được thêm 1), hợp lệ 1-30.
+        # [EN] Levels per extra fireball; default 3 (level 3 gains one), valid range 1-30.
+        fireballs-increase-every-levels: 3
+        # [VI] Bán kính vòng cảnh báo/khu vực rơi; mặc định 3 block, tăng mỗi 5 level, hợp lệ 1-12.
+        # [EN] Warning/fall area radius; default 3 blocks, scales every 5 levels, valid range 1-12.
+        area-radius-blocks: 3.0
+        # [VI] Số level cho mỗi block bán kính cộng thêm; mặc định 5 (level 5 được thêm 1), hợp lệ 1-30.
+        # [EN] Levels per added radius block; default 5 (level 5 gains one), valid range 1-30.
+        area-radius-increase-every-levels: 5
+        # [VI] Số hạt trên vòng cảnh báo; mặc định 32, hợp lệ 8-128.
+        # [EN] Particles on the warning ring; default 32, valid range 8-128.
+        warning-particle-count: 32
+        # [VI] Nhịp vẽ vòng cảnh báo; mặc định 5 tick, hợp lệ 1-40.
+        # [EN] Warning ring update interval; default 5 ticks, valid range 1-40.
+        warning-particle-interval-ticks: 5
+        # [VI] Độ cao fireball xuất hiện; mặc định 16 block, hợp lệ 4-80.
+        # [EN] Fireball spawn height; default 16 blocks, valid range 4-80.
+        fall-height-blocks: 16.0
+        # [VI] Tốc độ rơi; mặc định 1.2 block mỗi tick, hợp lệ 0.2-4.
+        # [EN] Fall speed; default 1.2 blocks per tick, valid range 0.2-4.
+        fall-speed: 1.2
+        # [VI] Khoảng cách thời gian giữa các fireball; mặc định 10 tick, hợp lệ 1-100.
+        # [EN] Delay between fireballs; default 10 ticks, valid range 1-100.
+        fireball-interval-ticks: 10
+        # [VI] Bán kính gây sát thương quanh mỗi điểm rơi; mặc định 1.5 block, hợp lệ 0.5-8.
+        # [EN] Damage radius around each impact; default 1.5 blocks, valid range 0.5-8.
+        impact-radius-blocks: 1.5
+        # [VI] Sát thương mỗi fireball; mặc định 12, hợp lệ 0-100.
+        # [EN] Damage per fireball; default 12, valid range 0-100.
         damage: 12.0
-        # [VI] Thời gian rơi/cảnh báo; mặc định 30 tick, hợp lệ 10-100.
-        # [EN] Fall/telegraph delay; default 30 ticks, valid range 10-100.
-        impact-delay-ticks: 30
-        # [VI] Thời gian chôn chân; mặc định 2 giây, hợp lệ 1-5.
-        # [EN] Root duration; default 2 seconds, valid range 1-5.
-        root-duration-seconds: 2
-        # [VI] Cấp Slowness dùng để chôn chân; mặc định 10, hợp lệ 0-20.
-        # [EN] Slowness amplifier for rooting; default 10, valid range 0-20.
-        root-amplifier: 10
-        # [VI] Số mục tiêu tối đa; mặc định 24, hợp lệ 1-64.
-        # [EN] Maximum targets; default 24, valid range 1-64.
-        max-targets: 24
+        # [VI] Số mục tiêu tối đa mỗi điểm rơi; mặc định 8, hợp lệ 1-64.
+        # [EN] Maximum targets per impact; default 8, valid range 1-64.
+        max-targets-per-fireball: 8
+        # [VI] Thời gian đốt sau khi trúng; mặc định 2 giây, hợp lệ 0-15 (0 tắt).
+        # [EN] Burn duration on hit; default 2 seconds, valid range 0-15 (0 disables).
+        burn-duration-seconds: 2
       PHOENIX_REBIRTH:
         # [VI] Hồi chiêu Phượng Hoàng Tái Sinh; mặc định 90 giây, hợp lệ 1-3600.
         # [EN] Phoenix Rebirth cooldown; default 90 seconds, valid range 1-3600.
@@ -1402,21 +1441,33 @@ classes:
         # [EN] Temporary ice duration under targets; default 3 seconds, valid range 1-30.
         ice-duration-seconds: 3
       ICE_WALL:
-        # [VI] Hồi chiêu; mặc định 18 giây, hợp lệ 1-3600.
-        # [EN] Cooldown; default 18 seconds, valid range 1-3600.
+        # [VI] Hồi chiêu Băng Ngục; mặc định 18 giây, hợp lệ 1-3600.
+        # [EN] Ice Prison cooldown; default 18 seconds, valid range 1-3600.
         cooldown-seconds: 18
         # [VI] Tầm kích hoạt cơ bản; mặc định 5 block, hợp lệ 1-64.
         # [EN] Base cast range; default 5 blocks, valid range 1-64.
         range-blocks: 5.0
-        # [VI] Chiều rộng hàng băng; mặc định 5 block, hợp lệ 1-9.
-        # [EN] Ice wall width; default 5 blocks, valid range 1-9.
-        width-blocks: 5
-        # [VI] Chiều cao; mặc định 2 block, hợp lệ 2-3.
-        # [EN] Height; default 2 blocks, valid range 2-3.
-        height-blocks: 2
-        # [VI] Thời gian tồn tại; mặc định 6 giây, hợp lệ 1-30.
-        # [EN] Lifetime; default 6 seconds, valid range 1-30.
-        duration-seconds: 6
+        # [VI] Thời gian Băng Ngục; mặc định 3 giây, tăng 0.1 giây mỗi level, hợp lệ 0.1-30.
+        # [EN] Ice Prison duration; default 3 seconds, adds 0.1 second per level, valid range 0.1-30.
+        duration-seconds: 3.0
+        # [VI] Thời gian cộng thêm mỗi level sau level 1; mặc định 0.1 giây, hợp lệ 0-10.
+        # [EN] Extra duration per level after level 1; default 0.1 second, valid range 0-10.
+        duration-increase-per-level-seconds: 0.1
+        # [VI] Sát thương mỗi giây khi mục tiêu còn trong lồng; mặc định 1, hợp lệ 0-100.
+        # [EN] Damage per second while the target is inside; default 1, valid range 0-100.
+        damage-per-second: 1.0
+        # [VI] Sát thương tăng mỗi level sau level 1; mặc định 0.1, hợp lệ 0-10.
+        # [EN] Damage added per level after level 1; default 0.1, valid range 0-10.
+        damage-increase-per-level: 0.1
+        # [VI] Phần trăm giảm tốc độ sau khi thoát lồng; mặc định 50%, hợp lệ 0-80%.
+        # [EN] Movement speed reduction after leaving the prison; default 50%, valid range 0-80%.
+        slowness-percent: 50.0
+        # [VI] Thời gian làm chậm sau khi thoát; mặc định 3 giây, tăng 0.1 giây mỗi level, hợp lệ 0.1-30.
+        # [EN] Slow duration after leaving; default 3 seconds, adds 0.1 second per level, valid range 0.1-30.
+        slowness-duration-seconds: 3.0
+        # [VI] Thời gian làm chậm cộng mỗi level sau level 1; mặc định 0.1 giây, hợp lệ 0-10.
+        # [EN] Slow duration added per level after level 1; default 0.1 second, valid range 0-10.
+        slowness-duration-increase-per-level-seconds: 0.1
       FROST_SHIELD:
         # [VI] Hồi chiêu; mặc định 24 giây, hợp lệ 1-3600.
         # [EN] Cooldown; default 24 seconds, valid range 1-3600.

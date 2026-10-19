@@ -10,6 +10,9 @@ display-name: "§0§lSpider Boss"
 army-token-class: assassin
 hp: 900
 damage-multiplier: 1.8
+# [VI] Sát thương tối đa mỗi hit skill lên người chơi trước giảm giáp và hệ số combat chung; mặc định 5, hợp lệ 0-100.
+# [EN] Maximum skill damage per hit to players before armor and the global combat multiplier; default 5, valid 0-100.
+max-player-hit-damage: 5.0
 # [VI] EXP thưởng cơ bản level 1; mặc định 250, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
 # [EN] Base XP reward at level 1; default 250, valid range 1-1000000; boss level scaling is in _settings.yml.
 experience: 250
