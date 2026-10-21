@@ -18,6 +18,12 @@
 - Trong báo cáo cuối, nêu phần kế hoạch tiếp theo và hỏi người dùng có muốn tiếp tục không. Chờ xác nhận trước khi bắt đầu phần kế tiếp.
 - Với yêu cầu độc lập, không liên quan đến kế hoạch đang theo dõi, không sửa `plan.md` chỉ để tạo cập nhật hình thức.
 
+## Commit, Push và Pull Request
+- Sau khi hoàn thành công việc, hỏi người dùng có muốn commit và push thay đổi lên GitHub, đồng thời tạo pull request hay không.
+- Chỉ thực hiện khi người dùng đồng ý. Trước khi commit, kiểm tra diff và chỉ đưa các thay đổi thuộc phạm vi công việc vào commit; tạo tiêu đề commit và nội dung mô tả phù hợp với thay đổi.
+- Sau khi commit, push nhánh lên remote phù hợp và tạo pull request đến repository/nhánh đích phù hợp với cấu hình remote. Nếu thiếu thông tin hoặc không đủ quyền để xác định repo/nhánh đích, hỏi người dùng trước khi tạo pull request.
+- Nếu người dùng từ chối, không commit, push hoặc tạo pull request.
+
 ## Cấu hình và tài liệu
 - Mọi tính năng mới phải có cấu hình để người quản trị tùy chỉnh mà không cần sửa và biên dịch lại mã Java. Cung cấp giá trị mặc định hợp lý khi khóa cấu hình bị thiếu.
 - Mọi tham số trong file cấu hình mặc định phải có chú thích cả tiếng Việt và tiếng Anh, nêu công dụng, giá trị mặc định và giới hạn hợp lệ nếu có. Ví dụ:
