@@ -1,0 +1,400 @@
+# ============================================================
+# [GIANT BOSS] 🗿 GIANT BOSS
+# ============================================================
+boss-id: giant_boss
+enabled: true
+entity-type: GIANT
+display-name: "§6§lKhổng Lồ"
+# [VI] Class lính của token boss; bậc token theo level boss.
+# [EN] Mercenary class for this boss token; token tier follows the boss level.
+army-token-class: berserker
+hp: 1500
+damage-multiplier: 2.5
+# [VI] EXP thưởng cơ bản level 1; mặc định 1000, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
+# [EN] Base XP reward at level 1; default 1000, valid range 1-1000000; boss level scaling is in _settings.yml.
+experience: 1000
+chance: 3
+# [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1800 = 30 phút.
+# [EN] Default boss lifetime after spawning (seconds); 1800 = 30 minutes.
+duration-seconds: 1800
+warning-seconds: 60
+activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
+
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# [VI] Giá trị được khai báo đến level 10; runtime giới hạn HP tối đa của boss ở 1024.
+# [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
+# damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
+hp-by-level:
+  1: 1500
+  2: 2900
+  3: 4400
+  4: 5900
+  5: 7400
+  6: 8900
+  7: 10400
+  8: 13600
+  9: 16800
+  10: 20000
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
+skills:
+  ground-slam:
+    enabled: true
+    damage: 10.0
+    multiply: 1
+    cooldown-seconds: 12
+    radius: 4.0
+    velocity: 1.0
+    spread: 0.0
+    # [VI] Độ dài đường xung kích (block); mặc định 15; hợp lệ 4-24.
+    # [EN] Shockwave line length (blocks); default 15; valid range 4-24.
+    line-length: 5
+  boulder-toss:
+    enabled: true
+    damage: 10.0
+    multiply: 1
+    cooldown-seconds: 20
+    radius: 3.0
+    velocity: 1.1
+    spread: 0.0
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  giant-armor:
+    enabled: true
+    # [VI] Hệ số sát thương vào điểm yếu đầu; mặc định 2; hợp lệ 1-5.
+    # [EN] Head weakpoint damage multiplier; default 2; valid range 1-5.
+    headshot-multiplier: 2.0
+
+immunities:
+  fall-damage: true
+
+drops:
+  ROTTEN_FLESH:
+    min-amount: 20
+    max-amount: 50
+    chance: 1.0
+  DIAMOND:
+    min-amount: 2
+    max-amount: 6
+    chance: 0.6
+
+# [VI] Loot quý theo level; level thiếu dùng mốc gần nhất thấp hơn. amount: 1-64, chance: 0.0-1.0.
+# [EN] Rare drops by level; missing tiers inherit the nearest lower tier. amount: 1-64, chance: 0.0-1.0.
+# [VI] enchantments áp dụng trực tiếp; book-enchantments lưu enchant để áp dụng lên vật phẩm.
+# [EN] enchantments apply to the item; book-enchantments are stored for applying to another item.
+# [VI] Mỗi cấp có một di vật riêng; số dòng enchant tăng đúng theo level (1-10).
+#      Số lượng hợp lệ 1-64; chance 0-1; cấp enchant 1-255.
+#      Lore gồm truyền thuyết theo boss và tối đa 4 dòng cho mỗi vật phẩm.
+#      Với cung, từ cấp 8 dùng sách phù phép để giữ đủ dòng enchant tương thích.
+# [EN] Each tier has a unique relic; enchantment lines increase with level (1-10).
+#      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
+#      Each item's lore tells the boss-specific legend in at most 4 lines.
+#      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+# [VI] Tạo bộ giáp bốn món cho boss này; vật liệu và enchant tự tăng theo level.
+# [EN] Generate this boss's four-piece armor set; materials and enchants scale by level.
+armor-set:
+  # [VI] Bật/tắt bộ giáp; mặc định true.
+  # [EN] Enable or disable the armor set; default true.
+  enabled: true
+  # [VI] Tên bộ giáp dùng cho mũ, áo, quần và ủng.
+  # [EN] Armor set name prefix used by the helmet, chestplate, leggings, and boots.
+  name: "§6§lGiáp Địa Mạch"
+  # [VI] ID lore trong story.yml; phải trỏ tới một mục artifacts hợp lệ.
+  # [EN] Lore ID in story.yml; must reference a valid artifacts entry.
+  story-id: giant-armor
+  # [VI] Mốc cấp tối thiểu cho vật liệu; từ 1 sắt, 4 kim cương, 7 netherite.
+  # [EN] Minimum level for each material tier; iron at 1, diamond at 4, netherite at 7.
+  material-tiers:
+    1: IRON
+    4: DIAMOND
+    7: NETHERITE
+  piece-names:
+    helmet: "Mũ Mạch Đá"
+    chestplate: "Áo Thành Cổ"
+    leggings: "Quần Địa Tầng"
+    boots: "Ủng Trụ Núi"
+  enchantments:
+    helmet: [protection, respiration, unbreaking]
+    chestplate: [protection, unbreaking, thorns]
+    leggings: [protection, swift_sneak, unbreaking]
+    boots: [protection, feather_falling, unbreaking, depth_strider]
+  bonuses:
+    2: {damage-reduction-percent: 0.05, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK]}
+    3: {damage-reduction-percent: 0.05, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK], knockback-reduction-percent: 0.10}
+    4: {damage-reduction-percent: 0.12, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK, PROJECTILE, ENTITY_EXPLOSION, BLOCK_EXPLOSION]}
+
+level-drops:
+  1:
+    - material: IRON_AXE
+      name: "§6§lRìu Địa Mạch · Cấp 1"
+      story-id: giant-relic-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 3
+    - material: ENCHANTED_BOOK
+      name: "§6§lSổ Địa Mạch · Cấp 1"
+      story-id: giant-codex-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 3
+
+  2:
+    - material: IRON_AXE
+      name: "§6§lRìu Địa Mạch · Cấp 2"
+      story-id: giant-relic-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 3
+        smite: 3
+    - material: ENCHANTED_BOOK
+      name: "§6§lSổ Địa Mạch · Cấp 2"
+      story-id: giant-codex-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 3
+        smite: 3
+
+  3:
+    - material: DIAMOND_AXE
+      name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 3"
+      story-id: giant-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+    - material: ENCHANTED_BOOK
+      name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 3"
+      story-id: giant-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+
+  4:
+    - material: DIAMOND_AXE
+      name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 4"
+      story-id: giant-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 5
+        smite: 5
+        bane_of_arthropods: 5
+        efficiency: 5
+    - material: ENCHANTED_BOOK
+      name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 4"
+      story-id: giant-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 5
+        smite: 5
+        bane_of_arthropods: 5
+        efficiency: 5
+  5:
+    - material: DIAMOND_AXE
+      name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 5"
+      story-id: giant-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 6
+        smite: 6
+        bane_of_arthropods: 6
+        efficiency: 6
+        silk_touch: 1
+    - material: ENCHANTED_BOOK
+      name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 5"
+      story-id: giant-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 6
+        smite: 6
+        bane_of_arthropods: 6
+        efficiency: 6
+        silk_touch: 1
+
+  6:
+    - material: NETHERITE_AXE
+      name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 6"
+      story-id: giant-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        efficiency: 7
+        silk_touch: 1
+        fortune: 5
+    - material: ENCHANTED_BOOK
+      name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 6"
+      story-id: giant-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        efficiency: 7
+        silk_touch: 1
+        fortune: 5
+
+  7:
+    - material: NETHERITE_AXE
+      name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 7"
+      story-id: giant-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        efficiency: 7
+        silk_touch: 1
+        fortune: 5
+        unbreaking: 5
+    - material: ENCHANTED_BOOK
+      name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 7"
+      story-id: giant-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        efficiency: 7
+        silk_touch: 1
+        fortune: 5
+        unbreaking: 5
+
+  8:
+    - material: NETHERITE_AXE
+      name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 8"
+      story-id: giant-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 8
+        smite: 8
+        bane_of_arthropods: 8
+        efficiency: 8
+        silk_touch: 1
+        fortune: 6
+        unbreaking: 6
+        mending: 1
+    - material: ENCHANTED_BOOK
+      name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 8"
+      story-id: giant-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 8
+        smite: 8
+        bane_of_arthropods: 8
+        efficiency: 8
+        silk_touch: 1
+        fortune: 6
+        unbreaking: 6
+        mending: 1
+
+  9:
+    - material: NETHERITE_AXE
+      name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 9"
+      story-id: giant-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 9
+        smite: 9
+        bane_of_arthropods: 9
+        efficiency: 9
+        silk_touch: 1
+        fortune: 7
+        unbreaking: 7
+        mending: 1
+        fire_aspect: 2
+    - material: ENCHANTED_BOOK
+      name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 9"
+      story-id: giant-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 9
+        smite: 9
+        bane_of_arthropods: 9
+        efficiency: 9
+        silk_touch: 1
+        fortune: 7
+        unbreaking: 7
+        mending: 1
+        fire_aspect: 2
+
+  10:
+    - material: NETHERITE_AXE
+      name: "§6§lRìu Địa Mạch Cự Nhân · Cấp 10"
+      story-id: giant-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 10
+        smite: 10
+        bane_of_arthropods: 10
+        efficiency: 10
+        silk_touch: 1
+        fortune: 8
+        unbreaking: 8
+        mending: 1
+        fire_aspect: 2
+        vanishing_curse: 1
+    - material: ENCHANTED_BOOK
+      name: "§6§lMật Lục Rìu Địa Mạch Cự Nhân · Cấp 10"
+      story-id: giant-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 10
+        smite: 10
+        bane_of_arthropods: 10
+        efficiency: 10
+        silk_touch: 1
+        fortune: 8
+        unbreaking: 8
+        mending: 1
+        fire_aspect: 2
+        vanishing_curse: 1

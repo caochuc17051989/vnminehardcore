@@ -1,5 +1,18 @@
 # Changelog
 
+## [v2.0.0] - 2026-10-21
+
+### Added
+- Thêm gear cho lính đánh thuê theo class, vật liệu, 1-5 sao, set và slot; chỉ số gear có hệ số, bonus set và giới hạn cấu hình riêng.
+- Thêm `/vnarmy item give` để admin cấp một món hoặc trọn set gear bằng GUI hoặc tham số; dùng quyền hiện có `vnmine.command.army.admin`.
+- Boss có thể rơi gear lính theo level; mỗi slot được roll riêng theo cấu hình `mercenary-gear-drops`.
+- Bổ sung AI boss: lựa chọn mục tiêu có trọng số, né projectile, phối hợp minion, chiến thuật theo phase, giới hạn độ cao boss bay và scaling kích thước/HP.
+
+### Changed
+- Tăng thời lượng boss mặc định từ 20 lên 30 phút và di trú các file boss cũ đang đặt 1200 giây.
+- Thêm giới hạn sát thương toàn cục boss gây trên mỗi hit người chơi, mặc định 6.
+- Bổ sung gear stats theo class cho lính đánh thuê và cập nhật cấu hình boss/armies tương ứng.
+
 ## [v1.46.1] - 2026-10-19
 
 ### Changed

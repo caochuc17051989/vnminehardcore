@@ -1,0 +1,429 @@
+# ============================================================
+# [WITCH BOSS] 🧙 WITCH BOSS
+# ============================================================
+boss-id: witch_boss
+enabled: true
+entity-type: WITCH
+display-name: "§9§lWitch Boss"
+# [VI] Class lính của token boss; bậc token theo level boss.
+# [EN] Mercenary class for this boss token; token tier follows the boss level.
+army-token-class: druid
+hp: 1150
+damage-multiplier: 2.0
+# [VI] EXP thưởng cơ bản level 1; mặc định 350, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
+# [EN] Base XP reward at level 1; default 350, valid range 1-1000000; boss level scaling is in _settings.yml.
+experience: 350
+chance: 10
+# [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1800 = 30 phút.
+# [EN] Default boss lifetime after spawning (seconds); 1800 = 30 minutes.
+duration-seconds: 1800
+warning-seconds: 45
+activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
+
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# [VI] Giá trị được khai báo đến level 10; runtime giới hạn HP tối đa của boss ở 1024.
+# [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
+# damage là sát thương cơ sở (tăng theo level); số potion = level * multiply, tối đa 40.
+hp-by-level:
+  1: 1150
+  2: 2500
+  3: 4000
+  4: 5500
+  5: 7000
+  6: 8500
+  7: 9900
+  8: 13000
+  9: 16200
+  10: 19500
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
+skills:
+  potion-rain:
+    enabled: true
+    damage: 5.0
+    multiply: 1
+    cooldown-seconds: 12
+    radius: 4.0
+    velocity: 1.0
+    spread: 0.8
+    # [VI] Số bình thuốc mỗi lần; mặc định 8; hợp lệ 3-16.
+    # [EN] Potions per cast; default 8; valid range 3-16.
+    potion-count: 8
+    # [VI] Thành phần vận tốc ném lên; mặc định 0.55; hợp lệ 0.1-1.5.
+    # [EN] Upward launch velocity; default 0.55; valid range 0.1-1.5.
+    launch-y: 0.55
+  disarm-magic:
+    enabled: true
+    damage: 0.0
+    multiply: 1
+    cooldown-seconds: 14
+    radius: 4.0
+    velocity: 1.2
+    spread: 0.0
+    # [VI] Thời gian Mệt mỏi khai thác (tick); mặc định 80; hợp lệ 20-200.
+    # [EN] Mining Fatigue duration (ticks); default 80; valid range 20-200.
+    fatigue-ticks: 80
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  witchcraft-drain:
+    enabled: true
+    # [VI] Tỷ lệ máu hút lại từ sát thương hiệu ứng; mặc định 0.5; hợp lệ 0-1.
+    # [EN] Healing fraction from qualifying effect damage; default 0.5; valid range 0-1.
+    heal-percent: 0.5
+    # [VI] Bán kính kích hoạt hút máu (block); mặc định 16; hợp lệ 1-64.
+    # [EN] Healing trigger radius (blocks); default 16; valid range 1-64.
+    radius: 5.0
+
+immunities:
+  poison: true
+  potion-effects:
+    - WEAKNESS
+
+drops:
+  POTION:
+    min-amount: 5
+    max-amount: 15
+    chance: 0.8
+  GLOWSTONE_DUST:
+    min-amount: 10
+    max-amount: 25
+    chance: 0.8
+  DIAMOND:
+    min-amount: 3
+    max-amount: 6
+    chance: 0.35
+  IRON_INGOT:
+    min-amount: 8
+    max-amount: 15
+    chance: 0.5
+  EMERALD:
+    min-amount: 10
+    max-amount: 20
+    chance: 0.6
+  REDSTONE:
+    min-amount: 15
+    max-amount: 30
+    chance: 0.7
+  ENCHANTED_BOOK:
+    min-amount: 1
+    max-amount: 2
+    chance: 0.3
+  SUGAR:
+    min-amount: 5
+    max-amount: 10
+    chance: 0.4
+  SPIDER_EYE:
+    min-amount: 3
+    max-amount: 8
+    chance: 0.4
+  GUNPOWDER:
+    min-amount: 5
+    max-amount: 10
+    chance: 0.4
+
+# [VI] Loot quý theo level; level thiếu dùng mốc gần nhất thấp hơn. amount: 1-64, chance: 0.0-1.0.
+# [EN] Rare drops by level; missing tiers inherit the nearest lower tier. amount: 1-64, chance: 0.0-1.0.
+# [VI] enchantments áp dụng trực tiếp; book-enchantments lưu enchant để áp dụng lên vật phẩm.
+# [EN] enchantments apply to the item; book-enchantments are stored for applying to another item.
+# [VI] Mỗi cấp có một di vật riêng; số dòng enchant tăng đúng theo level (1-10).
+#      Số lượng hợp lệ 1-64; chance 0-1; cấp enchant 1-255.
+#      Lore gồm truyền thuyết theo boss và tối đa 4 dòng cho mỗi vật phẩm.
+#      Với cung, từ cấp 8 dùng sách phù phép để giữ đủ dòng enchant tương thích.
+# [EN] Each tier has a unique relic; enchantment lines increase with level (1-10).
+#      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
+#      Each item's lore tells the boss-specific legend in at most 4 lines.
+#      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+# [VI] Tạo bộ giáp bốn món cho boss này; vật liệu và enchant tự tăng theo level.
+# [EN] Generate this boss's four-piece armor set; materials and enchants scale by level.
+armor-set:
+  # [VI] Bật/tắt bộ giáp; mặc định true.
+  # [EN] Enable or disable the armor set; default true.
+  enabled: true
+  # [VI] Tên bộ giáp dùng cho mũ, áo, quần và ủng.
+  # [EN] Armor set name prefix used by the helmet, chestplate, leggings, and boots.
+  name: "§d§lGiáp Trăng Máu"
+  # [VI] ID lore trong story.yml; phải trỏ tới một mục artifacts hợp lệ.
+  # [EN] Lore ID in story.yml; must reference a valid artifacts entry.
+  story-id: witch-armor
+  # [VI] Mốc cấp tối thiểu cho vật liệu; từ 1 sắt, 4 kim cương, 7 netherite.
+  # [EN] Minimum level for each material tier; iron at 1, diamond at 4, netherite at 7.
+  material-tiers:
+    1: IRON
+    4: DIAMOND
+    7: NETHERITE
+
+level-drops:
+  1:
+    - material: ENCHANTED_BOOK
+      name: "§d§lDược Thư · Cấp 1"
+      story-id: witch-relic-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        protection: 2
+    - material: ENCHANTED_BOOK
+      name: "§d§lSổ Dược Thư · Cấp 1"
+      story-id: witch-codex-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        protection: 2
+
+  2:
+    - material: ENCHANTED_BOOK
+      name: "§d§lDược Thư · Cấp 2"
+      story-id: witch-relic-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        protection: 2
+        sharpness: 3
+    - material: ENCHANTED_BOOK
+      name: "§d§lSổ Dược Thư · Cấp 2"
+      story-id: witch-codex-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        protection: 2
+        sharpness: 3
+
+  3:
+    - material: ENCHANTED_BOOK
+      name: "§d§lDược Thư Trăng Máu · Cấp 3"
+      story-id: witch-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        protection: 3
+        sharpness: 4
+        fire_aspect: 2
+    - material: ENCHANTED_BOOK
+      name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 3"
+      story-id: witch-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        protection: 3
+        sharpness: 4
+        fire_aspect: 2
+
+  4:
+    - material: ENCHANTED_BOOK
+      name: "§d§lDược Thư Trăng Máu · Cấp 4"
+      story-id: witch-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        protection: 4
+        sharpness: 5
+        fire_aspect: 2
+        mending: 1
+    - material: ENCHANTED_BOOK
+      name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 4"
+      story-id: witch-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        protection: 4
+        sharpness: 5
+        fire_aspect: 2
+        mending: 1
+  5:
+    - material: ENCHANTED_BOOK
+      name: "§d§lDược Thư Trăng Máu · Cấp 5"
+      story-id: witch-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        protection: 5
+        sharpness: 6
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 4
+    - material: ENCHANTED_BOOK
+      name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 5"
+      story-id: witch-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        protection: 5
+        sharpness: 6
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 4
+
+  6:
+    - material: ENCHANTED_BOOK
+      name: "§d§lDược Thư Trăng Máu · Cấp 6"
+      story-id: witch-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        protection: 6
+        sharpness: 7
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 5
+        looting: 5
+    - material: ENCHANTED_BOOK
+      name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 6"
+      story-id: witch-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        protection: 6
+        sharpness: 7
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 5
+        looting: 5
+
+  7:
+    - material: ENCHANTED_BOOK
+      name: "§d§lDược Thư Trăng Máu · Cấp 7"
+      story-id: witch-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        protection: 6
+        sharpness: 7
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 5
+        looting: 5
+        fortune: 5
+    - material: ENCHANTED_BOOK
+      name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 7"
+      story-id: witch-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        protection: 6
+        sharpness: 7
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 5
+        looting: 5
+        fortune: 5
+
+  8:
+    - material: ENCHANTED_BOOK
+      name: "§d§lDược Thư Trăng Máu · Cấp 8"
+      story-id: witch-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        protection: 7
+        sharpness: 8
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 6
+        looting: 6
+        fortune: 6
+        efficiency: 8
+    - material: ENCHANTED_BOOK
+      name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 8"
+      story-id: witch-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        protection: 7
+        sharpness: 8
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 6
+        looting: 6
+        fortune: 6
+        efficiency: 8
+
+  9:
+    - material: ENCHANTED_BOOK
+      name: "§d§lDược Thư Trăng Máu · Cấp 9"
+      story-id: witch-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        protection: 8
+        sharpness: 9
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 7
+        looting: 7
+        fortune: 7
+        efficiency: 9
+        feather_falling: 8
+    - material: ENCHANTED_BOOK
+      name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 9"
+      story-id: witch-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        protection: 8
+        sharpness: 9
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 7
+        looting: 7
+        fortune: 7
+        efficiency: 9
+        feather_falling: 8
+
+  10:
+    - material: ENCHANTED_BOOK
+      name: "§d§lDược Thư Trăng Máu · Cấp 10"
+      story-id: witch-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        protection: 9
+        sharpness: 10
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 8
+        looting: 8
+        fortune: 8
+        efficiency: 10
+        feather_falling: 9
+        vanishing_curse: 1
+    - material: ENCHANTED_BOOK
+      name: "§d§lMật Lục Dược Thư Trăng Máu · Cấp 10"
+      story-id: witch-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        protection: 9
+        sharpness: 10
+        fire_aspect: 2
+        mending: 1
+        unbreaking: 8
+        looting: 8
+        fortune: 8
+        efficiency: 10
+        feather_falling: 9
+        vanishing_curse: 1

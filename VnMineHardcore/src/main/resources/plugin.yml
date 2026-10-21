@@ -106,7 +106,7 @@ commands:
     permission: vnmine.command.users.manage
   vnarmy:
     description: Thuê và quản lý lính đánh thuê của người chơi
-    usage: /vnarmy <gui|list|hire|recall [ID]|rest [ID]|rename|attack|defend|protect|gear|mute|remove|clear|give|token>
+    usage: /vnarmy <gui|list|hire|recall [ID]|rest [ID]|rename|attack|defend|protect|gear|item|mute|remove|clear|give|token>
     permission: vnmine.command.army
   vndeathhistory:
     description: Xem và khôi phục lịch sử inventory lúc người chơi chết (admin)

@@ -1,0 +1,87 @@
+# ============================================================
+# [EARTHQUAKE] 🌍 ĐỘNG ĐẤT
+# ============================================================
+# [VI] Đá lở và rung chấn hất người chơi ngoài trời theo phương ngang/dọc.
+# [EN] Falling debris and tremors launch exposed players horizontally and vertically.
+
+disaster-id: earthquake
+enabled: true
+chance: 5
+name: "§6§l🌍 Động Đất"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Đá lở, rung chấn gây buồn nôn/làm chậm và hất người ngoài trời theo phương ngang/dọc. Tìm nơi trú có mái che."
+duration-seconds: 30
+effect-interval-seconds: 3
+warning-seconds: 120
+
+conditions:
+  only-night: false
+  only-day: false
+  worlds: ["overworld"]
+  min-players-online: 1
+
+start-title: "§6§l🌍 Động Đất"
+start-subtitle: "Động đất dữ dội!"
+start-sound: ENTITY_GENERIC_EXPLODE
+start-sound-volume: 1.0
+start-sound-pitch: 0.5
+
+actions:
+  - type: potion_effect
+    condition:
+      require-outdoor: true
+      ignore-safe-zone: false
+    targets:
+      player:
+        weight: 100
+    effects:
+      - type: NAUSEA
+        duration-ticks: 30
+        amplifier: 0
+      - type: SLOWNESS
+        duration-ticks: 30
+        amplifier: 1
+
+  - type: falling_block
+    condition:
+      require-outdoor: true
+      ignore-safe-zone: false
+    targets:
+      player:
+        weight: 100
+    radius: 30
+    min-y: 30
+    block-fall-chance: 30
+    blast-resistance-factor: 0.1
+    blocks-per-player: 5
+
+  - type: velocity
+    condition:
+      require-outdoor: true
+      ignore-safe-zone: false
+    targets:
+      all_players:
+        weight: 100
+    # [VI] Vận tốc hất lên (block/tick); mặc định 0.9. Số hữu hạn >= 0.
+    # [EN] Upward launch velocity (blocks/tick); default 0.9. Finite value >= 0.
+    velocity-y: 0.9
+    # [VI] Khoảng vận tốc ngẫu nhiên theo trục X/Z; mặc định -1.0 đến 1.0.
+    # [EN] Random velocity range on X/Z axes; default -1.0 to 1.0.
+    # [VI] Dạng min-max, số hữu hạn và min <= max; giá trị âm đẩy theo hướng âm.
+    # [EN] Format min-max, finite numbers with min <= max; negative values push in the negative direction.
+    velocity-x-range: "-1.0-1.0"
+    velocity-z-range: "-1.0-1.0"
+
+  - type: action_bar
+    condition:
+      require-outdoor: false
+      ignore-safe-zone: true
+    targets:
+      all_players:
+        weight: 100
+    message: "§6§l🌍 Động đất! Đá lở!"
+
+on-end:
+  - type: broadcast
+    message: "§a🌍 Động đất đã kết thúc."

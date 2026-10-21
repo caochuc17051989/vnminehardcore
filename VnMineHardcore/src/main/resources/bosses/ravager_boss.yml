@@ -14,9 +14,9 @@ damage-multiplier: 2.5
 # [EN] Base XP reward at level 1; default 600, valid range 1-1000000; boss level scaling is in _settings.yml.
 experience: 600
 chance: 8
-# [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1200 = 20 phút.
-# [EN] Default boss lifetime after spawning (seconds); 1200 = 20 minutes.
-duration-seconds: 1200
+# [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1800 = 30 phút.
+# [EN] Default boss lifetime after spawning (seconds); 1800 = 30 minutes.
+duration-seconds: 1800
 warning-seconds: 45
 activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
 

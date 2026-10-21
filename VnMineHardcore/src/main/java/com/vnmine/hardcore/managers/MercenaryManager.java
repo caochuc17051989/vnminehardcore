@@ -1,105 +1,7 @@
 package com.vnmine.hardcore.managers;
 
 import com.vnmine.hardcore.VnMineHardcore;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
-import org.bukkit.World;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.block.Block;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Evoker;
-import org.bukkit.entity.Horse;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Mob;
-import org.bukkit.entity.Monster;
-import org.bukkit.entity.Piglin;
-import org.bukkit.entity.PiglinAbstract;
-import org.bukkit.entity.PiglinBrute;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Vex;
-import org.bukkit.entity.Villager;
-import org.bukkit.entity.Zombie;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.AbstractArrow;
-import org.bukkit.entity.SpectralArrow;
-import org.bukkit.entity.Snowball;
-import org.bukkit.entity.SmallFireball;
-import org.bukkit.entity.Projectile;
-import org.bukkit.entity.ThrownPotion;
-import org.bukkit.entity.SplashPotion;
-import org.bukkit.entity.LingeringPotion;
-import org.bukkit.entity.TippedArrow;
 import io.papermc.paper.event.entity.EntityDamageItemEvent;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockFromToEvent;
-import org.bukkit.event.block.BlockPhysicsEvent;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPistonExtendEvent;
-import org.bukkit.event.block.BlockPistonRetractEvent;
-import org.bukkit.event.block.BlockExplodeEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityCombustEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntitySpellCastEvent;
-import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
-import org.bukkit.event.entity.EntityTransformEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.entity.EntityRemoveEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.entity.ProjectileLaunchEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemHeldEvent;
-import org.bukkit.event.player.PlayerExpChangeEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.world.EntitiesLoadEvent;
-import org.bukkit.event.world.EntitiesUnloadEvent;
-import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.event.player.PlayerSwapHandItemsEvent;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.potion.PotionType;
-import org.bukkit.potion.PotionEffectTypeCategory;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.FluidCollisionMode;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.util.Vector;
-import org.bukkit.entity.Spellcaster;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -109,245 +11,305 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
+import org.bukkit.Color;
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Particle;
+import org.bukkit.Registry;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.Particle.DustOptions;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.attribute.AttributeModifier.Operation;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.TileState;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.AbstractArrow;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.EnderDragon;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Evoker;
+import org.bukkit.entity.ExperienceOrb;
+import org.bukkit.entity.Ghast;
+import org.bukkit.entity.Horse;
+import org.bukkit.entity.LingeringPotion;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.MagmaCube;
+import org.bukkit.entity.Mob;
+import org.bukkit.entity.Monster;
+import org.bukkit.entity.Phantom;
+import org.bukkit.entity.PiglinAbstract;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Slime;
+import org.bukkit.entity.SmallFireball;
+import org.bukkit.entity.Snowball;
+import org.bukkit.entity.SpectralArrow;
+import org.bukkit.entity.SplashPotion;
+import org.bukkit.entity.ThrownPotion;
+import org.bukkit.entity.TippedArrow;
+import org.bukkit.entity.Vex;
+import org.bukkit.entity.Villager;
+import org.bukkit.entity.Wither;
+import org.bukkit.entity.Zombie;
+import org.bukkit.entity.AbstractArrow.PickupStatus;
+import org.bukkit.entity.Spellcaster.Spell;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDispenseArmorEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.entity.EntityCombustEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
+import org.bukkit.event.entity.EntitySpellCastEvent;
+import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
+import org.bukkit.event.entity.EntityTransformEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerExpChangeEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.world.EntitiesLoadEvent;
+import org.bukkit.event.world.EntitiesUnloadEvent;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.permissions.Permission;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionEffectTypeCategory;
+import org.bukkit.potion.PotionType;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.Team;
+import org.bukkit.util.Vector;
 
 public final class MercenaryManager implements CommandExecutor, TabCompleter, Listener {
-    private static final String COMMAND_PERMISSION = "vnmine.command.army";
-    private static final String ADMIN_PERMISSION = "vnmine.command.army.admin";
-    private static final Set<String> VALID_SKILLS = Set.of(
-        "ATTACK", "RANGED_ATTACK", "HEAL_OWNER", "HEAL_ALLIES", "BUFF_OWNER", "BUFF_ALLIES",
-        "SHIELD_OWNER", "VOLLEY", "POWER_STRIKE", "TAUNT", "CLEANSE_OWNER", "FIRE_BOLT",
-        "GUARDIAN_LINK", "GUARDIAN_CHARGE", "GUARDIAN_SHIELD", "GUARDIAN_QUAKE", "GUARDIAN_ULTIMATE",
-        "ROOT_TARGET", "LIFESTEAL", "BERSERK", "SUMMON_VEXES", "LANCE_CHARGE", "ILLUMINATION",
-        "FLAME_BOLT", "IGNITE", "FLAME_NOVA", "FIRE_WALL", "METEOR_STRIKE", "PHOENIX_REBIRTH",
-        "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL", "FROST_SHIELD", "FROST_STEP",
-        "FROST_WALKER", "ICE_AGE");
-    private static final Set<String> FROST_MAGE_SKILLS = Set.of(
-        "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL",
-        "FROST_SHIELD", "FROST_STEP", "FROST_WALKER", "ICE_AGE");
-    private static final Set<String> GUARDIAN_SKILLS = Set.of(
-        "GUARDIAN_LINK", "GUARDIAN_CHARGE", "GUARDIAN_SHIELD",
-        "GUARDIAN_QUAKE", "GUARDIAN_ULTIMATE");
-    private static final Set<String> FIRE_MAGE_SKILLS = Set.of(
-        "FLAME_BOLT", "IGNITE", "FLAME_NOVA", "FIRE_WALL", "METEOR_STRIKE", "PHOENIX_REBIRTH");
-    private static final List<org.bukkit.inventory.EquipmentSlot> EQUIPMENT_SLOTS = List.of(
-        org.bukkit.inventory.EquipmentSlot.HAND,
-        org.bukkit.inventory.EquipmentSlot.HEAD,
-        org.bukkit.inventory.EquipmentSlot.CHEST,
-        org.bukkit.inventory.EquipmentSlot.LEGS,
-        org.bukkit.inventory.EquipmentSlot.FEET,
-        org.bukkit.inventory.EquipmentSlot.OFF_HAND);
-    private static final String[] COMMANDS = {
-        "list", "gui", "hire", "recall", "rest", "attack", "defend", "protect", "gear", "give", "token",
-        "remove", "clear", "mute", "rename"
-    };
-    private final VnMineHardcore plugin;
-    private final File configFile;
-    private final File dataFile;
-    private final File torchFile;
-    private final NamespacedKey unitKey;
-    private final NamespacedKey ownerKey;
-    private final NamespacedKey horseMountKey;
-    private final NamespacedKey summonedMinionKey;
-    private final NamespacedKey tokenClassKey;
-    private final NamespacedKey tokenLevelKey;
-    private final NamespacedKey welcomeGiftKey;
-    private final NamespacedKey illuminationArrowKey;
-    private final NamespacedKey frostProjectileDamageKey;
-    private final NamespacedKey flameProjectileKey;
-    private final NamespacedKey flameProjectileDamageKey;
-    private final NamespacedKey meteorFireballKey;
-    private final NamespacedKey meteorFireballDamageKey;
-    private final NamespacedKey meteorFireballRadiusKey;
-    private final NamespacedKey meteorFireballMaxTargetsKey;
-    private final NamespacedKey meteorFireballBurnTicksKey;
-    private final NamespacedKey flameBoltSlowKey;
-    private final NamespacedKey flameBoltSlowExpiryKey;
-    private final NamespacedKey icePrisonSlowKey;
-    private final NamespacedKey icePrisonSlowExpiryKey;
-    private final File welcomeGiftFile;
-    private final Set<UUID> claimedWelcomeGiftPlayers = new HashSet<>();
-    private final Map<UUID, TemporaryTorch> temporaryTorches = new HashMap<>();
-    private final Map<UUID, BukkitTask> torchRemovalTasks = new HashMap<>();
-    private final Map<String, TemporaryFrostBlock> temporaryFrostBlocks = new HashMap<>();
-    private final Map<String, TemporaryFrostBlock> temporaryFireBlocks = new HashMap<>();
-    private final Set<BukkitTask> frostSkillTasks = new HashSet<>();
-    private final Set<BukkitTask> fireSkillTasks = new HashSet<>();
-    private final Map<UUID, Set<BukkitTask>> fireTasksByUnit = new HashMap<>();
-    private final Map<UUID, Set<BukkitTask>> frostTasksByUnit = new HashMap<>();
-    private final Map<UUID, Set<UUID>> flameProjectilesByUnit = new HashMap<>();
-    private final Map<UUID, Long> frostShieldExpiries = new HashMap<>();
-    private final Map<UUID, Long> phoenixImmunityExpiries = new HashMap<>();
-    private final Map<UUID, Long> flameBoltSlowExpiries = new HashMap<>();
-    private final Map<UUID, Long> icePrisonSlowExpiries = new HashMap<>();
-    private final Map<UUID, Map<PotionEffectType, FrostEffectSnapshot>> temporaryFrostEffects = new HashMap<>();
-    private final Map<UUID, FrostFreezeSnapshot> temporaryFrostFreezes = new HashMap<>();
-    private final MercenaryNamePacketListener namePacketListener;
-    private final MercenaryStatusPacketListener statusPacketListener;
-    private final Map<UUID, Unit> units = new HashMap<>();
-    private final Map<UUID, Mob> activeEntities = new HashMap<>();
-    private final Map<UUID, Map<String, Long>> skillCooldowns = new HashMap<>();
-    private final Map<UUID, Set<UUID>> summonedMinions = new HashMap<>();
-    private final Map<UUID, Integer> guardianHitCounters = new HashMap<>();
-    private final Map<UUID, Long> guardianOwnerImmunityExpiries = new HashMap<>();
-    private final Map<UUID, Set<BukkitTask>> guardianTasksByUnit = new HashMap<>();
-    private final Map<String, GuardianFakeBlockOverlay> guardianFakeBlockOverlays = new HashMap<>();
-    private final Map<UUID, UUID> ownerAttackTargets = new HashMap<>();
-    private final Map<UUID, Long> ownerAttackTargetExpiries = new HashMap<>();
-    private final Map<UUID, Map<UUID, Long>> ownerThreats = new HashMap<>();
-    private final Map<UUID, Map<UUID, Long>> ownerAttackers = new HashMap<>();
-    private final Map<UUID, Map<UUID, Long>> unitThreats = new HashMap<>();
-    private final Map<UUID, UUID> mountByUnit = new HashMap<>();
-    private final Map<UUID, Location> wanderTargets = new HashMap<>();
-    private final Map<UUID, Long> wanderTargetExpiries = new HashMap<>();
-    private final Set<UUID> awaitingGroupName = java.util.concurrent.ConcurrentHashMap.newKeySet();
-    private YamlConfiguration settings;
-    private YamlConfiguration data;
-    private boolean enabled;
-    private boolean ownerCommandedPvpEnabled;
-    private int maxUnits;
-    private int maxDeployedUnits;
-    private double followDistance;
-    private double teleportDistance;
-    private double targetRadius;
-    private double wanderRadius;
-    private boolean requireLineOfSight;
-    private int aiIntervalTicks;
-    private double healAmount;
-    private double healRadius;
-    private String ownerBuff;
-    private int ownerBuffTicks;
-    private double shieldReduction;
-    private int experiencePerKill;
-    private int experiencePerLevel;
-    private int maxLevel;
-    private int recoverySeconds;
-    private double skillPowerPerLevel;
-    private double maxSkillPowerMultiplier;
-    private double skillCooldownReductionAtMaxLevel;
-    private double foodHealAmount;
-    private boolean experienceOrbPickupEnabled;
-    private double experienceOrbPickupRadius;
-    private boolean statusDisplayEnabled;
-    private boolean statusDisplaySeeThrough;
-    private int statusDisplayBarLength;
-    private ChatColor vexHealthColor;
-    private String vexAttackIcon;
-    private String vexFollowIcon;
-    private String vexIdleIcon;
-    private BukkitRunnable aiTask;
+   private static final String COMMAND_PERMISSION = "vnmine.command.army";
+   private static final String ADMIN_PERMISSION = "vnmine.command.army.admin";
+   private static final Set<String> VALID_SKILLS = Set.of(
+      "ATTACK",
+      "RANGED_ATTACK",
+      "HEAL_OWNER",
+      "HEAL_ALLIES",
+      "BUFF_OWNER",
+      "BUFF_ALLIES",
+      "SHIELD_OWNER",
+      "VOLLEY",
+      "POWER_STRIKE",
+      "TAUNT",
+      "CLEANSE_OWNER",
+      "FIRE_BOLT",
+      "GUARDIAN_LINK",
+      "GUARDIAN_CHARGE",
+      "GUARDIAN_SHIELD",
+      "GUARDIAN_QUAKE",
+      "GUARDIAN_ULTIMATE",
+      "ROOT_TARGET",
+      "LIFESTEAL",
+      "BERSERK",
+      "SUMMON_VEXES",
+      "LANCE_CHARGE",
+      "ILLUMINATION",
+      "FLAME_BOLT",
+      "IGNITE",
+      "FLAME_NOVA",
+      "FIRE_WALL",
+      "METEOR_STRIKE",
+      "PHOENIX_REBIRTH",
+      "ICE_SPIKE",
+      "BLIZZARD",
+      "FROST_NOVA",
+      "ICE_WALL",
+      "FROST_SHIELD",
+      "FROST_STEP",
+      "FROST_WALKER",
+      "ICE_AGE"
+   );
+   private static final Set<String> FROST_MAGE_SKILLS = Set.of(
+      "ICE_SPIKE", "BLIZZARD", "FROST_NOVA", "ICE_WALL", "FROST_SHIELD", "FROST_STEP", "FROST_WALKER", "ICE_AGE"
+   );
+   private static final Set<String> GUARDIAN_SKILLS = Set.of("GUARDIAN_LINK", "GUARDIAN_CHARGE", "GUARDIAN_SHIELD", "GUARDIAN_QUAKE", "GUARDIAN_ULTIMATE");
+   private static final Set<String> FIRE_MAGE_SKILLS = Set.of("FLAME_BOLT", "IGNITE", "FLAME_NOVA", "FIRE_WALL", "METEOR_STRIKE", "PHOENIX_REBIRTH");
+   private static final List<EquipmentSlot> EQUIPMENT_SLOTS = List.of(
+      EquipmentSlot.HAND, EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.OFF_HAND
+   );
+   private static final List<String> GEAR_MATERIALS = List.of("leather", "copper", "iron", "gold", "diamond", "netherite");
+   private static final List<EquipmentSlot> SOLDIER_GEAR_SLOTS = List.of(
+      EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.HAND, EquipmentSlot.OFF_HAND
+   );
+   private static final List<Double> DEFAULT_GEAR_MATERIAL_MULTIPLIERS = List.of(1.0, 1.1, 1.22, 1.3, 1.45, 1.6);
+   private static final List<Double> DEFAULT_GEAR_STAR_MULTIPLIERS = List.of(1.0, 1.08, 1.16, 1.25, 1.35);
+   private static final String[] COMMANDS = new String[]{
+      "list", "gui", "hire", "recall", "rest", "attack", "defend", "protect", "gear", "give", "token", "item", "remove", "clear", "mute", "rename"
+   };
+   private final VnMineHardcore plugin;
+   private final File configFile;
+   private final File dataFile;
+   private final File torchFile;
+   private final NamespacedKey unitKey;
+   private final NamespacedKey ownerKey;
+   private final NamespacedKey horseMountKey;
+   private final NamespacedKey summonedMinionKey;
+   private final NamespacedKey tokenClassKey;
+   private final NamespacedKey tokenLevelKey;
+   private final NamespacedKey soldierGearKey;
+   private final NamespacedKey soldierGearClassKey;
+   private final NamespacedKey soldierGearMaterialKey;
+   private final NamespacedKey soldierGearStarsKey;
+   private final NamespacedKey soldierGearSetKey;
+   private final NamespacedKey soldierGearSlotKey;
+   private final NamespacedKey nativeSoldierGearKey;
+   private final NamespacedKey welcomeGiftKey;
+   private final NamespacedKey illuminationArrowKey;
+   private final NamespacedKey frostProjectileDamageKey;
+   private final NamespacedKey flameProjectileKey;
+   private final NamespacedKey flameProjectileDamageKey;
+   private final NamespacedKey meteorFireballKey;
+   private final NamespacedKey meteorFireballDamageKey;
+   private final NamespacedKey meteorFireballRadiusKey;
+   private final NamespacedKey meteorFireballMaxTargetsKey;
+   private final NamespacedKey meteorFireballBurnTicksKey;
+   private final NamespacedKey flameBoltSlowKey;
+   private final NamespacedKey flameBoltSlowExpiryKey;
+   private final NamespacedKey icePrisonSlowKey;
+   private final NamespacedKey icePrisonSlowExpiryKey;
+   private final File welcomeGiftFile;
+   private final Set<UUID> claimedWelcomeGiftPlayers = new HashSet<>();
+   private final Map<UUID, MercenaryManager.TemporaryTorch> temporaryTorches = new HashMap<>();
+   private final Map<UUID, BukkitTask> torchRemovalTasks = new HashMap<>();
+   private final Map<String, MercenaryManager.TemporaryFrostBlock> temporaryFrostBlocks = new HashMap<>();
+   private final Map<String, MercenaryManager.TemporaryFrostBlock> temporaryFireBlocks = new HashMap<>();
+   private final Set<BukkitTask> frostSkillTasks = new HashSet<>();
+   private final Set<BukkitTask> fireSkillTasks = new HashSet<>();
+   private final Map<UUID, Set<BukkitTask>> fireTasksByUnit = new HashMap<>();
+   private final Map<UUID, Set<BukkitTask>> frostTasksByUnit = new HashMap<>();
+   private final Map<UUID, Set<UUID>> flameProjectilesByUnit = new HashMap<>();
+   private final Map<UUID, Long> frostShieldExpiries = new HashMap<>();
+   private final Map<UUID, Long> phoenixImmunityExpiries = new HashMap<>();
+   private final Map<UUID, Long> flameBoltSlowExpiries = new HashMap<>();
+   private final Map<UUID, Long> icePrisonSlowExpiries = new HashMap<>();
+   private final Map<UUID, Map<PotionEffectType, MercenaryManager.FrostEffectSnapshot>> temporaryFrostEffects = new HashMap<>();
+   private final Map<UUID, MercenaryManager.FrostFreezeSnapshot> temporaryFrostFreezes = new HashMap<>();
+   private final MercenaryNamePacketListener namePacketListener;
+   private final MercenaryStatusPacketListener statusPacketListener;
+   private final Map<UUID, MercenaryManager.Unit> units = new HashMap<>();
+   private final Map<UUID, Mob> activeEntities = new HashMap<>();
+   private final Map<UUID, Map<String, Long>> skillCooldowns = new HashMap<>();
+   private final Map<UUID, Long> soldierGearEffectCooldowns = new HashMap<>();
+   private final Map<UUID, Set<UUID>> summonedMinions = new HashMap<>();
+   private final Map<UUID, Integer> guardianHitCounters = new HashMap<>();
+   private final Map<UUID, Long> guardianOwnerImmunityExpiries = new HashMap<>();
+   private final Map<UUID, Set<BukkitTask>> guardianTasksByUnit = new HashMap<>();
+   private final Map<String, MercenaryManager.GuardianFakeBlockOverlay> guardianFakeBlockOverlays = new HashMap<>();
+   private final Map<UUID, UUID> ownerAttackTargets = new HashMap<>();
+   private final Map<UUID, Long> ownerAttackTargetExpiries = new HashMap<>();
+   private final Map<UUID, Map<UUID, Long>> ownerThreats = new HashMap<>();
+   private final Map<UUID, Map<UUID, Long>> ownerAttackers = new HashMap<>();
+   private final Map<UUID, Map<UUID, Long>> unitThreats = new HashMap<>();
+   private final Map<UUID, UUID> mountByUnit = new HashMap<>();
+   private final Map<UUID, Location> wanderTargets = new HashMap<>();
+   private final Map<UUID, Long> wanderTargetExpiries = new HashMap<>();
+   private final Set<UUID> awaitingGroupName = ConcurrentHashMap.newKeySet();
+   private YamlConfiguration settings;
+   private YamlConfiguration data;
+   private boolean enabled;
+   private boolean ownerCommandedPvpEnabled;
+   private int maxUnits;
+   private int maxDeployedUnits;
+   private double followDistance;
+   private double teleportDistance;
+   private double targetRadius;
+   private double wanderRadius;
+   private boolean requireLineOfSight;
+   private int aiIntervalTicks;
+   private double healAmount;
+   private double healRadius;
+   private String ownerBuff;
+   private int ownerBuffTicks;
+   private double shieldReduction;
+   private int experiencePerKill;
+   private int experiencePerLevel;
+   private int maxLevel;
+   private int recoverySeconds;
+   private double skillPowerPerLevel;
+   private double maxSkillPowerMultiplier;
+   private double skillCooldownReductionAtMaxLevel;
+   private double foodHealAmount;
+   private boolean experienceOrbPickupEnabled;
+   private double experienceOrbPickupRadius;
+   private boolean statusDisplayEnabled;
+   private boolean statusDisplaySeeThrough;
+   private int statusDisplayBarLength;
+   private ChatColor vexHealthColor;
+   private String vexAttackIcon;
+   private String vexFollowIcon;
+   private String vexIdleIcon;
+   private BukkitRunnable aiTask;
 
-    private static final class IgniteContext {
-        private final Set<UUID> ignitedTargets = new HashSet<>();
-        private int targetLimit;
-
-        private IgniteContext(int targetLimit) {
-            this.targetLimit = targetLimit;
-        }
-    }
-
-    private static final class TemporaryTorch {
-        private final UUID id;
-        private final String worldName;
-        private final int x;
-        private final int y;
-        private final int z;
-        private final long expiresAt;
-
-        private TemporaryTorch(UUID id, String worldName, int x, int y, int z, long expiresAt) {
-            this.id = id;
-            this.worldName = worldName;
-            this.x = x;
-            this.y = y;
-            this.z = z;
-            this.expiresAt = expiresAt;
-        }
-
-    }
-
-    private static final class TemporaryFrostBlock {
-        private final String key;
-        private final World world;
-        private final int x;
-        private final int y;
-        private final int z;
-        private final BlockData originalData;
-        private final Material temporaryType;
-        private final UUID ownerUnitId;
-        private BukkitTask removalTask;
-
-        private TemporaryFrostBlock(String key, Block block, Material temporaryType, UUID ownerUnitId) {
-            this.key = key;
-            this.world = block.getWorld();
-            this.x = block.getX();
-            this.y = block.getY();
-            this.z = block.getZ();
-            this.originalData = block.getBlockData().clone();
-            this.temporaryType = temporaryType;
-            this.ownerUnitId = ownerUnitId;
-        }
-    }
-
-    private static final class GuardianFakeBlockOverlay {
-        private final World world;
-        private final int x;
-        private final int y;
-        private final int z;
-        private final Map<UUID, Long> unitExpiries = new HashMap<>();
-        private final Set<UUID> viewers = new HashSet<>();
-        private long expiresAtMillis;
-        private BukkitTask removalTask;
-
-        private GuardianFakeBlockOverlay(Block block) {
-            this.world = block.getWorld();
-            this.x = block.getX();
-            this.y = block.getY();
-            this.z = block.getZ();
-        }
-
-        private Location location() {
-            return new Location(world, x, y, z);
-        }
-    }
-
-    private static final class FrostEffectSnapshot {
-        private final PotionEffect previousEffect;
-        private final long previousExpiresAt;
-        private int appliedAmplifier;
-        private long appliedExpiresAt;
-
-        private FrostEffectSnapshot(PotionEffect previousEffect, long previousExpiresAt) {
-            this.previousEffect = previousEffect;
-            this.previousExpiresAt = previousExpiresAt;
-        }
-    }
-
-    private static final class FrostFreezeSnapshot {
-        private final int originalFreezeTicks;
-        private final long originalExpiresAt;
-        private long appliedExpiresAt;
-
-        private FrostFreezeSnapshot(int originalFreezeTicks, long originalExpiresAt) {
-            this.originalFreezeTicks = originalFreezeTicks;
-            this.originalExpiresAt = originalExpiresAt;
-        }
-    }
-
-    private enum Mode {
-        ATTACK, DEFEND, PROTECT
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onOwnerDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player owner)) return;
         Long immunityExpiresAt = guardianOwnerImmunityExpiries.get(owner.getUniqueId());
@@ -362,7 +324,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (event instanceof EntityDamageByEntityEvent byEntity) applyOwnerShield(byEntity);
     }
 
-    @EventHandler(ignoreCancelled = true)
+   @EventHandler(ignoreCancelled = true)
     public void onFrostShieldDamage(EntityDamageByEntityEvent event) {
         UUID defenderId = event.getEntity().getUniqueId();
         Long expiresAt = frostShieldExpiries.get(defenderId);
@@ -386,7 +348,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             attacker.getLocation().add(0.0, 1.0, 0.0), 8, 0.3, 0.4, 0.3, 0.02);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPhoenixRebirthImmunity(EntityDamageEvent event) {
         Long expiresAt = phoenixImmunityExpiries.get(event.getEntity().getUniqueId());
         if (expiresAt == null) return;
@@ -397,7 +359,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         event.setCancelled(true);
     }
 
-    @EventHandler
+   @EventHandler
     public void onFlameMageProjectileHit(ProjectileHitEvent event) {
         if (!(event.getEntity() instanceof Projectile projectile)
             || !projectile.getPersistentDataContainer().has(flameProjectileKey, PersistentDataType.BYTE)
@@ -427,7 +389,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         target.getWorld().playSound(target.getLocation(), Sound.ITEM_FIRECHARGE_USE, 0.5f, 1.4f);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onMeteorFireballDamage(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof SmallFireball fireball
                 && (fireball.getPersistentDataContainer().has(meteorFireballKey, PersistentDataType.BYTE)
@@ -436,7 +398,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onMagePotionLaunch(ProjectileLaunchEvent event) {
         if (!(event.getEntity() instanceof ThrownPotion potion)
                 || !(potion.getShooter() instanceof Mob shooter)) return;
@@ -447,7 +409,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler
+   @EventHandler
     public void onMeteorFireballHit(ProjectileHitEvent event) {
         if (!(event.getEntity() instanceof SmallFireball fireball)
                 || !fireball.getPersistentDataContainer().has(meteorFireballKey, PersistentDataType.BYTE)
@@ -476,7 +438,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler
+   @EventHandler
     public void onFrostProjectileHit(ProjectileHitEvent event) {
         if (!(event.getEntity() instanceof Snowball snowball)
                 || !snowball.getPersistentDataContainer().has(frostProjectileDamageKey, PersistentDataType.DOUBLE)
@@ -493,7 +455,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             target.getLocation().add(0.0, 1.0, 0.0), 12, 0.3, 0.4, 0.3, 0.02);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+   @EventHandler(priority = EventPriority.HIGHEST)
     public void onOwnerExperienceOrbPickup(PlayerExpChangeEvent event) {
         if (!experienceOrbPickupEnabled) return;
         Player owner = event.getPlayer();
@@ -509,181 +471,65 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         owner.giveExp(experience);
     }
 
-    private static final class ArmyMenuHolder implements InventoryHolder {
-        private final UUID owner;
-        private final int page;
-        private final List<UUID> unitIds;
-        private Inventory inventory;
-
-        private ArmyMenuHolder(UUID owner, int page, List<UUID> unitIds) {
-            this.owner = owner;
-            this.page = page;
-            this.unitIds = unitIds;
-        }
-
-        @Override
-        public Inventory getInventory() {
-            return inventory;
-        }
-    }
-
-    private static final class UnitMenuHolder implements InventoryHolder {
-        private final UUID owner;
-        private final UUID unit;
-        private Inventory inventory;
-
-        private UnitMenuHolder(UUID owner, UUID unit) {
-            this.owner = owner;
-            this.unit = unit;
-        }
-
-        @Override
-        public Inventory getInventory() {
-            return inventory;
-        }
-    }
-
     private void despawnAllForReload() {
         for (UUID ownerId : units.values().stream().map(unit -> unit.owner).distinct().toList()) {
             despawnForOwner(ownerId);
         }
     }
 
-    private static final class Unit {
-        private final UUID id;
-        private final UUID owner;
-        private final String unitClass;
-        private int originalTier;
-        private int tier;
-        private int level = 1;
-        private int experience;
-        private String customName = "";
-        private long recoveryUntilMillis;
-        private boolean gearCustomized;
-        private Mode mode;
-        private boolean deployed;
-        private boolean muted;
-        private boolean horseDead;
-        private UUID entityId;
-        private String worldName;
-        private double x;
-        private double y;
-        private double z;
-        private final EnumMap<org.bukkit.inventory.EquipmentSlot, ItemStack> equipment =
-            new EnumMap<>(org.bukkit.inventory.EquipmentSlot.class);
-        private final ItemStack[] inventory = new ItemStack[36];
-        private ItemStack horseArmor;
+   public MercenaryManager(VnMineHardcore plugin) {
+      this.plugin = plugin;
+      this.configFile = new File(plugin.getDataFolder(), "armies.yml");
+      this.dataFile = new File(plugin.getDataFolder(), "mercenaries.yml");
+      this.torchFile = new File(plugin.getDataFolder(), "ranger-torches.yml");
+      this.welcomeGiftFile = new File(plugin.getDataFolder(), "new-player-gifts.yml");
+      this.unitKey = new NamespacedKey(plugin, "army_unit");
+      this.ownerKey = new NamespacedKey(plugin, "army_owner");
+      this.horseMountKey = new NamespacedKey(plugin, "army_horse_mount");
+      this.summonedMinionKey = new NamespacedKey(plugin, "army_summoned_minion");
+      this.tokenClassKey = new NamespacedKey(plugin, "army_token_class");
+      this.tokenLevelKey = new NamespacedKey(plugin, "army_token_level");
+      this.soldierGearKey = new NamespacedKey(plugin, "army_soldier_gear");
+      this.soldierGearClassKey = new NamespacedKey(plugin, "army_soldier_gear_class");
+      this.soldierGearMaterialKey = new NamespacedKey(plugin, "army_soldier_gear_material");
+      this.soldierGearStarsKey = new NamespacedKey(plugin, "army_soldier_gear_stars");
+      this.soldierGearSetKey = new NamespacedKey(plugin, "army_soldier_gear_set");
+      this.soldierGearSlotKey = new NamespacedKey(plugin, "army_soldier_gear_slot");
+      this.nativeSoldierGearKey = new NamespacedKey(plugin, "army_native_soldier_gear");
+      this.welcomeGiftKey = new NamespacedKey(plugin, "welcome_gift");
+      this.illuminationArrowKey = new NamespacedKey(plugin, "ranger_illumination_arrow");
+      this.frostProjectileDamageKey = new NamespacedKey(plugin, "frost_projectile_damage");
+      this.flameProjectileKey = new NamespacedKey(plugin, "flame_mage_projectile");
+      this.flameProjectileDamageKey = new NamespacedKey(plugin, "flame_mage_projectile_damage");
+      this.meteorFireballKey = new NamespacedKey(plugin, "meteor_fireball");
+      this.meteorFireballDamageKey = new NamespacedKey(plugin, "meteor_fireball_damage");
+      this.meteorFireballRadiusKey = new NamespacedKey(plugin, "meteor_fireball_radius");
+      this.meteorFireballMaxTargetsKey = new NamespacedKey(plugin, "meteor_fireball_max_targets");
+      this.meteorFireballBurnTicksKey = new NamespacedKey(plugin, "meteor_fireball_burn_ticks");
+      this.flameBoltSlowKey = new NamespacedKey(plugin, "flame_bolt_slow");
+      this.flameBoltSlowExpiryKey = new NamespacedKey(plugin, "flame_bolt_slow_expires");
+      this.icePrisonSlowKey = new NamespacedKey(plugin, "ice_prison_slow");
+      this.icePrisonSlowExpiryKey = new NamespacedKey(plugin, "ice_prison_slow_expires");
+      this.namePacketListener = new MercenaryNamePacketListener(plugin);
+      this.statusPacketListener = new MercenaryStatusPacketListener(plugin);
+      this.loadSettings();
+      this.loadData();
+      this.loadWelcomeGiftClaims();
+      this.loadTemporaryTorches();
+      this.restoreFlameBoltSlowState();
+      this.restoreIcePrisonSlowState();
+      Bukkit.getPluginManager().registerEvents(this, plugin);
+      this.startAiTask();
 
-        private Unit(UUID id, UUID owner, String unitClass, int level, Mode mode, boolean deployed) {
-            this.id = id;
-            this.owner = owner;
-            this.unitClass = unitClass;
-            this.originalTier = level;
-            this.tier = level;
-            this.mode = mode;
-            this.deployed = deployed;
-        }
-    }
+      for (Player player : Bukkit.getOnlinePlayers()) {
+         Bukkit.getScheduler().runTask(plugin, () -> {
+            this.removeSoldierGearFromPlayerEquipment(player);
+            this.restoreDeployedUnits(player);
+         });
+      }
 
-    private record GuardianStats(
-        double baseHealth, double tierHealth, double levelHealth, double equipmentHealth, double maxHealth,
-        double baseArmor, double tierArmor, double levelArmor, double armor,
-        double baseDamage, double tierDamage, double levelDamage, double damage) {
-    }
-
-    private static final class GearHolder implements InventoryHolder {
-        private final UUID owner;
-        private final UUID unit;
-        private Inventory inventory;
-
-        private GearHolder(UUID owner, UUID unit) {
-            this.owner = owner;
-            this.unit = unit;
-        }
-
-        @Override
-        public Inventory getInventory() {
-            return inventory;
-        }
-    }
-
-    private enum MenuType {
-        MAIN, ADMIN, ADMIN_PLAYERS, GIVE_TYPE, CLASS_SELECT, TIER_SELECT, WELCOME_GIFT,
-        DISASTER_SELECT, BOSS_SELECT, BOSS_LEVEL_SELECT, ADMIN_TIME, TIME_DURATION,
-        ADMIN_DAY, ADMIN_PROTECT, PROTECTION_REMOVE, TELEPORT_PLAYERS, TELEPORT_WORLDS,
-        ADMIN_USER_PLAYERS, ADMIN_USER_ACTION, ADMIN_GROUPS, ADMIN_GROUP_SELECT,
-        ADMIN_GROUP_DELETE_CONFIRM, ADMIN_PERMISSION_SELECT, ADMIN_USER_GROUP_SELECT,
-        ADMIN_USER_PERMISSION_ACTIONS, ADMIN_USER_PERMISSION_SELECT,
-        ADMIN_SCOREBOARD_CONFIRM, ADMIN_DEATH_PLAYERS, ADMIN_SPAWN_WORLD, UNIT_DELETE_CONFIRM
-    }
-
-    private static final class ServiceMenuHolder implements InventoryHolder {
-        private final UUID viewer;
-        private final MenuType type;
-        private final UUID target;
-        private final String itemType;
-        private final String classId;
-        private final int page;
-        private final Map<Integer, String> choices = new HashMap<>();
-        private Inventory inventory;
-
-        private ServiceMenuHolder(UUID viewer, MenuType type, UUID target, String itemType,
-                                  String classId, int page) {
-            this.viewer = viewer;
-            this.type = type;
-            this.target = target;
-            this.itemType = itemType;
-            this.classId = classId;
-            this.page = page;
-        }
-
-        @Override
-        public Inventory getInventory() {
-            return inventory;
-        }
-    }
-
-    public MercenaryManager(VnMineHardcore plugin) {
-        this.plugin = plugin;
-        configFile = new File(plugin.getDataFolder(), "armies.yml");
-        dataFile = new File(plugin.getDataFolder(), "mercenaries.yml");
-        torchFile = new File(plugin.getDataFolder(), "ranger-torches.yml");
-        welcomeGiftFile = new File(plugin.getDataFolder(), "new-player-gifts.yml");
-        unitKey = new NamespacedKey(plugin, "army_unit");
-        ownerKey = new NamespacedKey(plugin, "army_owner");
-        horseMountKey = new NamespacedKey(plugin, "army_horse_mount");
-        summonedMinionKey = new NamespacedKey(plugin, "army_summoned_minion");
-        tokenClassKey = new NamespacedKey(plugin, "army_token_class");
-        tokenLevelKey = new NamespacedKey(plugin, "army_token_level");
-        welcomeGiftKey = new NamespacedKey(plugin, "welcome_gift");
-        illuminationArrowKey = new NamespacedKey(plugin, "ranger_illumination_arrow");
-        frostProjectileDamageKey = new NamespacedKey(plugin, "frost_projectile_damage");
-        flameProjectileKey = new NamespacedKey(plugin, "flame_mage_projectile");
-        flameProjectileDamageKey = new NamespacedKey(plugin, "flame_mage_projectile_damage");
-        meteorFireballKey = new NamespacedKey(plugin, "meteor_fireball");
-        meteorFireballDamageKey = new NamespacedKey(plugin, "meteor_fireball_damage");
-        meteorFireballRadiusKey = new NamespacedKey(plugin, "meteor_fireball_radius");
-        meteorFireballMaxTargetsKey = new NamespacedKey(plugin, "meteor_fireball_max_targets");
-        meteorFireballBurnTicksKey = new NamespacedKey(plugin, "meteor_fireball_burn_ticks");
-        flameBoltSlowKey = new NamespacedKey(plugin, "flame_bolt_slow");
-        flameBoltSlowExpiryKey = new NamespacedKey(plugin, "flame_bolt_slow_expires");
-        icePrisonSlowKey = new NamespacedKey(plugin, "ice_prison_slow");
-        icePrisonSlowExpiryKey = new NamespacedKey(plugin, "ice_prison_slow_expires");
-        namePacketListener = new MercenaryNamePacketListener(plugin);
-        statusPacketListener = new MercenaryStatusPacketListener(plugin);
-        loadSettings();
-        loadData();
-        loadWelcomeGiftClaims();
-        loadTemporaryTorches();
-        restoreFlameBoltSlowState();
-        restoreIcePrisonSlowState();
-        Bukkit.getPluginManager().registerEvents(this, plugin);
-        startAiTask();
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            Bukkit.getScheduler().runTask(plugin, () -> restoreDeployedUnits(player));
-        }
-        plugin.getLogger().info("[Army] Loaded " + units.size() + " mercenary record(s).");
-    }
+      plugin.getLogger().info("[Army] Loaded " + this.units.size() + " mercenary record(s).");
+   }
 
     public boolean reload() {
         try {
@@ -721,144 +567,284 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return recipients;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (command.getName().equalsIgnoreCase("vnmenu")) {
-            if (sender instanceof Player player) openMainMenu(player);
-            else sender.sendMessage("§cMenu chỉ dành cho người chơi.");
-            return true;
-        }
-        if (command.getName().equalsIgnoreCase("quatanthu")) {
-            return handleWelcomeGiftCommand(sender, args);
-        }
-        if (!sender.hasPermission(COMMAND_PERMISSION)) {
+   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+      if (command.getName().equalsIgnoreCase("vnmenu")) {
+         if (sender instanceof Player player) {
+            this.openMainMenu(player);
+         } else {
+            sender.sendMessage("§cMenu chỉ dành cho người chơi.");
+         }
+
+         return true;
+      } else {
+         if (command.getName().equalsIgnoreCase("quatanthu")) {
+            return this.handleWelcomeGiftCommand(sender, args);
+         }
+
+         if (!sender.hasPermission("vnmine.command.army")) {
             sender.sendMessage("§cBạn không có quyền dùng /vnarmy.");
             return true;
-        }
-        if (!enabled) {
+         }
+
+         if (!this.enabled) {
             sender.sendMessage("§cHệ thống lính đánh thuê hiện đang tắt.");
             return true;
-        }
-        if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-            sendHelp(sender);
+         }
+
+         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
+            this.sendHelp(sender);
             return true;
-        }
-        if (args[0].equalsIgnoreCase("token")) return handleTokenCommand(sender, args);
-        if (args[0].equalsIgnoreCase("give")) return handleGiveCommand(sender, args);
-        if (args[0].equalsIgnoreCase("remove")) return handleRemoveCommand(sender, args);
-        if (args[0].equalsIgnoreCase("clear")) return handleClearCommand(sender, args);
-        if (args[0].equalsIgnoreCase("list") && args.length == 2 && sender.hasPermission(ADMIN_PERMISSION)) {
-            listUnits(sender, args[1]);
+         }
+
+         if (args[0].equalsIgnoreCase("token")) {
+            return this.handleTokenCommand(sender, args);
+         }
+
+         if (args[0].equalsIgnoreCase("give")) {
+            return this.handleGiveCommand(sender, args);
+         }
+
+         if (args[0].equalsIgnoreCase("item")) {
+            return this.handleSoldierGearCommand(sender, args);
+         }
+
+         if (args[0].equalsIgnoreCase("remove")) {
+            return this.handleRemoveCommand(sender, args);
+         }
+
+         if (args[0].equalsIgnoreCase("clear")) {
+            return this.handleClearCommand(sender, args);
+         }
+
+         if (args[0].equalsIgnoreCase("list") && args.length == 2 && sender.hasPermission("vnmine.command.army.admin")) {
+            this.listUnits(sender, args[1]);
             return true;
-        }
-        if (!(sender instanceof Player player)) {
+         }
+
+         if (sender instanceof Player player) {
+            switch (args[0].toLowerCase(Locale.ROOT)) {
+               case "list":
+                  this.listUnits(player);
+                  break;
+               case "gui":
+                  this.openArmyMenu(player, 0);
+                  break;
+               case "hire":
+                  this.hire(player, args);
+                  break;
+               case "recall":
+                  this.recall(player, args);
+                  break;
+               case "rest":
+                  this.rest(player, args);
+                  break;
+               case "attack":
+                  this.setMode(player, MercenaryManager.Mode.ATTACK);
+                  break;
+               case "defend":
+                  this.setMode(player, MercenaryManager.Mode.DEFEND);
+                  break;
+               case "protect":
+                  this.setMode(player, MercenaryManager.Mode.PROTECT);
+                  break;
+               case "gear":
+                  this.openGear(player, args);
+                  break;
+               case "mute":
+                  this.toggleMuteCommand(player, args);
+                  break;
+               case "rename":
+                  this.rename(player, args);
+                  break;
+               default:
+                  this.sendHelp(player);
+            }
+
+            return true;
+         } else {
             sender.sendMessage("§cLệnh này chỉ dành cho người chơi.");
             return true;
-        }
-        switch (args[0].toLowerCase(Locale.ROOT)) {
-            case "list" -> listUnits(player);
-            case "gui" -> openArmyMenu(player, 0);
-            case "hire" -> hire(player, args);
-            case "recall" -> recall(player, args);
-            case "rest" -> rest(player, args);
-            case "attack" -> setMode(player, Mode.ATTACK);
-            case "defend" -> setMode(player, Mode.DEFEND);
-            case "protect" -> setMode(player, Mode.PROTECT);
-            case "gear" -> openGear(player, args);
-            case "mute" -> toggleMuteCommand(player, args);
-            case "rename" -> rename(player, args);
-            default -> sendHelp(player);
-        }
-        return true;
-    }
+         }
+      }
+   }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (!sender.hasPermission(COMMAND_PERMISSION)) return List.of();
-        if (args.length == 1) return matching(args[0], COMMANDS);
-        if (args.length == 2 && (args[0].equalsIgnoreCase("list") || args[0].equalsIgnoreCase("clear"))
-                && sender.hasPermission(ADMIN_PERMISSION)) {
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("remove") && sender instanceof Player player) {
-            List<String> ids = getOwnerUnits(player.getUniqueId()).stream().map(unit -> shortId(unit.id)).toList();
-            if (!sender.hasPermission(ADMIN_PERMISSION)) return ids;
-            return java.util.stream.Stream.concat(Bukkit.getOnlinePlayers().stream().map(Player::getName),
-                ids.stream()).toList();
-        }
-        if (args.length == 3 && args[0].equalsIgnoreCase("remove")
-                && sender.hasPermission(ADMIN_PERMISSION)) {
-            Player owner = Bukkit.getPlayerExact(args[1]);
-            return owner == null ? List.of() : getOwnerUnits(owner.getUniqueId()).stream()
-                .map(unit -> shortId(unit.id)).toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("mute") && sender instanceof Player player) {
-            return getOwnerUnits(player.getUniqueId()).stream().map(unit -> shortId(unit.id)).toList();
-        }
-        if (args.length == 2 && Set.of("rename", "recall", "rest")
-                .contains(args[0].toLowerCase(Locale.ROOT)) && sender instanceof Player player) {
-            return getOwnerUnits(player.getUniqueId()).stream().map(unit -> shortId(unit.id)).toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("give")
-                && sender.hasPermission(ADMIN_PERMISSION)) {
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
-        }
-        if (args.length == 3 && args[0].equalsIgnoreCase("give")
-                && sender.hasPermission(ADMIN_PERMISSION)) {
-            return matching(args[2], "token", "army");
-        }
-        if (args.length == 4 && args[0].equalsIgnoreCase("give")
-                && sender.hasPermission(ADMIN_PERMISSION) && args[2].equalsIgnoreCase("army")) {
-            return matching(args[3], getClassIds().toArray(String[]::new));
-        }
-        if (args.length == 5 && args[0].equalsIgnoreCase("give")
-                && sender.hasPermission(ADMIN_PERMISSION) && args[2].equalsIgnoreCase("army")) {
-            return matching(args[4], getTierIds().toArray(String[]::new));
-        }
-        if (args.length == 4 && args[0].equalsIgnoreCase("give")
-                && sender.hasPermission(ADMIN_PERMISSION) && args[2].equalsIgnoreCase("token")) {
-            return matching(args[3], getTierIds().toArray(String[]::new));
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("hire")) {
-            return matching(args[1], getClassIds().toArray(String[]::new));
-        }
-        if (args.length == 3 && args[0].equalsIgnoreCase("hire")) {
-            return matching(args[2], getTierIds().toArray(String[]::new));
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("token")
-                && sender.hasPermission(ADMIN_PERMISSION)) {
-            return matching(args[1], "give");
-        }
-        if (args.length == 3 && args[0].equalsIgnoreCase("token")
-                && args[1].equalsIgnoreCase("give") && sender.hasPermission(ADMIN_PERMISSION)) {
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
-        }
-        if (args.length == 4 && args[0].equalsIgnoreCase("token")
-                && args[1].equalsIgnoreCase("give") && sender.hasPermission(ADMIN_PERMISSION)) {
-            return matching(args[3], getClassIds().toArray(String[]::new));
-        }
-        if (args.length == 5 && args[0].equalsIgnoreCase("token")
-                && sender.hasPermission(ADMIN_PERMISSION)) {
-            return matching(args[4], getTierIds().toArray(String[]::new));
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("gear") && sender instanceof Player player) {
-            String prefix = args[1].toLowerCase(Locale.ROOT);
-            return getOwnerUnits(player.getUniqueId()).stream()
-                .map(unit -> shortId(unit.id))
-                .filter(id -> id.startsWith(prefix))
-                .toList();
-        }
-        return List.of();
-    }
+   public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+      if (!sender.hasPermission("vnmine.command.army")) {
+         return List.of();
+      } else if (args.length == 1) {
+         return matching(args[0], COMMANDS);
+      } else if (args.length == 2 && args[0].equalsIgnoreCase("item") && sender.hasPermission("vnmine.command.army.admin")) {
+         return matching(args[1], "give");
+      } else if (args.length == 3 && args[0].equalsIgnoreCase("item") && args[1].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin")) {
+         return Bukkit.getOnlinePlayers().stream().<String>map(Player::getName).toList();
+      } else if (args.length == 4 && args[0].equalsIgnoreCase("item") && args[1].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin")) {
+         return matching(args[3], this.getClassIds().toArray(String[]::new));
+      } else if (args.length == 5 && args[0].equalsIgnoreCase("item") && args[1].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin")) {
+         return matching(args[4], GEAR_MATERIALS.toArray(String[]::new));
+      } else if (args.length == 6 && args[0].equalsIgnoreCase("item") && args[1].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin")) {
+         return matching(args[5], "1", "2", "3", "4", "5");
+      } else if (args.length == 7 && args[0].equalsIgnoreCase("item") && args[1].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin")) {
+         String classId = this.normalizeClass(args[3]);
+         return classId == null ? List.of() : matching(args[6], this.gearSetIds(classId).toArray(String[]::new));
+      } else if (args.length == 8 && args[0].equalsIgnoreCase("item") && args[1].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin")) {
+         return matching(args[7], "helmet", "chestplate", "leggings", "boots", "mainhand", "offhand", "set");
+      } else if (args.length == 2
+         && (args[0].equalsIgnoreCase("list") || args[0].equalsIgnoreCase("clear"))
+         && sender.hasPermission("vnmine.command.army.admin")) {
+         return Bukkit.getOnlinePlayers().stream().<String>map(Player::getName).toList();
+      } else if (args.length == 2 && args[0].equalsIgnoreCase("remove") && sender instanceof Player player) {
+         List<String> ids = this.getOwnerUnits(player.getUniqueId()).stream().map(unit -> shortId(unit.id)).toList();
+         return !sender.hasPermission("vnmine.command.army.admin")
+            ? ids
+            : Stream.concat(Bukkit.getOnlinePlayers().stream().map(Player::getName), ids.stream()).toList();
+      } else if (args.length == 3 && args[0].equalsIgnoreCase("remove") && sender.hasPermission("vnmine.command.army.admin")) {
+         Player owner = Bukkit.getPlayerExact(args[1]);
+         return owner == null ? List.of() : this.getOwnerUnits(owner.getUniqueId()).stream().map(unit -> shortId(unit.id)).toList();
+      } else if (args.length == 2 && args[0].equalsIgnoreCase("mute") && sender instanceof Player player) {
+         return this.getOwnerUnits(player.getUniqueId()).stream().map(unit -> shortId(unit.id)).toList();
+      } else if (args.length == 2 && Set.of("rename", "recall", "rest").contains(args[0].toLowerCase(Locale.ROOT)) && sender instanceof Player player) {
+         return this.getOwnerUnits(player.getUniqueId()).stream().map(unit -> shortId(unit.id)).toList();
+      } else if (args.length == 2 && args[0].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin")) {
+         return Bukkit.getOnlinePlayers().stream().<String>map(Player::getName).toList();
+      } else if (args.length == 3 && args[0].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin")) {
+         return matching(args[2], "token", "army");
+      } else if (args.length == 4 && args[0].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin") && args[2].equalsIgnoreCase("army")) {
+         return matching(args[3], this.getClassIds().toArray(String[]::new));
+      } else if (args.length == 5 && args[0].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin") && args[2].equalsIgnoreCase("army")) {
+         return matching(args[4], this.getTierIds().toArray(String[]::new));
+      } else if (args.length == 4 && args[0].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin") && args[2].equalsIgnoreCase("token")
+         )
+       {
+         return matching(args[3], this.getTierIds().toArray(String[]::new));
+      } else if (args.length == 2 && args[0].equalsIgnoreCase("hire")) {
+         return matching(args[1], this.getClassIds().toArray(String[]::new));
+      } else if (args.length == 3 && args[0].equalsIgnoreCase("hire")) {
+         return matching(args[2], this.getTierIds().toArray(String[]::new));
+      } else if (args.length == 2 && args[0].equalsIgnoreCase("token") && sender.hasPermission("vnmine.command.army.admin")) {
+         return matching(args[1], "give");
+      } else if (args.length == 3 && args[0].equalsIgnoreCase("token") && args[1].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin")
+         )
+       {
+         return Bukkit.getOnlinePlayers().stream().<String>map(Player::getName).toList();
+      } else if (args.length == 4 && args[0].equalsIgnoreCase("token") && args[1].equalsIgnoreCase("give") && sender.hasPermission("vnmine.command.army.admin")
+         )
+       {
+         return matching(args[3], this.getClassIds().toArray(String[]::new));
+      } else if (args.length == 5 && args[0].equalsIgnoreCase("token") && sender.hasPermission("vnmine.command.army.admin")) {
+         return matching(args[4], this.getTierIds().toArray(String[]::new));
+      } else if (args.length == 2 && args[0].equalsIgnoreCase("gear") && sender instanceof Player player) {
+         String prefix = args[1].toLowerCase(Locale.ROOT);
+         return this.getOwnerUnits(player.getUniqueId()).stream().map(unit -> shortId(unit.id)).filter(id -> id.startsWith(prefix)).toList();
+      } else {
+         return List.of();
+      }
+   }
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        restoreFlameBoltSlowState(event.getPlayer());
-        restoreIcePrisonSlowState(event.getPlayer());
-        Bukkit.getScheduler().runTaskLater(plugin, () -> restoreDeployedUnits(event.getPlayer()), 1L);
-    }
+   @EventHandler
+   public void onPlayerJoin(PlayerJoinEvent event) {
+      this.restoreFlameBoltSlowState(event.getPlayer());
+      this.restoreIcePrisonSlowState(event.getPlayer());
+      Bukkit.getScheduler().runTask(this.plugin, () -> this.removeSoldierGearFromPlayerEquipment(event.getPlayer()));
+      Bukkit.getScheduler().runTaskLater(this.plugin, () -> this.restoreDeployedUnits(event.getPlayer()), 1L);
+   }
 
-    @EventHandler(ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+   public void preventSoldierGearArmorEquip(InventoryClickEvent event) {
+      if (event.getWhoClicked() instanceof Player player) {
+         if (event.isShiftClick()
+            && event.getClickedInventory() == player.getInventory()
+            && event.getView().getType() == InventoryType.CRAFTING
+            && this.isSoldierGear(event.getCurrentItem())
+            && this.isPlayerEquipmentItem(event.getCurrentItem())) {
+            event.setCancelled(true);
+            player.sendMessage("§cVật phẩm này chỉ dành cho lính đánh thuê, bạn không thể trang bị.");
+         } else if (event.getClickedInventory() == player.getInventory()) {
+            int slot = event.getSlot();
+            boolean armorOrOffhandSlot = slot >= 36 && slot <= 40;
+            ItemStack incoming = event.getCursor();
+            if (event.getHotbarButton() >= 0 && event.getHotbarButton() < 9) {
+               ItemStack hotbar = player.getInventory().getItem(event.getHotbarButton());
+               if (this.isSoldierGear(hotbar) && armorOrOffhandSlot) {
+                  incoming = hotbar;
+               }
+            }
+
+            if (armorOrOffhandSlot && this.isSoldierGear(incoming)) {
+               event.setCancelled(true);
+               player.sendMessage("§cVật phẩm này chỉ dành cho lính đánh thuê, bạn không thể trang bị.");
+            }
+         }
+      }
+   }
+
+   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+   public void preventSoldierGearDispenserEquip(BlockDispenseArmorEvent event) {
+      if (event.getTargetEntity() instanceof Player player && this.isSoldierGear(event.getItem())) {
+         event.setCancelled(true);
+         player.sendMessage("§cVật phẩm này chỉ dành cho lính đánh thuê, bạn không thể trang bị.");
+      }
+   }
+
+   private boolean isPlayerEquipmentItem(ItemStack item) {
+      EquipmentSlot slot = this.detectedEquipmentSlot(item.getType());
+      return slot == EquipmentSlot.HEAD
+         || slot == EquipmentSlot.CHEST
+         || slot == EquipmentSlot.LEGS
+         || slot == EquipmentSlot.FEET
+         || slot == EquipmentSlot.OFF_HAND;
+   }
+
+   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+   public void preventSoldierGearOffhandSwap(PlayerSwapHandItemsEvent event) {
+      if (this.isSoldierGear(event.getMainHandItem()) || this.isSoldierGear(event.getOffHandItem())) {
+         event.setCancelled(true);
+         event.getPlayer().sendMessage("§cVật phẩm này chỉ dành cho lính đánh thuê, bạn không thể trang bị.");
+      }
+   }
+
+   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+   public void preventSoldierGearArmorUse(PlayerInteractEvent event) {
+      ItemStack item = event.getItem();
+      if (this.isSoldierGear(item) && this.detectedEquipmentSlot(item.getType()) != null) {
+         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            if (List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET).contains(this.detectedEquipmentSlot(item.getType()))) {
+               event.setCancelled(true);
+               event.getPlayer().sendMessage("§cVật phẩm này chỉ dành cho lính đánh thuê, bạn không thể trang bị.");
+            }
+         }
+      }
+   }
+
+   private void removeSoldierGearFromPlayerEquipment(Player player) {
+      if (player != null && player.isOnline()) {
+         List<ItemStack> removed = new ArrayList<>();
+         ItemStack[] armor = player.getInventory().getArmorContents();
+
+         for (int slot = 0; slot < armor.length; slot++) {
+            if (this.isSoldierGear(armor[slot])) {
+               removed.add(armor[slot].clone());
+               armor[slot] = null;
+            }
+         }
+
+         player.getInventory().setArmorContents(armor);
+         ItemStack offhand = player.getInventory().getItemInOffHand();
+         if (this.isSoldierGear(offhand)) {
+            removed.add(offhand.clone());
+            player.getInventory().setItemInOffHand(null);
+         }
+
+         if (!removed.isEmpty()) {
+            for (ItemStack item : removed) {
+               this.giveItem(player, item);
+            }
+
+            player.sendMessage("§cVật phẩm dành riêng cho lính đã được tháo khỏi trang bị và trả vào túi đồ.");
+         }
+      }
+   }
+
+   @EventHandler(ignoreCancelled = true)
     public void onWelcomeGiftHold(PlayerItemHeldEvent event) {
         Player player = event.getPlayer();
         if (isWelcomeGiftClaimed(player.getUniqueId())) return;
@@ -872,7 +858,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         });
     }
 
-    @EventHandler(ignoreCancelled = true)
+   @EventHandler(ignoreCancelled = true)
     public void onWelcomeGiftRightClick(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         ItemStack item = event.getItem();
@@ -886,15 +872,20 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         openWelcomeGiftMenu(player);
     }
 
-    @EventHandler(ignoreCancelled = true)
-    public void onOpenMainMenu(PlayerSwapHandItemsEvent event) {
-        if (!plugin.getConfig().getBoolean("menus.main.enabled", true)
-                || !plugin.getConfig().getBoolean("menus.main.intercept-f-key", true)) return;
-        event.setCancelled(true);
-        openMainMenu(event.getPlayer());
-    }
+   @EventHandler(ignoreCancelled = true)
+   public void onOpenMainMenu(PlayerSwapHandItemsEvent event) {
+      if (!this.isSoldierGear(event.getMainHandItem()) && !this.isSoldierGear(event.getOffHandItem())) {
+         if (this.plugin.getConfig().getBoolean("menus.main.enabled", true) && this.plugin.getConfig().getBoolean("menus.main.intercept-f-key", true)) {
+            event.setCancelled(true);
+            this.openMainMenu(event.getPlayer());
+         }
+      } else {
+         event.setCancelled(true);
+         event.getPlayer().sendMessage("§cVật phẩm này chỉ dành cho lính đánh thuê, bạn không thể trang bị.");
+      }
+   }
 
-    @EventHandler(ignoreCancelled = true)
+   @EventHandler(ignoreCancelled = true)
     public void onShiftRightClickMercenary(PlayerInteractEntityEvent event) {
         if (!event.getPlayer().isSneaking()) return;
         if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) return;
@@ -907,7 +898,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         openGear(event.getPlayer(), unit);
     }
 
-    @EventHandler
+   @EventHandler
     public void onAdminGroupNameInput(AsyncPlayerChatEvent event) {
         UUID playerId = event.getPlayer().getUniqueId();
         if (!awaitingGroupName.remove(playerId)) return;
@@ -924,7 +915,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         });
     }
 
-    @EventHandler
+   @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         ownerAttackTargets.remove(event.getPlayer().getUniqueId());
         ownerAttackTargetExpiries.remove(event.getPlayer().getUniqueId());
@@ -933,7 +924,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         despawnForOwner(event.getPlayer().getUniqueId());
     }
 
-    @EventHandler
+   @EventHandler
     public void onMercenaryDeath(EntityDeathEvent event) {
         String idValue = event.getEntity().getPersistentDataContainer().get(unitKey, PersistentDataType.STRING);
         if (idValue == null) return;
@@ -968,7 +959,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler
+   @EventHandler
     public void onMercenaryHorseDeath(EntityDeathEvent event) {
         if (!(event.getEntity() instanceof Horse horse)) return;
         String unitIdValue = horse.getPersistentDataContainer()
@@ -997,14 +988,14 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler
+   @EventHandler
     public void onMercenaryEntityRemove(EntityRemoveEvent event) {
         if (isMercenary(event.getEntity())) namePacketListener.remove(event.getEntity());
         UUID unitId = getUnitId(event.getEntity());
         if (unitId != null) removeStatusDisplay(unitId);
     }
 
-    @EventHandler
+   @EventHandler
     public void onMercenaryEntitiesUnload(EntitiesUnloadEvent event) {
         for (Entity entity : event.getEntities()) {
             if (isMercenary(entity)) namePacketListener.remove(entity);
@@ -1013,7 +1004,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler
+   @EventHandler
     public void onMercenaryEntitiesLoad(EntitiesLoadEvent event) {
         for (Entity entity : event.getEntities()) {
             if (entity instanceof LivingEntity living) restoreFlameBoltSlowState(living);
@@ -1035,7 +1026,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onMercenaryEnvironmentDamage(EntityDamageEvent event) {
         if (event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
                 && isMercenaryMount(event.getEntity())) {
@@ -1053,7 +1044,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (!(attacker instanceof LivingEntity) || isMercenary(attacker)) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onMercenarySunCombust(EntityCombustEvent event) {
         if (event.getClass() != EntityCombustEvent.class) return;
         if (isMercenary(event.getEntity()) || isMercenaryMount(event.getEntity())) {
@@ -1061,7 +1052,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler
+   @EventHandler
     public void onMercenaryKillExperience(EntityDeathEvent event) {
         Entity source = event.getDamageSource().getCausingEntity();
         if (source instanceof org.bukkit.entity.Projectile projectile
@@ -1110,7 +1101,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler
+   @EventHandler
     public void onMercenaryTarget(EntityTargetLivingEntityEvent event) {
         if (!(event.getEntity() instanceof Mob mob) || !isMercenary(mob)) return;
         if (isSummonedMinion(mob)) {
@@ -1140,15 +1131,15 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+   @EventHandler(ignoreCancelled = true)
     public void onMercenarySpellCast(EntitySpellCastEvent event) {
         if (event.getEntity() instanceof Evoker evoker && isMercenary(evoker)
-                && event.getSpell() == Spellcaster.Spell.SUMMON_VEX) {
+                && event.getSpell() == Spell.SUMMON_VEX) {
             event.setCancelled(true);
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onMercenaryTransform(EntityTransformEvent event) {
         Entity entity = event.getEntity();
         if (!(entity instanceof Mob mob) || !isMercenary(mob)) return;
@@ -1227,7 +1218,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return slots;
     }
 
-    @EventHandler(ignoreCancelled = true)
+   @EventHandler(ignoreCancelled = true)
     public void onSummonedMinionTarget(EntityTargetLivingEntityEvent event) {
         if (!(event.getEntity() instanceof Mob mob) || !isSummonedMinion(mob)) return;
         if (!canMinionTarget(mob, event.getTarget())) {
@@ -1236,7 +1227,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+   @EventHandler(priority = EventPriority.HIGHEST)
     public void onMercenaryFriendlyFire(EntityDamageByEntityEvent event) {
         Entity source = resolveDamageSource(event.getDamager());
         if (!isMercenary(source)) return;
@@ -1244,145 +1235,228 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (!canMercenaryDamageTarget(getOwnerId(source), target)) event.setCancelled(true);
     }
 
-    @EventHandler
+   @EventHandler
     public void onMercenaryItemDamage(EntityDamageItemEvent event) {
         if (isMercenary(event.getEntity())) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onMercenaryCombat(EntityDamageByEntityEvent event) {
-        Entity source = resolveDamageSource(event.getDamager());
-        if (isMercenary(source) && event.getEntity() instanceof LivingEntity victim
-                && !canMercenaryDamageTarget(getOwnerId(source), victim)) {
-            event.setCancelled(true);
-            return;
-        }
-        if (event.isCancelled()) return;
-        Unit attackingUnit = null;
-        if (source instanceof Mob mob && isMercenary(mob)) {
-            UUID unitId = getUnitId(mob);
-            attackingUnit = unitId == null ? null : units.get(unitId);
-            if (hasMainHandWeapon(mob)) {
-                double multiplier = attackingUnit == null
-                    ? readBoundedDouble(settings, "combat.main-hand-damage-multiplier", 1.3, 1.0, 3.0)
-                    : mainHandDamageMultiplier(attackingUnit);
-                event.setDamage(event.getDamage() * multiplier);
+   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+   public void onMercenaryCombat(EntityDamageByEntityEvent event) {
+      Entity source = this.resolveDamageSource(event.getDamager());
+      if (this.isMercenary(source) && event.getEntity() instanceof LivingEntity victim && !this.canMercenaryDamageTarget(this.getOwnerId(source), victim)) {
+         event.setCancelled(true);
+      } else if (!event.isCancelled()) {
+         MercenaryManager.Unit attackingUnit = null;
+         if (source instanceof Mob mob && this.isMercenary(mob)) {
+            UUID unitId = this.getUnitId(mob);
+            attackingUnit = unitId == null ? null : this.units.get(unitId);
+            double multiplier = 1.0;
+            if (this.hasMainHandWeapon(mob)) {
+               multiplier *= attackingUnit == null
+                  ? this.readBoundedDouble(this.settings, "combat.main-hand-damage-multiplier", 1.3, 1.0, 3.0)
+                  : this.mainHandDamageMultiplier(attackingUnit);
             }
-        }
-        if (attackingUnit != null && "guardian".equals(attackingUnit.unitClass)
-                && event.getEntity() instanceof LivingEntity target && isHostileMob(target)) {
-            handleGuardianBasicHit(attackingUnit, (Mob) source, target, event);
-        }
-        if (event.getEntity() instanceof Player player) {
-            registerOwnerThreat(player.getUniqueId(), source);
-            registerThreat(ownerAttackers, player.getUniqueId(), source);
-        }
-        if (event.getEntity() instanceof LivingEntity victim && !(victim instanceof Player)) {
-            UUID victimOwner = getOwnerId(victim);
+
+            if (attackingUnit != null) {
+               MercenaryManager.GearStats gear = this.soldierGearStats(attackingUnit);
+
+               double elementalBonus = switch (attackingUnit.unitClass) {
+                  case "pyromancer" -> gear.fireDamagePercent();
+                  case "frost_mage" -> gear.frostDamagePercent();
+                  case "druid" -> gear.natureDamagePercent();
+                  default -> 0.0;
+               };
+               multiplier *= 1.0 + elementalBonus / 100.0;
+            }
+
+            if (multiplier > 1.0) {
+               event.setDamage(event.getDamage() * multiplier);
+            }
+         }
+
+         if (attackingUnit != null
+            && "guardian".equals(attackingUnit.unitClass)
+            && event.getEntity() instanceof LivingEntity target
+            && this.isHostileMob(target)) {
+            this.handleGuardianBasicHit(attackingUnit, (Mob)source, target, event);
+         }
+
+         if (attackingUnit != null && event.getEntity() instanceof LivingEntity target && !event.isCancelled()) {
+            this.applySoldierGearHitEffect(attackingUnit, target);
+         }
+
+         if (event.getEntity() instanceof Player player) {
+            this.registerOwnerThreat(player.getUniqueId(), source);
+            this.registerThreat(this.ownerAttackers, player.getUniqueId(), source);
+         }
+
+         if (event.getEntity() instanceof LivingEntity victim && !(victim instanceof Player)) {
+            UUID victimOwner = this.getOwnerId(victim);
             if (victimOwner != null) {
-                registerOwnerThreat(victimOwner, source);
+               this.registerOwnerThreat(victimOwner, source);
             }
-            UUID victimUnitId = getUnitId(victim);
-            if (victimUnitId != null) registerThreat(unitThreats, victimUnitId, source);
-        }
-        UUID attackingOwner = source instanceof LivingEntity living ? getOwnerId(living) : null;
-        if (attackingOwner != null && event.getEntity() instanceof LivingEntity victim) {
+
+            UUID victimUnitId = this.getUnitId(victim);
+            if (victimUnitId != null) {
+               this.registerThreat(this.unitThreats, victimUnitId, source);
+            }
+         }
+
+         UUID attackingOwner = source instanceof LivingEntity living ? this.getOwnerId(living) : null;
+         if (attackingOwner != null && event.getEntity() instanceof LivingEntity victim) {
             Player owner = Bukkit.getPlayer(attackingOwner);
             if (victim.getUniqueId().equals(attackingOwner)) {
-                event.setCancelled(true);
-                return;
+               event.setCancelled(true);
+               return;
             }
-            if (owner != null && owner.isOnline()) victim.setKiller(owner);
-        }
-        if (isMercenary(event.getEntity())) {
-            UUID ownerId = getOwnerId(event.getEntity());
+
+            if (owner != null && owner.isOnline()) {
+               victim.setKiller(owner);
+            }
+         }
+
+         if (this.isMercenary(event.getEntity())) {
+            UUID ownerId = this.getOwnerId(event.getEntity());
             Entity attacker = event.getDamager();
-            if (attacker instanceof org.bukkit.entity.Projectile projectile
-                    && projectile.getShooter() instanceof Entity shooter) attacker = shooter;
-                if (ownerId != null && (attacker.getUniqueId().equals(ownerId)
-                    || (isMercenary(attacker) && ownerId.equals(getOwnerId(attacker))))) {
-                event.setCancelled(true);
-                return;
+            if (attacker instanceof Projectile projectile && projectile.getShooter() instanceof Entity shooter) {
+               attacker = shooter;
             }
-        }
-        if (!(source instanceof Player owner) || !(event.getEntity() instanceof LivingEntity target)
-                || target.getUniqueId().equals(owner.getUniqueId())) return;
-        UUID targetOwner = getOwnerId(target);
-        if (targetOwner != null && targetOwner.equals(owner.getUniqueId())) return;
-        ownerAttackTargets.put(owner.getUniqueId(), target.getUniqueId());
-        ownerAttackTargetExpiries.put(owner.getUniqueId(), System.currentTimeMillis() + 15_000L);
-        for (Unit unit : getOwnerUnits(owner.getUniqueId())) {
-            Mob mob = activeEntities.get(unit.id);
-            if (unit.deployed && mob != null && mob.isValid()
-                    && ((isValidTarget(target) && !isMercenary(target)) || isMercenary(target))
-                    && isAllowedMercenaryTarget(unit.owner, target, true)) {
-                mob.setTarget(target);
-            }
-        }
-    }
 
-    @EventHandler
-    public void onGearInventoryClose(InventoryCloseEvent event) {
-        if (!(event.getInventory().getHolder() instanceof GearHolder holder)
-                || !(event.getPlayer() instanceof Player player)
-                || !holder.owner.equals(player.getUniqueId())) return;
-        Unit unit = units.get(holder.unit);
-        if (unit == null || !unit.owner.equals(player.getUniqueId())) return;
-        Inventory inventory = event.getInventory();
-        EnumMap<org.bukkit.inventory.EquipmentSlot, ItemStack> previousEquipment =
-            new EnumMap<>(org.bukkit.inventory.EquipmentSlot.class);
-        unit.equipment.forEach((slot, item) -> previousEquipment.put(slot, cloneOrNull(item)));
-        ItemStack[] previousInventory = new ItemStack[unit.inventory.length];
-        for (int slot = 0; slot < unit.inventory.length; slot++) {
-            previousInventory[slot] = cloneOrNull(unit.inventory[slot]);
-        }
-        boolean previousCustomized = unit.gearCustomized;
-        ItemStack previousHorseArmor = cloneOrNull(unit.horseArmor);
-        captureGearInventory(player, unit, inventory);
-        unit.gearCustomized = true;
-        Mob mob = activeEntities.get(unit.id);
-        if (mob != null && mob.isValid()) {
-            applyEquipment(unit, mob);
-            applyStats(unit, mob, false);
-        }
-        applyHorseArmorToMount(unit);
-        if (!saveData()) {
-            unit.equipment.clear();
-            unit.equipment.putAll(previousEquipment);
-            System.arraycopy(previousInventory, 0, unit.inventory, 0, unit.inventory.length);
-            unit.gearCustomized = previousCustomized;
-            unit.horseArmor = previousHorseArmor;
+            if (ownerId != null && (attacker.getUniqueId().equals(ownerId) || this.isMercenary(attacker) && ownerId.equals(this.getOwnerId(attacker)))) {
+               event.setCancelled(true);
+               return;
+            }
+         }
+
+         if (source instanceof Player owner && event.getEntity() instanceof LivingEntity target && !target.getUniqueId().equals(owner.getUniqueId())) {
+            UUID targetOwner = this.getOwnerId(target);
+            if (targetOwner == null || !targetOwner.equals(owner.getUniqueId())) {
+               this.ownerAttackTargets.put(owner.getUniqueId(), target.getUniqueId());
+               this.ownerAttackTargetExpiries.put(owner.getUniqueId(), System.currentTimeMillis() + 15000L);
+
+               for (MercenaryManager.Unit unit : this.getOwnerUnits(owner.getUniqueId())) {
+                  Mob mob = this.activeEntities.get(unit.id);
+                  if (unit.deployed
+                     && mob != null
+                     && mob.isValid()
+                     && (this.isValidTarget(target) && !this.isMercenary(target) || this.isMercenary(target))
+                     && this.isAllowedMercenaryTarget(unit.owner, target, true)) {
+                     mob.setTarget(target);
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   @EventHandler
+   public void onGearInventoryClose(InventoryCloseEvent event) {
+      if (event.getInventory().getHolder() instanceof MercenaryManager.GearHolder holder
+         && event.getPlayer() instanceof Player player
+         && holder.owner.equals(player.getUniqueId())) {
+         MercenaryManager.Unit unit = this.units.get(holder.unit);
+         if (unit != null && unit.owner.equals(player.getUniqueId())) {
+            Inventory inventory = event.getInventory();
+            EnumMap<EquipmentSlot, ItemStack> previousEquipment = new EnumMap<>(EquipmentSlot.class);
+            unit.equipment.forEach((slot, item) -> previousEquipment.put(slot, cloneOrNull(item)));
+            ItemStack[] previousInventory = new ItemStack[unit.inventory.length];
+
+            for (int slot = 0; slot < unit.inventory.length; slot++) {
+               previousInventory[slot] = cloneOrNull(unit.inventory[slot]);
+            }
+
+            boolean previousCustomized = unit.gearCustomized;
+            ItemStack previousHorseArmor = cloneOrNull(unit.horseArmor);
+            this.captureGearInventory(player, unit, inventory);
+            unit.gearCustomized = true;
+            Mob mob = this.activeEntities.get(unit.id);
             if (mob != null && mob.isValid()) {
-                applyEquipment(unit, mob);
-                applyStats(unit, mob, false);
+               this.applyEquipment(unit, mob);
+               this.applyStats(unit, mob, false);
             }
-            applyHorseArmorToMount(unit);
-            plugin.getLogger().severe("[Army] Could not save gear changes for mercenary " + unit.id + ".");
-            player.sendMessage("§cKhông thể lưu trang bị lính vào mercenaries.yml; giữ lính hiện tại và thử lưu lại.");
-            return;
-        }
-        player.sendMessage("§aĐã lưu trang bị cho lính §e#" + shortId(unit.id) + "§a.");
-    }
 
-    @EventHandler
-    public void onGearInventoryClick(InventoryClickEvent event) {
-        if (!(event.getView().getTopInventory().getHolder() instanceof GearHolder)) return;
-        if (event.isShiftClick()) {
+            this.applyHorseArmorToMount(unit);
+            if (!this.saveData()) {
+               unit.equipment.clear();
+               unit.equipment.putAll(previousEquipment);
+               System.arraycopy(previousInventory, 0, unit.inventory, 0, unit.inventory.length);
+               unit.gearCustomized = previousCustomized;
+               unit.horseArmor = previousHorseArmor;
+               if (mob != null && mob.isValid()) {
+                  this.applyEquipment(unit, mob);
+                  this.applyStats(unit, mob, false);
+               }
+
+               this.applyHorseArmorToMount(unit);
+               this.plugin.getLogger().severe("[Army] Could not save gear changes for mercenary " + unit.id + ".");
+               player.sendMessage("§cKhông thể lưu trang bị lính vào mercenaries.yml; giữ lính hiện tại và thử lưu lại.");
+               this.openUnitMenuAfterGearClose(player, unit, holder);
+            } else {
+               player.sendMessage("§aĐã lưu trang bị cho lính §e#" + shortId(unit.id) + "§a.");
+               this.openUnitMenuAfterGearClose(player, unit, holder);
+            }
+         }
+      }
+   }
+
+   private void openUnitMenuAfterGearClose(Player player, MercenaryManager.Unit unit, MercenaryManager.GearHolder holder) {
+      if (holder.returnToUnitMenu) {
+         Bukkit.getScheduler().runTask(this.plugin, () -> {
+            if (player.isOnline() && this.units.get(unit.id) == unit) {
+               this.openUnitMenu(player, unit);
+            }
+         });
+      }
+   }
+
+   @EventHandler
+   public void onGearInventoryClick(InventoryClickEvent event) {
+      if (event.getView().getTopInventory().getHolder() instanceof MercenaryManager.GearHolder holder) {
+         if (event.isShiftClick()) {
             event.setCancelled(true);
-            return;
-        }
-        if (event.getClickedInventory() != event.getView().getTopInventory()) return;
-        int slot = event.getRawSlot();
-        if ((slot >= 36 && slot < 45) || slot > 51) event.setCancelled(true);
-    }
+         } else if (event.getClickedInventory() == event.getView().getTopInventory()) {
+            int slot = event.getRawSlot();
+            if (slot == 53) {
+               event.setCancelled(true);
+               ItemStack cursor = event.getCursor();
+               if (cursor != null && !cursor.getType().isAir()) {
+                  event.getWhoClicked().sendMessage("§cHãy đặt vật phẩm đang cầm vào kho hoặc ô trang bị trước khi quay lại.");
+               } else {
+                  holder.returnToUnitMenu = true;
+                  event.getWhoClicked().closeInventory();
+               }
+            } else {
+               if (slot >= 36 && slot < 45 || slot > 51) {
+                  event.setCancelled(true);
+               }
+            }
+         }
+      }
+   }
 
-    @EventHandler
+   @EventHandler
     public void onGearInventoryDrag(InventoryDragEvent event) {
         if (!(event.getView().getTopInventory().getHolder() instanceof GearHolder)) return;
         if (event.getRawSlots().stream().anyMatch(slot -> (slot >= 36 && slot < 45) || slot > 51)) {
             event.setCancelled(true);
         }
     }
+
+   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+   public void preventSoldierGearArmorDrag(InventoryDragEvent event) {
+      if (event.getWhoClicked() instanceof Player player && this.isSoldierGear(event.getOldCursor())) {
+         int topSize = event.getView().getTopInventory().getSize();
+         boolean targetsPlayerEquipment = event.getRawSlots()
+            .stream()
+            .filter(rawSlot -> rawSlot >= topSize)
+            .<Integer>map(event.getView()::convertSlot)
+            .anyMatch(slot -> slot >= 36 && slot <= 40);
+         if (targetsPlayerEquipment) {
+            event.setCancelled(true);
+            player.sendMessage("§cVật phẩm này chỉ dành cho lính đánh thuê, bạn không thể trang bị.");
+         }
+      }
+   }
 
     private void loadSettings() {
         if (!configFile.isFile()) {
@@ -1398,628 +1472,731 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    private void loadSettingsFromDisk() throws IOException, InvalidConfigurationException {
-        YamlConfiguration loaded = new YamlConfiguration();
-        loaded.options().parseComments(true);
-        loaded.load(configFile);
-        mergeBundledDefaults(loaded);
-        if (loaded.getConfigurationSection("classes") == null
-                || loaded.getConfigurationSection("tiers") == null) {
-            throw new InvalidConfigurationException("armies.yml must define classes and tiers.");
-        }
-        if (loaded.contains("enabled") && !loaded.isBoolean("enabled")) {
-            throw new InvalidConfigurationException("enabled must be true or false.");
-        }
-        if (loaded.contains("pvp.allow-owner-commanded-targets")
-                && !loaded.isBoolean("pvp.allow-owner-commanded-targets")) {
-            throw new InvalidConfigurationException("pvp.allow-owner-commanded-targets must be true or false.");
-        }
-        if (loaded.getConfigurationSection("classes").getKeys(false).isEmpty()
-                || loaded.getConfigurationSection("tiers").getKeys(false).isEmpty()) {
-            throw new InvalidConfigurationException("armies.yml must define at least one class and one tier.");
-        }
-        int configuredMaxLevel = readBoundedInt(loaded, "progression.max-level", 30, 1, 30);
-        for (String classId : loaded.getConfigurationSection("classes").getKeys(false)) {
+   private void loadSettingsFromDisk() throws IOException, InvalidConfigurationException {
+      YamlConfiguration loaded = new YamlConfiguration();
+      loaded.options().parseComments(true);
+      loaded.load(this.configFile);
+      this.mergeBundledDefaults(loaded);
+      if (loaded.getConfigurationSection("classes") == null || loaded.getConfigurationSection("tiers") == null) {
+         throw new InvalidConfigurationException("armies.yml must define classes and tiers.");
+      }
+
+      if (loaded.contains("enabled") && !loaded.isBoolean("enabled")) {
+         throw new InvalidConfigurationException("enabled must be true or false.");
+      }
+
+      if (loaded.contains("pvp.allow-owner-commanded-targets") && !loaded.isBoolean("pvp.allow-owner-commanded-targets")) {
+         throw new InvalidConfigurationException("pvp.allow-owner-commanded-targets must be true or false.");
+      }
+
+      if (!loaded.getConfigurationSection("classes").getKeys(false).isEmpty() && !loaded.getConfigurationSection("tiers").getKeys(false).isEmpty()) {
+         int configuredMaxLevel = this.readBoundedInt(loaded, "progression.max-level", 30, 1, 30);
+
+         for (String classId : loaded.getConfigurationSection("classes").getKeys(false)) {
             if (!classId.matches("[a-z0-9_-]{1,32}")) {
-                throw new InvalidConfigurationException("Invalid mercenary class ID '" + classId + "'.");
+               throw new InvalidConfigurationException("Invalid mercenary class ID '" + classId + "'.");
             }
-            Material menuIcon = Material.matchMaterial(
-                loaded.getString("classes." + classId + ".menu-icon", "IRON_SWORD"));
-            if (menuIcon == null && "paladin".equals(classId)
-                    && "IRON_SPEAR".equalsIgnoreCase(loaded.getString("classes." + classId + ".menu-icon", ""))) {
-                menuIcon = Material.TRIDENT;
+
+            Material menuIcon = Material.matchMaterial(loaded.getString("classes." + classId + ".menu-icon", "IRON_SWORD"));
+            if (menuIcon == null && "paladin".equals(classId) && "IRON_SPEAR".equalsIgnoreCase(loaded.getString("classes." + classId + ".menu-icon", ""))) {
+               menuIcon = Material.TRIDENT;
             }
-            if (menuIcon == null || menuIcon.isAir()) {
-                throw new InvalidConfigurationException("Invalid menu-icon for class '" + classId + "'.");
-            }
-            Material startingWeapon = Material.matchMaterial(
-                loaded.getString("classes." + classId + ".starting-weapon", "IRON_SWORD"));
-            String startingWeaponName = loaded.getString("classes." + classId + ".starting-weapon", "IRON_SWORD");
-            boolean deferredSpear = "paladin".equals(classId)
-                && ("IRON_SPEAR".equalsIgnoreCase(startingWeaponName)
-                    || "WOODEN_SPEAR".equalsIgnoreCase(startingWeaponName));
-            boolean unarmed = "AIR".equalsIgnoreCase(startingWeaponName)
-                && startingWeapon != null && startingWeapon.isAir();
-            if ((startingWeapon == null || startingWeapon.isAir()) && !deferredSpear && !unarmed) {
-                throw new InvalidConfigurationException("Invalid starting-weapon for class '" + classId + "'.");
-            }
-            String offhandName = loaded.getString("classes." + classId + ".starting-offhand", "AIR");
-            Material startingOffhand = Material.matchMaterial(offhandName);
-            if (startingOffhand == null || (startingOffhand.isAir()
-                    && !"AIR".equalsIgnoreCase(offhandName))) {
-                throw new InvalidConfigurationException("Invalid starting-offhand for class '" + classId + "'.");
-            }
-            for (String preferenceKey : List.of("preferred-main-hand-items", "preferred-offhand-items")) {
-                String preferencePath = "classes." + classId + "." + preferenceKey;
-                Object configuredPreferences = loaded.get(preferencePath);
-                if (configuredPreferences == null) continue;
-                if (!(configuredPreferences instanceof List<?> preferences)
-                        || preferences.stream().anyMatch(item -> !(item instanceof String))) {
-                    throw new InvalidConfigurationException(preferencePath + " must be a list of materials.");
-                }
-                for (Object preference : preferences) {
-                    String materialName = (String) preference;
-                    boolean spearAlias = "paladin".equals(classId)
-                        && Set.of("IRON_SPEAR", "WOODEN_SPEAR").contains(materialName.toUpperCase(Locale.ROOT));
-                    if (Material.matchMaterial(materialName) == null && !spearAlias) {
-                        throw new InvalidConfigurationException("Unknown material '" + materialName
-                            + "' in " + preferencePath + ".");
-                    }
-                }
-            }
-            String skillsPath = "classes." + classId + ".skills";
-            Object skillsValue = loaded.get(skillsPath);
-            if (!(skillsValue instanceof List<?> configuredSkills)
-                    || configuredSkills.stream().anyMatch(skill -> !(skill instanceof String))) {
-                throw new InvalidConfigurationException(skillsPath + " must be a list of skill names.");
-            }
-            String entityName = loaded.getString("classes." + classId + ".entity-type", "");
-            EntityType entityType = EntityType.fromName(entityName);
-            Class<? extends Entity> entityClass = entityType == null ? null : entityType.getEntityClass();
-            if (entityType == null || !entityType.isAlive()
-                    || entityClass == null || !Mob.class.isAssignableFrom(entityClass)) {
-                throw new InvalidConfigurationException("Entity type for class '" + classId + "' must be an AI mob.");
-            }
-            for (String skill : loaded.getStringList("classes." + classId + ".skills")) {
-                if (!VALID_SKILLS.contains(skill.toUpperCase(Locale.ROOT))) {
-                    throw new InvalidConfigurationException(
-                        "Unknown skill '" + skill + "' in class '" + classId + "'.");
-                }
-                if (FROST_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
-                        && !"frost_mage".equals(classId)) {
-                    throw new InvalidConfigurationException(
-                        "Frost Mage skill '" + skill + "' can only be used by class 'frost_mage'.");
-                }
-                if (FIRE_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
-                        && !"pyromancer".equals(classId)) {
-                    throw new InvalidConfigurationException(
-                        "Fire Mage skill '" + skill + "' can only be used by class 'pyromancer'.");
-                }
-                if (GUARDIAN_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
-                        && !"guardian".equals(classId)) {
-                    throw new InvalidConfigurationException(
-                        "Guardian skill '" + skill + "' can only be used by class 'guardian'.");
-                }
-            }
-            ConfigurationSection skillSettings =
-                loaded.getConfigurationSection("classes." + classId + ".skill-settings");
-            if (skillSettings != null) {
-                for (String skill : skillSettings.getKeys(false)) {
-                    if (!VALID_SKILLS.contains(skill.toUpperCase(Locale.ROOT))) {
-                        throw new InvalidConfigurationException(
-                            "Unknown skill-settings entry '" + skill + "' in class '" + classId + "'.");
-                    }
-                    if (FROST_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
-                            && !"frost_mage".equals(classId)) {
-                        throw new InvalidConfigurationException(
-                            "Frost Mage skill-settings '" + skill + "' can only be used by class 'frost_mage'.");
-                    }
-                    if (FIRE_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
-                            && !"pyromancer".equals(classId)) {
-                        throw new InvalidConfigurationException(
-                            "Fire Mage skill-settings '" + skill + "' can only be used by class 'pyromancer'.");
-                    }
-                    if (GUARDIAN_SKILLS.contains(skill.toUpperCase(Locale.ROOT))
-                            && !"guardian".equals(classId)) {
-                        throw new InvalidConfigurationException(
-                            "Guardian skill-settings '" + skill + "' can only be used by class 'guardian'.");
-                    }
-                    String target = loaded.getString("classes." + classId + ".skill-settings." + skill + ".target");
-                    if (target != null && !Set.of("OWNER", "ALLIES", "OWNER_AND_ALLIES")
-                            .contains(target.toUpperCase(Locale.ROOT))) {
-                        throw new InvalidConfigurationException("Invalid target '" + target
-                            + "' for " + classId + "." + skill + "; expected OWNER, ALLIES, or OWNER_AND_ALLIES.");
-                    }
-                    if (skill.equalsIgnoreCase("CLEANSE_OWNER")) {
-                        for (String effect : loaded.getStringList("classes." + classId
-                                + ".skill-settings." + skill + ".effects")) {
-                            if (Registry.EFFECT.get(NamespacedKey.minecraft(
-                                    effect.toLowerCase(Locale.ROOT))) == null) {
-                                throw new InvalidConfigurationException("Unknown potion effect '" + effect
-                                    + "' in " + classId + ".CLEANSE_OWNER.effects.");
-                            }
+
+            if (menuIcon != null && !menuIcon.isAir()) {
+               Material startingWeapon = Material.matchMaterial(loaded.getString("classes." + classId + ".starting-weapon", "IRON_SWORD"));
+               String startingWeaponName = loaded.getString("classes." + classId + ".starting-weapon", "IRON_SWORD");
+               boolean deferredSpear = "paladin".equals(classId)
+                  && ("IRON_SPEAR".equalsIgnoreCase(startingWeaponName) || "WOODEN_SPEAR".equalsIgnoreCase(startingWeaponName));
+               boolean unarmed = "AIR".equalsIgnoreCase(startingWeaponName) && startingWeapon != null && startingWeapon.isAir();
+               if ((startingWeapon == null || startingWeapon.isAir()) && !deferredSpear && !unarmed) {
+                  throw new InvalidConfigurationException("Invalid starting-weapon for class '" + classId + "'.");
+               }
+
+               String offhandName = loaded.getString("classes." + classId + ".starting-offhand", "AIR");
+               Material startingOffhand = Material.matchMaterial(offhandName);
+               if (startingOffhand != null && (!startingOffhand.isAir() || "AIR".equalsIgnoreCase(offhandName))) {
+                  for (String preferenceKey : List.of("preferred-main-hand-items", "preferred-offhand-items")) {
+                     String preferencePath = "classes." + classId + "." + preferenceKey;
+                     Object configuredPreferences = loaded.get(preferencePath);
+                     if (configuredPreferences != null) {
+                        if (!(configuredPreferences instanceof List<?> preferences) || preferences.stream().anyMatch(item -> !(item instanceof String))) {
+                           throw new InvalidConfigurationException(preferencePath + " must be a list of materials.");
                         }
-                    }
-                    if (skill.equalsIgnoreCase("ROOT_TARGET") || skill.equalsIgnoreCase("BERSERK")) {
-                        String defaultEffect = skill.equalsIgnoreCase("ROOT_TARGET") ? "SLOWNESS" : "STRENGTH";
-                        String effect = loaded.getString("classes." + classId
-                            + ".skill-settings." + skill + ".effect", defaultEffect);
-                        if (effect == null || effect.isBlank()) effect = defaultEffect;
-                        if (Registry.EFFECT.get(NamespacedKey.minecraft(
-                                effect.toLowerCase(Locale.ROOT))) == null) {
-                            throw new InvalidConfigurationException("Unknown potion effect '" + effect
-                                + "' in " + classId + "." + skill + ".effect.");
+
+                        for (Object preference : preferences) {
+                           String materialName = (String)preference;
+                           boolean spearAlias = "paladin".equals(classId)
+                              && Set.of("IRON_SPEAR", "WOODEN_SPEAR").contains(materialName.toUpperCase(Locale.ROOT));
+                           if (Material.matchMaterial(materialName) == null && !spearAlias) {
+                              throw new InvalidConfigurationException("Unknown material '" + materialName + "' in " + preferencePath + ".");
+                           }
                         }
-                    }
-                    if (skill.equalsIgnoreCase("FIRE_WALL")) {
-                        String configuredMaterial = loaded.getString("classes." + classId
-                            + ".skill-settings." + skill + ".block-material", "MAGMA_BLOCK");
-                        Material wallMaterial = Material.matchMaterial(configuredMaterial);
-                        if (wallMaterial == null || wallMaterial.isAir() || !wallMaterial.isSolid()) {
-                            throw new InvalidConfigurationException("Invalid solid block-material '"
-                                + configuredMaterial + "' in " + classId + ".FIRE_WALL.");
+                     }
+                  }
+
+                  String skillsPath = "classes." + classId + ".skills";
+                  if (loaded.get(skillsPath) instanceof List<?> configuredSkills && !configuredSkills.stream().anyMatch(skillx -> !(skillx instanceof String))) {
+                     String entityName = loaded.getString("classes." + classId + ".entity-type", "");
+                     EntityType entityType = EntityType.fromName(entityName);
+                     Class<? extends Entity> entityClass = entityType == null ? null : entityType.getEntityClass();
+                     if (entityType != null && entityType.isAlive() && entityClass != null && Mob.class.isAssignableFrom(entityClass)) {
+                        for (String skill : loaded.getStringList("classes." + classId + ".skills")) {
+                           if (!VALID_SKILLS.contains(skill.toUpperCase(Locale.ROOT))) {
+                              throw new InvalidConfigurationException("Unknown skill '" + skill + "' in class '" + classId + "'.");
+                           }
+
+                           if (FROST_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT)) && !"frost_mage".equals(classId)) {
+                              throw new InvalidConfigurationException("Frost Mage skill '" + skill + "' can only be used by class 'frost_mage'.");
+                           }
+
+                           if (FIRE_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT)) && !"pyromancer".equals(classId)) {
+                              throw new InvalidConfigurationException("Fire Mage skill '" + skill + "' can only be used by class 'pyromancer'.");
+                           }
+
+                           if (GUARDIAN_SKILLS.contains(skill.toUpperCase(Locale.ROOT)) && !"guardian".equals(classId)) {
+                              throw new InvalidConfigurationException("Guardian skill '" + skill + "' can only be used by class 'guardian'.");
+                           }
                         }
-                    }
-                    if (skill.equalsIgnoreCase("GUARDIAN_QUAKE")) {
-                        String configuredMaterial = loaded.getString("classes." + classId
-                            + ".skill-settings." + skill + ".fake-block-material", "COBBLESTONE");
-                        Material fakeMaterial = Material.matchMaterial(configuredMaterial);
-                        if (fakeMaterial == null || fakeMaterial.isAir() || !fakeMaterial.isSolid()) {
-                            throw new InvalidConfigurationException("Invalid solid fake-block-material '"
-                                + configuredMaterial + "' in " + classId + ".GUARDIAN_QUAKE.");
+
+                        ConfigurationSection skillSettings = loaded.getConfigurationSection("classes." + classId + ".skill-settings");
+                        if (skillSettings != null) {
+                           for (String skill : skillSettings.getKeys(false)) {
+                              if (!VALID_SKILLS.contains(skill.toUpperCase(Locale.ROOT))) {
+                                 throw new InvalidConfigurationException("Unknown skill-settings entry '" + skill + "' in class '" + classId + "'.");
+                              }
+
+                              if (FROST_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT)) && !"frost_mage".equals(classId)) {
+                                 throw new InvalidConfigurationException("Frost Mage skill-settings '" + skill + "' can only be used by class 'frost_mage'.");
+                              }
+
+                              if (FIRE_MAGE_SKILLS.contains(skill.toUpperCase(Locale.ROOT)) && !"pyromancer".equals(classId)) {
+                                 throw new InvalidConfigurationException("Fire Mage skill-settings '" + skill + "' can only be used by class 'pyromancer'.");
+                              }
+
+                              if (GUARDIAN_SKILLS.contains(skill.toUpperCase(Locale.ROOT)) && !"guardian".equals(classId)) {
+                                 throw new InvalidConfigurationException("Guardian skill-settings '" + skill + "' can only be used by class 'guardian'.");
+                              }
+
+                              String target = loaded.getString("classes." + classId + ".skill-settings." + skill + ".target");
+                              if (target != null && !Set.of("OWNER", "ALLIES", "OWNER_AND_ALLIES").contains(target.toUpperCase(Locale.ROOT))) {
+                                 throw new InvalidConfigurationException(
+                                    "Invalid target '" + target + "' for " + classId + "." + skill + "; expected OWNER, ALLIES, or OWNER_AND_ALLIES."
+                                 );
+                              }
+
+                              if (skill.equalsIgnoreCase("CLEANSE_OWNER")) {
+                                 for (String effect : loaded.getStringList("classes." + classId + ".skill-settings." + skill + ".effects")) {
+                                    if (Registry.EFFECT.get(NamespacedKey.minecraft(effect.toLowerCase(Locale.ROOT))) == null) {
+                                       throw new InvalidConfigurationException(
+                                          "Unknown potion effect '" + effect + "' in " + classId + ".CLEANSE_OWNER.effects."
+                                       );
+                                    }
+                                 }
+                              }
+
+                              if (skill.equalsIgnoreCase("ROOT_TARGET") || skill.equalsIgnoreCase("BERSERK")) {
+                                 String defaultEffect = skill.equalsIgnoreCase("ROOT_TARGET") ? "SLOWNESS" : "STRENGTH";
+                                 String effect = loaded.getString("classes." + classId + ".skill-settings." + skill + ".effect", defaultEffect);
+                                 if (effect == null || effect.isBlank()) {
+                                    effect = defaultEffect;
+                                 }
+
+                                 if (Registry.EFFECT.get(NamespacedKey.minecraft(effect.toLowerCase(Locale.ROOT))) == null) {
+                                    throw new InvalidConfigurationException("Unknown potion effect '" + effect + "' in " + classId + "." + skill + ".effect.");
+                                 }
+                              }
+
+                              if (skill.equalsIgnoreCase("FIRE_WALL")) {
+                                 String configuredMaterial = loaded.getString(
+                                    "classes." + classId + ".skill-settings." + skill + ".block-material", "MAGMA_BLOCK"
+                                 );
+                                 Material wallMaterial = Material.matchMaterial(configuredMaterial);
+                                 if (wallMaterial == null || wallMaterial.isAir() || !wallMaterial.isSolid()) {
+                                    throw new InvalidConfigurationException(
+                                       "Invalid solid block-material '" + configuredMaterial + "' in " + classId + ".FIRE_WALL."
+                                    );
+                                 }
+                              }
+
+                              if (skill.equalsIgnoreCase("GUARDIAN_QUAKE")) {
+                                 String configuredMaterial = loaded.getString(
+                                    "classes." + classId + ".skill-settings." + skill + ".fake-block-material", "COBBLESTONE"
+                                 );
+                                 Material fakeMaterial = Material.matchMaterial(configuredMaterial);
+                                 if (fakeMaterial == null || fakeMaterial.isAir() || !fakeMaterial.isSolid()) {
+                                    throw new InvalidConfigurationException(
+                                       "Invalid solid fake-block-material '" + configuredMaterial + "' in " + classId + ".GUARDIAN_QUAKE."
+                                    );
+                                 }
+                              }
+                           }
                         }
-                    }
-                }
-            }
-            double baseHealth = loaded.getDouble("classes." + classId + ".base-health", 24.0);
-            double healthGrowth = loaded.getDouble("classes." + classId + ".health-per-level", 4.0);
-            double baseDamage = loaded.getDouble("classes." + classId + ".base-damage", 4.0);
-            double damageGrowth = loaded.getDouble("classes." + classId + ".damage-per-level", 0.5);
-            double baseArmor = loaded.getDouble("classes." + classId + ".base-armor", 0.0);
-            double armorGrowth = loaded.getDouble("classes." + classId + ".armor-per-level", 0.0);
-            if (!Double.isFinite(baseHealth) || baseHealth <= 0.0
-                    || !Double.isFinite(healthGrowth) || healthGrowth < 0.0
-                    || !Double.isFinite(baseDamage) || baseDamage < 0.0
-                    || !Double.isFinite(damageGrowth) || damageGrowth < 0.0
-                    || !Double.isFinite(baseArmor) || baseArmor < 0.0
-                    || !Double.isFinite(armorGrowth) || armorGrowth < 0.0
-                    || baseHealth + healthGrowth * (configuredMaxLevel + 12.0) > 1024.0
-                    || baseDamage + damageGrowth * (configuredMaxLevel + 12.0) > 1024.0
-                    || baseArmor + armorGrowth * (configuredMaxLevel + 12.0) > 100.0) {
-                throw new InvalidConfigurationException("Invalid stats for class '" + classId + "'.");
-            }
-            if ("guardian".equals(classId)) {
-                double healthPerTier = loaded.getDouble("classes.guardian.health-per-tier", 6.0);
-                double armorPerTier = loaded.getDouble("classes.guardian.armor-per-tier", 0.5);
-                int armorStepLevels = loaded.getInt("classes.guardian.armor-level-step-levels", 5);
-                double armorPerLevelStep = loaded.getDouble("classes.guardian.armor-per-level-step", 0.5);
-                double damagePerTier = loaded.getDouble("classes.guardian.damage-per-tier", 0.75);
-                double shieldHealthBonus = loaded.getDouble(
-                    "classes.guardian.shield-offhand-health-bonus", 8.0);
-                double swordMultiplier = loaded.getDouble("classes.guardian.sword-damage-multiplier", 1.1);
-                if (!Double.isFinite(healthPerTier) || healthPerTier < 0.0 || healthPerTier > 100.0
-                        || !Double.isFinite(armorPerTier) || armorPerTier < 0.0 || armorPerTier > 10.0
-                        || armorStepLevels < 1 || armorStepLevels > 30
-                        || !Double.isFinite(armorPerLevelStep) || armorPerLevelStep < 0.0
-                            || armorPerLevelStep > 10.0
-                        || !Double.isFinite(damagePerTier) || damagePerTier < 0.0 || damagePerTier > 10.0
-                        || !Double.isFinite(shieldHealthBonus) || shieldHealthBonus < 0.0
-                            || shieldHealthBonus > 100.0
-                        || !Double.isFinite(swordMultiplier) || swordMultiplier < 1.0 || swordMultiplier > 3.0
-                        || baseHealth + healthPerTier * 12.0 + healthGrowth * (configuredMaxLevel - 1.0)
-                            + shieldHealthBonus > 1024.0
-                        || baseArmor + armorPerTier * 12.0
-                            + armorPerLevelStep * (configuredMaxLevel / (double) armorStepLevels) > 100.0
-                        || baseDamage + damagePerTier * 12.0
-                            + damageGrowth * (configuredMaxLevel - 1.0) > 1024.0) {
-                    throw new InvalidConfigurationException("Invalid tier/level/equipment stats for class 'guardian'.");
-                }
-            }
-            ConfigurationSection upgrades = loaded.getConfigurationSection(
-                "classes." + classId + ".tier-upgrades");
-            if (upgrades != null) {
-                for (String targetTier : upgrades.getKeys(false)) {
-                    int tierNumber = parsePositiveInt(targetTier);
-                    ConfigurationSection costs = upgrades.getConfigurationSection(
-                        targetTier + ".materials");
-                    if (tierNumber < 2 || tierNumber > 13 || costs == null) {
-                        throw new InvalidConfigurationException("Invalid tier upgrade cost for class '"
-                            + classId + "' at tier " + targetTier + ".");
-                    }
-                    for (String materialName : costs.getKeys(false)) {
-                        Material material = Material.matchMaterial(materialName);
-                        int amount = costs.getInt(materialName, -1);
-                        if (material == null || material.isAir() || amount < 0 || amount > 1_000_000) {
-                            throw new InvalidConfigurationException("Invalid tier upgrade material '"
-                                + materialName + "' for class '" + classId + "' at tier " + targetTier + ".");
+
+                        double baseHealth = loaded.getDouble("classes." + classId + ".base-health", 24.0);
+                        double healthGrowth = loaded.getDouble("classes." + classId + ".health-per-level", 4.0);
+                        double baseDamage = loaded.getDouble("classes." + classId + ".base-damage", 4.0);
+                        double damageGrowth = loaded.getDouble("classes." + classId + ".damage-per-level", 0.5);
+                        double baseArmor = loaded.getDouble("classes." + classId + ".base-armor", 0.0);
+                        double armorGrowth = loaded.getDouble("classes." + classId + ".armor-per-level", 0.0);
+                        if (Double.isFinite(baseHealth)
+                           && !(baseHealth <= 0.0)
+                           && Double.isFinite(healthGrowth)
+                           && !(healthGrowth < 0.0)
+                           && Double.isFinite(baseDamage)
+                           && !(baseDamage < 0.0)
+                           && Double.isFinite(damageGrowth)
+                           && !(damageGrowth < 0.0)
+                           && Double.isFinite(baseArmor)
+                           && !(baseArmor < 0.0)
+                           && Double.isFinite(armorGrowth)
+                           && !(armorGrowth < 0.0)
+                           && !(baseHealth + healthGrowth * (configuredMaxLevel + 12.0) > 1024.0)
+                           && !(baseDamage + damageGrowth * (configuredMaxLevel + 12.0) > 1024.0)
+                           && !(baseArmor + armorGrowth * (configuredMaxLevel + 12.0) > 100.0)) {
+                           if ("guardian".equals(classId)) {
+                              double healthPerTier = loaded.getDouble("classes.guardian.health-per-tier", 6.0);
+                              double armorPerTier = loaded.getDouble("classes.guardian.armor-per-tier", 0.5);
+                              int armorStepLevels = loaded.getInt("classes.guardian.armor-level-step-levels", 5);
+                              double armorPerLevelStep = loaded.getDouble("classes.guardian.armor-per-level-step", 0.5);
+                              double damagePerTier = loaded.getDouble("classes.guardian.damage-per-tier", 0.75);
+                              double shieldHealthBonus = loaded.getDouble("classes.guardian.shield-offhand-health-bonus", 8.0);
+                              double swordMultiplier = loaded.getDouble("classes.guardian.sword-damage-multiplier", 1.1);
+                              if (!Double.isFinite(healthPerTier)
+                                 || healthPerTier < 0.0
+                                 || healthPerTier > 100.0
+                                 || !Double.isFinite(armorPerTier)
+                                 || armorPerTier < 0.0
+                                 || armorPerTier > 10.0
+                                 || armorStepLevels < 1
+                                 || armorStepLevels > 30
+                                 || !Double.isFinite(armorPerLevelStep)
+                                 || armorPerLevelStep < 0.0
+                                 || armorPerLevelStep > 10.0
+                                 || !Double.isFinite(damagePerTier)
+                                 || damagePerTier < 0.0
+                                 || damagePerTier > 10.0
+                                 || !Double.isFinite(shieldHealthBonus)
+                                 || shieldHealthBonus < 0.0
+                                 || shieldHealthBonus > 100.0
+                                 || !Double.isFinite(swordMultiplier)
+                                 || swordMultiplier < 1.0
+                                 || swordMultiplier > 3.0
+                                 || baseHealth + healthPerTier * 12.0 + healthGrowth * (configuredMaxLevel - 1.0) + shieldHealthBonus > 1024.0
+                                 || baseArmor + armorPerTier * 12.0 + armorPerLevelStep * ((double)configuredMaxLevel / armorStepLevels) > 100.0
+                                 || baseDamage + damagePerTier * 12.0 + damageGrowth * (configuredMaxLevel - 1.0) > 1024.0) {
+                                 throw new InvalidConfigurationException("Invalid tier/level/equipment stats for class 'guardian'.");
+                              }
+                           }
+
+                           ConfigurationSection upgrades = loaded.getConfigurationSection("classes." + classId + ".tier-upgrades");
+                           if (upgrades != null) {
+                              label367:
+                              for (String targetTier : upgrades.getKeys(false)) {
+                                 int tierNumber = parsePositiveInt(targetTier);
+                                 ConfigurationSection costs = upgrades.getConfigurationSection(targetTier + ".materials");
+                                 if (tierNumber >= 2 && tierNumber <= 13 && costs != null) {
+                                    Iterator upgradeMaterialKeys = costs.getKeys(false).iterator();
+
+                                    String materialName;
+                                    int amount;
+                                    Material material;
+                                    do {
+                                       if (!upgradeMaterialKeys.hasNext()) {
+                                          continue label367;
+                                       }
+
+                                       materialName = (String)upgradeMaterialKeys.next();
+                                       material = Material.matchMaterial(materialName);
+                                       amount = costs.getInt(materialName, -1);
+                                    } while (material != null && !material.isAir() && amount >= 0 && amount <= 1000000);
+
+                                    throw new InvalidConfigurationException(
+                                       "Invalid tier upgrade material '" + materialName + "' for class '" + classId + "' at tier " + targetTier + "."
+                                    );
+                                 }
+
+                                 throw new InvalidConfigurationException("Invalid tier upgrade cost for class '" + classId + "' at tier " + targetTier + ".");
+                              }
+                           }
+                           continue;
                         }
-                    }
-                }
+
+                        throw new InvalidConfigurationException("Invalid stats for class '" + classId + "'.");
+                     }
+
+                     throw new InvalidConfigurationException("Entity type for class '" + classId + "' must be an AI mob.");
+                  }
+
+                  throw new InvalidConfigurationException(skillsPath + " must be a list of skill names.");
+               }
+
+               throw new InvalidConfigurationException("Invalid starting-offhand for class '" + classId + "'.");
             }
-        }
-        Set<String> validAiActions = Set.of("OWNER_ATTACK_TARGET", "OWNER_ATTACKER", "OWNER_THREAT",
-            "NEAREST_HOSTILE", "SEARCH", "FOLLOW_OWNER", "RETURN_TO_OWNER", "WANDER");
-        for (String mode : List.of("attack", "defend", "protect")) {
+
+            throw new InvalidConfigurationException("Invalid menu-icon for class '" + classId + "'.");
+         }
+
+         ConfigurationSection configuredGearSets = loaded.getConfigurationSection("gear-system.sets");
+         if (configuredGearSets != null) {
+            for (String classId : configuredGearSets.getKeys(false)) {
+               if (loaded.getConfigurationSection("classes." + classId) == null) {
+                  throw new InvalidConfigurationException("Gear sets reference unknown mercenary class '" + classId + "'.");
+               }
+
+               ConfigurationSection classSets = loaded.getConfigurationSection("gear-system.sets." + classId);
+               if (classSets == null) {
+                  throw new InvalidConfigurationException("Gear sets for class '" + classId + "' must be a section of set IDs.");
+               }
+
+               for (String setId : classSets.getKeys(false)) {
+                  String setPath = "gear-system.sets." + classId + "." + setId;
+                  if (!setId.matches("[a-z0-9_-]{1,32}") || loaded.getConfigurationSection(setPath) == null) {
+                     throw new InvalidConfigurationException("Invalid gear set '" + setPath + "'; set IDs must match [a-z0-9_-]{1,32}.");
+                  }
+
+                  String displayName = loaded.getString(setPath + ".display-name");
+                  if (displayName != null && (displayName.isBlank() || displayName.length() > 64)) {
+                     throw new InvalidConfigurationException("Gear set display-name at '" + setPath + "' must contain 1-64 characters.");
+                  }
+               }
+            }
+         }
+
+         Set<String> validAiActions = Set.of(
+            "OWNER_ATTACK_TARGET", "OWNER_ATTACKER", "OWNER_THREAT", "NEAREST_HOSTILE", "SEARCH", "FOLLOW_OWNER", "RETURN_TO_OWNER", "WANDER"
+         );
+
+         for (String mode : List.of("attack", "defend", "protect")) {
             String path = "ai.priorities." + mode;
             List<String> priorities = loaded.getStringList(path);
-            Set<String> normalized = priorities.stream()
-                .map(value -> value.toUpperCase(Locale.ROOT)).collect(java.util.stream.Collectors.toSet());
-            if (priorities.isEmpty() || normalized.size() != priorities.size()
-                    || !validAiActions.containsAll(normalized)) {
-                throw new InvalidConfigurationException("Invalid AI priority list at '" + path + "'.");
+            Set<String> normalized = priorities.stream().map(value -> value.toUpperCase(Locale.ROOT)).collect(Collectors.toSet());
+            if (priorities.isEmpty() || normalized.size() != priorities.size() || !validAiActions.containsAll(normalized)) {
+               throw new InvalidConfigurationException("Invalid AI priority list at '" + path + "'.");
             }
-        }
-        for (String tier : loaded.getConfigurationSection("tiers").getKeys(false)) {
+         }
+
+         for (String tier : loaded.getConfigurationSection("tiers").getKeys(false)) {
             int level = parsePositiveInt(tier);
             int xp = loaded.getInt("tiers." + tier + ".experience-levels", -1);
             ConfigurationSection materials = loaded.getConfigurationSection("tiers." + tier + ".materials");
-            if (level < 1 || level > 10 || xp < 0 || xp > 100_000 || materials == null) {
-                throw new InvalidConfigurationException("Invalid costs in tier '" + tier + "'.");
+            if (level < 1 || level > 10 || xp < 0 || xp > 100000 || materials == null) {
+               throw new InvalidConfigurationException("Invalid costs in tier '" + tier + "'.");
             }
-            for (String materialName : materials.getKeys(false)) {
-                Material material = Material.matchMaterial(materialName);
-                int amount = materials.getInt(materialName, -1);
-                if (material == null || material.isAir() || amount < 0 || amount > 1_000_000) {
-                    throw new InvalidConfigurationException(
-                        "Invalid material cost '" + materialName + "' in tier '" + tier + "'.");
-                }
-            }
-        }
-        String configuredBuff = loaded.getString("skills.owner-buff", "SPEED");
-        String resolvedBuff = configuredBuff == null || configuredBuff.isBlank()
-            ? "SPEED" : configuredBuff.toUpperCase(Locale.ROOT);
-        if (Registry.EFFECT.get(NamespacedKey.minecraft(resolvedBuff.toLowerCase(Locale.ROOT))) == null) {
-            throw new InvalidConfigurationException("Unknown skills.owner-buff effect '" + resolvedBuff + "'.");
-        }
-        this.settings = loaded;
-        this.enabled = loaded.getBoolean("enabled", true);
-        this.ownerCommandedPvpEnabled =
-            loaded.getBoolean("pvp.allow-owner-commanded-targets", true);
-        this.maxUnits = readBoundedInt(loaded, "max-units-per-player", 10, 1, 100);
-        this.maxDeployedUnits = readBoundedInt(loaded, "max-summoned-per-player", 3, 1, 10);
-        this.followDistance = readBoundedDouble(loaded, "follow-distance-blocks", 8.0, 2.0, 64.0);
-        this.teleportDistance = readBoundedDouble(loaded, "teleport-distance-blocks", 40.0, 8.0, 256.0);
-        this.targetRadius = readBoundedDouble(loaded, "target-radius-blocks", 50.0, 4.0, 50.0);
-        this.wanderRadius = readBoundedDouble(loaded, "ai.wander-radius-blocks", 6.0, 1.0, 32.0);
-        this.requireLineOfSight = loaded.getBoolean("ai.require-line-of-sight", true);
-        this.aiIntervalTicks = readBoundedInt(loaded, "ai-interval-ticks", 20, 10, 100);
-        this.healAmount = readBoundedDouble(loaded, "skills.heal-amount", 4.0, 0.0, 100.0);
-        this.healRadius = readBoundedDouble(loaded, "skills.heal-radius-blocks", 8.0, 1.0, 32.0);
-        this.ownerBuff = resolvedBuff;
-        this.ownerBuffTicks = readBoundedInt(loaded, "skills.owner-buff-seconds", 8, 1, 600) * 20;
-        this.shieldReduction = readBoundedDouble(loaded, "skills.owner-damage-reduction", 0.2, 0.0, 0.9);
-        this.experiencePerKill = readBoundedInt(loaded, "progression.experience-per-kill", 5, 0, 100_000);
-        this.experiencePerLevel = readBoundedInt(loaded, "progression.experience-per-level", 100, 1, 100_000);
-        this.skillPowerPerLevel = readBoundedDouble(loaded, "progression.skill-power-per-level", 0.05, 0.0, 1.0);
-        this.maxSkillPowerMultiplier = readBoundedDouble(
-            loaded, "progression.max-skill-power-multiplier", 2.5, 1.0, 5.0);
-        this.skillCooldownReductionAtMaxLevel = readBoundedDouble(
-            loaded, "progression.skill-cooldown-reduction-at-max-level-seconds", 3.0, 0.0, 10.0);
-        this.recoverySeconds = readBoundedInt(loaded, "recovery.seconds", 300, 1, 86_400);
-        this.foodHealAmount = readBoundedDouble(loaded, "gear.food-heal-amount", 6.0, 0.0, 100.0);
-        this.experienceOrbPickupEnabled = loaded.getBoolean("experience-orb-pickup.enabled", true);
-        this.experienceOrbPickupRadius = readBoundedDouble(
-            loaded, "experience-orb-pickup.radius-blocks", 4.0, 1.0, 16.0);
-        this.statusDisplayEnabled = loaded.getBoolean("status-display.enabled", true);
-        this.statusDisplaySeeThrough = loaded.getBoolean("status-display.see-through", true);
-        this.statusDisplayBarLength = readBoundedInt(loaded, "status-display.bar-length", 10, 5, 20);
-        this.vexHealthColor = readVexHealthColor(loaded);
-        this.vexAttackIcon = readVexActionIcon(loaded, "attack", "⚔");
-        this.vexFollowIcon = readVexActionIcon(loaded, "follow", "🐾");
-        this.vexIdleIcon = readVexActionIcon(loaded, "idle", "•");
-        this.maxLevel = configuredMaxLevel;
-        plugin.getLogger().info("[Army] Loaded " + getClassIds().size() + " class(es), enabled=" + enabled + ".");
-    }
 
-    private void mergeBundledDefaults(YamlConfiguration loaded)
-            throws IOException, InvalidConfigurationException {
-        boolean rangerIlluminationMigrationComplete =
-            loaded.getBoolean("_migrations.ranger-illumination-skill", false);
-        boolean rangerRangeTuningMigrationComplete =
-            loaded.getBoolean("_migrations.ranger-range-and-damage-tuning", false);
-        InputStream resource = plugin.getResource("armies.yml");
-        if (resource == null) throw new IOException("Bundled armies.yml is missing.");
-        YamlConfiguration defaults = new YamlConfiguration();
-        defaults.options().parseComments(true);
-        try (InputStreamReader reader = new InputStreamReader(resource, StandardCharsets.UTF_8)) {
-            defaults.load(reader);
-        }
-        boolean changed = mergeSettingsSection(loaded, defaults, "");
-        if (!loaded.getBoolean("_migrations.mage-prison-and-firestorm-skills", false)) {
-            String iceWallPath = "classes.frost_mage.skill-settings.ICE_WALL";
-            if (loaded.getDouble(iceWallPath + ".duration-seconds", 3.0) == 6.0
-                    && loaded.getInt(iceWallPath + ".width-blocks", 5) == 5
-                    && loaded.getInt(iceWallPath + ".height-blocks", 2) == 2) {
-                loaded.set(iceWallPath + ".duration-seconds", 3.0);
-                loaded.setComments(iceWallPath + ".duration-seconds",
-                    defaults.getComments(iceWallPath + ".duration-seconds"));
-                plugin.getLogger().info("[Army] Updated the default ICE_WALL duration to 3 seconds.");
+            for (String materialName : materials.getKeys(false)) {
+               Material material = Material.matchMaterial(materialName);
+               int amount = materials.getInt(materialName, -1);
+               if (material == null || material.isAir() || amount < 0 || amount > 1000000) {
+                  throw new InvalidConfigurationException("Invalid material cost '" + materialName + "' in tier '" + tier + "'.");
+               }
             }
-            String oldFlameNovaDamagePath = "classes.pyromancer.skill-settings.FLAME_NOVA.damage";
-            double oldFlameNovaDamage = loaded.getDouble(oldFlameNovaDamagePath, 6.0);
-            if (Double.compare(oldFlameNovaDamage, 6.0) != 0) {
-                String newDamagePath = "classes.pyromancer.skill-settings.FLAME_NOVA.damage-per-second";
-                loaded.set(newDamagePath, oldFlameNovaDamage);
-                loaded.setComments(newDamagePath, defaults.getComments(newDamagePath));
+         }
+
+         String configuredBuff = loaded.getString("skills.owner-buff", "SPEED");
+         String resolvedBuff = configuredBuff != null && !configuredBuff.isBlank() ? configuredBuff.toUpperCase(Locale.ROOT) : "SPEED";
+         if (Registry.EFFECT.get(NamespacedKey.minecraft(resolvedBuff.toLowerCase(Locale.ROOT))) == null) {
+            throw new InvalidConfigurationException("Unknown skills.owner-buff effect '" + resolvedBuff + "'.");
+         }
+
+         this.settings = loaded;
+         this.enabled = loaded.getBoolean("enabled", true);
+         this.ownerCommandedPvpEnabled = loaded.getBoolean("pvp.allow-owner-commanded-targets", true);
+         this.maxUnits = this.readBoundedInt(loaded, "max-units-per-player", 10, 1, 100);
+         this.maxDeployedUnits = this.readBoundedInt(loaded, "max-summoned-per-player", 3, 1, 10);
+         this.followDistance = this.readBoundedDouble(loaded, "follow-distance-blocks", 8.0, 2.0, 64.0);
+         this.teleportDistance = this.readBoundedDouble(loaded, "teleport-distance-blocks", 40.0, 8.0, 256.0);
+         this.targetRadius = this.readBoundedDouble(loaded, "target-radius-blocks", 50.0, 4.0, 50.0);
+         this.wanderRadius = this.readBoundedDouble(loaded, "ai.wander-radius-blocks", 6.0, 1.0, 32.0);
+         this.requireLineOfSight = loaded.getBoolean("ai.require-line-of-sight", true);
+         this.aiIntervalTicks = this.readBoundedInt(loaded, "ai-interval-ticks", 20, 10, 100);
+         this.healAmount = this.readBoundedDouble(loaded, "skills.heal-amount", 4.0, 0.0, 100.0);
+         this.healRadius = this.readBoundedDouble(loaded, "skills.heal-radius-blocks", 8.0, 1.0, 32.0);
+         this.ownerBuff = resolvedBuff;
+         this.ownerBuffTicks = this.readBoundedInt(loaded, "skills.owner-buff-seconds", 8, 1, 600) * 20;
+         this.shieldReduction = this.readBoundedDouble(loaded, "skills.owner-damage-reduction", 0.2, 0.0, 0.9);
+         this.experiencePerKill = this.readBoundedInt(loaded, "progression.experience-per-kill", 5, 0, 100000);
+         this.experiencePerLevel = this.readBoundedInt(loaded, "progression.experience-per-level", 100, 1, 100000);
+         this.skillPowerPerLevel = this.readBoundedDouble(loaded, "progression.skill-power-per-level", 0.05, 0.0, 1.0);
+         this.maxSkillPowerMultiplier = this.readBoundedDouble(loaded, "progression.max-skill-power-multiplier", 2.5, 1.0, 5.0);
+         this.skillCooldownReductionAtMaxLevel = this.readBoundedDouble(loaded, "progression.skill-cooldown-reduction-at-max-level-seconds", 3.0, 0.0, 10.0);
+         this.recoverySeconds = this.readBoundedInt(loaded, "recovery.seconds", 300, 1, 86400);
+         this.foodHealAmount = this.readBoundedDouble(loaded, "gear.food-heal-amount", 6.0, 0.0, 100.0);
+         this.experienceOrbPickupEnabled = loaded.getBoolean("experience-orb-pickup.enabled", true);
+         this.experienceOrbPickupRadius = this.readBoundedDouble(loaded, "experience-orb-pickup.radius-blocks", 4.0, 1.0, 16.0);
+         this.statusDisplayEnabled = loaded.getBoolean("status-display.enabled", true);
+         this.statusDisplaySeeThrough = loaded.getBoolean("status-display.see-through", true);
+         this.statusDisplayBarLength = this.readBoundedInt(loaded, "status-display.bar-length", 10, 5, 20);
+         this.vexHealthColor = this.readVexHealthColor(loaded);
+         this.vexAttackIcon = this.readVexActionIcon(loaded, "attack", "⚔");
+         this.vexFollowIcon = this.readVexActionIcon(loaded, "follow", "\ud83d\udc3e");
+         this.vexIdleIcon = this.readVexActionIcon(loaded, "idle", "•");
+         this.maxLevel = configuredMaxLevel;
+         this.plugin.getLogger().info("[Army] Loaded " + this.getClassIds().size() + " class(es), enabled=" + this.enabled + ".");
+      } else {
+         throw new InvalidConfigurationException("armies.yml must define at least one class and one tier.");
+      }
+   }
+
+   private void mergeBundledDefaults(YamlConfiguration loaded) throws IOException, InvalidConfigurationException {
+      boolean rangerIlluminationMigrationComplete = loaded.getBoolean("_migrations.ranger-illumination-skill", false);
+      boolean rangerRangeTuningMigrationComplete = loaded.getBoolean("_migrations.ranger-range-and-damage-tuning", false);
+      InputStream resource = this.plugin.getResource("armies.yml");
+      if (resource == null) {
+         throw new IOException("Bundled armies.yml is missing.");
+      }
+
+      YamlConfiguration defaults = new YamlConfiguration();
+      defaults.options().parseComments(true);
+      InputStreamReader reader = new InputStreamReader(resource, StandardCharsets.UTF_8);
+
+      try {
+         defaults.load(reader);
+      } catch (Throwable resourceLoadFailure) {
+         try {
+            reader.close();
+         } catch (Throwable resourceCloseFailure) {
+            resourceLoadFailure.addSuppressed(resourceCloseFailure);
+         }
+
+         throw resourceLoadFailure;
+      }
+
+      reader.close();
+      boolean settingsChanged = this.mergeSettingsSection(loaded, defaults, "");
+      if (!loaded.getBoolean("_migrations.mage-prison-and-firestorm-skills", false)) {
+         String iceWallPath = "classes.frost_mage.skill-settings.ICE_WALL";
+         if (loaded.getDouble(iceWallPath + ".duration-seconds", 3.0) == 6.0
+            && loaded.getInt(iceWallPath + ".width-blocks", 5) == 5
+            && loaded.getInt(iceWallPath + ".height-blocks", 2) == 2) {
+            loaded.set(iceWallPath + ".duration-seconds", 3.0);
+            loaded.setComments(iceWallPath + ".duration-seconds", defaults.getComments(iceWallPath + ".duration-seconds"));
+            this.plugin.getLogger().info("[Army] Updated the default ICE_WALL duration to 3 seconds.");
+         }
+
+         String oldFlameNovaDamagePath = "classes.pyromancer.skill-settings.FLAME_NOVA.damage";
+         double oldFlameNovaDamage = loaded.getDouble(oldFlameNovaDamagePath, 6.0);
+         if (Double.compare(oldFlameNovaDamage, 6.0) != 0) {
+            String newDamagePath = "classes.pyromancer.skill-settings.FLAME_NOVA.damage-per-second";
+            loaded.set(newDamagePath, oldFlameNovaDamage);
+            loaded.setComments(newDamagePath, defaults.getComments(newDamagePath));
+         }
+
+         String oldMeteorRadiusPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.radius-blocks";
+         double oldMeteorRadius = loaded.getDouble(oldMeteorRadiusPath, 4.0);
+         if (Double.compare(oldMeteorRadius, 4.0) != 0) {
+            String newRadiusPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.area-radius-blocks";
+            loaded.set(newRadiusPath, oldMeteorRadius);
+            loaded.setComments(newRadiusPath, defaults.getComments(newRadiusPath));
+         }
+
+         String oldMeteorDelayPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.impact-delay-ticks";
+         double oldMeteorDelay = loaded.getDouble(oldMeteorDelayPath, 30.0);
+         if (Double.compare(oldMeteorDelay, 30.0) != 0) {
+            String newDelayPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.warning-delay-seconds";
+            loaded.set(newDelayPath, oldMeteorDelay / 20.0);
+            loaded.setComments(newDelayPath, defaults.getComments(newDelayPath));
+         }
+
+         String oldMeteorTargetsPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.max-targets";
+         int oldMeteorTargets = loaded.getInt(oldMeteorTargetsPath, 24);
+         if (oldMeteorTargets != 24) {
+            String newTargetsPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.max-targets-per-fireball";
+            loaded.set(newTargetsPath, oldMeteorTargets);
+            loaded.setComments(newTargetsPath, defaults.getComments(newTargetsPath));
+         }
+
+         loaded.set("_migrations.mage-prison-and-firestorm-skills", true);
+         settingsChanged = true;
+      }
+
+      if (!loaded.getBoolean("_migrations.pyromancer-flame-nova-cone", false)) {
+         String flameNovaRadiusPath = "classes.pyromancer.skill-settings.FLAME_NOVA.radius-blocks";
+         if (Double.compare(loaded.getDouble(flameNovaRadiusPath, 3.0), 3.0) == 0) {
+            loaded.set(flameNovaRadiusPath, 5.0);
+            loaded.setComments(flameNovaRadiusPath, defaults.getComments(flameNovaRadiusPath));
+            this.plugin.getLogger().info("[Army] Updated the default FLAME_NOVA radius to 5 blocks.");
+         }
+
+         loaded.set("_migrations.pyromancer-flame-nova-cone", true);
+         settingsChanged = true;
+      }
+
+      if (!loaded.getBoolean("_migrations.pyromancer-six-skills", false)) {
+         Set<String> previousDefaults = Set.of("RANGED_ATTACK", "FIRE_BOLT", "ROOT_TARGET", "BUFF_OWNER");
+         List<String> configuredSkills = loaded.getStringList("classes.pyromancer.skills");
+         Set<String> normalizedSkills = configuredSkills.stream().map(skill -> skill.toUpperCase(Locale.ROOT)).collect(Collectors.toSet());
+         if (normalizedSkills.equals(previousDefaults)) {
+            String skillPath = "classes.pyromancer.skills";
+            loaded.set(skillPath, defaults.getStringList(skillPath));
+            loaded.setComments(skillPath, defaults.getComments(skillPath));
+            String descriptionPath = "classes.pyromancer.description";
+            if ("Thiêu đốt mục tiêu, làm chậm kẻ địch và kháng lửa cho chủ.".equals(loaded.getString(descriptionPath))) {
+               loaded.set(descriptionPath, defaults.getString(descriptionPath));
+               loaded.setComments(descriptionPath, defaults.getComments(descriptionPath));
             }
-            String oldMeteorRadiusPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.radius-blocks";
-            double oldMeteorRadius = loaded.getDouble(oldMeteorRadiusPath, 4.0);
-            if (Double.compare(oldMeteorRadius, 4.0) != 0) {
-                String newRadiusPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.area-radius-blocks";
-                loaded.set(newRadiusPath, oldMeteorRadius);
-                loaded.setComments(newRadiusPath, defaults.getComments(newRadiusPath));
-            }
-            String oldMeteorDelayPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.impact-delay-ticks";
-            double oldMeteorDelay = loaded.getDouble(oldMeteorDelayPath, 30.0);
-            if (Double.compare(oldMeteorDelay, 30.0) != 0) {
-                String newDelayPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.warning-delay-seconds";
-                loaded.set(newDelayPath, oldMeteorDelay / 20.0);
-                loaded.setComments(newDelayPath, defaults.getComments(newDelayPath));
-            }
-            String oldMeteorTargetsPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.max-targets";
-            int oldMeteorTargets = loaded.getInt(oldMeteorTargetsPath, 24);
-            if (oldMeteorTargets != 24) {
-                String newTargetsPath = "classes.pyromancer.skill-settings.METEOR_STRIKE.max-targets-per-fireball";
-                loaded.set(newTargetsPath, oldMeteorTargets);
-                loaded.setComments(newTargetsPath, defaults.getComments(newTargetsPath));
-            }
-            loaded.set("_migrations.mage-prison-and-firestorm-skills", true);
-            changed = true;
-        }
-        if (!loaded.getBoolean("_migrations.pyromancer-flame-nova-cone", false)) {
-            String flameNovaRadiusPath = "classes.pyromancer.skill-settings.FLAME_NOVA.radius-blocks";
-            if (Double.compare(loaded.getDouble(flameNovaRadiusPath, 3.0), 3.0) == 0) {
-                loaded.set(flameNovaRadiusPath, 5.0);
-                loaded.setComments(flameNovaRadiusPath, defaults.getComments(flameNovaRadiusPath));
-                plugin.getLogger().info("[Army] Updated the default FLAME_NOVA radius to 5 blocks.");
-            }
-            loaded.set("_migrations.pyromancer-flame-nova-cone", true);
-            changed = true;
-        }
-        if (!loaded.getBoolean("_migrations.pyromancer-six-skills", false)) {
-            Set<String> previousDefaults = Set.of("RANGED_ATTACK", "FIRE_BOLT", "ROOT_TARGET", "BUFF_OWNER");
-            List<String> configuredSkills = loaded.getStringList("classes.pyromancer.skills");
-            Set<String> normalizedSkills = configuredSkills.stream()
-                .map(skill -> skill.toUpperCase(Locale.ROOT))
-                .collect(java.util.stream.Collectors.toSet());
-            if (normalizedSkills.equals(previousDefaults)) {
-                String skillPath = "classes.pyromancer.skills";
-                loaded.set(skillPath, defaults.getStringList(skillPath));
-                loaded.setComments(skillPath, defaults.getComments(skillPath));
-                String descriptionPath = "classes.pyromancer.description";
-                if ("Thiêu đốt mục tiêu, làm chậm kẻ địch và kháng lửa cho chủ."
-                        .equals(loaded.getString(descriptionPath))) {
-                    loaded.set(descriptionPath, defaults.getString(descriptionPath));
-                    loaded.setComments(descriptionPath, defaults.getComments(descriptionPath));
-                }
-                plugin.getLogger().info("[Army] Migrated the default Pyromancer skill kit to the six fire skills.");
-            }
-            loaded.set("_migrations.pyromancer-six-skills", true);
-            changed = true;
-        }
-        if (!loaded.getBoolean("_migrations.pyromancer-fire-charge-weapon", false)) {
-            String weaponPath = "classes.pyromancer.starting-weapon";
-            if ("BLAZE_ROD".equalsIgnoreCase(loaded.getString(weaponPath, "BLAZE_ROD"))) {
-                loaded.set(weaponPath, "FIRE_CHARGE");
-                loaded.setComments(weaponPath, defaults.getComments(weaponPath));
-            }
-            loaded.set("_migrations.pyromancer-fire-charge-weapon", true);
-            changed = true;
-        }
-        if (!loaded.getBoolean("_migrations.class-weapons-and-icons-2026", false)) {
-            Map<String, String> oldDefaults = Map.ofEntries(
-                Map.entry("classes.guardian.starting-weapon", "IRON_SWORD"),
-                Map.entry("classes.medic.starting-weapon", "GOLDEN_HOE"),
-                Map.entry("classes.paladin.starting-weapon", "IRON_SPEAR"),
-                Map.entry("classes.berserker.starting-weapon", "IRON_AXE"),
-                Map.entry("classes.assassin.starting-weapon", "IRON_SWORD"),
-                Map.entry("classes.druid.starting-weapon", "STICK"),
-                Map.entry("classes.frost_mage.starting-weapon", "SNOWBALL"),
-                Map.entry("classes.pyromancer.starting-weapon", "FIRE_CHARGE"),
-                Map.entry("classes.paladin.menu-icon", "TRIDENT"),
-                Map.entry("classes.assassin.menu-icon", "DIAMOND_SWORD"),
-                Map.entry("classes.druid.menu-icon", "OAK_SAPLING"));
-            Map<String, String> newDefaults = Map.ofEntries(
-                Map.entry("classes.guardian.starting-weapon", "WOODEN_SWORD"),
-                Map.entry("classes.medic.starting-weapon", "AIR"),
-                Map.entry("classes.paladin.starting-weapon", "WOODEN_SPEAR"),
-                Map.entry("classes.berserker.starting-weapon", "WOODEN_AXE"),
-                Map.entry("classes.assassin.starting-weapon", "WOODEN_SWORD"),
-                Map.entry("classes.druid.starting-weapon", "AIR"),
-                Map.entry("classes.frost_mage.starting-weapon", "AIR"),
-                Map.entry("classes.pyromancer.starting-weapon", "AIR"),
-                Map.entry("classes.paladin.menu-icon", "IRON_SPEAR"),
-                Map.entry("classes.assassin.menu-icon", "IRON_SWORD"),
-                Map.entry("classes.druid.menu-icon", "ENCHANTED_BOOK"));
-            for (Map.Entry<String, String> migration : oldDefaults.entrySet()) {
-                String path = migration.getKey();
-                if (migration.getValue().equalsIgnoreCase(loaded.getString(path, migration.getValue()))) {
-                    loaded.set(path, newDefaults.get(path));
-                    loaded.setComments(path, defaults.getComments(path));
-                }
-            }
-            loaded.set("_migrations.class-weapons-and-icons-2026", true);
-            changed = true;
-        }
-        String legacySnowballSettingsPath = "classes.frost_mage.skill-settings.SNOWBALL";
-        ConfigurationSection legacySnowballSettings = loaded.getConfigurationSection(legacySnowballSettingsPath);
-        if (legacySnowballSettings != null) {
-            String basicAttackPath = "classes.frost_mage.basic-attack";
-            for (String option : legacySnowballSettings.getKeys(false)) {
-                String targetPath = basicAttackPath + "." + option;
-                if (!loaded.contains(targetPath)) {
-                    loaded.set(targetPath, legacySnowballSettings.get(option));
-                }
-            }
-            loaded.set(legacySnowballSettingsPath, null);
-            changed = true;
-            plugin.getLogger().info("[Army] Migrated legacy frost_mage.skill-settings.SNOWBALL "
-                + "settings to frost_mage.basic-attack.");
-        }
-        List<String> rangerSkills = new ArrayList<>(loaded.getStringList("classes.ranger.skills"));
-        if (!rangerIlluminationMigrationComplete) {
-            boolean addedIllumination = false;
-            if (rangerSkills.stream().noneMatch(skill -> skill.equalsIgnoreCase("ILLUMINATION"))) {
-                rangerSkills.add("ILLUMINATION");
-                loaded.set("classes.ranger.skills", rangerSkills);
-                loaded.setComments("classes.ranger.skills", defaults.getComments("classes.ranger.skills"));
-                addedIllumination = true;
-            }
-            loaded.set("_migrations.ranger-illumination-skill", true);
-            changed = true;
-            if (addedIllumination) {
-                plugin.getLogger().info("[Army] Enabled the new ILLUMINATION skill for the Ranger in armies.yml.");
-            }
-        }
-        if (!rangerRangeTuningMigrationComplete) {
-            migrateRangerDefault(loaded, defaults, "classes.ranger.base-damage", 4.0, 2.8);
-            migrateRangerDefault(loaded, defaults, "classes.ranger.damage-per-level", 0.45, 0.35);
-            migrateRangerDefault(loaded, defaults,
-                "classes.ranger.skill-settings.RANGED_ATTACK.damage", 4.5, 4.2);
-            migrateRangerDefault(loaded, defaults,
-                "classes.ranger.skill-settings.VOLLEY.damage", 2.5, 2.1);
-            loaded.set("_migrations.ranger-range-and-damage-tuning", true);
-            changed = true;
-        }
-        if (loaded.getInt("max-units-per-player", 10) == 4) {
-            loaded.set("max-units-per-player", 10);
-            changed = true;
-        }
-        if (loaded.getInt("progression.max-level", 30) > 30) {
-            loaded.set("progression.max-level", 30);
-            changed = true;
-        }
-        if ("TRIDENT".equalsIgnoreCase(loaded.getString("classes.paladin.starting-weapon", ""))) {
-            String weaponPath = "classes.paladin.starting-weapon";
-            loaded.set(weaponPath, "IRON_SPEAR");
+
+            this.plugin.getLogger().info("[Army] Migrated the default Pyromancer skill kit to the six fire skills.");
+         }
+
+         loaded.set("_migrations.pyromancer-six-skills", true);
+         settingsChanged = true;
+      }
+
+      if (!loaded.getBoolean("_migrations.pyromancer-fire-charge-weapon", false)) {
+         String weaponPath = "classes.pyromancer.starting-weapon";
+         if ("BLAZE_ROD".equalsIgnoreCase(loaded.getString(weaponPath, "BLAZE_ROD"))) {
+            loaded.set(weaponPath, "FIRE_CHARGE");
             loaded.setComments(weaponPath, defaults.getComments(weaponPath));
-            changed = true;
-        }
-        if (!loaded.getBoolean("_migrations.guardian-husk-model", false)) {
-            String guardianEntityPath = "classes.guardian.entity-type";
-            if ("VINDICATOR".equalsIgnoreCase(loaded.getString(guardianEntityPath, ""))) {
-                loaded.set(guardianEntityPath, defaults.getString(guardianEntityPath, "HUSK"));
-                loaded.setComments(guardianEntityPath, defaults.getComments(guardianEntityPath));
-                plugin.getLogger().info("[Army] Updated the default Guardian entity to HUSK "
-                    + "to display items in both hands.");
+         }
+
+         loaded.set("_migrations.pyromancer-fire-charge-weapon", true);
+         settingsChanged = true;
+      }
+
+      if (!loaded.getBoolean("_migrations.class-weapons-and-icons-2026", false)) {
+         Map<String, String> oldDefaults = Map.ofEntries(
+            Map.entry("classes.guardian.starting-weapon", "IRON_SWORD"),
+            Map.entry("classes.medic.starting-weapon", "GOLDEN_HOE"),
+            Map.entry("classes.paladin.starting-weapon", "IRON_SPEAR"),
+            Map.entry("classes.berserker.starting-weapon", "IRON_AXE"),
+            Map.entry("classes.assassin.starting-weapon", "IRON_SWORD"),
+            Map.entry("classes.druid.starting-weapon", "STICK"),
+            Map.entry("classes.frost_mage.starting-weapon", "SNOWBALL"),
+            Map.entry("classes.pyromancer.starting-weapon", "FIRE_CHARGE"),
+            Map.entry("classes.paladin.menu-icon", "TRIDENT"),
+            Map.entry("classes.assassin.menu-icon", "DIAMOND_SWORD"),
+            Map.entry("classes.druid.menu-icon", "OAK_SAPLING")
+         );
+         Map<String, String> newDefaults = Map.ofEntries(
+            Map.entry("classes.guardian.starting-weapon", "WOODEN_SWORD"),
+            Map.entry("classes.medic.starting-weapon", "AIR"),
+            Map.entry("classes.paladin.starting-weapon", "WOODEN_SPEAR"),
+            Map.entry("classes.berserker.starting-weapon", "WOODEN_AXE"),
+            Map.entry("classes.assassin.starting-weapon", "WOODEN_SWORD"),
+            Map.entry("classes.druid.starting-weapon", "AIR"),
+            Map.entry("classes.frost_mage.starting-weapon", "AIR"),
+            Map.entry("classes.pyromancer.starting-weapon", "AIR"),
+            Map.entry("classes.paladin.menu-icon", "IRON_SPEAR"),
+            Map.entry("classes.assassin.menu-icon", "IRON_SWORD"),
+            Map.entry("classes.druid.menu-icon", "ENCHANTED_BOOK")
+         );
+
+         for (Entry<String, String> migration : oldDefaults.entrySet()) {
+            String path = migration.getKey();
+            if (migration.getValue().equalsIgnoreCase(loaded.getString(path, migration.getValue()))) {
+               loaded.set(path, newDefaults.get(path));
+               loaded.setComments(path, defaults.getComments(path));
             }
-            loaded.set("_migrations.guardian-husk-model", true);
-            changed = true;
-        }
-        String berserkerEntityPath = "classes.berserker.entity-type";
-        if ("PIGLIN_BRUTE".equalsIgnoreCase(loaded.getString(berserkerEntityPath, ""))) {
-            loaded.set(berserkerEntityPath, defaults.getString(berserkerEntityPath, "ZOMBIFIED_PIGLIN"));
-            loaded.setComments(berserkerEntityPath, defaults.getComments(berserkerEntityPath));
-            changed = true;
-            plugin.getLogger().info("[Army] Migrated berserker entity to ZOMBIFIED_PIGLIN to prevent transformation.");
-        }
-        if (loaded.getStringList("classes.archer.skills").equals(List.of("RANGED_ATTACK"))) {
-            loaded.set("classes.archer.skills", defaults.getStringList("classes.archer.skills"));
-            changed = true;
-        }
-        if (loaded.getStringList("classes.archer.skills")
-                .equals(List.of("ATTACK", "RANGED_ATTACK", "BUFF_OWNER"))) {
-            loaded.set("classes.archer.skills", defaults.getStringList("classes.archer.skills"));
-            changed = true;
-        }
-        if (!loaded.getBoolean("_migrations.guardian-six-skills-v1", false)) {
-            String guardianSkillsPath = "classes.guardian.skills";
-            loaded.set(guardianSkillsPath, defaults.getStringList(guardianSkillsPath));
-            loaded.setComments(guardianSkillsPath, defaults.getComments(guardianSkillsPath));
-            for (String legacySkill : List.of("SHIELD_OWNER", "HEAL_OWNER", "POWER_STRIKE", "TAUNT")) {
-                loaded.set("classes.guardian.skill-settings." + legacySkill, null);
+         }
+
+         loaded.set("_migrations.class-weapons-and-icons-2026", true);
+         settingsChanged = true;
+      }
+
+      String legacySnowballSettingsPath = "classes.frost_mage.skill-settings.SNOWBALL";
+      ConfigurationSection legacySnowballSettings = loaded.getConfigurationSection(legacySnowballSettingsPath);
+      if (legacySnowballSettings != null) {
+         String basicAttackPath = "classes.frost_mage.basic-attack";
+
+         for (String option : legacySnowballSettings.getKeys(false)) {
+            String targetPath = basicAttackPath + "." + option;
+            if (!loaded.contains(targetPath)) {
+               loaded.set(targetPath, legacySnowballSettings.get(option));
             }
-            String ultimateCooldownPath = "classes.guardian.skill-settings.GUARDIAN_ULTIMATE.cooldown-seconds";
-            if (loaded.getInt(ultimateCooldownPath, 90) == 8) {
-                loaded.set(ultimateCooldownPath, 90);
-                loaded.setComments(ultimateCooldownPath, defaults.getComments(ultimateCooldownPath));
-            }
-            loaded.set("classes.guardian.skill-settings.GUARDIAN_ULTIMATE.radius-blocks", null);
-            loaded.set("classes.guardian.skill-settings.GUARDIAN_ULTIMATE.damage-reduction", null);
-            String guardianDescriptionPath = "classes.guardian.description";
-            if ("Chiến đấu cận chiến và bảo vệ chủ nhân."
-                    .equals(loaded.getString(guardianDescriptionPath))) {
-                loaded.set(guardianDescriptionPath, defaults.getString(guardianDescriptionPath));
-                loaded.setComments(guardianDescriptionPath, defaults.getComments(guardianDescriptionPath));
-            }
-            loaded.set("_migrations.guardian-six-skills-v1", true);
-            changed = true;
-            plugin.getLogger().info("[Army] Migrated the Guardian to its six tank skills.");
-        }
-        if (!loaded.getBoolean("_migrations.guardian-balance-v2", false)) {
-            String swordMultiplierPath = "classes.guardian.sword-damage-multiplier";
-            if (Double.compare(loaded.getDouble(swordMultiplierPath, 1.5), 1.5) == 0) {
-                loaded.set(swordMultiplierPath, 1.1);
-                loaded.setComments(swordMultiplierPath, defaults.getComments(swordMultiplierPath));
-            }
-            String redirectedDamagePath =
-                "classes.guardian.skill-settings.GUARDIAN_LINK.redirected-damage-fraction";
-            if (Double.compare(loaded.getDouble(redirectedDamagePath, 0.2), 0.2) == 0) {
-                loaded.set(redirectedDamagePath, 0.4);
-                loaded.setComments(redirectedDamagePath, defaults.getComments(redirectedDamagePath));
-            }
-            String chargeRangePath = "classes.guardian.skill-settings.GUARDIAN_CHARGE.maximum-range-blocks";
-            if (Double.compare(loaded.getDouble(chargeRangePath, 12.0), 12.0) == 0) {
-                loaded.set(chargeRangePath, 8.0);
-                loaded.setComments(chargeRangePath, defaults.getComments(chargeRangePath));
-            }
-            loaded.set("_migrations.guardian-balance-v2", true);
-            changed = true;
-            plugin.getLogger().info("[Army] Updated Guardian weapon damage, owner protection, and charge defaults.");
-        }
-        if (loaded.getStringList("classes.guardian.skills").equals(List.of("ATTACK", "SHIELD_OWNER"))) {
-            loaded.set("classes.guardian.skills", defaults.getStringList("classes.guardian.skills"));
-            changed = true;
-        }
-        if (loaded.getStringList("classes.guardian.skills")
-                .equals(List.of("ATTACK", "SHIELD_OWNER", "HEAL_OWNER"))) {
-            loaded.set("classes.guardian.skills", defaults.getStringList("classes.guardian.skills"));
-            changed = true;
-        }
-        if (loaded.getStringList("classes.medic.skills")
-                .equals(List.of("HEAL_OWNER", "HEAL_ALLIES", "BUFF_OWNER", "BUFF_ALLIES"))) {
-            loaded.set("classes.medic.skills", defaults.getStringList("classes.medic.skills"));
-            changed = true;
-        }
-        if (loaded.getStringList("classes.frost_mage.skills")
-                .equals(List.of("RANGED_ATTACK", "VOLLEY", "ROOT_TARGET", "HEAL_OWNER"))) {
-            String frostSkillsPath = "classes.frost_mage.skills";
-            loaded.set(frostSkillsPath, defaults.getStringList(frostSkillsPath));
-            loaded.setComments(frostSkillsPath, defaults.getComments(frostSkillsPath));
-            loaded.set("classes.frost_mage.starting-weapon",
-                defaults.getString("classes.frost_mage.starting-weapon", "SNOWBALL"));
-            loaded.setComments("classes.frost_mage.starting-weapon",
-                defaults.getComments("classes.frost_mage.starting-weapon"));
-            if ("Bắn loạt băng, làm chậm quái và hồi máu cho chủ nhân."
-                    .equals(loaded.getString("classes.frost_mage.description"))) {
-                loaded.set("classes.frost_mage.description",
-                    defaults.getString("classes.frost_mage.description"));
-                loaded.setComments("classes.frost_mage.description",
-                    defaults.getComments("classes.frost_mage.description"));
-            }
-            changed = true;
-        }
-        String vexMaximumPath = "classes.druid.skill-settings.SUMMON_VEXES.max-active";
-        int oldVexMaximum = loaded.getInt(vexMaximumPath, 7);
-        if (oldVexMaximum == 2 || oldVexMaximum == 4) {
-            loaded.set(vexMaximumPath, 7);
-            loaded.setComments(vexMaximumPath, defaults.getComments(vexMaximumPath));
-            changed = true;
-        }
-        String druidNamePath = "classes.druid.display-name";
-        if ("Druid".equals(loaded.getString(druidNamePath))) {
-            loaded.set(druidNamePath, defaults.getString(druidNamePath, "Tu sĩ rừng"));
-            loaded.setComments(druidNamePath, defaults.getComments(druidNamePath));
-            changed = true;
-        }
-        String skillPowerPath = "progression.skill-power-per-level";
-        if (Math.abs(loaded.getDouble(skillPowerPath, 0.05) - 0.02) < 0.000001) {
-            loaded.set(skillPowerPath, 0.05);
-            loaded.setComments(skillPowerPath, defaults.getComments(skillPowerPath));
-            changed = true;
-        }
-        if (changed) loaded.save(configFile);
-    }
+         }
+
+         loaded.set(legacySnowballSettingsPath, null);
+         settingsChanged = true;
+         this.plugin.getLogger().info("[Army] Migrated legacy frost_mage.skill-settings.SNOWBALL settings to frost_mage.basic-attack.");
+      }
+
+      List<String> rangerSkills = new ArrayList<>(loaded.getStringList("classes.ranger.skills"));
+      if (!rangerIlluminationMigrationComplete) {
+         boolean addedIllumination = false;
+         if (rangerSkills.stream().noneMatch(skill -> skill.equalsIgnoreCase("ILLUMINATION"))) {
+            rangerSkills.add("ILLUMINATION");
+            loaded.set("classes.ranger.skills", rangerSkills);
+            loaded.setComments("classes.ranger.skills", defaults.getComments("classes.ranger.skills"));
+            addedIllumination = true;
+         }
+
+         loaded.set("_migrations.ranger-illumination-skill", true);
+         settingsChanged = true;
+         if (addedIllumination) {
+            this.plugin.getLogger().info("[Army] Enabled the new ILLUMINATION skill for the Ranger in armies.yml.");
+         }
+      }
+
+      if (!rangerRangeTuningMigrationComplete) {
+         this.migrateRangerDefault(loaded, defaults, "classes.ranger.base-damage", 4.0, 2.8);
+         this.migrateRangerDefault(loaded, defaults, "classes.ranger.damage-per-level", 0.45, 0.35);
+         this.migrateRangerDefault(loaded, defaults, "classes.ranger.skill-settings.RANGED_ATTACK.damage", 4.5, 4.2);
+         this.migrateRangerDefault(loaded, defaults, "classes.ranger.skill-settings.VOLLEY.damage", 2.5, 2.1);
+         loaded.set("_migrations.ranger-range-and-damage-tuning", true);
+         settingsChanged = true;
+      }
+
+      if (loaded.getInt("max-units-per-player", 10) == 4) {
+         loaded.set("max-units-per-player", 10);
+         settingsChanged = true;
+      }
+
+      if (loaded.getInt("progression.max-level", 30) > 30) {
+         loaded.set("progression.max-level", 30);
+         settingsChanged = true;
+      }
+
+      if ("TRIDENT".equalsIgnoreCase(loaded.getString("classes.paladin.starting-weapon", ""))) {
+         String weaponPath = "classes.paladin.starting-weapon";
+         loaded.set(weaponPath, "IRON_SPEAR");
+         loaded.setComments(weaponPath, defaults.getComments(weaponPath));
+         settingsChanged = true;
+      }
+
+      if (!loaded.getBoolean("_migrations.guardian-husk-model", false)) {
+         String guardianEntityPath = "classes.guardian.entity-type";
+         if ("VINDICATOR".equalsIgnoreCase(loaded.getString(guardianEntityPath, ""))) {
+            loaded.set(guardianEntityPath, defaults.getString(guardianEntityPath, "HUSK"));
+            loaded.setComments(guardianEntityPath, defaults.getComments(guardianEntityPath));
+            this.plugin.getLogger().info("[Army] Updated the default Guardian entity to HUSK to display items in both hands.");
+         }
+
+         loaded.set("_migrations.guardian-husk-model", true);
+         settingsChanged = true;
+      }
+
+      String berserkerEntityPath = "classes.berserker.entity-type";
+      if ("PIGLIN_BRUTE".equalsIgnoreCase(loaded.getString(berserkerEntityPath, ""))) {
+         loaded.set(berserkerEntityPath, defaults.getString(berserkerEntityPath, "ZOMBIFIED_PIGLIN"));
+         loaded.setComments(berserkerEntityPath, defaults.getComments(berserkerEntityPath));
+         settingsChanged = true;
+         this.plugin.getLogger().info("[Army] Migrated berserker entity to ZOMBIFIED_PIGLIN to prevent transformation.");
+      }
+
+      if (loaded.getStringList("classes.archer.skills").equals(List.of("RANGED_ATTACK"))) {
+         loaded.set("classes.archer.skills", defaults.getStringList("classes.archer.skills"));
+         settingsChanged = true;
+      }
+
+      if (loaded.getStringList("classes.archer.skills").equals(List.of("ATTACK", "RANGED_ATTACK", "BUFF_OWNER"))) {
+         loaded.set("classes.archer.skills", defaults.getStringList("classes.archer.skills"));
+         settingsChanged = true;
+      }
+
+      if (!loaded.getBoolean("_migrations.guardian-six-skills-v1", false)) {
+         String guardianSkillsPath = "classes.guardian.skills";
+         loaded.set(guardianSkillsPath, defaults.getStringList(guardianSkillsPath));
+         loaded.setComments(guardianSkillsPath, defaults.getComments(guardianSkillsPath));
+
+         for (String legacySkill : List.of("SHIELD_OWNER", "HEAL_OWNER", "POWER_STRIKE", "TAUNT")) {
+            loaded.set("classes.guardian.skill-settings." + legacySkill, null);
+         }
+
+         String ultimateCooldownPath = "classes.guardian.skill-settings.GUARDIAN_ULTIMATE.cooldown-seconds";
+         if (loaded.getInt(ultimateCooldownPath, 90) == 8) {
+            loaded.set(ultimateCooldownPath, 90);
+            loaded.setComments(ultimateCooldownPath, defaults.getComments(ultimateCooldownPath));
+         }
+
+         loaded.set("classes.guardian.skill-settings.GUARDIAN_ULTIMATE.radius-blocks", null);
+         loaded.set("classes.guardian.skill-settings.GUARDIAN_ULTIMATE.damage-reduction", null);
+         String guardianDescriptionPath = "classes.guardian.description";
+         if ("Chiến đấu cận chiến và bảo vệ chủ nhân.".equals(loaded.getString(guardianDescriptionPath))) {
+            loaded.set(guardianDescriptionPath, defaults.getString(guardianDescriptionPath));
+            loaded.setComments(guardianDescriptionPath, defaults.getComments(guardianDescriptionPath));
+         }
+
+         loaded.set("_migrations.guardian-six-skills-v1", true);
+         settingsChanged = true;
+         this.plugin.getLogger().info("[Army] Migrated the Guardian to its six tank skills.");
+      }
+
+      if (!loaded.getBoolean("_migrations.guardian-balance-v2", false)) {
+         String swordMultiplierPath = "classes.guardian.sword-damage-multiplier";
+         if (Double.compare(loaded.getDouble(swordMultiplierPath, 1.5), 1.5) == 0) {
+            loaded.set(swordMultiplierPath, 1.1);
+            loaded.setComments(swordMultiplierPath, defaults.getComments(swordMultiplierPath));
+         }
+
+         String redirectedDamagePath = "classes.guardian.skill-settings.GUARDIAN_LINK.redirected-damage-fraction";
+         if (Double.compare(loaded.getDouble(redirectedDamagePath, 0.2), 0.2) == 0) {
+            loaded.set(redirectedDamagePath, 0.4);
+            loaded.setComments(redirectedDamagePath, defaults.getComments(redirectedDamagePath));
+         }
+
+         String chargeRangePath = "classes.guardian.skill-settings.GUARDIAN_CHARGE.maximum-range-blocks";
+         if (Double.compare(loaded.getDouble(chargeRangePath, 12.0), 12.0) == 0) {
+            loaded.set(chargeRangePath, 8.0);
+            loaded.setComments(chargeRangePath, defaults.getComments(chargeRangePath));
+         }
+
+         loaded.set("_migrations.guardian-balance-v2", true);
+         settingsChanged = true;
+         this.plugin.getLogger().info("[Army] Updated Guardian weapon damage, owner protection, and charge defaults.");
+      }
+
+      if (loaded.getStringList("classes.guardian.skills").equals(List.of("ATTACK", "SHIELD_OWNER"))) {
+         loaded.set("classes.guardian.skills", defaults.getStringList("classes.guardian.skills"));
+         settingsChanged = true;
+      }
+
+      if (loaded.getStringList("classes.guardian.skills").equals(List.of("ATTACK", "SHIELD_OWNER", "HEAL_OWNER"))) {
+         loaded.set("classes.guardian.skills", defaults.getStringList("classes.guardian.skills"));
+         settingsChanged = true;
+      }
+
+      if (loaded.getStringList("classes.medic.skills").equals(List.of("HEAL_OWNER", "HEAL_ALLIES", "BUFF_OWNER", "BUFF_ALLIES"))) {
+         loaded.set("classes.medic.skills", defaults.getStringList("classes.medic.skills"));
+         settingsChanged = true;
+      }
+
+      if (loaded.getStringList("classes.frost_mage.skills").equals(List.of("RANGED_ATTACK", "VOLLEY", "ROOT_TARGET", "HEAL_OWNER"))) {
+         String frostSkillsPath = "classes.frost_mage.skills";
+         loaded.set(frostSkillsPath, defaults.getStringList(frostSkillsPath));
+         loaded.setComments(frostSkillsPath, defaults.getComments(frostSkillsPath));
+         loaded.set("classes.frost_mage.starting-weapon", defaults.getString("classes.frost_mage.starting-weapon", "SNOWBALL"));
+         loaded.setComments("classes.frost_mage.starting-weapon", defaults.getComments("classes.frost_mage.starting-weapon"));
+         if ("Bắn loạt băng, làm chậm quái và hồi máu cho chủ nhân.".equals(loaded.getString("classes.frost_mage.description"))) {
+            loaded.set("classes.frost_mage.description", defaults.getString("classes.frost_mage.description"));
+            loaded.setComments("classes.frost_mage.description", defaults.getComments("classes.frost_mage.description"));
+         }
+
+         settingsChanged = true;
+      }
+
+      String vexMaximumPath = "classes.druid.skill-settings.SUMMON_VEXES.max-active";
+      int oldVexMaximum = loaded.getInt(vexMaximumPath, 7);
+      if (oldVexMaximum == 2 || oldVexMaximum == 4) {
+         loaded.set(vexMaximumPath, 7);
+         loaded.setComments(vexMaximumPath, defaults.getComments(vexMaximumPath));
+         settingsChanged = true;
+      }
+
+      String druidNamePath = "classes.druid.display-name";
+      if ("Druid".equals(loaded.getString(druidNamePath))) {
+         loaded.set(druidNamePath, defaults.getString(druidNamePath, "Tu sĩ rừng"));
+         loaded.setComments(druidNamePath, defaults.getComments(druidNamePath));
+         settingsChanged = true;
+      }
+
+      String berserkerNamePath = "classes.berserker.display-name";
+      if ("Cuồng Chiến".equals(loaded.getString(berserkerNamePath))) {
+         loaded.set(berserkerNamePath, defaults.getString(berserkerNamePath, "Chiến binh"));
+         loaded.setComments(berserkerNamePath, defaults.getComments(berserkerNamePath));
+         settingsChanged = true;
+      }
+
+      String skillPowerPath = "progression.skill-power-per-level";
+      if (Math.abs(loaded.getDouble(skillPowerPath, 0.05) - 0.02) < 1.0E-6) {
+         loaded.set(skillPowerPath, 0.05);
+         loaded.setComments(skillPowerPath, defaults.getComments(skillPowerPath));
+         settingsChanged = true;
+      }
+
+      if (settingsChanged) {
+         loaded.save(this.configFile);
+      }
+   }
 
     private void migrateRangerDefault(YamlConfiguration loaded, YamlConfiguration defaults, String path,
                                      double previous, double updated) {
@@ -2029,99 +2206,141 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    private boolean mergeSettingsSection(YamlConfiguration target, ConfigurationSection defaults, String prefix)
-            throws InvalidConfigurationException {
-        boolean changed = false;
-        for (String key : defaults.getKeys(false)) {
-            String path = prefix.isEmpty() ? key : prefix + "." + key;
-            ConfigurationSection defaultChild = defaults.getConfigurationSection(key);
-            if (defaultChild != null) {
-                if (target.contains(path) && !target.isConfigurationSection(path)) {
-                    throw new InvalidConfigurationException("Expected a configuration section at '" + path + "'.");
-                }
-                if (!target.isConfigurationSection(path)) {
-                    target.createSection(path);
-                    target.setComments(path, defaults.getComments(key));
-                    changed = true;
-                }
-                changed |= mergeSettingsSection(target, defaultChild, path);
-            } else if (!target.contains(path)) {
-                target.set(path, defaults.get(key));
-                target.setComments(path, defaults.getComments(key));
-                changed = true;
-            }
-        }
-        return changed;
-    }
+   private boolean mergeSettingsSection(YamlConfiguration target, ConfigurationSection defaults, String prefix) throws InvalidConfigurationException {
+      boolean changed = false;
 
-    private void loadData() {
-        if (!dataFile.isFile()) {
-            data = new YamlConfiguration();
-            data.createSection("units");
-            if (!saveData()) throw new IllegalStateException("Could not create mercenaries.yml.");
-            return;
-        }
-        YamlConfiguration loaded = new YamlConfiguration();
-        try {
-            loaded.load(dataFile);
-        } catch (IOException | InvalidConfigurationException exception) {
-            throw new IllegalStateException("Could not load mercenaries.yml; refusing to overwrite stored army data.",
-                exception);
-        }
-        ConfigurationSection section = loaded.getConfigurationSection("units");
-        if (section != null) {
+      for (String key : defaults.getKeys(false)) {
+         String path = prefix.isEmpty() ? key : prefix + "." + key;
+         ConfigurationSection defaultChild = defaults.getConfigurationSection(key);
+         if (defaultChild != null) {
+            if (target.contains(path) && !target.isConfigurationSection(path)) {
+               throw new InvalidConfigurationException("Expected a configuration section at '" + path + "'.");
+            }
+
+            if (!target.isConfigurationSection(path)) {
+               target.createSection(path);
+               target.setComments(path, defaults.getComments(key));
+               changed = true;
+            }
+
+            changed |= this.mergeSettingsSection(target, defaultChild, path);
+         } else if (!target.contains(path)) {
+            target.set(path, defaults.get(key));
+            target.setComments(path, defaults.getComments(key));
+            changed = true;
+         }
+      }
+
+      return changed;
+   }
+
+   private void loadData() {
+      if (!this.dataFile.isFile()) {
+         this.data = new YamlConfiguration();
+         this.data.createSection("units");
+         if (!this.saveData()) {
+            throw new IllegalStateException("Could not create mercenaries.yml.");
+         }
+      } else {
+         YamlConfiguration loaded = new YamlConfiguration();
+
+         try {
+            loaded.load(this.dataFile);
+         } catch (IOException | InvalidConfigurationException exception) {
+            throw new IllegalStateException("Could not load mercenaries.yml; refusing to overwrite stored army data.", exception);
+         }
+
+         ConfigurationSection section = loaded.getConfigurationSection("units");
+         boolean migratedGear = false;
+         if (section != null) {
             for (String idText : section.getKeys(false)) {
-                try {
-                    UUID id = UUID.fromString(idText);
-                    UUID owner = UUID.fromString(loaded.getString("units." + idText + ".owner", ""));
-                    String classId = normalizeClass(loaded.getString("units." + idText + ".class", ""));
-                    boolean hasSeparateTier = loaded.contains("units." + idText + ".tier");
-                    int tier = loaded.getInt("units." + idText + ".tier",
-                        loaded.getInt("units." + idText + ".level", 1));
-                    int originalTier = loaded.getInt("units." + idText + ".original-tier", tier);
-                    if (classId == null || originalTier < 1 || originalTier > 10
-                            || tier < originalTier || tier > originalTier + 3 || tier > 13) {
-                        plugin.getLogger().warning("[Army] Skipping invalid mercenary record " + idText + ".");
-                        continue;
-                    }
-                    Unit unit = new Unit(id, owner, classId, tier,
+               try {
+                  UUID id = UUID.fromString(idText);
+                  UUID owner = UUID.fromString(loaded.getString("units." + idText + ".owner", ""));
+                  String classId = this.normalizeClass(loaded.getString("units." + idText + ".class", ""));
+                  boolean hasSeparateTier = loaded.contains("units." + idText + ".tier");
+                  int tier = loaded.getInt("units." + idText + ".tier", loaded.getInt("units." + idText + ".level", 1));
+                  int originalTier = loaded.getInt("units." + idText + ".original-tier", tier);
+                  if (classId != null && originalTier >= 1 && originalTier <= 10 && tier >= originalTier && tier <= originalTier + 3 && tier <= 13) {
+                     MercenaryManager.Unit unit = new MercenaryManager.Unit(
+                        id,
+                        owner,
+                        classId,
+                        tier,
                         parseMode(loaded.getString("units." + idText + ".mode", "PROTECT")),
-                        loaded.getBoolean("units." + idText + ".deployed", false));
-                    unit.originalTier = originalTier;
-                    unit.level = hasSeparateTier
-                        ? Math.max(1, Math.min(maxLevel, loaded.getInt("units." + idText + ".level", 1))) : 1;
-                    unit.experience = Math.max(0, loaded.getInt("units." + idText + ".experience", 0));
-                    unit.customName = loaded.getString("units." + idText + ".custom-name", "");
-                    unit.recoveryUntilMillis = Math.max(0L,
-                        loaded.getLong("units." + idText + ".recovery-until", 0L));
-                    unit.gearCustomized = loaded.getBoolean("units." + idText + ".gear-customized", false);
-                    unit.horseDead = loaded.getBoolean("units." + idText + ".horse-dead", false);
-                    unit.entityId = parseUuid(loaded.getString("units." + idText + ".entity-uuid", ""));
-                    unit.muted = loaded.getBoolean("units." + idText + ".muted", false);
-                    unit.worldName = loaded.getString("units." + idText + ".world", "");
-                    unit.x = loaded.getDouble("units." + idText + ".x");
-                    unit.y = loaded.getDouble("units." + idText + ".y");
-                    unit.z = loaded.getDouble("units." + idText + ".z");
-                    ItemStack horseArmor = loaded.getItemStack("units." + idText + ".horse-armor");
-                    if (isHorseArmor(horseArmor)) unit.horseArmor = horseArmor.clone();
-                    for (org.bukkit.inventory.EquipmentSlot slot : org.bukkit.inventory.EquipmentSlot.values()) {
+                        loaded.getBoolean("units." + idText + ".deployed", false)
+                     );
+                     unit.originalTier = originalTier;
+                     unit.level = hasSeparateTier ? Math.max(1, Math.min(this.maxLevel, loaded.getInt("units." + idText + ".level", 1))) : 1;
+                     unit.experience = Math.max(0, loaded.getInt("units." + idText + ".experience", 0));
+                     unit.customName = loaded.getString("units." + idText + ".custom-name", "");
+                     unit.recoveryUntilMillis = Math.max(0L, loaded.getLong("units." + idText + ".recovery-until", 0L));
+                     unit.gearCustomized = loaded.getBoolean("units." + idText + ".gear-customized", false);
+                     unit.horseDead = loaded.getBoolean("units." + idText + ".horse-dead", false);
+                     unit.entityId = parseUuid(loaded.getString("units." + idText + ".entity-uuid", ""));
+                     unit.muted = loaded.getBoolean("units." + idText + ".muted", false);
+                     unit.worldName = loaded.getString("units." + idText + ".world", "");
+                     unit.x = loaded.getDouble("units." + idText + ".x");
+                     unit.y = loaded.getDouble("units." + idText + ".y");
+                     unit.z = loaded.getDouble("units." + idText + ".z");
+                     ItemStack horseArmor = loaded.getItemStack("units." + idText + ".horse-armor");
+                     if (this.isHorseArmor(horseArmor)) {
+                        unit.horseArmor = horseArmor.clone();
+                     }
+
+                     for (EquipmentSlot slot : EquipmentSlot.values()) {
                         String path = "units." + idText + ".equipment." + slotPath(slot);
                         ItemStack item = loaded.getItemStack(path);
-                        if (item != null && !item.getType().isAir()) unit.equipment.put(slot, item.clone());
-                    }
-                    clearLegacyGeneratedMainHand(unit);
-                    for (int slot = 0; slot < unit.inventory.length; slot++) {
+                        if (item != null && !item.getType().isAir()) {
+                           unit.equipment.put(slot, item.clone());
+                        }
+                     }
+
+                     this.clearLegacyGeneratedMainHand(unit);
+
+                     for (int slot = 0; slot < unit.inventory.length; slot++) {
                         ItemStack item = loaded.getItemStack("units." + idText + ".inventory." + slot);
-                        if (item != null && !item.getType().isAir()) unit.inventory[slot] = item.clone();
-                    }
-                    units.put(id, unit);
-                } catch (IllegalArgumentException exception) {
-                    plugin.getLogger().warning("[Army] Skipping malformed mercenary data at units." + idText + ".");
-                }
+                        if (item != null && !item.getType().isAir()) {
+                           unit.inventory[slot] = item.clone();
+                        }
+                     }
+
+                     migratedGear |= this.sanitizeUnitGear(unit);
+                     this.units.put(id, unit);
+                  } else {
+                     this.plugin.getLogger().warning("[Army] Skipping invalid mercenary record " + idText + ".");
+                  }
+               } catch (IllegalArgumentException exception) {
+                  this.plugin.getLogger().warning("[Army] Skipping malformed mercenary data at units." + idText + ".");
+               }
             }
-        }
-        data = loaded;
-    }
+         }
+
+         this.data = loaded;
+         if (migratedGear && !this.saveData()) {
+            this.plugin.getLogger().severe("[Army] Legacy non-soldier equipment was moved to storage in memory but could not be persisted to mercenaries.yml.");
+         }
+      }
+   }
+
+   private boolean sanitizeUnitGear(MercenaryManager.Unit unit) {
+      boolean moved = false;
+
+      for (EquipmentSlot slot : SOLDIER_GEAR_SLOTS) {
+         ItemStack item = unit.equipment.get(slot);
+         if (item != null && !item.getType().isAir() && !this.validSoldierGear(item, slot) && this.storeInUnitInventory(unit, item)) {
+            unit.equipment.remove(slot);
+            moved = true;
+         }
+      }
+
+      if (unit.horseArmor != null && !unit.horseArmor.getType().isAir() && this.storeInUnitInventory(unit, unit.horseArmor)) {
+         unit.horseArmor = null;
+         moved = true;
+      }
+
+      return moved;
+   }
 
     private void clearLegacyGeneratedMainHand(Unit unit) {
         if (unit.gearCustomized) return;
@@ -2602,32 +2821,33 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         statusPacketListener.update(vex.getUniqueId(), vex, ownerId, healthBar, statusDisplaySeeThrough);
     }
 
-    private ChatColor readVexHealthColor(YamlConfiguration loaded) throws InvalidConfigurationException {
-        String configuredColor = loaded.getString("status-display.vex-health-color", "GREEN");
-        if (configuredColor == null || configuredColor.isBlank()) {
-            throw new InvalidConfigurationException(
-                "status-display.vex-health-color must be a valid ChatColor color name.");
-        }
-        try {
+   private ChatColor readVexHealthColor(YamlConfiguration loaded) throws InvalidConfigurationException {
+      String configuredColor = loaded.getString("status-display.vex-health-color", "GREEN");
+      if (configuredColor != null && !configuredColor.isBlank()) {
+         try {
             ChatColor color = ChatColor.valueOf(configuredColor.toUpperCase(Locale.ROOT));
-            if (!color.isColor()) throw new IllegalArgumentException("Formatting colors are not allowed.");
-            return color;
-        } catch (IllegalArgumentException exception) {
-            throw new InvalidConfigurationException(
-                "Unknown status-display.vex-health-color '" + configuredColor + "'. Use a ChatColor color name.");
-        }
-    }
+            if (!color.isColor()) {
+               throw new IllegalArgumentException("Formatting colors are not allowed.");
+            } else {
+               return color;
+            }
+         } catch (IllegalArgumentException exception) {
+            throw new InvalidConfigurationException("Unknown status-display.vex-health-color '" + configuredColor + "'. Use a ChatColor color name.");
+         }
+      } else {
+         throw new InvalidConfigurationException("status-display.vex-health-color must be a valid ChatColor color name.");
+      }
+   }
 
-    private String readVexActionIcon(YamlConfiguration loaded, String action, String defaultIcon)
-            throws InvalidConfigurationException {
-        String path = "status-display.vex-action-icons." + action;
-        String icon = loaded.getString(path, defaultIcon);
-        if (icon == null || icon.isBlank() || icon.codePointCount(0, icon.length()) > 4) {
-            throw new InvalidConfigurationException(
-                "Invalid " + path + "; use a non-empty symbol of at most 4 Unicode code points.");
-        }
-        return icon;
-    }
+   private String readVexActionIcon(YamlConfiguration loaded, String action, String defaultIcon) throws InvalidConfigurationException {
+      String path = "status-display.vex-action-icons." + action;
+      String icon = loaded.getString(path, defaultIcon);
+      if (icon != null && !icon.isBlank() && icon.codePointCount(0, icon.length()) <= 4) {
+         return icon;
+      } else {
+         throw new InvalidConfigurationException("Invalid " + path + "; use a non-empty symbol of at most 4 Unicode code points.");
+      }
+   }
 
     private void useGuardianSkills(Unit unit, Player owner, Mob guardian, LivingEntity target) {
         if (guardian == null || !guardian.isValid() || !owner.isOnline()
@@ -3188,17 +3408,13 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             && mob.getLocation().distanceSquared(target.getLocation()) <= range * range;
     }
 
-    private double frostRange(Unit unit, String skill, String option, double fallback) {
-        String basePath = "classes.frost_mage."
-            + (skill.equals("BASIC_ATTACK") ? "basic-attack." : "skill-settings." + skill + ".")
-            + option;
-        double base = readBoundedDouble(settings, basePath, fallback, 1.0, 64.0);
-        int interval = readBoundedInt(settings,
-            "classes.frost_mage.level-scaling.range-increase-every-levels", 5, 1, 30);
-        double increase = readBoundedDouble(settings,
-            "classes.frost_mage.level-scaling.range-increase-blocks", 1.0, 0.0, 16.0);
-        return Math.min(64.0, base + (unit.level / interval) * increase);
-    }
+   private double frostRange(MercenaryManager.Unit unit, String skill, String option, double fallback) {
+      String basePath = "classes.frost_mage." + (skill.equals("BASIC_ATTACK") ? "basic-attack." : "skill-settings." + skill + ".") + option;
+      double base = this.readBoundedDouble(this.settings, basePath, fallback, 1.0, 64.0);
+      int interval = this.readBoundedInt(this.settings, "classes.frost_mage.level-scaling.range-increase-every-levels", 5, 1, 30);
+      double increase = this.readBoundedDouble(this.settings, "classes.frost_mage.level-scaling.range-increase-blocks", 1.0, 0.0, 16.0);
+      return Math.min(64.0, base + unit.level / interval * increase + this.soldierGearStats(unit).attackRangeBlocks());
+   }
 
     private double frostDamage(Unit unit, String skill, double fallback) {
         double base = frostOptionDouble(skill, "damage", fallback, 0.0, 100.0);
@@ -3207,12 +3423,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return Math.min(100.0, base + Math.max(0, unit.level - 1) * increase);
     }
 
-    private double frostCooldown(Unit unit, String skill, double fallback) {
-        double base = frostOptionDouble(skill, "cooldown-seconds", fallback, 1.0, 3600.0);
-        double reduction = readBoundedDouble(settings,
-            "classes.frost_mage.level-scaling.cooldown-reduction-per-level-seconds", 0.1, 0.0, 10.0);
-        return Math.max(1.0, base - Math.max(0, unit.level - 1) * reduction);
-    }
+   private double frostCooldown(MercenaryManager.Unit unit, String skill, double fallback) {
+      double base = this.frostOptionDouble(skill, "cooldown-seconds", fallback, 1.0, 3600.0);
+      double reduction = this.readBoundedDouble(this.settings, "classes.frost_mage.level-scaling.cooldown-reduction-per-level-seconds", 0.1, 0.0, 10.0);
+      double levelAdjusted = Math.max(1.0, base - Math.max(0, unit.level - 1) * reduction);
+      return Math.max(1.0, levelAdjusted * (1.0 - Math.min(20.0, this.soldierGearStats(unit).cooldownReductionPercent()) / 100.0));
+   }
 
     private int frostDurationTicks(Unit unit, String skill, double fallback, double min, double max) {
         double base = skillOptionDouble(unit, skill, "duration-seconds", fallback, min, max);
@@ -3602,205 +3818,226 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    private void useSkillsRemaining(Unit unit, Player owner, LivingEntity target, Mob mob) {
-        if ("medic".equals(unit.unitClass) && mob != null) {
-            useMedicPotion(unit, owner, mob);
-        }
-        if (hasSkill(unit, "VOLLEY") && target != null && mob != null
-                && isWithinConfiguredSkillRange(unit, mob, target, "VOLLEY") && ready(unit, "volley")) {
-            int arrowCount = (int) skillOptionDouble(unit, "VOLLEY", "arrow-count", 3.0, 2.0, 5.0);
-            double speed = skillOptionDouble(unit, "VOLLEY", "arrow-speed", 2.0, 0.5, 4.0);
-            double spread = skillOptionDouble(unit, "VOLLEY", "spread-degrees", 8.0, 0.0, 30.0);
-            double damage = Math.min(100.0, skillOptionDouble(unit, "VOLLEY", "damage", 3.0,
-                0.0, 100.0) * skillPowerMultiplier(unit));
-            int ammoBefore = countStoredArrows(unit);
-            Vector direction = target.getEyeLocation().toVector().subtract(mob.getEyeLocation().toVector());
-            if (direction.lengthSquared() > 0.0) {
-                for (int index = 0; index < arrowCount; index++) {
-                    double offset = index - (arrowCount - 1) / 2.0;
-                    AbstractArrow arrow = launchConfiguredArrow(mob, unit);
-                    arrow.setVelocity(direction.clone().normalize()
-                        .rotateAroundY(Math.toRadians(offset * spread)).multiply(speed));
-                    arrow.setDamage(damage);
-                    arrow.setPickupStatus(Arrow.PickupStatus.DISALLOWED);
-                }
-                persistAmmoIfConsumed(unit, ammoBefore);
-                markUsed(unit, "volley", skillCooldownSeconds(unit, "VOLLEY"));
-                announceSkillCast(unit, owner, "VOLLEY", Particle.CRIT);
-            }
-        }
+   private void useSkillsRemaining(MercenaryManager.Unit unit, Player owner, LivingEntity target, Mob mob) {
+      if ("medic".equals(unit.unitClass) && mob != null) {
+         this.useMedicPotion(unit, owner, mob);
+      }
 
-        if (hasSkill(unit, "POWER_STRIKE") && target != null && mob != null
-                && ready(unit, "power-strike")) {
-            double damage = Math.min(100.0, skillOptionDouble(unit, "POWER_STRIKE",
-                "damage", 8.0, 0.0, 100.0) * skillPowerMultiplier(unit));
+      if (this.hasSkill(unit, "VOLLEY")
+         && target != null
+         && mob != null
+         && this.isWithinConfiguredSkillRange(unit, mob, target, "VOLLEY")
+         && this.ready(unit, "volley")) {
+         int arrowCount = (int)this.skillOptionDouble(unit, "VOLLEY", "arrow-count", 3.0, 2.0, 5.0);
+         double speed = this.skillOptionDouble(unit, "VOLLEY", "arrow-speed", 2.0, 0.5, 4.0);
+         double spread = this.skillOptionDouble(unit, "VOLLEY", "spread-degrees", 8.0, 0.0, 30.0);
+         double damage = Math.min(100.0, this.skillOptionDouble(unit, "VOLLEY", "damage", 3.0, 0.0, 100.0) * this.skillPowerMultiplier(unit));
+         int ammoBefore = this.countStoredArrows(unit);
+         Vector direction = target.getEyeLocation().toVector().subtract(mob.getEyeLocation().toVector());
+         if (direction.lengthSquared() > 0.0) {
+            for (int index = 0; index < arrowCount; index++) {
+               double offset = index - (arrowCount - 1) / 2.0;
+               AbstractArrow arrow = this.launchConfiguredArrow(mob, unit);
+               arrow.setVelocity(direction.clone().normalize().rotateAroundY(Math.toRadians(offset * spread)).multiply(speed));
+               arrow.setDamage(damage);
+               arrow.setPickupStatus(PickupStatus.DISALLOWED);
+            }
+
+            this.persistAmmoIfConsumed(unit, ammoBefore);
+            this.markUsed(unit, "volley", this.skillCooldownSeconds(unit, "VOLLEY"));
+            this.announceSkillCast(unit, owner, "VOLLEY", Particle.CRIT);
+         }
+      }
+
+      if (this.hasSkill(unit, "POWER_STRIKE") && target != null && mob != null && this.ready(unit, "power-strike")) {
+         double damage = Math.min(100.0, this.skillOptionDouble(unit, "POWER_STRIKE", "damage", 8.0, 0.0, 100.0) * this.skillPowerMultiplier(unit));
+         target.damage(damage, mob);
+         target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0.0, 1.0, 0.0), 16, 0.35, 0.45, 0.35, 0.15);
+         this.markUsed(unit, "power-strike", this.skillCooldownSeconds(unit, "POWER_STRIKE"));
+         this.announceSkillCast(unit, owner, "POWER_STRIKE", Particle.SWEEP_ATTACK);
+      }
+
+      if (this.hasSkill(unit, "TAUNT") && mob != null && this.ready(unit, "taunt")) {
+         double radius = this.skillOptionDouble(unit, "TAUNT", "radius-blocks", 8.0, 1.0, 32.0);
+         List<Monster> taunted = mob.getWorld()
+            .getNearbyEntities(owner.getLocation(), radius, radius, radius)
+            .stream()
+            .filter(Monster.class::isInstance)
+            .map(Monster.class::cast)
+            .filter(
+               monster -> monster.isValid()
+                  && !monster.isDead()
+                  && (monster.getTarget() == null || monster.getTarget().getUniqueId().equals(owner.getUniqueId()))
+            )
+            .toList();
+         if (!taunted.isEmpty()) {
+            taunted.forEach(monster -> monster.setTarget(mob));
+            this.markUsed(unit, "taunt", this.skillCooldownSeconds(unit, "TAUNT"));
+            this.announceSkillCast(unit, owner, "TAUNT", Particle.WAX_ON);
+         }
+      }
+
+      if (this.hasSkill(unit, "CLEANSE_OWNER") && this.ready(unit, "cleanse-owner")) {
+         boolean cleansed = false;
+
+         for (String effect : this.settings.getStringList("classes." + unit.unitClass + ".skill-settings.CLEANSE_OWNER.effects")) {
+            PotionEffectType type = (PotionEffectType)Registry.EFFECT.get(NamespacedKey.minecraft(effect.toLowerCase(Locale.ROOT)));
+            if (type != null && owner.hasPotionEffect(type)) {
+               owner.removePotionEffect(type);
+               cleansed = true;
+            }
+         }
+
+         if (cleansed) {
+            this.markUsed(unit, "cleanse-owner", this.skillCooldownSeconds(unit, "CLEANSE_OWNER"));
+            this.announceSkillCast(unit, owner, "CLEANSE_OWNER", Particle.HAPPY_VILLAGER);
+         }
+      }
+
+      if (this.hasSkill(unit, "FIRE_BOLT") && target != null && mob != null && this.ready(unit, "fire-bolt")) {
+         double damage = Math.min(100.0, this.skillOptionDouble(unit, "FIRE_BOLT", "damage", 7.0, 0.0, 100.0) * this.skillPowerMultiplier(unit));
+         int fireSeconds = (int)this.skillOptionDouble(unit, "FIRE_BOLT", "fire-seconds", 3.0, 0.0, 15.0);
+         target.damage(damage, mob);
+         if (fireSeconds > 0) {
+            target.setFireTicks(Math.max(target.getFireTicks(), fireSeconds * 20));
+         }
+
+         target.getWorld().spawnParticle(Particle.FLAME, target.getLocation().add(0.0, 1.0, 0.0), 18, 0.35, 0.45, 0.35, 0.03);
+         this.markUsed(unit, "fire-bolt", this.skillCooldownSeconds(unit, "FIRE_BOLT"));
+         this.announceSkillCast(unit, owner, "FIRE_BOLT", Particle.FLAME);
+      }
+
+      if (this.hasSkill(unit, "ROOT_TARGET") && target != null && this.ready(unit, "root-target")) {
+         String effectName = this.skillOptionString(unit, "ROOT_TARGET", "effect", "SLOWNESS");
+         PotionEffectType effect = (PotionEffectType)Registry.EFFECT.get(NamespacedKey.minecraft(effectName.toLowerCase(Locale.ROOT)));
+         if (effect != null) {
+            int duration = (int)this.skillOptionDouble(unit, "ROOT_TARGET", "duration-seconds", 4.0, 1.0, 600.0);
+            int amplifier = (int)this.skillOptionDouble(unit, "ROOT_TARGET", "amplifier", 1.0, 0.0, 10.0);
+            target.addPotionEffect(new PotionEffect(effect, duration * 20, amplifier, true, true, true));
+            target.getWorld().spawnParticle(Particle.SNOWFLAKE, target.getLocation().add(0.0, 1.0, 0.0), 14, 0.35, 0.45, 0.35, 0.02);
+            this.markUsed(unit, "root-target", this.skillCooldownSeconds(unit, "ROOT_TARGET"));
+            this.announceSkillCast(unit, owner, "ROOT_TARGET", Particle.SNOWFLAKE);
+         }
+      }
+
+      if (this.hasSkill(unit, "LIFESTEAL") && target != null && mob != null && this.ready(unit, "lifesteal")) {
+         double maximum = maxHealth(mob);
+         if (maximum > 0.0 && mob.getHealth() < maximum) {
+            double damage = Math.min(100.0, this.skillOptionDouble(unit, "LIFESTEAL", "damage", 6.0, 0.0, 100.0) * this.skillPowerMultiplier(unit));
+            double healing = Math.min(100.0, this.skillOptionDouble(unit, "LIFESTEAL", "heal-amount", 4.0, 0.0, 100.0) * this.skillPowerMultiplier(unit))
+               * this.soldierHealingMultiplier(unit);
             target.damage(damage, mob);
-            target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0),
-                16, 0.35, 0.45, 0.35, 0.15);
-            markUsed(unit, "power-strike", skillCooldownSeconds(unit, "POWER_STRIKE"));
-            announceSkillCast(unit, owner, "POWER_STRIKE", Particle.SWEEP_ATTACK);
-        }
+            mob.setHealth(Math.min(maximum, mob.getHealth() + healing));
+            mob.getWorld().spawnParticle(Particle.HEART, mob.getLocation().add(0.0, 1.0, 0.0), 10, 0.3, 0.4, 0.3, 0.02);
+            this.markUsed(unit, "lifesteal", this.skillCooldownSeconds(unit, "LIFESTEAL"));
+            this.announceSkillCast(unit, owner, "LIFESTEAL", Particle.DAMAGE_INDICATOR);
+         }
+      }
 
-        if (hasSkill(unit, "TAUNT") && mob != null && ready(unit, "taunt")) {
-            double radius = skillOptionDouble(unit, "TAUNT", "radius-blocks", 8.0, 1.0, 32.0);
-            List<Monster> taunted = mob.getWorld().getNearbyEntities(owner.getLocation(), radius, radius, radius)
-                .stream().filter(Monster.class::isInstance).map(Monster.class::cast)
-                .filter(monster -> monster.isValid() && !monster.isDead()
-                    && (monster.getTarget() == null
-                        || monster.getTarget().getUniqueId().equals(owner.getUniqueId())))
-                .toList();
-            if (!taunted.isEmpty()) {
-                taunted.forEach(monster -> monster.setTarget(mob));
-                markUsed(unit, "taunt", skillCooldownSeconds(unit, "TAUNT"));
-                announceSkillCast(unit, owner, "TAUNT", Particle.WAX_ON);
-            }
-        }
+      if (this.hasSkill(unit, "BERSERK") && target != null && mob != null && this.ready(unit, "berserk")) {
+         double maximum = maxHealth(mob);
+         double threshold = this.skillOptionDouble(unit, "BERSERK", "health-percent", 50.0, 1.0, 99.0);
+         String effectName = this.skillOptionString(unit, "BERSERK", "effect", "STRENGTH");
+         PotionEffectType effect = (PotionEffectType)Registry.EFFECT.get(NamespacedKey.minecraft(effectName.toLowerCase(Locale.ROOT)));
+         if (maximum > 0.0 && mob.getHealth() / maximum * 100.0 <= threshold && effect != null && !mob.hasPotionEffect(effect)) {
+            int duration = (int)this.skillOptionDouble(unit, "BERSERK", "duration-seconds", 8.0, 1.0, 600.0);
+            int amplifier = (int)this.skillOptionDouble(unit, "BERSERK", "amplifier", 0.0, 0.0, 10.0);
+            mob.addPotionEffect(new PotionEffect(effect, duration * 20, amplifier, true, true, true));
+            mob.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, mob.getLocation().add(0.0, 1.0, 0.0), 12, 0.35, 0.45, 0.35, 0.02);
+            this.markUsed(unit, "berserk", this.skillCooldownSeconds(unit, "BERSERK"));
+            this.announceSkillCast(unit, owner, "BERSERK", Particle.ANGRY_VILLAGER);
+         }
+      }
 
-        if (hasSkill(unit, "CLEANSE_OWNER") && ready(unit, "cleanse-owner")) {
-            boolean cleansed = false;
-            for (String effect : settings.getStringList("classes." + unit.unitClass
-                    + ".skill-settings.CLEANSE_OWNER.effects")) {
-                PotionEffectType type = Registry.EFFECT.get(
-                    NamespacedKey.minecraft(effect.toLowerCase(Locale.ROOT)));
-                if (type != null && owner.hasPotionEffect(type)) {
-                    owner.removePotionEffect(type);
-                    cleansed = true;
-                }
-            }
-            if (cleansed) {
-                markUsed(unit, "cleanse-owner", skillCooldownSeconds(unit, "CLEANSE_OWNER"));
-                announceSkillCast(unit, owner, "CLEANSE_OWNER", Particle.HAPPY_VILLAGER);
-            }
-        }
+      double ownerMaxHealth = maxHealth(owner);
+      if (this.hasSkill(unit, "HEAL_OWNER") && ownerMaxHealth > 0.0 && owner.getHealth() < ownerMaxHealth && this.ready(unit, "heal-owner")) {
+         double amount = Math.min(100.0, this.skillOptionDouble(unit, "HEAL_OWNER", "amount", this.healAmount, 0.0, 100.0) * this.skillPowerMultiplier(unit))
+            * this.soldierHealingMultiplier(unit);
+         owner.setHealth(Math.min(ownerMaxHealth, owner.getHealth() + amount));
+         this.markUsed(unit, "heal-owner", this.skillCooldownSeconds(unit, "HEAL_OWNER"));
+         this.announceSkillCast(unit, owner, "HEAL_OWNER", Particle.HEART);
+      }
 
-        if (hasSkill(unit, "FIRE_BOLT") && target != null && mob != null && ready(unit, "fire-bolt")) {
-            double damage = Math.min(100.0, skillOptionDouble(unit, "FIRE_BOLT",
-                "damage", 7.0, 0.0, 100.0) * skillPowerMultiplier(unit));
-            int fireSeconds = (int) skillOptionDouble(unit, "FIRE_BOLT", "fire-seconds", 3.0, 0.0, 15.0);
-            target.damage(damage, mob);
-            if (fireSeconds > 0) target.setFireTicks(Math.max(target.getFireTicks(), fireSeconds * 20));
-            target.getWorld().spawnParticle(Particle.FLAME, target.getLocation().add(0, 1, 0),
-                18, 0.35, 0.45, 0.35, 0.03);
-            markUsed(unit, "fire-bolt", skillCooldownSeconds(unit, "FIRE_BOLT"));
-            announceSkillCast(unit, owner, "FIRE_BOLT", Particle.FLAME);
-        }
+      if (this.hasSkill(unit, "HEAL_ALLIES") && this.ready(unit, "heal-allies")) {
+         List<LivingEntity> allies = new ArrayList<>();
+         String targetRule = this.skillOptionString(unit, "HEAL_ALLIES", "target", "OWNER_AND_ALLIES");
+         if (!targetRule.equals("ALLIES")) {
+            allies.add(owner);
+         }
 
-        if (hasSkill(unit, "ROOT_TARGET") && target != null && ready(unit, "root-target")) {
-            String effectName = skillOptionString(unit, "ROOT_TARGET", "effect", "SLOWNESS");
-            PotionEffectType effect = Registry.EFFECT.get(
-                NamespacedKey.minecraft(effectName.toLowerCase(Locale.ROOT)));
-            if (effect != null) {
-                int duration = (int) skillOptionDouble(unit, "ROOT_TARGET",
-                    "duration-seconds", 4.0, 1.0, 600.0);
-                int amplifier = (int) skillOptionDouble(unit, "ROOT_TARGET", "amplifier", 1.0, 0.0, 10.0);
-                target.addPotionEffect(new PotionEffect(effect, duration * 20, amplifier, true, true, true));
-                target.getWorld().spawnParticle(Particle.SNOWFLAKE, target.getLocation().add(0, 1, 0),
-                    14, 0.35, 0.45, 0.35, 0.02);
-                markUsed(unit, "root-target", skillCooldownSeconds(unit, "ROOT_TARGET"));
-                announceSkillCast(unit, owner, "ROOT_TARGET", Particle.SNOWFLAKE);
+         for (UUID siblingId : this.getOwnerUnits(unit.owner).stream().map(sibling -> sibling.id).toList()) {
+            Mob sibling = this.activeEntities.get(siblingId);
+            if (sibling != null && sibling.isValid() && !targetRule.equals("OWNER")) {
+               allies.add(sibling);
             }
-        }
+         }
 
-        if (hasSkill(unit, "LIFESTEAL") && target != null && mob != null && ready(unit, "lifesteal")) {
-            double maximum = maxHealth(mob);
-            if (maximum > 0.0 && mob.getHealth() < maximum) {
-                double damage = Math.min(100.0, skillOptionDouble(unit, "LIFESTEAL",
-                    "damage", 6.0, 0.0, 100.0) * skillPowerMultiplier(unit));
-                double healing = Math.min(100.0, skillOptionDouble(unit, "LIFESTEAL",
-                    "heal-amount", 4.0, 0.0, 100.0) * skillPowerMultiplier(unit));
-                target.damage(damage, mob);
-                mob.setHealth(Math.min(maximum, mob.getHealth() + healing));
-                mob.getWorld().spawnParticle(Particle.HEART, mob.getLocation().add(0, 1, 0),
-                    10, 0.3, 0.4, 0.3, 0.02);
-                markUsed(unit, "lifesteal", skillCooldownSeconds(unit, "LIFESTEAL"));
-                announceSkillCast(unit, owner, "LIFESTEAL", Particle.DAMAGE_INDICATOR);
-            }
-        }
+         boolean healed = false;
 
-        if (hasSkill(unit, "BERSERK") && target != null && mob != null && ready(unit, "berserk")) {
-            double maximum = maxHealth(mob);
-            double threshold = skillOptionDouble(unit, "BERSERK", "health-percent", 50.0, 1.0, 99.0);
-            String effectName = skillOptionString(unit, "BERSERK", "effect", "STRENGTH");
-            PotionEffectType effect = Registry.EFFECT.get(
-                NamespacedKey.minecraft(effectName.toLowerCase(Locale.ROOT)));
-            if (maximum > 0.0 && mob.getHealth() / maximum * 100.0 <= threshold
-                    && effect != null && !mob.hasPotionEffect(effect)) {
-                int duration = (int) skillOptionDouble(unit, "BERSERK",
-                    "duration-seconds", 8.0, 1.0, 600.0);
-                int amplifier = (int) skillOptionDouble(unit, "BERSERK", "amplifier", 0.0, 0.0, 10.0);
-                mob.addPotionEffect(new PotionEffect(effect, duration * 20, amplifier, true, true, true));
-                mob.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, mob.getLocation().add(0, 1, 0),
-                    12, 0.35, 0.45, 0.35, 0.02);
-                markUsed(unit, "berserk", skillCooldownSeconds(unit, "BERSERK"));
-                announceSkillCast(unit, owner, "BERSERK", Particle.ANGRY_VILLAGER);
+         for (LivingEntity ally : allies) {
+            double maxHealth = maxHealth(ally);
+            if (!ally.isDead()
+               && ally.getWorld().equals(owner.getWorld())
+               && !(
+                  ally.getLocation().distanceSquared(owner.getLocation())
+                     > Math.pow(this.skillOptionDouble(unit, "HEAL_ALLIES", "radius-blocks", this.healRadius, 1.0, 32.0), 2.0)
+               )
+               && !(maxHealth <= 0.0)
+               && !(ally.getHealth() >= maxHealth)) {
+               double amount = Math.min(
+                     100.0, this.skillOptionDouble(unit, "HEAL_ALLIES", "amount", this.healAmount, 0.0, 100.0) * this.skillPowerMultiplier(unit)
+                  )
+                  * this.soldierHealingMultiplier(unit);
+               ally.setHealth(Math.min(maxHealth, ally.getHealth() + amount));
+               healed = true;
             }
-        }
+         }
 
-        double ownerMaxHealth = maxHealth(owner);
-        if (hasSkill(unit, "HEAL_OWNER") && ownerMaxHealth > 0 && owner.getHealth() < ownerMaxHealth) {
-            if (ready(unit, "heal-owner")) {
-                double amount = Math.min(100.0, skillOptionDouble(unit, "HEAL_OWNER",
-                    "amount", healAmount, 0.0, 100.0) * skillPowerMultiplier(unit));
-                owner.setHealth(Math.min(ownerMaxHealth, owner.getHealth() + amount));
-                markUsed(unit, "heal-owner", skillCooldownSeconds(unit, "HEAL_OWNER"));
-                announceSkillCast(unit, owner, "HEAL_OWNER", Particle.HEART);
+         if (healed) {
+            this.markUsed(unit, "heal-allies", this.skillCooldownSeconds(unit, "HEAL_ALLIES"));
+            this.announceSkillCast(unit, owner, "HEAL_ALLIES", Particle.HEART);
+         }
+      }
+
+      if (this.hasSkill(unit, "BUFF_OWNER") && this.ready(unit, "buff-owner")) {
+         this.applyConfiguredBuff(unit, owner, "BUFF_OWNER", "buff-owner");
+      }
+
+      if (this.hasSkill(unit, "BUFF_ALLIES") && this.ready(unit, "buff-allies")) {
+         double radius = this.skillOptionDouble(unit, "BUFF_ALLIES", "radius-blocks", this.healRadius, 1.0, 32.0);
+         String targetRule = this.skillOptionString(unit, "BUFF_ALLIES", "target", "OWNER_AND_ALLIES");
+         List<LivingEntity> allies = new ArrayList<>();
+         if (!targetRule.equals("ALLIES")) {
+            allies.add(owner);
+         }
+
+         if (!targetRule.equals("OWNER")) {
+            for (UUID siblingId : this.getOwnerUnits(unit.owner).stream().map(sibling -> sibling.id).toList()) {
+               Mob sibling = this.activeEntities.get(siblingId);
+               if (sibling != null && sibling.isValid()) {
+                  allies.add(sibling);
+               }
             }
-        }
-        if (hasSkill(unit, "HEAL_ALLIES") && ready(unit, "heal-allies")) {
-            List<LivingEntity> allies = new ArrayList<>();
-            String targetRule = skillOptionString(unit, "HEAL_ALLIES", "target", "OWNER_AND_ALLIES");
-            if (!targetRule.equals("ALLIES")) allies.add(owner);
-            for (UUID siblingId : getOwnerUnits(unit.owner).stream()
-                    .map(sibling -> sibling.id).toList()) {
-                Mob sibling = activeEntities.get(siblingId);
-                if (sibling != null && sibling.isValid() && !targetRule.equals("OWNER")) allies.add(sibling);
+         }
+
+         boolean buffed = false;
+
+         for (LivingEntity ally : allies) {
+            if (!ally.isDead() && ally.getWorld().equals(owner.getWorld()) && !(ally.getLocation().distanceSquared(owner.getLocation()) > radius * radius)) {
+               buffed |= this.applyConfiguredBuff(unit, ally, "BUFF_ALLIES", "buff-allies");
             }
-            boolean healed = false;
-            for (LivingEntity ally : allies) {
-                double maxHealth = maxHealth(ally);
-                if (ally.isDead() || !ally.getWorld().equals(owner.getWorld())
-                        || ally.getLocation().distanceSquared(owner.getLocation()) >
-                            Math.pow(skillOptionDouble(unit, "HEAL_ALLIES", "radius-blocks", healRadius, 1.0, 32.0), 2)
-                            || maxHealth <= 0 || ally.getHealth() >= maxHealth) continue;
-                double amount = Math.min(100.0, skillOptionDouble(unit, "HEAL_ALLIES",
-                    "amount", healAmount, 0.0, 100.0) * skillPowerMultiplier(unit));
-                ally.setHealth(Math.min(maxHealth, ally.getHealth() + amount));
-                healed = true;
-            }
-            if (healed) {
-                markUsed(unit, "heal-allies", skillCooldownSeconds(unit, "HEAL_ALLIES"));
-                announceSkillCast(unit, owner, "HEAL_ALLIES", Particle.HEART);
-            }
-        }
-        if (hasSkill(unit, "BUFF_OWNER") && ready(unit, "buff-owner")) {
-            applyConfiguredBuff(unit, owner, "BUFF_OWNER", "buff-owner");
-        }
-        if (hasSkill(unit, "BUFF_ALLIES") && ready(unit, "buff-allies")) {
-            double radius = skillOptionDouble(unit, "BUFF_ALLIES", "radius-blocks", healRadius, 1.0, 32.0);
-            String targetRule = skillOptionString(unit, "BUFF_ALLIES", "target", "OWNER_AND_ALLIES");
-            List<LivingEntity> allies = new ArrayList<>();
-            if (!targetRule.equals("ALLIES")) allies.add(owner);
-            if (!targetRule.equals("OWNER")) {
-                for (UUID siblingId : getOwnerUnits(unit.owner).stream().map(sibling -> sibling.id).toList()) {
-                    Mob sibling = activeEntities.get(siblingId);
-                    if (sibling != null && sibling.isValid()) allies.add(sibling);
-                }
-            }
-            boolean buffed = false;
-            for (LivingEntity ally : allies) {
-                if (ally.isDead() || !ally.getWorld().equals(owner.getWorld())
-                            || ally.getLocation().distanceSquared(owner.getLocation()) > radius * radius) continue;
-                buffed |= applyConfiguredBuff(unit, ally, "BUFF_ALLIES", "buff-allies");
-            }
-            if (buffed) {
-                markUsed(unit, "buff-allies", skillCooldownSeconds(unit, "BUFF_ALLIES"));
-                announceSkillCast(unit, owner, "BUFF_ALLIES", Particle.ENCHANT);
-            }
-        }
-        if ("pyromancer".equals(unit.unitClass)) {
-            useFireMageSkills(unit, owner, target, mob);
-        }
-    }
+         }
+
+         if (buffed) {
+            this.markUsed(unit, "buff-allies", this.skillCooldownSeconds(unit, "BUFF_ALLIES"));
+            this.announceSkillCast(unit, owner, "BUFF_ALLIES", Particle.ENCHANT);
+         }
+      }
+
+      if ("pyromancer".equals(unit.unitClass)) {
+         this.useFireMageSkills(unit, owner, target, mob);
+      }
+   }
 
     private void useMedicPotion(Unit unit, Player owner, Mob mob) {
         ItemStack potionItem = unit.equipment.get(org.bukkit.inventory.EquipmentSlot.OFF_HAND);
@@ -3943,11 +4180,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             * skillPowerMultiplier(unit));
     }
 
-    private double flameCooldown(Unit unit, String skill, double fallback) {
-        double configured = flameOption(unit, skill, "cooldown-seconds", fallback, 1.0, 3600.0);
-        double levelProgress = maxLevel <= 1 ? 0.0 : (double) (unit.level - 1) / (maxLevel - 1);
-        return Math.max(1.0, configured - skillCooldownReductionAtMaxLevel * levelProgress);
-    }
+   private double flameCooldown(MercenaryManager.Unit unit, String skill, double fallback) {
+      double configured = this.flameOption(unit, skill, "cooldown-seconds", fallback, 1.0, 3600.0);
+      double levelProgress = this.maxLevel <= 1 ? 0.0 : (double)(unit.level - 1) / (this.maxLevel - 1);
+      double levelAdjusted = Math.max(1.0, configured - this.skillCooldownReductionAtMaxLevel * levelProgress);
+      return Math.max(1.0, levelAdjusted * (1.0 - Math.min(20.0, this.soldierGearStats(unit).cooldownReductionPercent()) / 100.0));
+   }
 
     private void launchFlameBolt(Unit unit, Mob mob, LivingEntity target) {
         Projectile projectile;
@@ -4692,12 +4930,12 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         announceSkillCast(unit, owner, skill, Particle.FLAME);
     }
 
-    private double illuminationCooldownSeconds(Unit unit) {
-        double cooldown = skillOptionDouble(unit, "ILLUMINATION", "cooldown-seconds", 30.0, 1.0, 3600.0);
-        double reduction = skillOptionDouble(unit, "ILLUMINATION",
-            "cooldown-reduction-per-level-seconds", 0.2, 0.0, 30.0) * (unit.level - 1);
-        return Math.max(1.0, cooldown - reduction);
-    }
+   private double illuminationCooldownSeconds(MercenaryManager.Unit unit) {
+      double cooldown = this.skillOptionDouble(unit, "ILLUMINATION", "cooldown-seconds", 30.0, 1.0, 3600.0);
+      double reduction = this.skillOptionDouble(unit, "ILLUMINATION", "cooldown-reduction-per-level-seconds", 0.2, 0.0, 30.0) * (unit.level - 1);
+      double levelAdjusted = Math.max(1.0, cooldown - reduction);
+      return Math.max(1.0, levelAdjusted * (1.0 - Math.min(20.0, this.soldierGearStats(unit).cooldownReductionPercent()) / 100.0));
+   }
 
     private boolean canUseIlluminationInCurrentLight(Mob mob) {
         if (!settings.getBoolean("classes.ranger.skill-settings.ILLUMINATION.darkness-only", true)) return true;
@@ -4708,7 +4946,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return mob.getLocation().getBlock().getLightLevel() <= threshold;
     }
 
-    @EventHandler
+   @EventHandler
     public void onIlluminationArrowHit(ProjectileHitEvent event) {
         if (!(event.getEntity() instanceof Arrow arrow)
                 || !arrow.getPersistentDataContainer().has(illuminationArrowKey, PersistentDataType.BYTE)) return;
@@ -4728,72 +4966,72 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         scheduleTorchRemoval(temporaryTorch);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryTorchBreak(BlockBreakEvent event) {
         if (isTemporaryTorchOrSupport(event.getBlock())) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onTemporaryTorchPhysics(BlockPhysicsEvent event) {
         if (isTemporaryTorch(event.getBlock())) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onTemporaryTorchWaterFlow(BlockFromToEvent event) {
         if (isTemporaryTorch(event.getToBlock())) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryTorchEntityExplosion(EntityExplodeEvent event) {
         event.blockList().removeIf(this::isTemporaryTorchOrSupport);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryTorchBlockExplosion(BlockExplodeEvent event) {
         event.blockList().removeIf(this::isTemporaryTorchOrSupport);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryTorchPistonExtend(BlockPistonExtendEvent event) {
         if (event.getBlocks().stream().anyMatch(this::isTemporaryTorchOrSupport)) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryTorchPistonRetract(BlockPistonRetractEvent event) {
         if (event.getBlocks().stream().anyMatch(this::isTemporaryTorchOrSupport)) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryFrostBlockBreak(BlockBreakEvent event) {
         if (isTemporaryFrostBlock(event.getBlock())) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onTemporaryFrostBlockPhysics(BlockPhysicsEvent event) {
         if (isTemporaryFrostBlock(event.getBlock())) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onTemporaryFrostBlockWaterFlow(BlockFromToEvent event) {
         if (isTemporaryFrostBlock(event.getToBlock())) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryFrostBlockEntityExplosion(EntityExplodeEvent event) {
         event.blockList().removeIf(this::isTemporaryFrostBlock);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryFrostBlockBlockExplosion(BlockExplodeEvent event) {
         event.blockList().removeIf(this::isTemporaryFrostBlock);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryFrostBlockPistonExtend(BlockPistonExtendEvent event) {
         if (event.getBlocks().stream().anyMatch(this::isTemporaryFrostBlock)) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onTemporaryFrostBlockPistonRetract(BlockPistonRetractEvent event) {
         if (event.getBlocks().stream().anyMatch(this::isTemporaryFrostBlock)) event.setCancelled(true);
     }
@@ -4822,7 +5060,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             fallback, minimum, maximum);
     }
 
-    @EventHandler
+   @EventHandler
     public void onTemporaryTorchChunkLoad(ChunkLoadEvent event) {
         for (TemporaryTorch temporaryTorch : temporaryTorches.values()) {
             if (temporaryTorch.worldName.equals(event.getWorld().getName())
@@ -4926,18 +5164,29 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return true;
     }
 
-    private double skillOptionDouble(Unit unit, String skill, String option, double fallback,
-                                         double minimum, double maximum) {
-        String path = "classes." + unit.unitClass + ".skill-settings." + skill + "." + option;
-        return readBoundedDouble(settings, path, fallback, minimum, maximum);
-    }
+   private double skillOptionDouble(MercenaryManager.Unit unit, String skill, String option, double fallback, double minimum, double maximum) {
+      String path = "classes." + unit.unitClass + ".skill-settings." + skill + "." + option;
+      double value = this.readBoundedDouble(this.settings, path, fallback, minimum, maximum);
+      if ("range-blocks".equals(option)) {
+         value = Math.min(maximum, value + this.soldierGearStats(unit).attackRangeBlocks());
+      }
 
-    private double skillCooldownSeconds(Unit unit, String skill) {
-        double configured = readBoundedInt(settings, "classes." + unit.unitClass + ".skill-settings."
-            + skill + ".cooldown-seconds", settings.getInt("skills.cooldown-seconds", 15), 1, 3600);
-        double levelProgress = maxLevel <= 1 ? 0.0 : (double) (unit.level - 1) / (maxLevel - 1);
-        return Math.max(1.0, configured - skillCooldownReductionAtMaxLevel * levelProgress);
-    }
+      return value;
+   }
+
+   private double skillCooldownSeconds(MercenaryManager.Unit unit, String skill) {
+      double configured = this.readBoundedInt(
+         this.settings,
+         "classes." + unit.unitClass + ".skill-settings." + skill + ".cooldown-seconds",
+         this.settings.getInt("skills.cooldown-seconds", 15),
+         1,
+         3600
+      );
+      double levelProgress = this.maxLevel <= 1 ? 0.0 : (double)(unit.level - 1) / (this.maxLevel - 1);
+      double levelAdjusted = Math.max(1.0, configured - this.skillCooldownReductionAtMaxLevel * levelProgress);
+      double gearReduction = Math.min(20.0, this.soldierGearStats(unit).cooldownReductionPercent());
+      return Math.max(1.0, levelAdjusted * (1.0 - gearReduction / 100.0));
+   }
 
     private String skillOptionString(Unit unit, String skill, String option, String fallback) {
         String value = settings.getString("classes." + unit.unitClass + ".skill-settings."
@@ -5021,6 +5270,36 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         guardian.getWorld().playSound(guardian.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0f, 0.75f);
     }
 
+   private void applySoldierGearHitEffect(MercenaryManager.Unit unit, LivingEntity target) {
+      MercenaryManager.GearStats gear = this.soldierGearStats(unit);
+      if (!(gear.effectChancePercent() <= 0.0) && !(ThreadLocalRandom.current().nextDouble(100.0) >= gear.effectChancePercent())) {
+         long now = System.currentTimeMillis();
+         long cooldownMillis = (long)(this.readBoundedDouble(this.settings, "gear-system.effect-internal-cooldown-seconds", 5.0, 0.0, 120.0) * 1000.0);
+         if (now >= this.soldierGearEffectCooldowns.getOrDefault(unit.id, 0L)) {
+            this.soldierGearEffectCooldowns.put(unit.id, now + cooldownMillis);
+            int durationTicks = (int)Math.min(1200.0, Math.max(1.0, (1.0 + gear.effectDurationSeconds()) * 20.0));
+            switch (unit.unitClass) {
+               case "pyromancer":
+                  target.setFireTicks(Math.max(target.getFireTicks(), durationTicks));
+                  break;
+               case "assassin":
+                  target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, durationTicks, 0, true, true, true));
+                  break;
+               case "archer":
+               case "ranger":
+               case "guardian":
+               case "druid":
+               case "frost_mage":
+                  target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, durationTicks, 0, true, true, true));
+            }
+         }
+      }
+   }
+
+   private double soldierHealingMultiplier(MercenaryManager.Unit unit) {
+      return 1.0 + this.soldierGearStats(unit).healingPercent() / 100.0;
+   }
+
     private void applyOwnerShield(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player owner)) return;
         boolean hostile = event.getDamager() instanceof Monster;
@@ -5092,10 +5371,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             && minion.hasLineOfSight(target);
     }
 
-    private int maxSummonedMinions(Unit unit) {
-        int configuredMaximum = (int) skillOptionDouble(unit, "SUMMON_VEXES", "max-active", 7.0, 1.0, 10.0);
-        return Math.min(configuredMaximum, 1 + unit.level / 5);
-    }
+   private int maxSummonedMinions(MercenaryManager.Unit unit) {
+      int configuredMaximum = (int)this.skillOptionDouble(unit, "SUMMON_VEXES", "max-active", 7.0, 1.0, 10.0);
+      int gearBonus = (int)Math.floor(this.soldierGearStats(unit).minions());
+      return Math.min(10, Math.min(configuredMaximum + gearBonus, 1 + unit.level / 5 + gearBonus));
+   }
 
     private boolean isAllowedMinionVictim(Mob minion, LivingEntity target) {
         UUID ownerId = getOwnerId(minion);
@@ -5596,37 +5876,44 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             .get(horseMountKey, PersistentDataType.STRING));
     }
 
-    private void applyHorseStatsAndArmor(Unit unit, Horse horse) {
-        double horseHealth = readBoundedDouble(settings, "classes.paladin.horse-health", 50.0, 1.0, 1024.0);
-        double horseSpeed = readBoundedDouble(settings, "classes.paladin.horse-speed", 0.3375, 0.1, 1.0);
-        if (horse.getAttribute(Attribute.MAX_HEALTH) != null) {
-            double previousMaximum = horse.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
-            horse.getAttribute(Attribute.MAX_HEALTH).setBaseValue(horseHealth);
-            double currentHealth = horse.getHealth();
-            horse.setHealth(currentHealth >= previousMaximum
-                ? horseHealth : Math.min(currentHealth, horseHealth));
-        }
-        if (horse.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
-            horse.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(horseSpeed);
-        }
-        if (isHorseArmor(horse.getInventory().getArmor())) {
-            unit.horseArmor = selectBestHorseArmor(unit.horseArmor, horse.getInventory().getArmor());
-        }
-        horse.getInventory().setArmor(cloneOrNull(unit.horseArmor));
-    }
+   private void applyHorseStatsAndArmor(MercenaryManager.Unit unit, Horse horse) {
+      double horseHealth = this.readBoundedDouble(this.settings, "classes.paladin.horse-health", 50.0, 1.0, 1024.0);
+      double horseSpeed = this.readBoundedDouble(this.settings, "classes.paladin.horse-speed", 0.3375, 0.1, 1.0);
+      if (horse.getAttribute(Attribute.MAX_HEALTH) != null) {
+         double previousMaximum = horse.getAttribute(Attribute.MAX_HEALTH).getBaseValue();
+         horse.getAttribute(Attribute.MAX_HEALTH).setBaseValue(horseHealth);
+         double currentHealth = horse.getHealth();
+         horse.setHealth(currentHealth >= previousMaximum ? horseHealth : Math.min(currentHealth, horseHealth));
+      }
+
+      if (horse.getAttribute(Attribute.MOVEMENT_SPEED) != null) {
+         horse.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(horseSpeed);
+      }
+
+      ItemStack wornArmor = horse.getInventory().getArmor();
+      if (this.isHorseArmor(wornArmor) && !this.storeInUnitInventory(unit, wornArmor)) {
+         unit.horseArmor = cloneOrNull(wornArmor);
+      }
+
+      horse.getInventory().setArmor(null);
+   }
 
     private void applyHorseArmorToMount(Unit unit) {
         Entity mount = mountByUnit.containsKey(unit.id) ? Bukkit.getEntity(mountByUnit.get(unit.id)) : null;
         if (mount instanceof Horse horse && horse.isValid()) applyHorseStatsAndArmor(unit, horse);
     }
 
-    private void captureHorseArmor(UUID unitId, Horse horse) {
-        Unit unit = units.get(unitId);
-        ItemStack armor = horse.getInventory().getArmor();
-        if (unit != null && isHorseArmor(armor)) {
-            unit.horseArmor = selectBestHorseArmor(unit.horseArmor, armor);
-        }
-    }
+   private void captureHorseArmor(UUID unitId, Horse horse) {
+      MercenaryManager.Unit unit = this.units.get(unitId);
+      ItemStack armor = horse.getInventory().getArmor();
+      if (unit != null && this.isHorseArmor(armor)) {
+         if (!this.storeInUnitInventory(unit, armor)) {
+            unit.horseArmor = this.selectBestHorseArmor(unit.horseArmor, armor);
+         }
+
+         horse.getInventory().setArmor(null);
+      }
+   }
 
     private boolean isHorseArmor(ItemStack item) {
         return item != null && item.getType().name().endsWith("_HORSE_ARMOR");
@@ -5917,44 +6204,55 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         player.openInventory(inventory);
     }
 
-    private void openAdminMenu(Player player) {
-        if (!hasAdminMenuAccess(player)) return;
-        ServiceMenuHolder holder = createServiceMenu(player, MenuType.ADMIN, null, null, null, 0,
-            54, "VnMine • Admin");
-        if (player.hasPermission(ADMIN_PERMISSION)) holder.inventory.setItem(11,
-            menuItem(Material.IRON_SWORD, "§6Quân đội", List.of("§7Chọn người chơi để cấp lính hoặc token.")));
-        holder.inventory.setItem(12, menuItem(Material.CLOCK, "§eGọi thiên tai", List.of("§7Chọn một thiên tai để kích hoạt.")));
-        holder.inventory.setItem(13, menuItem(Material.BARRIER, "§cDừng thiên tai", List.of("§7Dừng cảnh báo hoặc sự kiện đang chạy.")));
-        holder.inventory.setItem(14, menuItem(Material.DRAGON_HEAD, "§cGọi boss", List.of("§7Chọn boss và level để kích hoạt.")));
-        holder.inventory.setItem(15, menuItem(Material.DIAMOND_SWORD, "§4Kết thúc boss", List.of("§7Kết thúc boss hiện tại.")));
-        holder.inventory.setItem(16, menuItem(Material.REDSTONE, "§eTải lại cấu hình", List.of("§7Tải lại cấu hình plugin.")));
-        holder.inventory.setItem(17, menuItem(Material.COMPASS, "§bVề spawn", List.of("§7Dịch chuyển về spawn thế giới.")));
-        holder.inventory.setItem(18, menuItem(Material.LODESTONE, "§bĐặt spawn world", List.of("§7Đặt spawn tại vị trí hiện tại.")));
-        holder.inventory.setItem(19, menuItem(Material.CLOCK, "§eThời lượng ngày/đêm", List.of("§7Chọn chu kỳ và số phút.")));
-        holder.inventory.setItem(20, menuItem(Material.SUNFLOWER, "§eĐặt ngày", List.of("§7Chọn ngày cho world hiện tại.")));
-        holder.inventory.setItem(21, menuItem(Material.SHIELD, "§6Spawn protection", List.of("§7Tạo, xem hoặc xóa vùng bảo vệ.")));
-        holder.inventory.setItem(22, menuItem(Material.ENDER_PEARL, "§bDịch chuyển người chơi", List.of("§7Chọn người chơi và world spawn.")));
-        holder.inventory.setItem(23, menuItem(Material.BOOKSHELF, "§dQuản lý nhóm/quyền", List.of("§7Xem, tạo, xóa nhóm và chỉnh permission.")));
-        holder.inventory.setItem(24, menuItem(Material.PLAYER_HEAD, "§dQuản lý người chơi", List.of("§7Xem thông tin hoặc đặt lại quyền.")));
-        holder.inventory.setItem(25, menuItem(Material.FEATHER, "§aBật/tắt bay", List.of("§7Chuyển trạng thái bay của bạn.")));
-        holder.inventory.setItem(26, menuItem(Material.BARRIER, "§cMiễn sát thương", List.of("§7Bật/tắt chế độ thử boss.")));
-        holder.inventory.setItem(27, menuItem(Material.IRON_PICKAXE, "§eSurvival", List.of("§7Đổi game mode.")));
-        holder.inventory.setItem(28, menuItem(Material.GRASS_BLOCK, "§aCreative", List.of("§7Đổi game mode.")));
-        holder.inventory.setItem(29, menuItem(Material.MAP, "§6Adventure", List.of("§7Đổi game mode.")));
-        holder.inventory.setItem(30, menuItem(Material.ENDER_EYE, "§7Spectator", List.of("§7Đổi game mode.")));
-        holder.inventory.setItem(31, menuItem(Material.REDSTONE_BLOCK, "§cReset scoreboard",
-            List.of("§7Xóa điểm mùa và phần thưởng chờ.")));
-        holder.inventory.setItem(32, menuItem(Material.SKELETON_SKULL, "§cReset số lần chết",
-            List.of("§7Chọn người chơi.")));
-        holder.inventory.setItem(33, menuItem(Material.MAP, "§bĐi tới spawn world",
-            List.of("§7Chọn world đích.")));
-        if (player.hasPermission("vnmine.command.death.history")) {
-            holder.inventory.setItem(34, menuItem(Material.CLOCK, "§cLịch sử chết",
-                List.of("§7Chọn người chơi online và xem inventory lúc chết.")));
-        }
-        holder.inventory.setItem(49, menuItem(Material.ARROW, "§7Menu chính", List.of()));
-        player.openInventory(holder.inventory);
-    }
+   private void openAdminMenu(Player player) {
+      if (this.hasAdminMenuAccess(player)) {
+         MercenaryManager.ServiceMenuHolder holder = this.createServiceMenu(player, MercenaryManager.MenuType.ADMIN, null, null, null, 0, 54, "VnMine • Admin");
+         if (player.hasPermission("vnmine.command.army.admin")) {
+            holder.inventory.setItem(11, this.menuItem(Material.IRON_SWORD, "§6Quân đội", List.of("§7Chọn người chơi để cấp lính hoặc token.")));
+         }
+
+         holder.inventory.setItem(12, this.menuItem(Material.CLOCK, "§eGọi thiên tai", List.of("§7Chọn một thiên tai để kích hoạt.")));
+         holder.inventory.setItem(13, this.menuItem(Material.BARRIER, "§cDừng thiên tai", List.of("§7Dừng cảnh báo hoặc sự kiện đang chạy.")));
+         holder.inventory.setItem(14, this.menuItem(Material.DRAGON_HEAD, "§cGọi boss", List.of("§7Chọn boss và level để kích hoạt.")));
+         holder.inventory.setItem(15, this.menuItem(Material.DIAMOND_SWORD, "§4Kết thúc boss", List.of("§7Kết thúc boss hiện tại.")));
+         holder.inventory.setItem(16, this.menuItem(Material.REDSTONE, "§eTải lại cấu hình", List.of("§7Tải lại cấu hình plugin.")));
+         holder.inventory.setItem(17, this.menuItem(Material.COMPASS, "§bVề spawn", List.of("§7Dịch chuyển về spawn thế giới.")));
+         holder.inventory.setItem(18, this.menuItem(Material.LODESTONE, "§bĐặt spawn world", List.of("§7Đặt spawn tại vị trí hiện tại.")));
+         holder.inventory.setItem(19, this.menuItem(Material.CLOCK, "§eThời lượng ngày/đêm", List.of("§7Chọn chu kỳ và số phút.")));
+         holder.inventory.setItem(20, this.menuItem(Material.SUNFLOWER, "§eĐặt ngày", List.of("§7Chọn ngày cho world hiện tại.")));
+         holder.inventory.setItem(21, this.menuItem(Material.SHIELD, "§6Spawn protection", List.of("§7Tạo, xem hoặc xóa vùng bảo vệ.")));
+         holder.inventory.setItem(22, this.menuItem(Material.ENDER_PEARL, "§bDịch chuyển người chơi", List.of("§7Chọn người chơi và world spawn.")));
+         holder.inventory.setItem(23, this.menuItem(Material.BOOKSHELF, "§dQuản lý nhóm/quyền", List.of("§7Xem, tạo, xóa nhóm và chỉnh permission.")));
+         holder.inventory.setItem(24, this.menuItem(Material.PLAYER_HEAD, "§dQuản lý người chơi", List.of("§7Xem thông tin hoặc đặt lại quyền.")));
+         holder.inventory.setItem(25, this.menuItem(Material.FEATHER, "§aBật/tắt bay", List.of("§7Chuyển trạng thái bay của bạn.")));
+         holder.inventory.setItem(26, this.menuItem(Material.BARRIER, "§cMiễn sát thương", List.of("§7Bật/tắt chế độ thử boss.")));
+         holder.inventory.setItem(27, this.menuItem(Material.IRON_PICKAXE, "§eSurvival", List.of("§7Đổi game mode.")));
+         holder.inventory.setItem(28, this.menuItem(Material.GRASS_BLOCK, "§aCreative", List.of("§7Đổi game mode.")));
+         holder.inventory.setItem(29, this.menuItem(Material.MAP, "§6Adventure", List.of("§7Đổi game mode.")));
+         holder.inventory.setItem(30, this.menuItem(Material.ENDER_EYE, "§7Spectator", List.of("§7Đổi game mode.")));
+         holder.inventory.setItem(31, this.menuItem(Material.REDSTONE_BLOCK, "§cReset scoreboard", List.of("§7Xóa điểm mùa và phần thưởng chờ.")));
+         holder.inventory.setItem(32, this.menuItem(Material.SKELETON_SKULL, "§cReset số lần chết", List.of("§7Chọn người chơi.")));
+         holder.inventory.setItem(33, this.menuItem(Material.MAP, "§bĐi tới spawn world", List.of("§7Chọn world đích.")));
+         if (player.hasPermission("vnmine.command.death.history")) {
+            holder.inventory.setItem(34, this.menuItem(Material.CLOCK, "§cLịch sử chết", List.of("§7Chọn người chơi online và xem inventory lúc chết.")));
+         }
+
+         if (player.hasPermission("vnmine.command.army.admin")) {
+            holder.inventory
+               .setItem(
+                  35,
+                  this.menuItem(
+                     Material.NETHERITE_CHESTPLATE,
+                     "§6Give item lính",
+                     List.of("§7Chọn người chơi, class, vật liệu, sao và set.", "§7Cấp một món hoặc cả bộ sáu món.")
+                  )
+               );
+         }
+
+         holder.inventory.setItem(49, this.menuItem(Material.ARROW, "§7Menu chính", List.of()));
+         player.openInventory(holder.inventory);
+      }
+   }
 
     private boolean hasAdminMenuAccess(Player player) {
         return List.of(ADMIN_PERMISSION, "vnmine.command.disasters", "vnmine.command.bosses",
@@ -5985,6 +6283,578 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         if (safePage + 1 < pages) holder.inventory.setItem(53, menuItem(Material.ARROW, "§eTrang sau", List.of()));
         player.openInventory(holder.inventory);
     }
+
+   private void openAdminItemPlayers(Player player, int page) {
+      if (player.hasPermission("vnmine.command.army.admin")) {
+         List<? extends Player> online = Bukkit.getOnlinePlayers()
+            .stream()
+            .sorted(Comparator.comparing(Player::getName, String.CASE_INSENSITIVE_ORDER))
+            .toList();
+         int pages = Math.max(1, (online.size() + 44) / 45);
+         int safePage = Math.max(0, Math.min(page, pages - 1));
+         MercenaryManager.ServiceMenuHolder holder = this.createServiceMenu(
+            player, MercenaryManager.MenuType.ITEM_GIVE_PLAYERS, null, null, null, safePage, 54, "Give item lính • Người chơi " + (safePage + 1) + "/" + pages
+         );
+
+         for (int index = safePage * 45; index < Math.min((safePage + 1) * 45, online.size()); index++) {
+            Player target = online.get(index);
+            int slot = index - safePage * 45;
+            holder.choices.put(slot, target.getUniqueId().toString());
+            holder.inventory.setItem(slot, this.menuItem(Material.PLAYER_HEAD, "§e" + target.getName(), List.of("§7Chọn người nhận trang bị lính.")));
+         }
+
+         if (safePage > 0) {
+            holder.inventory.setItem(45, this.menuItem(Material.ARROW, "§eTrang trước", List.of()));
+         }
+
+         holder.inventory.setItem(49, this.menuItem(Material.ARROW, "§7Quay lại admin", List.of()));
+         if (safePage + 1 < pages) {
+            holder.inventory.setItem(53, this.menuItem(Material.ARROW, "§eTrang sau", List.of()));
+         }
+
+         player.openInventory(holder.inventory);
+      }
+   }
+
+   private void openItemGearClassMenu(Player player, UUID target) {
+      MercenaryManager.ServiceMenuHolder holder = this.createServiceMenu(
+         player, MercenaryManager.MenuType.ITEM_GIVE_CLASS, target, null, null, 0, 54, "Give item lính • Class"
+      );
+      List<String> classes = this.getClassIds();
+
+      for (int index = 0; index < classes.size() && index < 28; index++) {
+         String classId = classes.get(index);
+         int slot = 10 + index / 7 * 9 + index % 7;
+         Material icon = Material.matchMaterial(this.settings.getString("classes." + classId + ".menu-icon", "IRON_SWORD"));
+         if (icon == null || icon.isAir()) {
+            icon = Material.IRON_SWORD;
+         }
+
+         holder.choices.put(slot, classId);
+         holder.inventory.setItem(slot, this.menuItem(icon, "§e" + this.classDisplay(classId), List.of("§7Chọn class để tạo trang bị.")));
+      }
+
+      holder.inventory.setItem(49, this.menuItem(Material.ARROW, "§7Quay lại", List.of("§7Chọn người chơi")));
+      player.openInventory(holder.inventory);
+   }
+
+   private void openItemGearMaterialMenu(Player player, UUID target, String classId) {
+      MercenaryManager.ServiceMenuHolder holder = this.createServiceMenu(
+         player, MercenaryManager.MenuType.ITEM_GIVE_MATERIAL, target, null, classId, 0, 54, this.classDisplay(classId) + " • Vật liệu"
+      );
+      Material[] icons = new Material[]{
+         Material.LEATHER_CHESTPLATE,
+         Material.IRON_INGOT,
+         Material.IRON_CHESTPLATE,
+         Material.GOLD_INGOT,
+         Material.DIAMOND_CHESTPLATE,
+         Material.NETHERITE_CHESTPLATE
+      };
+
+      for (int index = 0; index < GEAR_MATERIALS.size(); index++) {
+         String material = GEAR_MATERIALS.get(index);
+         int slot = 10 + index;
+         holder.choices.put(slot, material);
+         holder.inventory.setItem(slot, this.menuItem(icons[index], "§e" + this.gearMaterialDisplay(material), List.of("§7Chọn cấp vật liệu.")));
+      }
+
+      holder.inventory.setItem(49, this.menuItem(Material.ARROW, "§7Quay lại", List.of("§7Chọn class")));
+      player.openInventory(holder.inventory);
+   }
+
+   private void openItemGearStarsMenu(Player player, UUID target, String classId, String material) {
+      MercenaryManager.ServiceMenuHolder holder = this.createServiceMenu(
+         player, MercenaryManager.MenuType.ITEM_GIVE_STARS, target, null, classId, 0, 54, this.gearMaterialDisplay(material) + " • Số sao"
+      );
+      holder.gearMaterial = material;
+
+      for (int stars = 1; stars <= 5; stars++) {
+         int slot = 19 + stars;
+         holder.choices.put(slot, Integer.toString(stars));
+         holder.inventory.setItem(slot, this.menuItem(Material.NETHER_STAR, "§e" + "★".repeat(stars), List.of("§7Chọn bậc sao của set.")));
+      }
+
+      holder.inventory.setItem(49, this.menuItem(Material.ARROW, "§7Quay lại", List.of("§7Chọn vật liệu")));
+      player.openInventory(holder.inventory);
+   }
+
+   private void openItemGearSetMenu(Player player, UUID target, String classId, String material, int stars) {
+      MercenaryManager.ServiceMenuHolder holder = this.createServiceMenu(
+         player, MercenaryManager.MenuType.ITEM_GIVE_SET, target, null, classId, 0, 54, this.classDisplay(classId) + " • Chọn set"
+      );
+      holder.gearMaterial = material;
+      holder.gearStars = stars;
+      List<String> sets = this.gearSetIds(classId);
+
+      for (int index = 0; index < sets.size() && index < 28; index++) {
+         String setId = sets.get(index);
+         int slot = 10 + index / 7 * 9 + index % 7;
+         String path = "gear-system.sets." + classId + "." + setId;
+         String displayName = this.settings.getString(path + ".display-name", setId);
+         holder.choices.put(slot, setId);
+         holder.inventory.setItem(slot, this.menuItem(Material.CHEST, "§e" + displayName, List.of("§7ID: §f" + setId, "§7Chọn set trang bị này.")));
+      }
+
+      holder.inventory.setItem(49, this.menuItem(Material.ARROW, "§7Quay lại", List.of("§7Chọn số sao")));
+      player.openInventory(holder.inventory);
+   }
+
+   private void openItemGearSlotMenu(Player player, UUID target, String classId, String material, int stars, String setId) {
+      MercenaryManager.ServiceMenuHolder holder = this.createServiceMenu(
+         player, MercenaryManager.MenuType.ITEM_GIVE_SLOT, target, null, classId, 0, 54, this.classDisplay(classId) + " • Chọn món"
+      );
+      holder.gearMaterial = material;
+      holder.gearStars = stars;
+      holder.gearSet = setId;
+
+      for (int index = 0; index < SOLDIER_GEAR_SLOTS.size(); index++) {
+         EquipmentSlot equipmentSlot = SOLDIER_GEAR_SLOTS.get(index);
+         ItemStack preview = this.createSoldierGearItem(classId, material, stars, setId, equipmentSlot);
+         int slot = 10 + index;
+         holder.choices.put(slot, this.gearSlotCommandName(equipmentSlot));
+         holder.inventory.setItem(slot, this.menuItem(preview.getType(), this.gearSlotDisplayName(equipmentSlot), preview.getItemMeta().getLore()));
+      }
+
+      holder.inventory.setItem(25, this.menuItem(Material.CHEST, "§aGive trọn set", List.of("§7Cấp cả sáu món của set này.")));
+      holder.choices.put(25, "set");
+      holder.inventory.setItem(49, this.menuItem(Material.ARROW, "§7Quay lại", List.of("§7Chọn set")));
+      player.openInventory(holder.inventory);
+   }
+
+   private ItemStack createSoldierGearItem(String classId, String material, int stars, String setId, EquipmentSlot slot) {
+      Material itemMaterial = this.soldierGearMaterial(classId, material, slot);
+      ItemStack item = new ItemStack(itemMaterial);
+      ItemMeta meta = item.getItemMeta();
+      String setName = this.settings.getString("gear-system.sets." + classId + "." + setId + ".display-name", setId);
+      meta.setDisplayName("§b" + this.gearSlotDisplayName(slot) + " §7• §e" + this.gearMaterialDisplay(material) + " " + "★".repeat(stars));
+      List<String> lore = new ArrayList<>(
+         List.of(
+            "§7Dành riêng cho lính: §f" + this.classDisplay(classId),
+            "§7Set: §f" + setName + " §8(" + setId + ")",
+            "§7Vật liệu: §f" + this.gearMaterialDisplay(material) + " §8| §7Bậc sao: §e" + stars,
+            "§7Ô trang bị: §f" + this.gearSlotDisplayName(slot)
+         )
+      );
+      meta.getPersistentDataContainer().set(this.soldierGearKey, PersistentDataType.BYTE, (byte)1);
+      meta.getPersistentDataContainer().set(this.soldierGearClassKey, PersistentDataType.STRING, classId);
+      meta.getPersistentDataContainer().set(this.soldierGearMaterialKey, PersistentDataType.STRING, material);
+      meta.getPersistentDataContainer().set(this.soldierGearStarsKey, PersistentDataType.INTEGER, stars);
+      meta.getPersistentDataContainer().set(this.soldierGearSetKey, PersistentDataType.STRING, setId);
+      meta.getPersistentDataContainer().set(this.soldierGearSlotKey, PersistentDataType.STRING, slot.name());
+      item.setItemMeta(meta);
+      lore.addAll(this.soldierGearLore(this.soldierGearItemStats(item)));
+      lore.add("§8Item dành cho lính đánh thuê; người chơi không thể trang bị.");
+      meta = item.getItemMeta();
+      meta.setLore(lore);
+      item.setItemMeta(meta);
+      return item;
+   }
+
+   public List<ItemStack> createRandomBossGearSet(String material, int stars) {
+      String normalizedMaterial = this.normalizeGearMaterial(material);
+      if (normalizedMaterial != null && stars >= 1 && stars <= 5) {
+         ConfigurationSection classesSection = this.settings.getConfigurationSection("classes");
+         if (classesSection == null) {
+            throw new IllegalStateException("Mercenary classes are not configured.");
+         }
+
+         List<String> classIds = classesSection.getKeys(false)
+            .stream()
+            .filter(classIdx -> classIdx.matches("[a-z0-9_]+"))
+            .filter(classIdx -> !this.gearSetIds(classIdx).isEmpty())
+            .sorted(String.CASE_INSENSITIVE_ORDER)
+            .toList();
+         if (classIds.isEmpty()) {
+            throw new IllegalStateException("No mercenary classes with configured gear sets are available.");
+         }
+
+         ThreadLocalRandom random = ThreadLocalRandom.current();
+         String classId = classIds.get(random.nextInt(classIds.size()));
+         List<String> setIds = this.gearSetIds(classId);
+         String setId = setIds.get(random.nextInt(setIds.size()));
+         List<ItemStack> gearItems = new ArrayList<>(SOLDIER_GEAR_SLOTS.size());
+
+         for (EquipmentSlot slot : SOLDIER_GEAR_SLOTS) {
+            Material itemMaterial = this.soldierGearMaterial(classId, normalizedMaterial, slot);
+            if (itemMaterial != null && !itemMaterial.isAir()) {
+               ItemStack item = this.createSoldierGearItem(classId, normalizedMaterial, stars, setId, slot);
+               if (item != null && !item.getType().isAir()) {
+                  gearItems.add(item);
+               }
+            }
+         }
+
+         if (gearItems.isEmpty()) {
+            throw new IllegalStateException("The selected mercenary class has no valid gear slots.");
+         } else {
+            return List.copyOf(gearItems);
+         }
+      } else {
+         throw new IllegalArgumentException("Boss mercenary gear requires a valid material and 1-5 stars.");
+      }
+   }
+
+   private List<String> soldierGearLore(MercenaryManager.GearStats stats) {
+      List<String> lore = new ArrayList<>();
+      this.addGearLore(lore, "HP", stats.health(), "", "§c");
+      this.addGearLore(lore, "Giáp", stats.armor(), "", "§b");
+      this.addGearLore(lore, "Sát thương tay", stats.damagePercent(), "%", "§6");
+      this.addGearLore(lore, "Sát thương hỏa", stats.fireDamagePercent(), "%", "§c");
+      this.addGearLore(lore, "Sát thương băng", stats.frostDamagePercent(), "%", "§b");
+      this.addGearLore(lore, "Sát thương tự nhiên", stats.natureDamagePercent(), "%", "§a");
+      this.addGearLore(lore, "Giảm hồi chiêu", stats.cooldownReductionPercent(), "%", "§d");
+      this.addGearLore(lore, "Tầm đánh", stats.attackRangeBlocks(), " block", "§e");
+      this.addGearLore(lore, "Tỉ lệ hiệu ứng", stats.effectChancePercent(), "%", "§5");
+      this.addGearLore(lore, "Thời lượng hiệu ứng", stats.effectDurationSeconds(), " giây", "§5");
+      this.addGearLore(lore, "Minion", stats.minions(), "", "§3");
+      this.addGearLore(lore, "Hồi máu", stats.healingPercent(), "%", "§d");
+      return lore.isEmpty() ? List.of("§7Chỉ số riêng theo class, vật liệu và sao.") : lore;
+   }
+
+   private void addGearLore(List<String> lore, String name, double value, String suffix, String color) {
+      if (!(value <= 1.0E-4)) {
+         lore.add(color + "+" + formatStat(value) + suffix + " " + name);
+      }
+   }
+
+   private Material soldierGearMaterial(String classId, String tier, EquipmentSlot slot) {
+      String tierPrefix = switch (tier) {
+         case "leather" -> "LEATHER";
+         case "copper" -> "COPPER";
+         case "iron" -> "IRON";
+         case "gold" -> "GOLDEN";
+         case "diamond" -> "DIAMOND";
+         case "netherite" -> "NETHERITE";
+         default -> "IRON";
+      };
+
+      String armorSuffix = switch (slot) {
+         case HEAD -> "_HELMET";
+         case CHEST -> "_CHESTPLATE";
+         case LEGS -> "_LEGGINGS";
+         case FEET -> "_BOOTS";
+         default -> null;
+      };
+      if (armorSuffix != null) {
+         String itemName = tierPrefix + armorSuffix;
+         if (tier.equals("leather")) {
+            itemName = "LEATHER" + armorSuffix;
+         }
+
+         Material armor = Material.matchMaterial(itemName);
+         if (armor == null && tier.equals("copper")) {
+            armor = Material.matchMaterial("IRON" + armorSuffix);
+         }
+
+         return armor == null ? Material.IRON_CHESTPLATE : armor;
+      } else {
+         String configured = this.settings.getString("gear-system.item-materials." + classId + "." + (slot == EquipmentSlot.HAND ? "mainhand" : "offhand"));
+         if (configured == null || configured.isBlank()) {
+            configured = slot == EquipmentSlot.HAND
+               ? this.settings.getString("classes." + classId + ".starting-weapon", "IRON_SWORD")
+               : this.settings.getString("classes." + classId + ".starting-offhand", "SHIELD");
+         }
+
+         String weapon = configured.toUpperCase(Locale.ROOT);
+         if (slot == EquipmentSlot.HAND && ("WOODEN_SPEAR".equals(weapon) || "IRON_SPEAR".equals(weapon))) {
+            weapon = "WOODEN_SPEAR".equals(weapon) ? "STICK" : "TRIDENT";
+         }
+
+         if (slot == EquipmentSlot.HAND && weapon.matches("(WOODEN|COPPER|IRON|GOLDEN|DIAMOND|NETHERITE)_.+")) {
+            int separator = weapon.indexOf(95);
+            String weaponSuffix = weapon.substring(separator + 1);
+
+            String prefix = switch (tier) {
+               case "leather" -> "WOODEN";
+               case "copper" -> "COPPER";
+               case "iron" -> "IRON";
+               case "gold" -> "GOLDEN";
+               case "diamond" -> "DIAMOND";
+               case "netherite" -> "NETHERITE";
+               default -> "IRON";
+            };
+            Material tieredWeapon = Material.matchMaterial(prefix + "_" + weaponSuffix);
+            if (tieredWeapon != null && !tieredWeapon.isAir()) {
+               return tieredWeapon;
+            }
+         }
+
+         Material selected = Material.matchMaterial(weapon);
+         if (selected == null || selected.isAir()) {
+            selected = slot == EquipmentSlot.HAND ? Material.STICK : Material.SHIELD;
+         }
+
+         return selected;
+      }
+   }
+
+   private boolean isSoldierGear(ItemStack item) {
+      if (item != null && !item.getType().isAir() && item.hasItemMeta()) {
+         Byte marker = (Byte)item.getItemMeta().getPersistentDataContainer().get(this.soldierGearKey, PersistentDataType.BYTE);
+         return marker != null && marker == 1;
+      } else {
+         return false;
+      }
+   }
+
+   private boolean isNativeSoldierGear(ItemStack item) {
+      if (!this.isSoldierGear(item)) {
+         return false;
+      }
+
+      Byte marker = (Byte)item.getItemMeta().getPersistentDataContainer().get(this.nativeSoldierGearKey, PersistentDataType.BYTE);
+      return marker != null && marker == 1;
+   }
+
+   private ItemStack markNativeSoldierGear(ItemStack item, String classId, EquipmentSlot slot) {
+      if (item != null && !item.getType().isAir()) {
+         ItemMeta meta = item.getItemMeta();
+         PersistentDataContainer pdc = meta.getPersistentDataContainer();
+         pdc.set(this.soldierGearKey, PersistentDataType.BYTE, (byte)1);
+         pdc.set(this.soldierGearClassKey, PersistentDataType.STRING, classId);
+         pdc.set(this.soldierGearMaterialKey, PersistentDataType.STRING, "leather");
+         pdc.set(this.soldierGearStarsKey, PersistentDataType.INTEGER, 1);
+         pdc.set(this.soldierGearSetKey, PersistentDataType.STRING, "standard");
+         pdc.set(this.soldierGearSlotKey, PersistentDataType.STRING, slot.name());
+         pdc.set(this.nativeSoldierGearKey, PersistentDataType.BYTE, (byte)1);
+         item.setItemMeta(meta);
+         return item;
+      } else {
+         return null;
+      }
+   }
+
+   private String soldierGearValue(ItemStack item, NamespacedKey key) {
+      return !this.isSoldierGear(item) ? null : (String)item.getItemMeta().getPersistentDataContainer().get(key, PersistentDataType.STRING);
+   }
+
+   private int soldierGearStars(ItemStack item) {
+      if (!this.isSoldierGear(item)) {
+         return 0;
+      }
+
+      Integer stars = (Integer)item.getItemMeta().getPersistentDataContainer().get(this.soldierGearStarsKey, PersistentDataType.INTEGER);
+      return stars == null ? 0 : stars;
+   }
+
+   private boolean validSoldierGear(ItemStack item, EquipmentSlot slot) {
+      if (!this.isSoldierGear(item)) {
+         return false;
+      }
+
+      String itemSlot = this.soldierGearValue(item, this.soldierGearSlotKey);
+      return slot.name().equals(itemSlot)
+         && this.normalizeClass(this.soldierGearValue(item, this.soldierGearClassKey)) != null
+         && this.normalizeGearMaterial(this.soldierGearValue(item, this.soldierGearMaterialKey)) != null
+         && this.soldierGearStars(item) >= 1
+         && this.soldierGearStars(item) <= 5
+         && this.normalizeGearSet(this.soldierGearValue(item, this.soldierGearSetKey)) != null;
+   }
+
+   private String gearSlotDisplayName(EquipmentSlot slot) {
+      return switch (slot) {
+         case HEAD -> "Mũ";
+         case CHEST -> "Áo giáp";
+         case LEGS -> "Quần";
+         case FEET -> "Giày";
+         case HAND -> "Vũ khí chính";
+         case OFF_HAND -> "Vũ khí tay phụ";
+         default -> slot.name();
+      };
+   }
+
+   private String gearSlotCommandName(EquipmentSlot slot) {
+      return switch (slot) {
+         case HEAD -> "helmet";
+         case CHEST -> "chestplate";
+         case LEGS -> "leggings";
+         case FEET -> "boots";
+         case HAND -> "mainhand";
+         case OFF_HAND -> "offhand";
+         default -> slot.name().toLowerCase(Locale.ROOT);
+      };
+   }
+
+   private MercenaryManager.GearStats soldierGearBaseStats(String classId, String path) {
+      String statsPath = path + ".gear-stats.";
+      return new MercenaryManager.GearStats(
+         this.readBoundedDouble(this.settings, statsPath + "health", 0.0, 0.0, 100.0),
+         this.readBoundedDouble(this.settings, statsPath + "armor", 0.0, 0.0, 20.0),
+         this.readBoundedDouble(this.settings, statsPath + "damage-percent", 0.0, 0.0, 100.0),
+         this.readBoundedDouble(this.settings, statsPath + "fire-damage-percent", 0.0, 0.0, 100.0),
+         this.readBoundedDouble(this.settings, statsPath + "frost-damage-percent", 0.0, 0.0, 100.0),
+         this.readBoundedDouble(this.settings, statsPath + "cooldown-reduction-percent", 0.0, 0.0, 100.0),
+         this.readBoundedDouble(this.settings, statsPath + "attack-range-blocks", 0.0, 0.0, 10.0),
+         this.readBoundedDouble(this.settings, statsPath + "effect-chance-percent", 0.0, 0.0, 100.0),
+         this.readBoundedDouble(this.settings, statsPath + "effect-duration-seconds", 0.0, 0.0, 10.0),
+         this.readBoundedDouble(this.settings, statsPath + "minions", 0.0, 0.0, 10.0),
+         this.readBoundedDouble(this.settings, statsPath + "healing-percent", 0.0, 0.0, 100.0),
+         this.readBoundedDouble(this.settings, statsPath + "nature-damage-percent", 0.0, 0.0, 100.0)
+      );
+   }
+
+   private MercenaryManager.GearStats soldierGearItemStats(ItemStack item) {
+      if (this.isSoldierGear(item) && !this.isNativeSoldierGear(item)) {
+         String classId = this.normalizeClass(this.soldierGearValue(item, this.soldierGearClassKey));
+         String material = this.normalizeGearMaterial(this.soldierGearValue(item, this.soldierGearMaterialKey));
+         int stars = this.soldierGearStars(item);
+         if (classId != null && material != null && stars >= 1 && stars <= 5) {
+            int materialIndex = GEAR_MATERIALS.indexOf(material);
+            double materialMultiplier = this.readBoundedDouble(
+               this.settings, "gear-system.material-multipliers." + material, DEFAULT_GEAR_MATERIAL_MULTIPLIERS.get(materialIndex), 0.1, 5.0
+            );
+            double starMultiplier = this.readBoundedDouble(
+               this.settings, "gear-system.star-multipliers." + stars, DEFAULT_GEAR_STAR_MULTIPLIERS.get(stars - 1), 0.1, 5.0
+            );
+            return this.soldierGearBaseStats(classId, "classes." + classId).scaled(materialMultiplier * starMultiplier / SOLDIER_GEAR_SLOTS.size());
+         } else {
+            return MercenaryManager.GearStats.ZERO;
+         }
+      } else {
+         return MercenaryManager.GearStats.ZERO;
+      }
+   }
+
+   private MercenaryManager.GearStats soldierGearSetBonus(String classId, String setId, int pieces, double scaleFactor) {
+      MercenaryManager.GearStats bonus = MercenaryManager.GearStats.ZERO;
+
+      for (int threshold : List.of(2, 4, 6)) {
+         if (pieces >= threshold) {
+            String specific = "gear-system.sets." + classId + "." + setId + ".bonuses." + threshold + ".";
+            String fallback = "gear-system.default-set-bonuses." + threshold + ".";
+            bonus = bonus.plus(
+               new MercenaryManager.GearStats(
+                     this.readBoundedDouble(
+                        this.settings, specific + "health", this.readBoundedDouble(this.settings, fallback + "health", 0.0, 0.0, 20.0), 0.0, 20.0
+                     ),
+                     this.readBoundedDouble(
+                        this.settings, specific + "armor", this.readBoundedDouble(this.settings, fallback + "armor", 0.0, 0.0, 4.0), 0.0, 4.0
+                     ),
+                     this.readBoundedDouble(
+                        this.settings,
+                        specific + "damage-percent",
+                        this.readBoundedDouble(this.settings, fallback + "damage-percent", 0.0, 0.0, 15.0),
+                        0.0,
+                        15.0
+                     ),
+                     this.readBoundedDouble(
+                        this.settings,
+                        specific + "fire-damage-percent",
+                        this.readBoundedDouble(this.settings, fallback + "fire-damage-percent", 0.0, 0.0, 15.0),
+                        0.0,
+                        15.0
+                     ),
+                     this.readBoundedDouble(
+                        this.settings,
+                        specific + "frost-damage-percent",
+                        this.readBoundedDouble(this.settings, fallback + "frost-damage-percent", 0.0, 0.0, 15.0),
+                        0.0,
+                        15.0
+                     ),
+                     this.readBoundedDouble(
+                        this.settings,
+                        specific + "cooldown-reduction-percent",
+                        this.readBoundedDouble(this.settings, fallback + "cooldown-reduction-percent", 0.0, 0.0, 20.0),
+                        0.0,
+                        20.0
+                     ),
+                     this.readBoundedDouble(
+                        this.settings,
+                        specific + "attack-range-blocks",
+                        this.readBoundedDouble(this.settings, fallback + "attack-range-blocks", 0.0, 0.0, 1.5),
+                        0.0,
+                        1.5
+                     ),
+                     this.readBoundedDouble(
+                        this.settings,
+                        specific + "effect-chance-percent",
+                        this.readBoundedDouble(this.settings, fallback + "effect-chance-percent", 0.0, 0.0, 10.0),
+                        0.0,
+                        10.0
+                     ),
+                     this.readBoundedDouble(
+                        this.settings,
+                        specific + "effect-duration-seconds",
+                        this.readBoundedDouble(this.settings, fallback + "effect-duration-seconds", 0.0, 0.0, 1.0),
+                        0.0,
+                        1.0
+                     ),
+                     this.readBoundedDouble(
+                        this.settings, specific + "minions", this.readBoundedDouble(this.settings, fallback + "minions", 0.0, 0.0, 1.0), 0.0, 1.0
+                     ),
+                     this.readBoundedDouble(
+                        this.settings,
+                        specific + "healing-percent",
+                        this.readBoundedDouble(this.settings, fallback + "healing-percent", 0.0, 0.0, 15.0),
+                        0.0,
+                        15.0
+                     ),
+                     this.readBoundedDouble(
+                        this.settings,
+                        specific + "nature-damage-percent",
+                        this.readBoundedDouble(this.settings, fallback + "nature-damage-percent", 0.0, 0.0, 15.0),
+                        0.0,
+                        15.0
+                     )
+                  )
+                  .scaled(scaleFactor)
+            );
+         }
+      }
+
+      return bonus;
+   }
+
+   private MercenaryManager.GearStats soldierGearStats(MercenaryManager.Unit unit) {
+      MercenaryManager.GearStats total = MercenaryManager.GearStats.ZERO;
+      Map<String, Integer> matchingSets = new HashMap<>();
+      Map<String, Double> setScales = new HashMap<>();
+
+      for (EquipmentSlot slot : SOLDIER_GEAR_SLOTS) {
+         ItemStack item = unit.equipment.get(slot);
+         if (this.validSoldierGear(item, slot)) {
+            total = total.plus(this.soldierGearItemStats(item));
+            String classId = this.soldierGearValue(item, this.soldierGearClassKey);
+            String material = this.soldierGearValue(item, this.soldierGearMaterialKey);
+            int stars = this.soldierGearStars(item);
+            String setId = this.soldierGearValue(item, this.soldierGearSetKey);
+            String setKey = classId + "|" + material + "|" + stars + "|" + setId;
+            matchingSets.merge(setKey, 1, Integer::sum);
+            int materialIndex = GEAR_MATERIALS.indexOf(material);
+            double scale = this.readBoundedDouble(
+                  this.settings, "gear-system.material-multipliers." + material, DEFAULT_GEAR_MATERIAL_MULTIPLIERS.get(materialIndex), 0.1, 5.0
+               )
+               * this.readBoundedDouble(this.settings, "gear-system.star-multipliers." + stars, DEFAULT_GEAR_STAR_MULTIPLIERS.get(stars - 1), 0.1, 5.0);
+            setScales.merge(setKey, scale, Math::max);
+         }
+      }
+
+      for (Entry<String, Integer> entry : matchingSets.entrySet()) {
+         if (entry.getValue() >= 2) {
+            String[] parts = entry.getKey().split("\\|", 4);
+            total = total.plus(this.soldierGearSetBonus(parts[0], parts[3], entry.getValue(), setScales.getOrDefault(entry.getKey(), 1.0)));
+         }
+      }
+
+      return this.capSoldierGearStats(total);
+   }
+
+   private MercenaryManager.GearStats capSoldierGearStats(MercenaryManager.GearStats stats) {
+      return new MercenaryManager.GearStats(
+         Math.min(stats.health(), this.readBoundedDouble(this.settings, "gear-system.caps.health", 20.0, 0.0, 100.0)),
+         Math.min(stats.armor(), this.readBoundedDouble(this.settings, "gear-system.caps.armor", 4.0, 0.0, 20.0)),
+         Math.min(stats.damagePercent(), this.readBoundedDouble(this.settings, "gear-system.caps.damage-percent", 15.0, 0.0, 100.0)),
+         Math.min(stats.fireDamagePercent(), this.readBoundedDouble(this.settings, "gear-system.caps.fire-damage-percent", 15.0, 0.0, 100.0)),
+         Math.min(stats.frostDamagePercent(), this.readBoundedDouble(this.settings, "gear-system.caps.frost-damage-percent", 15.0, 0.0, 100.0)),
+         Math.min(stats.cooldownReductionPercent(), this.readBoundedDouble(this.settings, "gear-system.caps.cooldown-reduction-percent", 20.0, 0.0, 80.0)),
+         Math.min(stats.attackRangeBlocks(), this.readBoundedDouble(this.settings, "gear-system.caps.attack-range-blocks", 1.5, 0.0, 10.0)),
+         Math.min(stats.effectChancePercent(), this.readBoundedDouble(this.settings, "gear-system.caps.effect-chance-percent", 10.0, 0.0, 100.0)),
+         Math.min(stats.effectDurationSeconds(), this.readBoundedDouble(this.settings, "gear-system.caps.effect-duration-seconds", 1.0, 0.0, 30.0)),
+         Math.min(stats.minions(), this.readBoundedDouble(this.settings, "gear-system.caps.minions", 1.0, 0.0, 10.0)),
+         Math.min(stats.healingPercent(), this.readBoundedDouble(this.settings, "gear-system.caps.healing-percent", 15.0, 0.0, 100.0)),
+         Math.min(stats.natureDamagePercent(), this.readBoundedDouble(this.settings, "gear-system.caps.nature-damage-percent", 15.0, 0.0, 100.0))
+      );
+   }
 
     private void openTimeMenu(Player player) {
         ServiceMenuHolder holder = createServiceMenu(player, MenuType.ADMIN_TIME, null, null, null,
@@ -6450,46 +7320,33 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return preferred.equals("Không trang bị") ? actual : "Trống (ưu tiên " + preferred + " nếu có)";
     }
 
-    private ItemStack displayedMainHand(Unit unit) {
-        Mob mob = activeEntities.get(unit.id);
-        if (mob != null && mob.isValid() && mob.getEquipment() != null) {
-            return mob.getEquipment().getItemInMainHand();
-        }
-        ItemStack current = unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HAND);
-        List<String> preferences = settings.getStringList(
-            "classes." + unit.unitClass + ".preferred-main-hand-items");
-        for (String preference : preferences) {
-            if (matchesPreferredItem(current, preference)) return current;
-            for (ItemStack candidate : unit.inventory) {
-                if (matchesPreferredItem(candidate, preference)) return candidate;
-            }
-        }
-        ItemStack starting = configuredStartingWeapon(unit);
-        if (isCompatibleWeapon(current, starting)) return current;
-        ItemStack best = isWeaponItem(starting) ? starting : null;
-        for (ItemStack candidate : unit.inventory) {
-            if (isCompatibleWeapon(candidate, starting)
-                    && (best == null || weaponScore(candidate) > weaponScore(best))) best = candidate;
-        }
-        return best == null ? current : best;
-    }
+   private ItemStack displayedMainHand(MercenaryManager.Unit unit) {
+      Mob mob = this.activeEntities.get(unit.id);
+      if (mob != null && mob.isValid() && mob.getEquipment() != null) {
+         return mob.getEquipment().getItemInMainHand();
+      } else {
+         ItemStack current = unit.equipment.get(EquipmentSlot.HAND);
+         if (this.validSoldierGear(current, EquipmentSlot.HAND)) {
+            return current;
+         } else {
+            return unit.gearCustomized ? null : this.configuredStartingWeapon(unit);
+         }
+      }
+   }
 
-    private ItemStack displayedOffhand(Unit unit) {
-        Mob mob = activeEntities.get(unit.id);
-        if (mob != null && mob.isValid() && mob.getEquipment() != null) {
-            return mob.getEquipment().getItemInOffHand();
-        }
-        ItemStack current = unit.equipment.get(org.bukkit.inventory.EquipmentSlot.OFF_HAND);
-        for (String preference : settings.getStringList(
-                "classes." + unit.unitClass + ".preferred-offhand-items")) {
-            if (matchesPreferredItem(current, preference)) return current;
-            for (ItemStack candidate : unit.inventory) {
-                if (matchesPreferredItem(candidate, preference)) return candidate;
-            }
-        }
-        ItemStack starting = configuredStartingOffhand(unit);
-        return starting == null ? current : starting;
-    }
+   private ItemStack displayedOffhand(MercenaryManager.Unit unit) {
+      Mob mob = this.activeEntities.get(unit.id);
+      if (mob != null && mob.isValid() && mob.getEquipment() != null) {
+         return mob.getEquipment().getItemInOffHand();
+      } else {
+         ItemStack current = unit.equipment.get(EquipmentSlot.OFF_HAND);
+         if (this.validSoldierGear(current, EquipmentSlot.OFF_HAND)) {
+            return current;
+         } else {
+            return unit.gearCustomized ? null : this.configuredStartingOffhand(unit);
+         }
+      }
+   }
 
     private String basicDamageSummary(Unit unit) {
         if (!hasSkill(unit, "ATTACK")) return null;
@@ -6497,37 +7354,51 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return "Sát thương đòn cận chiến: " + meleeDamageDescription(unit);
     }
 
-    private String guardianBasicAttackDescription(Unit unit) {
-        GuardianStats stats = guardianStats(unit);
-        ItemStack weapon = displayedMainHand(unit);
-        double weaponBonus = itemDamageBonus(weapon, stats.damage());
-        double handMultiplier = mainHandDamageMultiplier(unit);
-        double normalDamage = (stats.baseDamage() + weaponBonus + stats.tierDamage() + stats.levelDamage())
-            * handMultiplier;
-        double thirdHitBonus = stats.maxHealth() * skillOptionDouble(unit, "ATTACK",
-            "third-hit-max-health-damage", 0.05, 0.0, 1.0);
-        return "Sát thương đòn thường: " + meleeDamageDescription(unit)
-            + " §8| §7đòn thứ 3: Tổng §6" + formatStat(normalDamage + thirdHitBonus)
-            + " §8(§f" + formatStat(normalDamage) + " §7+ §a" + formatStat(thirdHitBonus)
-            + " (" + formatStat(skillOptionDouble(unit, "ATTACK",
-                "third-hit-max-health-damage", 0.05, 0.0, 1.0) * 100.0)
-            + "% max HP)§8)";
-    }
+   private String guardianBasicAttackDescription(MercenaryManager.Unit unit) {
+      MercenaryManager.GuardianStats stats = this.guardianStats(unit);
+      ItemStack weapon = this.displayedMainHand(unit);
+      MercenaryManager.GearStats gear = this.soldierGearStats(unit);
+      double adjustedDamage = stats.damage() * (1.0 + gear.damagePercent() / 100.0);
+      double weaponBonus = this.itemDamageBonus(weapon, adjustedDamage);
+      double handMultiplier = this.mainHandDamageMultiplier(unit);
+      double normalDamage = (adjustedDamage + weaponBonus) * handMultiplier * (1.0 + this.skillGearDamagePercent(unit) / 100.0);
+      double gearHealth = this.soldierGearStats(unit).health();
+      double maxHealth = Math.min(1024.0, stats.maxHealth() + gearHealth);
+      double thirdHitBonus = maxHealth * this.skillOptionDouble(unit, "ATTACK", "third-hit-max-health-damage", 0.05, 0.0, 1.0);
+      return "Sát thương đòn thường: "
+         + this.meleeDamageDescription(unit)
+         + " §8| §7đòn thứ 3: §6"
+         + formatStat(normalDamage + thirdHitBonus)
+         + " §8(§f"
+         + formatStat(normalDamage)
+         + " §7+ §6"
+         + formatStat(thirdHitBonus)
+         + " ("
+         + formatStat(this.skillOptionDouble(unit, "ATTACK", "third-hit-max-health-damage", 0.05, 0.0, 1.0) * 100.0)
+         + "% max HP)§8)";
+   }
 
-    private String meleeDamageDescription(Unit unit) {
-        if ("guardian".equals(unit.unitClass)) {
-            GuardianStats stats = guardianStats(unit);
-            double weaponBonus = itemDamageBonus(displayedMainHand(unit), stats.damage());
-            return damageBreakdown(stats.baseDamage(), weaponBonus, stats.tierDamage(),
-                stats.levelDamage(), 1.0, mainHandDamageMultiplier(unit), Double.POSITIVE_INFINITY);
-        }
-        double base = settings.getDouble("classes." + unit.unitClass + ".base-damage", 4.0);
-        double levelBonus = Math.max(0, statRank(unit) - 1)
-            * settings.getDouble("classes." + unit.unitClass + ".damage-per-level", 0.5);
-        double weaponBonus = itemDamageBonus(displayedMainHand(unit), base + levelBonus);
-        return damageBreakdown(base, weaponBonus, 0.0, levelBonus, 1.0,
-            mainHandDamageMultiplier(unit), Double.POSITIVE_INFINITY);
-    }
+   private String meleeDamageDescription(MercenaryManager.Unit unit) {
+      MercenaryManager.GearStats gear = this.soldierGearStats(unit);
+      double handMultiplier = this.mainHandDamageMultiplier(unit);
+      double elementalPercent = this.skillGearDamagePercent(unit);
+      if ("guardian".equals(unit.unitClass)) {
+         MercenaryManager.GuardianStats stats = this.guardianStats(unit);
+         double rawDamage = stats.damage();
+         double gearBonus = rawDamage * gear.damagePercent() / 100.0;
+         double weaponBonus = this.itemDamageBonus(this.displayedMainHand(unit), rawDamage + gearBonus);
+         return this.meleeDamageBreakdown(stats.baseDamage(), weaponBonus, stats.tierDamage(), stats.levelDamage(), gearBonus, handMultiplier, elementalPercent);
+      } else {
+         double base = this.settings.getDouble("classes." + unit.unitClass + ".base-damage", 4.0);
+         double damagePerLevel = this.settings.getDouble("classes." + unit.unitClass + ".damage-per-level", 0.5);
+         double tierBonus = Math.max(0, unit.tier - 1) * damagePerLevel;
+         double levelBonus = Math.max(0, unit.level - 1) * damagePerLevel;
+         double rawDamage = base + tierBonus + levelBonus;
+         double gearBonus = rawDamage * gear.damagePercent() / 100.0;
+         double weaponBonus = this.itemDamageBonus(this.displayedMainHand(unit), rawDamage + gearBonus);
+         return this.meleeDamageBreakdown(base, weaponBonus, tierBonus, levelBonus, gearBonus, handMultiplier, elementalPercent);
+      }
+   }
 
     private String frostDamageDescription(Unit unit, String skill, double fallback) {
         double base = frostOptionDouble(skill, "damage", fallback, 0.0, 100.0);
@@ -6542,39 +7413,85 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             0.0, skillPowerMultiplier(unit), 100.0, true);
     }
 
-    private String skillDamageDescription(Unit unit, double base, double levelBonus,
-                                          double skillMultiplier, double cap, boolean applyHandBonus) {
-        return damageBreakdown(base, 0.0, 0.0, levelBonus, skillMultiplier,
-            applyHandBonus ? mainHandDamageMultiplier(unit) : 1.0, cap);
-    }
+   private String skillDamageDescription(MercenaryManager.Unit unit, double base, double levelBonus, double skillMultiplier, double cap, boolean applyHandBonus) {
+      return this.damageBreakdown(
+         base,
+         0.0,
+         0.0,
+         levelBonus,
+         skillMultiplier,
+         applyHandBonus ? this.mainHandDamageMultiplier(unit) : 1.0,
+         applyHandBonus ? this.skillGearDamagePercent(unit) : 0.0,
+         cap
+      );
+   }
 
-    private String damageBreakdown(double base, double weaponBonus, double levelBonus,
-                                   double skillMultiplier, double handMultiplier, double cap) {
-        return damageBreakdown(base, weaponBonus, 0.0, levelBonus,
-            skillMultiplier, handMultiplier, cap);
-    }
+   private String damageBreakdown(
+      double base, double weaponBonus, double tierBonus, double levelBonus, double skillMultiplier, double handMultiplier, double gearPercent, double cap
+   ) {
+      double skillBonus = Math.max(0.0, base + weaponBonus + tierBonus + levelBonus) * (skillMultiplier - 1.0);
+      double uncapped = Math.max(0.0, base + weaponBonus + tierBonus + levelBonus + skillBonus);
+      double capped = Math.min(cap, uncapped);
+      double capScale = uncapped > 0.0 ? capped / uncapped : 0.0;
+      double handBonus = capped * (handMultiplier - 1.0);
+      double gearBonus = capped * handMultiplier * gearPercent / 100.0;
+      double total = capped * handMultiplier + gearBonus;
+      List<MercenaryManager.StatPart> parts = new ArrayList<>();
+      parts.add(new MercenaryManager.StatPart(base * capScale, "§f"));
+      parts.add(new MercenaryManager.StatPart(weaponBonus * capScale, "§b"));
+      parts.add(new MercenaryManager.StatPart(tierBonus * capScale, "§d"));
+      parts.add(new MercenaryManager.StatPart(levelBonus * capScale, "§c"));
+      parts.add(new MercenaryManager.StatPart(skillBonus * capScale, "§6"));
+      parts.add(new MercenaryManager.StatPart(handBonus, "§e"));
+      parts.add(new MercenaryManager.StatPart(gearBonus, "§a"));
+      return "§6" + formatStat(total) + this.formatStatPartSuffix(parts);
+   }
 
-    private String damageBreakdown(double base, double weaponBonus, double tierBonus, double levelBonus,
-                                   double skillMultiplier, double handMultiplier, double cap) {
-        double skillBonus = Math.max(0.0, base + weaponBonus + tierBonus + levelBonus)
-            * (skillMultiplier - 1.0);
-        double uncapped = base + weaponBonus + tierBonus + levelBonus + skillBonus;
-        double total = Math.min(cap, uncapped) * handMultiplier;
-        StringBuilder formula = new StringBuilder("§f").append(formatStat(base));
-        if (weaponBonus > 0.0) formula.append(" §7+ §b").append(formatStat(weaponBonus)).append(" vũ khí");
-        if (tierBonus > 0.0) formula.append(" §7+ §d").append(formatStat(tierBonus)).append(" Bậc");
-        if (levelBonus > 0.0) formula.append(" §7+ §c").append(formatStat(levelBonus)).append(" tăng theo cấp");
-        if (skillBonus > 0.0) {
-            formula.append(" §7+ §c").append(formatStat(skillBonus))
-                .append(" cấp kỹ năng (§a+").append(formatStat((skillMultiplier - 1.0) * 100.0))
-                .append("%§c)");
-        }
-        if (handMultiplier > 1.0) {
-            formula.append(" §a×").append(formatStat(handMultiplier))
-                .append(" tay chính (+").append(formatStat((handMultiplier - 1.0) * 100.0)).append("%)");
-        }
-        return "Tổng: §6" + formatStat(total) + " §8(" + formula + "§8)";
-    }
+   private double skillGearDamagePercent(MercenaryManager.Unit unit) {
+      MercenaryManager.GearStats gear = this.soldierGearStats(unit);
+
+      return switch (unit.unitClass) {
+         case "pyromancer" -> gear.fireDamagePercent();
+         case "frost_mage" -> gear.frostDamagePercent();
+         case "druid" -> gear.natureDamagePercent();
+         default -> 0.0;
+      };
+   }
+
+   private String meleeDamageBreakdown(
+      double base, double weaponBonus, double tierBonus, double levelBonus, double gearBonus, double handMultiplier, double elementalPercent
+   ) {
+      double beforeHand = base + weaponBonus + tierBonus + levelBonus + gearBonus;
+      double handBonus = beforeHand * (handMultiplier - 1.0);
+      double elementalBonus = beforeHand * handMultiplier * elementalPercent / 100.0;
+      double total = beforeHand * handMultiplier + elementalBonus;
+      List<MercenaryManager.StatPart> parts = List.of(
+         new MercenaryManager.StatPart(base, "§f"),
+         new MercenaryManager.StatPart(weaponBonus, "§b"),
+         new MercenaryManager.StatPart(tierBonus, "§d"),
+         new MercenaryManager.StatPart(levelBonus, "§c"),
+         new MercenaryManager.StatPart(gearBonus, "§a"),
+         new MercenaryManager.StatPart(handBonus, "§e"),
+         new MercenaryManager.StatPart(elementalBonus, "§a")
+      );
+      return "§6" + formatStat(total) + this.formatStatPartSuffix(parts);
+   }
+
+   private String formatStatParts(List<MercenaryManager.StatPart> parts) {
+      StringBuilder formatted = new StringBuilder();
+
+      for (MercenaryManager.StatPart part : parts) {
+         if (Double.isFinite(part.value()) && !(Math.abs(part.value()) < 1.0E-4)) {
+            if (!formatted.isEmpty()) {
+               formatted.append(" §7+ ");
+            }
+
+            formatted.append(part.color()).append(formatStat(part.value()));
+         }
+      }
+
+      return formatted.toString();
+   }
 
     private double mainHandDamageMultiplier(Unit unit) {
         ItemStack mainHand = displayedMainHand(unit);
@@ -6713,262 +7630,450 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         player.openInventory(holder.inventory);
     }
 
-    private List<String> unitDetails(Unit unit) {
-        List<String> details = new ArrayList<>();
-        Mob mob = activeEntities.get(unit.id);
-        boolean guardianClass = "guardian".equals(unit.unitClass);
-        GuardianStats guardianStats = guardianClass ? guardianStats(unit) : null;
-        double maxHealth = mob != null && mob.isValid() ? maxHealth(mob)
-            : guardianClass ? guardianStats.maxHealth()
-            : settings.getDouble("classes." + unit.unitClass + ".base-health", 24.0)
-                + Math.max(0, statRank(unit) - 1)
-                    * settings.getDouble("classes." + unit.unitClass + ".health-per-level", 4.0);
-        double health = mob != null && mob.isValid() ? mob.getHealth() : maxHealth;
-        double armor = mob != null && mob.getAttribute(Attribute.ARMOR) != null
-            ? mob.getAttribute(Attribute.ARMOR).getValue()
-            : guardianClass ? guardianStats.armor()
-            : settings.getDouble("classes." + unit.unitClass + ".base-armor", 0.0)
-                + Math.max(0, statRank(unit) - 1)
-                    * settings.getDouble("classes." + unit.unitClass + ".armor-per-level", 0.0);
-        details.add("§7Bậc: §f" + unit.tier + " (gốc " + unit.originalTier + ") §8| §7Cấp: §f" + unit.level
-            + " §8| §7XP: §f" + unit.experience + "/" + nextLevelExperience(unit));
-        details.add("§7Trạng thái: " + unitStatus(unit));
-        details.add("§7Vũ khí tay chính: §f" + unitHandDescription(unit,
-            displayedMainHand(unit), "preferred-main-hand-items", "starting-weapon"));
-        details.add("§7Vũ khí/vật phẩm tay phụ: §f" + unitHandDescription(unit,
-            displayedOffhand(unit), "preferred-offhand-items", "starting-offhand"));
-        details.add("§cHP: §f" + formatStat(health) + "/" + formatStat(maxHealth)
-            + " §7| Giáp: §f" + formatStat(armor));
-        if (guardianClass) {
-            details.add(guardianHealthBreakdown(guardianStats));
-            details.add(guardianArmorBreakdown(guardianStats));
-        }
-        String damageSummary = basicDamageSummary(unit);
-        if (damageSummary != null) details.add("§7" + damageSummary);
-        if ("frost_mage".equals(unit.unitClass)) {
-            details.add("§7Đòn cơ bản (cầu tuyết): "
-                + frostDamageDescription(unit, "BASIC_ATTACK", 3.0) + ", tầm "
-                + formatStat(frostRange(unit, "BASIC_ATTACK", "range-blocks", 5.0))
-                + " block §8| §7Hồi chiêu: §f"
-                + formatStat(frostCooldown(unit, "BASIC_ATTACK", 2.0)) + " giây");
-        }
-        details.add("§8Skill:");
-        for (String skill : settings.getStringList("classes." + unit.unitClass + ".skills")) {
-            String normalized = skill.toUpperCase(Locale.ROOT);
-            if (guardianClass && normalized.equals("ATTACK")) {
-                details.add("§7" + skillDisplayName(normalized) + ": §f"
-                    + skillDescription(unit, normalized) + " §8| §7Đòn cơ bản");
-                continue;
-            }
-            if (guardianClass && normalized.equals("GUARDIAN_LINK")) {
-                details.add("§7" + skillDisplayName(normalized) + ": §f"
-                    + skillDescription(unit, normalized));
-                continue;
-            }
+   private List<String> unitDetails(MercenaryManager.Unit unit) {
+      List<String> details = new ArrayList<>();
+      Mob mob = this.activeEntities.get(unit.id);
+      boolean guardianClass = "guardian".equals(unit.unitClass);
+      MercenaryManager.GuardianStats guardianStats = guardianClass ? this.guardianStats(unit) : null;
+      MercenaryManager.GearStats gear = this.soldierGearStats(unit);
+      double calculatedHealth = (
+            guardianClass
+               ? guardianStats.maxHealth()
+               : this.settings.getDouble("classes." + unit.unitClass + ".base-health", 24.0)
+                  + Math.max(0, this.statRank(unit) - 1) * this.settings.getDouble("classes." + unit.unitClass + ".health-per-level", 4.0)
+         )
+         + gear.health();
+      double maxHealth = mob != null && mob.isValid() ? maxHealth(mob) : Math.min(1024.0, calculatedHealth);
+      double health = mob != null && mob.isValid() ? mob.getHealth() : maxHealth;
+      double armor = mob != null && mob.getAttribute(Attribute.ARMOR) != null
+         ? mob.getAttribute(Attribute.ARMOR).getValue()
+         : Math.min(
+            100.0,
+            (
+                  guardianClass
+                     ? guardianStats.armor()
+                     : this.settings.getDouble("classes." + unit.unitClass + ".base-armor", 0.0)
+                        + Math.max(0, this.statRank(unit) - 1) * this.settings.getDouble("classes." + unit.unitClass + ".armor-per-level", 0.0)
+               )
+               + gear.armor()
+         );
+      details.add(
+         "§7Bậc: §f"
+            + unit.tier
+            + " (gốc "
+            + unit.originalTier
+            + ") §8| §7Cấp: §f"
+            + unit.level
+            + " §8| §7XP: §f"
+            + unit.experience
+            + "/"
+            + this.nextLevelExperience(unit)
+      );
+      details.add("§eNhấn vào bảng tên này để làm mới thông tin chỉ số.");
+      details.add("§7Trạng thái: " + this.unitStatus(unit));
+      details.add("§7Vũ khí tay chính: §f" + this.unitHandDescription(unit, this.displayedMainHand(unit), "preferred-main-hand-items", "starting-weapon"));
+      details.add("§7Vũ khí/vật phẩm tay phụ: §f" + this.unitHandDescription(unit, this.displayedOffhand(unit), "preferred-offhand-items", "starting-offhand"));
+      List<MercenaryManager.StatPart> healthParts = this.fitStatParts(this.unitHealthParts(unit, guardianStats, gear), maxHealth);
+      List<MercenaryManager.StatPart> armorParts = this.fitStatParts(this.unitArmorParts(unit, guardianStats, gear), armor);
+      details.add("§cHP: §f" + formatStat(health) + "/§6" + formatStat(maxHealth) + this.formatStatPartSuffix(healthParts));
+      if (armor > 1.0E-4) {
+         details.add(this.formatStatBreakdown("Giáp", armor, armorParts));
+      }
+
+      String gearSummary = this.gearDetails(gear);
+      if (gearSummary != null) {
+         details.add(gearSummary);
+      }
+
+      String damageSummary = this.basicDamageSummary(unit);
+      if (damageSummary != null) {
+         details.add("§7" + damageSummary);
+      }
+
+      if ("frost_mage".equals(unit.unitClass)) {
+         details.add(
+            "§7Đòn cơ bản (cầu tuyết): "
+               + this.frostDamageDescription(unit, "BASIC_ATTACK", 3.0)
+               + ", tầm "
+               + formatStat(this.frostRange(unit, "BASIC_ATTACK", "range-blocks", 5.0))
+               + " block §8| §7Hồi chiêu: §f"
+               + formatStat(this.frostCooldown(unit, "BASIC_ATTACK", 2.0))
+               + " giây"
+         );
+      }
+
+      details.add("§8Skill:");
+
+      for (String skill : this.settings.getStringList("classes." + unit.unitClass + ".skills")) {
+         String normalized = skill.toUpperCase(Locale.ROOT);
+         if (guardianClass && normalized.equals("ATTACK")) {
+            details.add("§7" + skillDisplayName(normalized) + ": §f" + this.skillDescription(unit, normalized) + " §8| §7Đòn cơ bản");
+         } else if (guardianClass && normalized.equals("GUARDIAN_LINK")) {
+            details.add("§7" + skillDisplayName(normalized) + ": §f" + this.skillDescription(unit, normalized));
+         } else {
             String cooldownKey = skillCooldownKey(normalized);
-            long remaining = Math.max(0L, skillCooldowns.getOrDefault(unit.id, Map.of())
-                .getOrDefault(cooldownKey, 0L) - System.currentTimeMillis());
+            long remaining = Math.max(0L, this.skillCooldowns.getOrDefault(unit.id, Map.of()).getOrDefault(cooldownKey, 0L) - System.currentTimeMillis());
             double cooldownSeconds = normalized.equals("ILLUMINATION")
-                ? illuminationCooldownSeconds(unit)
-                : FROST_MAGE_SKILLS.contains(normalized)
-                    ? frostCooldown(unit, normalized, 1.0)
-                    : FIRE_MAGE_SKILLS.contains(normalized)
-                        ? flameCooldown(unit, normalized, 1.0) : skillCooldownSeconds(unit, normalized);
+               ? this.illuminationCooldownSeconds(unit)
+               : (
+                  FROST_MAGE_SKILLS.contains(normalized)
+                     ? this.frostCooldown(unit, normalized, 1.0)
+                     : (FIRE_MAGE_SKILLS.contains(normalized) ? this.flameCooldown(unit, normalized, 1.0) : this.skillCooldownSeconds(unit, normalized))
+               );
             String cooldown = formatStat(cooldownSeconds) + " giây";
-            if (remaining > 0L) cooldown += " (còn " + formatStat(remaining / 1000.0) + " giây)";
-            details.add("§7" + skillDisplayName(normalized) + ": §f"
-                + skillDescription(unit, normalized) + " §8| §7Hồi chiêu: §f" + cooldown);
-        }
-        return details;
-    }
+            if (remaining > 0L) {
+               cooldown = cooldown + " (còn " + formatStat(remaining / 1000.0) + " giây)";
+            }
 
-    private String guardianHealthBreakdown(GuardianStats stats) {
-        return "§7HP tối đa Tổng §6" + formatStat(stats.maxHealth()) + " §8(§f"
-            + formatStat(stats.baseHealth()) + " nền §7+ §d" + formatStat(stats.tierHealth())
-            + " Bậc §7+ §c" + formatStat(stats.levelHealth()) + " Level §7+ §b"
-            + formatStat(stats.equipmentHealth()) + " khiên tay phụ§8)";
-    }
+            details.add("§7" + skillDisplayName(normalized) + ": §f" + this.skillDescription(unit, normalized) + " §8| §7Hồi chiêu: §f" + cooldown);
+         }
+      }
 
-    private String guardianArmorBreakdown(GuardianStats stats) {
-        return "§7Giáp Tổng §6" + formatStat(stats.armor()) + " §8(§f"
-            + formatStat(stats.baseArmor()) + " nền §7+ §d" + formatStat(stats.tierArmor())
-            + " Bậc §7+ §c" + formatStat(stats.levelArmor()) + " Level§8)";
-    }
+      details.add("§8Nguồn: §fNền §8/ §bVũ khí §8/ §dBậc §8/ §cLevel §8/ §eTay chính §8/ §3Tay phụ §8/ §6Kỹ năng §8/ §aTrang bị");
+      return details;
+   }
 
-    private String skillDescription(Unit unit, String skill) {
-        double power = skillPowerMultiplier(unit);
-        return switch (skill.toUpperCase(Locale.ROOT)) {
-            case "ATTACK" -> "guardian".equals(unit.unitClass)
-                ? guardianBasicAttackDescription(unit) + "; làm chậm mục tiêu trong góc phía trước"
-                : "Sát thương mỗi đòn cận chiến: " + meleeDamageDescription(unit);
-            case "RANGED_ATTACK" -> "Sát thương mỗi tên: " + skillDamageDescription(unit,
-                skillOptionDouble(unit, skill, "damage", 4.0, 0.0, 100.0), 0.0, power, 100.0, true)
-                + ", tầm " + formatStat(skillOptionDouble(unit, skill,
-                    "range-blocks", 16.0, 4.0, 64.0)) + " block";
-            case "HEAL_OWNER" -> "Hồi " + formatStat(skillOptionDouble(unit, skill, "amount",
-                healAmount, 0.0, 100.0) * power) + " HP cho chủ nhân";
-            case "HEAL_ALLIES" -> "Hồi " + formatStat(skillOptionDouble(unit, skill, "amount",
-                healAmount, 0.0, 100.0) * power) + " HP cho "
-                + skillTargetDescription(unit, skill) + ", bán kính " + formatStat(skillOptionDouble(
-                unit, skill, "radius-blocks", healRadius, 1.0, 32.0)) + " block";
-            case "SHIELD_OWNER" -> "Giảm " + formatStat(Math.min(0.9, skillOptionDouble(unit, skill,
-                "damage-reduction", shieldReduction, 0.0, 0.9) * power) * 100.0)
-                + "% sát thương lên chủ nhân, bán kính " + formatStat(skillOptionDouble(unit,
-                skill, "radius-blocks", 8.0, 1.0, 32.0)) + " block";
-            case "BUFF_OWNER" -> "Tăng " + localizedEffectName(skillOptionString(unit, skill,
-                "effect", ownerBuff)) + " cho chủ nhân trong " + scaledDuration(unit, skill, ownerBuffTicks / 20.0)
-                + " giây";
-            case "BUFF_ALLIES" -> "Tăng " + localizedEffectName(skillOptionString(unit, skill,
-                "effect", ownerBuff)) + " cho " + skillTargetDescription(unit, skill) + " trong "
-                + scaledDuration(unit, skill, ownerBuffTicks / 20.0) + " giây, bán kính "
-                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", healRadius, 1.0, 32.0)) + " block";
-            case "VOLLEY" -> "Bắn " + (int) skillOptionDouble(unit, skill, "arrow-count", 3.0, 2.0, 5.0)
-                + " mũi tên, sát thương mỗi mũi: " + skillDamageDescription(unit,
-                    skillOptionDouble(unit, skill, "damage", 3.0, 0.0, 100.0), 0.0, power, 100.0, true)
-                + ("ranger".equals(unit.unitClass) ? ", tầm " + formatStat(skillOptionDouble(unit, skill,
-                "range-blocks", 20.8, 4.0, 64.0)) + " block" : "");
-            case "POWER_STRIKE" -> "Sát thương đòn cường kích: " + skillDamageDescription(unit,
-                skillOptionDouble(unit, skill, "damage", 8.0, 0.0, 100.0), 0.0, power, 100.0, true);
-            case "TAUNT" -> "Khiêu khích quái trong bán kính "
-                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 8.0, 1.0, 32.0)) + " block";
-            case "GUARDIAN_LINK" -> "§7(Nội tại) Nhận §c"
-                + formatStat(skillOptionDouble(unit, skill,
-                    "redirected-damage-fraction", 0.4, 0.0, 0.9) * 100.0)
-                + "%§f sát thương thay cho chủ nhân trong "
-                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 5.0, 1.0, 16.0))
-                + " block";
-            case "GUARDIAN_CHARGE" -> "Tự lao "
-                + formatStat(skillOptionDouble(unit, skill,
-                "minimum-range-blocks", 4.0, 1.0, 16.0)) + "-"
-                + formatStat(guardianChargeMaximumRange(unit))
-                + " block (tăng 1 block mỗi 5 Level), hất lùi kẻ địch trong bán kính "
-                + formatStat(skillOptionDouble(unit, skill, "sweep-radius-blocks", 2.0, 1.0, 6.0))
-                + " block";
-            case "GUARDIAN_SHIELD" -> guardianShieldDescription(unit);
-            case "GUARDIAN_QUAKE" -> "Tạo vòng đá giả vây mục tiêu trong "
-                + formatStat(skillOptionDouble(unit, skill, "duration-seconds", 5.0, 1.0, 15.0))
-                + " giây và làm chậm mục tiêu (bán kính "
-                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 3.0, 1.0, 8.0))
-                + " block)";
-            case "GUARDIAN_ULTIMATE" -> "Tự kích hoạt khi chủ dưới "
-                + formatStat(skillOptionDouble(unit, skill,
-                    "owner-health-threshold-percent", 50.0, 1.0, 99.0))
-                + "% HP: dịch chuyển đến chủ, hất lùi/khiêu khích quái, miễn sát thương "
-                + formatStat(skillOptionDouble(unit, skill,
-                    "protection-duration-seconds", 3.0, 1.0, 10.0)) + " giây";
-            case "CLEANSE_OWNER" -> "Gỡ hiệu ứng " + settings.getStringList("classes." + unit.unitClass
-                + ".skill-settings.CLEANSE_OWNER.effects").stream().map(MercenaryManager::localizedEffectName)
-                .reduce((left, right) -> left + ", " + right).orElse("bất lợi") + " khỏi chủ nhân";
-            case "FIRE_BOLT" -> skillDamageDescription(unit,
-                skillOptionDouble(unit, skill, "damage", 6.0, 0.0, 100.0), 0.0, power, 100.0, true)
-                + " và đốt mục tiêu trong "
-                + (int) skillOptionDouble(unit, skill, "fire-seconds", 3.0, 0.0, 15.0) + " giây";
-            case "FLAME_BOLT" -> "Phóng hỏa cầu gây "
-                + flameDamageDescription(unit, skill, "damage", 6.0)
-                + "; giảm 20% tốc độ trong 3 giây";
-            case "IGNITE" -> "Thiêu đốt gây "
-                + flameDamageDescription(unit, skill, "damage-per-pulse", 2.5)
-                + " mỗi 2 giây trong "
-                + (int) flameOption(unit, skill, "duration-seconds", 8.0, 2.0, 30.0)
-                + " giây, lây tối đa "
-                + (int) flameOption(unit, skill, "max-spread-targets", 6.0, 1.0, 24.0) + " mục tiêu";
-            case "FLAME_NOVA" -> "Xoáy lửa gây "
-                + skillDamageDescription(unit,
-                    flameOption(unit, skill, "damage-per-second", 1.0, 0.0, 100.0),
-                    Math.max(0, unit.level - 1) * flameOption(unit, skill,
-                        "damage-increase-per-level", 0.1, 0.0, 10.0),
-                    power, 100.0, true)
-                + "/giây với "
-                + (int) Math.min(64.0, Math.floor(
-                    flameOption(unit, skill, "particle-count", 10.0, 1.0, 64.0)
-                        + Math.max(0, unit.level - 1) * flameOption(unit, skill,
-                            "particles-increase-per-level", 1.0, 0.0, 10.0)))
-                + " hạt lửa trong "
-                + formatStat(scaledSkillDurationSeconds(unit, skill, 3.0, 0.1, 30.0))
-                + " giây, bán kính "
-                + formatStat(Math.min(16.0, flameOption(unit, skill, "radius-blocks", 3.0, 1.0, 12.0)
-                    + Math.floor(unit.level / flameOption(unit, skill,
-                        "radius-increase-every-levels", 5.0, 1.0, 30.0)))) + " block";
-            case "FIRE_WALL" -> "Lồng 3×3, cao 2 block, tồn tại "
-                + formatStat(scaledSkillDurationSeconds(unit, skill, 3.0, 0.1, 30.0)) + " giây";
-            case "METEOR_STRIKE" -> "Gọi "
-                + Math.min(32, (int) flameOption(unit, skill, "fireball-count", 3.0, 1.0, 32.0)
-                    + (int) (unit.level / flameOption(unit, skill,
-                        "fireballs-increase-every-levels", 3.0, 1.0, 30.0)))
-                + " fireball; mỗi quả gây " + flameDamageDescription(unit, skill, "damage", 12.0)
-                + ", tối đa " + (int) flameOption(unit, skill,
-                    "max-targets-per-fireball", 8.0, 1.0, 64.0) + " mục tiêu trong bán kính "
-                + formatStat(Math.min(16.0, flameOption(unit, skill,
-                    "area-radius-blocks", 3.0, 1.0, 12.0)
-                    + Math.floor(unit.level / flameOption(unit, skill,
-                        "area-radius-increase-every-levels", 5.0, 1.0, 30.0))))
-                + " block sau " + formatStat(flameOption(unit, skill,
-                    "warning-delay-seconds", 2.0, 0.1, 30.0)) + " giây cảnh báo";
-            case "PHOENIX_REBIRTH" -> "Hồi "
-                + formatStat(flameOption(unit, skill, "heal-percent", 30.0, 1.0, 100.0))
-                + "% máu, miễn sát thương 2 giây rồi gây "
-                + flameDamageDescription(unit, skill, "damage", 18.0)
-                + " AoE trong bán kính "
-                + formatStat(flameOption(unit, skill, "radius-blocks", 8.0, 1.0, 16.0)) + " block";
-            case "ROOT_TARGET" -> "Gây " + localizedEffectName(skillOptionString(unit, skill,
-                "effect", "SLOWNESS")) + " lên mục tiêu trong " + scaledDuration(unit, skill, 5.0) + " giây";
-            case "LIFESTEAL" -> skillDamageDescription(unit,
-                skillOptionDouble(unit, skill, "damage", 8.0, 0.0, 100.0), 0.0, power, 100.0, true)
-                + " và hồi " + formatStat(skillOptionDouble(unit, skill,
-                "heal", 4.0, 0.0, 100.0) * power) + " HP";
-            case "BERSERK" -> "Kích hoạt dưới " + formatStat(skillOptionDouble(unit, skill,
-                "health-percent", 50.0, 1.0, 99.0)) + "% HP, tăng sức mạnh trong "
-                + scaledDuration(unit, skill, 8.0) + " giây";
-            case "SUMMON_VEXES" -> "Triệu hồi tối đa " + maxSummonedMinions(unit)
-                + " Vex, mỗi lần gọi thêm một con; mỗi Vex: " + skillDamageDescription(unit,
-                    skillOptionDouble(unit, skill, "damage", 4.0, 0.0, 100.0), 0.0, power, 100.0, false);
-            case "LANCE_CHARGE" -> "Khi cưỡi ngựa: " + skillDamageDescription(unit,
-                skillOptionDouble(unit, skill, "damage", 12.0, 0.0, 100.0), 0.0, power, 100.0, true)
-                + " trong bán kính "
-                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0)) + " block";
-            case "ILLUMINATION" -> "Bắn " + Math.min(20, (int) skillOptionDouble(unit, skill,
-                "base-arrow-count", 1.0, 1.0, 20.0) + unit.level / (int) skillOptionDouble(unit, skill,
-                "levels-per-extra-arrow", 5.0, 1.0, 30.0))
-                + " tên lửa rơi quanh mục tiêu, cắm đuốc "
-                + (int) skillOptionDouble(unit, skill, "torch-duration-seconds", 30.0, 1.0, 600.0)
-                + " giây, tầm " + formatStat(skillOptionDouble(unit, skill,
-                    "range-blocks", 20.8, 4.0, 64.0)) + " block";
-            case "ICE_SPIKE" -> "Phóng gai băng gây " + frostDamageDescription(unit, skill, 3.0)
-                + ", tầm " + formatStat(frostRange(unit, skill, "range-blocks", 5.0)) + " block";
-            case "BLIZZARD" -> "Bão tuyết gây " + frostDamageDescription(unit, skill, 3.0)
-                + " mỗi nhịp trong bán kính "
-                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0))
-                + " block, kéo dài " + frostDurationTicks(unit, skill, 3.0, 1.0, 12.0) / 20 + " giây";
-            case "FROST_NOVA" -> "Làm chậm mục tiêu quanh lính trong "
-                + frostDurationTicks(unit, skill, 3.0, 1.0, 10.0) / 20 + " giây, bán kính "
-                + formatStat(skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0)) + " block";
-            case "ICE_WALL" -> "Lồng băng gây "
-                + skillDamageDescription(unit, skillOptionDouble(unit, skill,
-                    "damage-per-second", 1.0, 0.0, 100.0),
-                    Math.max(0, unit.level - 1) * skillOptionDouble(unit, skill,
-                        "damage-increase-per-level", 0.1, 0.0, 10.0),
-                    power, 100.0, true)
-                + "/giây; sau khi thoát giảm tốc "
-                + formatStat(skillOptionDouble(unit, skill, "slowness-percent", 50.0, 0.0, 80.0))
-                + "% trong "
-                + formatStat(Math.min(30.0, skillOptionDouble(unit, skill,
-                    "slowness-duration-seconds", 3.0, 0.1, 30.0)
-                    + Math.max(0, unit.level - 1) * skillOptionDouble(unit, skill,
-                        "slowness-duration-increase-per-level-seconds", 0.1, 0.0, 10.0)))
-                + " giây";
-            case "FROST_SHIELD" -> "Nhận Absorption và làm chậm kẻ tấn công trong "
-                + frostDurationTicks(unit, skill, 6.0, 1.0, 30.0) / 20 + " giây";
-            case "FROST_STEP" -> "Lướt áp sát mục tiêu, tầm "
-                + formatStat(frostRange(unit, skill, "range-blocks", 5.0)) + " block";
-            case "FROST_WALKER" -> "Tạo băng tạm trên mặt nước trong "
-                + frostDurationTicks(unit, skill, 8.0, 1.0, 30.0) / 20 + " giây";
-            case "ICE_AGE" -> "Đóng băng tối đa "
-                + (int) skillOptionDouble(unit, skill, "max-targets", 24.0, 1.0, 64.0)
-                + " mục tiêu trong bán kính "
-                + formatStat(frostRange(unit, skill, "radius-blocks", 15.0)) + " block";
-            default -> "Chiến đấu với mục tiêu";
-        };
-    }
+   private String guardianHealthBreakdown(MercenaryManager.GuardianStats stats) {
+      return this.formatStatBreakdown(
+         "HP",
+         stats.maxHealth(),
+         this.fitStatParts(
+            List.of(
+               new MercenaryManager.StatPart(stats.baseHealth(), "§f"),
+               new MercenaryManager.StatPart(stats.tierHealth(), "§d"),
+               new MercenaryManager.StatPart(stats.levelHealth(), "§c"),
+               new MercenaryManager.StatPart(stats.equipmentHealth(), "§3")
+            ),
+            stats.maxHealth()
+         )
+      );
+   }
+
+   private String guardianArmorBreakdown(MercenaryManager.GuardianStats stats) {
+      return this.formatStatBreakdown(
+         "Giáp",
+         stats.armor(),
+         this.fitStatParts(
+            List.of(
+               new MercenaryManager.StatPart(stats.baseArmor(), "§f"),
+               new MercenaryManager.StatPart(stats.tierArmor(), "§d"),
+               new MercenaryManager.StatPart(stats.levelArmor(), "§c")
+            ),
+            stats.armor()
+         )
+      );
+   }
+
+   private List<MercenaryManager.StatPart> unitHealthParts(MercenaryManager.Unit unit, MercenaryManager.GuardianStats guardian, MercenaryManager.GearStats gear) {
+      if (guardian != null) {
+         return List.of(
+            new MercenaryManager.StatPart(guardian.baseHealth(), "§f"),
+            new MercenaryManager.StatPart(guardian.tierHealth(), "§d"),
+            new MercenaryManager.StatPart(guardian.levelHealth(), "§c"),
+            new MercenaryManager.StatPart(guardian.equipmentHealth(), "§3"),
+            new MercenaryManager.StatPart(gear.health(), "§a")
+         );
+      }
+
+      double perLevel = this.settings.getDouble("classes." + unit.unitClass + ".health-per-level", 4.0);
+      return List.of(
+         new MercenaryManager.StatPart(this.settings.getDouble("classes." + unit.unitClass + ".base-health", 24.0), "§f"),
+         new MercenaryManager.StatPart(Math.max(0, unit.tier - 1) * perLevel, "§d"),
+         new MercenaryManager.StatPart(Math.max(0, unit.level - 1) * perLevel, "§c"),
+         new MercenaryManager.StatPart(gear.health(), "§a")
+      );
+   }
+
+   private List<MercenaryManager.StatPart> unitArmorParts(MercenaryManager.Unit unit, MercenaryManager.GuardianStats guardian, MercenaryManager.GearStats gear) {
+      if (guardian != null) {
+         return List.of(
+            new MercenaryManager.StatPart(guardian.baseArmor(), "§f"),
+            new MercenaryManager.StatPart(guardian.tierArmor(), "§d"),
+            new MercenaryManager.StatPart(guardian.levelArmor(), "§c"),
+            new MercenaryManager.StatPart(gear.armor(), "§a")
+         );
+      }
+
+      double perLevel = this.settings.getDouble("classes." + unit.unitClass + ".armor-per-level", 0.0);
+      return List.of(
+         new MercenaryManager.StatPart(this.settings.getDouble("classes." + unit.unitClass + ".base-armor", 0.0), "§f"),
+         new MercenaryManager.StatPart(Math.max(0, unit.tier - 1) * perLevel, "§d"),
+         new MercenaryManager.StatPart(Math.max(0, unit.level - 1) * perLevel, "§c"),
+         new MercenaryManager.StatPart(gear.armor(), "§a")
+      );
+   }
+
+   private String formatStatBreakdown(String label, double total, List<MercenaryManager.StatPart> parts) {
+      return "§7" + label + ": §6" + formatStat(total) + this.formatStatPartSuffix(parts);
+   }
+
+   private List<MercenaryManager.StatPart> fitStatParts(List<MercenaryManager.StatPart> parts, double total) {
+      double sum = parts.stream().mapToDouble(part -> Math.max(0.0, part.value())).sum();
+      if (!(sum <= total) && !(sum <= 0.0)) {
+         double factor = total / sum;
+         return parts.stream().map(part -> new MercenaryManager.StatPart(Math.max(0.0, part.value()) * factor, part.color())).toList();
+      } else {
+         return parts;
+      }
+   }
+
+   private String formatStatPartSuffix(List<MercenaryManager.StatPart> parts) {
+      String formatted = this.formatStatParts(parts);
+      return formatted.isEmpty() ? "" : " §8(" + formatted + "§8)";
+   }
+
+   private String gearDetails(MercenaryManager.GearStats gear) {
+      List<String> bonuses = new ArrayList<>();
+      this.addGearDetail(bonuses, "Giảm hồi chiêu", gear.cooldownReductionPercent(), "%");
+      this.addGearDetail(bonuses, "Tầm đánh", gear.attackRangeBlocks(), " block");
+      this.addGearDetail(bonuses, "Sát thương tay", gear.damagePercent(), "%");
+      this.addGearDetail(bonuses, "Sát thương hỏa", gear.fireDamagePercent(), "%");
+      this.addGearDetail(bonuses, "Sát thương băng", gear.frostDamagePercent(), "%");
+      this.addGearDetail(bonuses, "Sát thương tự nhiên", gear.natureDamagePercent(), "%");
+      this.addGearDetail(bonuses, "Tỉ lệ hiệu ứng", gear.effectChancePercent(), "%");
+      this.addGearDetail(bonuses, "Thời lượng hiệu ứng", gear.effectDurationSeconds(), " giây");
+      this.addGearDetail(bonuses, "Minion", gear.minions(), "");
+      this.addGearDetail(bonuses, "Hồi máu", gear.healingPercent(), "%");
+      return bonuses.isEmpty() ? null : "§aTrang bị: §7" + String.join(" §8| §7", bonuses);
+   }
+
+   private void addGearDetail(List<String> bonuses, String label, double value, String suffix) {
+      if (value > 1.0E-4) {
+         bonuses.add(label + " §a+" + formatStat(value) + suffix);
+      }
+   }
+
+   private String skillDescription(MercenaryManager.Unit unit, String skill) {
+      double power = this.skillPowerMultiplier(unit);
+
+      return switch (skill.toUpperCase(Locale.ROOT)) {
+         case "ATTACK" -> "guardian".equals(unit.unitClass)
+            ? this.guardianBasicAttackDescription(unit) + "; làm chậm mục tiêu trong góc phía trước"
+            : "Sát thương mỗi đòn cận chiến: " + this.meleeDamageDescription(unit);
+         case "RANGED_ATTACK" -> "Sát thương mỗi tên: "
+            + this.skillDamageDescription(unit, this.skillOptionDouble(unit, skill, "damage", 4.0, 0.0, 100.0), 0.0, power, 100.0, true)
+            + ", tầm "
+            + formatStat(this.skillOptionDouble(unit, skill, "range-blocks", 16.0, 4.0, 64.0))
+            + " block";
+         case "HEAL_OWNER" -> "Hồi "
+            + formatStat(this.skillOptionDouble(unit, skill, "amount", this.healAmount, 0.0, 100.0) * power * this.soldierHealingMultiplier(unit))
+            + " HP cho chủ nhân";
+         case "HEAL_ALLIES" -> "Hồi "
+            + formatStat(this.skillOptionDouble(unit, skill, "amount", this.healAmount, 0.0, 100.0) * power * this.soldierHealingMultiplier(unit))
+            + " HP cho "
+            + this.skillTargetDescription(unit, skill)
+            + ", bán kính "
+            + formatStat(this.skillOptionDouble(unit, skill, "radius-blocks", this.healRadius, 1.0, 32.0))
+            + " block";
+         case "SHIELD_OWNER" -> "Giảm "
+            + formatStat(Math.min(0.9, this.skillOptionDouble(unit, skill, "damage-reduction", this.shieldReduction, 0.0, 0.9) * power) * 100.0)
+            + "% sát thương lên chủ nhân, bán kính "
+            + formatStat(this.skillOptionDouble(unit, skill, "radius-blocks", 8.0, 1.0, 32.0))
+            + " block";
+         case "BUFF_OWNER" -> "Tăng "
+            + localizedEffectName(this.skillOptionString(unit, skill, "effect", this.ownerBuff))
+            + " cho chủ nhân trong "
+            + this.scaledDuration(unit, skill, this.ownerBuffTicks / 20.0)
+            + " giây";
+         case "BUFF_ALLIES" -> "Tăng "
+            + localizedEffectName(this.skillOptionString(unit, skill, "effect", this.ownerBuff))
+            + " cho "
+            + this.skillTargetDescription(unit, skill)
+            + " trong "
+            + this.scaledDuration(unit, skill, this.ownerBuffTicks / 20.0)
+            + " giây, bán kính "
+            + formatStat(this.skillOptionDouble(unit, skill, "radius-blocks", this.healRadius, 1.0, 32.0))
+            + " block";
+         case "VOLLEY" -> "Bắn "
+            + (int)this.skillOptionDouble(unit, skill, "arrow-count", 3.0, 2.0, 5.0)
+            + " mũi tên, sát thương mỗi mũi: "
+            + this.skillDamageDescription(unit, this.skillOptionDouble(unit, skill, "damage", 3.0, 0.0, 100.0), 0.0, power, 100.0, true)
+            + ("ranger".equals(unit.unitClass) ? ", tầm " + formatStat(this.skillOptionDouble(unit, skill, "range-blocks", 20.8, 4.0, 64.0)) + " block" : "");
+         case "POWER_STRIKE" -> "Sát thương đòn cường kích: "
+            + this.skillDamageDescription(unit, this.skillOptionDouble(unit, skill, "damage", 8.0, 0.0, 100.0), 0.0, power, 100.0, true);
+         case "TAUNT" -> "Khiêu khích quái trong bán kính " + formatStat(this.skillOptionDouble(unit, skill, "radius-blocks", 8.0, 1.0, 32.0)) + " block";
+         case "GUARDIAN_LINK" -> "§7(Nội tại) Nhận §c"
+            + formatStat(this.skillOptionDouble(unit, skill, "redirected-damage-fraction", 0.4, 0.0, 0.9) * 100.0)
+            + "%§f sát thương thay cho chủ nhân trong "
+            + formatStat(this.skillOptionDouble(unit, skill, "radius-blocks", 5.0, 1.0, 16.0))
+            + " block";
+         case "GUARDIAN_CHARGE" -> "Tự lao "
+            + formatStat(this.skillOptionDouble(unit, skill, "minimum-range-blocks", 4.0, 1.0, 16.0))
+            + "-"
+            + formatStat(this.guardianChargeMaximumRange(unit))
+            + " block (tăng 1 block mỗi 5 Level), hất lùi kẻ địch trong bán kính "
+            + formatStat(this.skillOptionDouble(unit, skill, "sweep-radius-blocks", 2.0, 1.0, 6.0))
+            + " block";
+         case "GUARDIAN_SHIELD" -> this.guardianShieldDescription(unit);
+         case "GUARDIAN_QUAKE" -> "Tạo vòng đá giả vây mục tiêu trong "
+            + formatStat(this.skillOptionDouble(unit, skill, "duration-seconds", 5.0, 1.0, 15.0))
+            + " giây và làm chậm mục tiêu (bán kính "
+            + formatStat(this.skillOptionDouble(unit, skill, "radius-blocks", 3.0, 1.0, 8.0))
+            + " block)";
+         case "GUARDIAN_ULTIMATE" -> "Tự kích hoạt khi chủ dưới "
+            + formatStat(this.skillOptionDouble(unit, skill, "owner-health-threshold-percent", 50.0, 1.0, 99.0))
+            + "% HP: dịch chuyển đến chủ, hất lùi/khiêu khích quái, miễn sát thương "
+            + formatStat(this.skillOptionDouble(unit, skill, "protection-duration-seconds", 3.0, 1.0, 10.0))
+            + " giây";
+         case "CLEANSE_OWNER" -> "Gỡ hiệu ứng "
+            + (String)this.settings
+               .getStringList("classes." + unit.unitClass + ".skill-settings.CLEANSE_OWNER.effects")
+               .stream()
+               .map(MercenaryManager::localizedEffectName)
+               .reduce((left, right) -> left + ", " + right)
+               .orElse("bất lợi")
+            + " khỏi chủ nhân";
+         case "FIRE_BOLT" -> this.skillDamageDescription(unit, this.skillOptionDouble(unit, skill, "damage", 6.0, 0.0, 100.0), 0.0, power, 100.0, true)
+            + " và đốt mục tiêu trong "
+            + (int)this.skillOptionDouble(unit, skill, "fire-seconds", 3.0, 0.0, 15.0)
+            + " giây";
+         case "FLAME_BOLT" -> "Phóng hỏa cầu gây " + this.flameDamageDescription(unit, skill, "damage", 6.0) + "; giảm 20% tốc độ trong 3 giây";
+         case "IGNITE" -> "Thiêu đốt gây "
+            + this.flameDamageDescription(unit, skill, "damage-per-pulse", 2.5)
+            + " mỗi 2 giây trong "
+            + (int)this.flameOption(unit, skill, "duration-seconds", 8.0, 2.0, 30.0)
+            + " giây, lây tối đa "
+            + (int)this.flameOption(unit, skill, "max-spread-targets", 6.0, 1.0, 24.0)
+            + " mục tiêu";
+         case "FLAME_NOVA" -> "Xoáy lửa gây "
+            + this.skillDamageDescription(
+               unit,
+               this.flameOption(unit, skill, "damage-per-second", 1.0, 0.0, 100.0),
+               Math.max(0, unit.level - 1) * this.flameOption(unit, skill, "damage-increase-per-level", 0.1, 0.0, 10.0),
+               power,
+               100.0,
+               true
+            )
+            + "/giây với "
+            + (int)Math.min(
+               64.0,
+               Math.floor(
+                  this.flameOption(unit, skill, "particle-count", 10.0, 1.0, 64.0)
+                     + Math.max(0, unit.level - 1) * this.flameOption(unit, skill, "particles-increase-per-level", 1.0, 0.0, 10.0)
+               )
+            )
+            + " hạt lửa trong "
+            + formatStat(this.scaledSkillDurationSeconds(unit, skill, 3.0, 0.1, 30.0))
+            + " giây, bán kính "
+            + formatStat(
+               Math.min(
+                  16.0,
+                  this.flameOption(unit, skill, "radius-blocks", 3.0, 1.0, 12.0)
+                     + Math.floor(unit.level / this.flameOption(unit, skill, "radius-increase-every-levels", 5.0, 1.0, 30.0))
+               )
+            )
+            + " block";
+         case "FIRE_WALL" -> "Lồng 3×3, cao 2 block, tồn tại " + formatStat(this.scaledSkillDurationSeconds(unit, skill, 3.0, 0.1, 30.0)) + " giây";
+         case "METEOR_STRIKE" -> "Gọi "
+            + Math.min(
+               32,
+               (int)this.flameOption(unit, skill, "fireball-count", 3.0, 1.0, 32.0)
+                  + (int)(unit.level / this.flameOption(unit, skill, "fireballs-increase-every-levels", 3.0, 1.0, 30.0))
+            )
+            + " fireball; mỗi quả gây "
+            + this.flameDamageDescription(unit, skill, "damage", 12.0)
+            + ", tối đa "
+            + (int)this.flameOption(unit, skill, "max-targets-per-fireball", 8.0, 1.0, 64.0)
+            + " mục tiêu trong bán kính "
+            + formatStat(
+               Math.min(
+                  16.0,
+                  this.flameOption(unit, skill, "area-radius-blocks", 3.0, 1.0, 12.0)
+                     + Math.floor(unit.level / this.flameOption(unit, skill, "area-radius-increase-every-levels", 5.0, 1.0, 30.0))
+               )
+            )
+            + " block sau "
+            + formatStat(this.flameOption(unit, skill, "warning-delay-seconds", 2.0, 0.1, 30.0))
+            + " giây cảnh báo";
+         case "PHOENIX_REBIRTH" -> "Hồi "
+            + formatStat(this.flameOption(unit, skill, "heal-percent", 30.0, 1.0, 100.0))
+            + "% máu, miễn sát thương 2 giây rồi gây "
+            + this.flameDamageDescription(unit, skill, "damage", 18.0)
+            + " AoE trong bán kính "
+            + formatStat(this.flameOption(unit, skill, "radius-blocks", 8.0, 1.0, 16.0))
+            + " block";
+         case "ROOT_TARGET" -> "Gây "
+            + localizedEffectName(this.skillOptionString(unit, skill, "effect", "SLOWNESS"))
+            + " lên mục tiêu trong "
+            + this.scaledDuration(unit, skill, 5.0)
+            + " giây";
+         case "LIFESTEAL" -> this.skillDamageDescription(unit, this.skillOptionDouble(unit, skill, "damage", 8.0, 0.0, 100.0), 0.0, power, 100.0, true)
+            + " và hồi "
+            + formatStat(this.skillOptionDouble(unit, skill, "heal", 4.0, 0.0, 100.0) * power)
+            + " HP";
+         case "BERSERK" -> "Kích hoạt dưới "
+            + formatStat(this.skillOptionDouble(unit, skill, "health-percent", 50.0, 1.0, 99.0))
+            + "% HP, tăng sức mạnh trong "
+            + this.scaledDuration(unit, skill, 8.0)
+            + " giây";
+         case "SUMMON_VEXES" -> "Triệu hồi tối đa "
+            + this.maxSummonedMinions(unit)
+            + " Vex, mỗi lần gọi thêm một con; mỗi Vex: "
+            + this.skillDamageDescription(unit, this.skillOptionDouble(unit, skill, "damage", 4.0, 0.0, 100.0), 0.0, power, 100.0, false);
+         case "LANCE_CHARGE" -> "Khi cưỡi ngựa: "
+            + this.skillDamageDescription(unit, this.skillOptionDouble(unit, skill, "damage", 12.0, 0.0, 100.0), 0.0, power, 100.0, true)
+            + " trong bán kính "
+            + formatStat(this.skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0))
+            + " block";
+         case "ILLUMINATION" -> "Bắn "
+            + Math.min(
+               20,
+               (int)this.skillOptionDouble(unit, skill, "base-arrow-count", 1.0, 1.0, 20.0)
+                  + unit.level / (int)this.skillOptionDouble(unit, skill, "levels-per-extra-arrow", 5.0, 1.0, 30.0)
+            )
+            + " tên lửa rơi quanh mục tiêu, cắm đuốc "
+            + (int)this.skillOptionDouble(unit, skill, "torch-duration-seconds", 30.0, 1.0, 600.0)
+            + " giây, tầm "
+            + formatStat(this.skillOptionDouble(unit, skill, "range-blocks", 20.8, 4.0, 64.0))
+            + " block";
+         case "ICE_SPIKE" -> "Phóng gai băng gây "
+            + this.frostDamageDescription(unit, skill, 3.0)
+            + ", tầm "
+            + formatStat(this.frostRange(unit, skill, "range-blocks", 5.0))
+            + " block";
+         case "BLIZZARD" -> "Bão tuyết gây "
+            + this.frostDamageDescription(unit, skill, 3.0)
+            + " mỗi nhịp trong bán kính "
+            + formatStat(this.skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0))
+            + " block, kéo dài "
+            + this.frostDurationTicks(unit, skill, 3.0, 1.0, 12.0) / 20
+            + " giây";
+         case "FROST_NOVA" -> "Làm chậm mục tiêu quanh lính trong "
+            + this.frostDurationTicks(unit, skill, 3.0, 1.0, 10.0) / 20
+            + " giây, bán kính "
+            + formatStat(this.skillOptionDouble(unit, skill, "radius-blocks", 4.0, 1.0, 12.0))
+            + " block";
+         case "ICE_WALL" -> "Lồng băng gây "
+            + this.skillDamageDescription(
+               unit,
+               this.skillOptionDouble(unit, skill, "damage-per-second", 1.0, 0.0, 100.0),
+               Math.max(0, unit.level - 1) * this.skillOptionDouble(unit, skill, "damage-increase-per-level", 0.1, 0.0, 10.0),
+               power,
+               100.0,
+               true
+            )
+            + "/giây; sau khi thoát giảm tốc "
+            + formatStat(this.skillOptionDouble(unit, skill, "slowness-percent", 50.0, 0.0, 80.0))
+            + "% trong "
+            + formatStat(
+               Math.min(
+                  30.0,
+                  this.skillOptionDouble(unit, skill, "slowness-duration-seconds", 3.0, 0.1, 30.0)
+                     + Math.max(0, unit.level - 1) * this.skillOptionDouble(unit, skill, "slowness-duration-increase-per-level-seconds", 0.1, 0.0, 10.0)
+               )
+            )
+            + " giây";
+         case "FROST_SHIELD" -> "Nhận Absorption và làm chậm kẻ tấn công trong " + this.frostDurationTicks(unit, skill, 6.0, 1.0, 30.0) / 20 + " giây";
+         case "FROST_STEP" -> "Lướt áp sát mục tiêu, tầm " + formatStat(this.frostRange(unit, skill, "range-blocks", 5.0)) + " block";
+         case "FROST_WALKER" -> "Tạo băng tạm trên mặt nước trong " + this.frostDurationTicks(unit, skill, 8.0, 1.0, 30.0) / 20 + " giây";
+         case "ICE_AGE" -> "Đóng băng tối đa "
+            + (int)this.skillOptionDouble(unit, skill, "max-targets", 24.0, 1.0, 64.0)
+            + " mục tiêu trong bán kính "
+            + formatStat(this.frostRange(unit, skill, "radius-blocks", 15.0))
+            + " block";
+         default -> "Chiến đấu với mục tiêu";
+      };
+   }
 
     private String guardianShieldDescription(Unit unit) {
         GuardianStats stats = guardianStats(unit);
@@ -7093,425 +8198,645 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return item;
     }
 
-    @EventHandler
-    public void onServiceMenuClick(InventoryClickEvent event) {
-        if (!(event.getInventory().getHolder() instanceof ServiceMenuHolder holder)) return;
-        event.setCancelled(true);
-        if (!(event.getWhoClicked() instanceof Player player)
-                || !holder.viewer.equals(player.getUniqueId())
-                || event.getClickedInventory() != event.getView().getTopInventory()) return;
-        int slot = event.getRawSlot();
-        String choice = holder.choices.get(slot);
-        switch (holder.type) {
-            case WELCOME_GIFT -> {
-                if (slot == 49) player.closeInventory();
-                else if (choice != null) selectWelcomeGift(player, choice);
-            }
-            case MAIN -> {
-                if (slot == 10) player.performCommand("vnstats");
-                else if (slot == 12) player.performCommand("vnhardcore");
-                else if (slot == 14 && enabled) openArmyMenu(player, 0);
-                else if (slot == 16) player.performCommand("reward");
-                else if (slot == 22) player.performCommand("vnhelp");
-                else if (slot == 24 && hasAdminMenuAccess(player)) openAdminMenu(player);
-            }
-            case ADMIN -> {
-                if (slot == 11 && player.hasPermission(ADMIN_PERMISSION)) openAdminArmyPlayers(player, 0);
-                else if (slot == 12) openDisasterMenu(player);
-                else if (slot == 13) player.performCommand("vnevent stop");
-                else if (slot == 14) openBossMenu(player);
-                else if (slot == 15) player.performCommand("vnboss kill");
-                else if (slot == 16) player.performCommand("vnreload");
-                else if (slot == 17) player.performCommand("spawn");
-                else if (slot == 18) player.performCommand("vnspawn set");
-                else if (slot == 19) openTimeMenu(player);
-                else if (slot == 20) openDayMenu(player);
-                else if (slot == 21) openProtectionMenu(player);
-                else if (slot == 22) openTeleportPlayers(player, 0);
-                else if (slot == 23) openAdminGroupMenu(player);
-                else if (slot == 24) openAdminUserPlayers(player, 0);
-                else if (slot == 25) player.performCommand("fly");
-                else if (slot == 26) player.performCommand("nodame");
-                else if (slot == 27) player.performCommand("gm0");
-                else if (slot == 28) player.performCommand("gm1");
-                else if (slot == 29) player.performCommand("gm2");
-                else if (slot == 30) player.performCommand("gm3");
-                else if (slot == 31) openAdminScoreboardConfirm(player);
-                else if (slot == 32) openAdminDeathPlayers(player);
-                else if (slot == 33) openAdminSpawnWorlds(player);
-                else if (slot == 34 && player.hasPermission("vnmine.command.death.history")) {
-                    player.performCommand("vndeathhistory");
-                }
-                else if (slot == 49) openMainMenu(player);
-            }
-            case UNIT_DELETE_CONFIRM -> {
-                if (slot == 15 || slot == 22) {
-                    UUID unitId = holder.itemType == null ? null : UUID.fromString(holder.itemType);
-                    Unit unit = unitId == null ? null : units.get(unitId);
-                    if (unit == null || !unit.owner.equals(player.getUniqueId())) openArmyMenu(player, 0);
-                    else openUnitMenu(player, unit);
-                }
-                else if (slot == 11) {
-                    Unit unit = units.get(UUID.fromString(holder.itemType));
-                    if (unit == null || !unit.owner.equals(player.getUniqueId())) {
-                        player.sendMessage("§cKhông tìm thấy lính cần xóa.");
+   @EventHandler
+   public void onServiceMenuClick(InventoryClickEvent event) {
+      if (event.getInventory().getHolder() instanceof MercenaryManager.ServiceMenuHolder holder) {
+         event.setCancelled(true);
+         if (event.getWhoClicked() instanceof Player player
+            && holder.viewer.equals(player.getUniqueId())
+            && event.getClickedInventory() == event.getView().getTopInventory()) {
+            int slot = event.getRawSlot();
+            String choice = holder.choices.get(slot);
+            switch (holder.type) {
+               case MAIN:
+                  if (slot == 10) {
+                     player.performCommand("vnstats");
+                  } else if (slot == 12) {
+                     player.performCommand("vnhardcore");
+                  } else if (slot == 14 && this.enabled) {
+                     this.openArmyMenu(player, 0);
+                  } else if (slot == 16) {
+                     player.performCommand("reward");
+                  } else if (slot == 22) {
+                     player.performCommand("vnhelp");
+                  } else if (slot == 24 && this.hasAdminMenuAccess(player)) {
+                     this.openAdminMenu(player);
+                  }
+                  break;
+               case ADMIN:
+                  if (slot == 11 && player.hasPermission("vnmine.command.army.admin")) {
+                     this.openAdminArmyPlayers(player, 0);
+                  } else if (slot == 12) {
+                     this.openDisasterMenu(player);
+                  } else if (slot == 13) {
+                     player.performCommand("vnevent stop");
+                  } else if (slot == 14) {
+                     this.openBossMenu(player);
+                  } else if (slot == 15) {
+                     player.performCommand("vnboss kill");
+                  } else if (slot == 16) {
+                     player.performCommand("vnreload");
+                  } else if (slot == 17) {
+                     player.performCommand("spawn");
+                  } else if (slot == 18) {
+                     player.performCommand("vnspawn set");
+                  } else if (slot == 19) {
+                     this.openTimeMenu(player);
+                  } else if (slot == 20) {
+                     this.openDayMenu(player);
+                  } else if (slot == 21) {
+                     this.openProtectionMenu(player);
+                  } else if (slot == 22) {
+                     this.openTeleportPlayers(player, 0);
+                  } else if (slot == 23) {
+                     this.openAdminGroupMenu(player);
+                  } else if (slot == 24) {
+                     this.openAdminUserPlayers(player, 0);
+                  } else if (slot == 25) {
+                     player.performCommand("fly");
+                  } else if (slot == 26) {
+                     player.performCommand("nodame");
+                  } else if (slot == 27) {
+                     player.performCommand("gm0");
+                  } else if (slot == 28) {
+                     player.performCommand("gm1");
+                  } else if (slot == 29) {
+                     player.performCommand("gm2");
+                  } else if (slot == 30) {
+                     player.performCommand("gm3");
+                  } else if (slot == 31) {
+                     this.openAdminScoreboardConfirm(player);
+                  } else if (slot == 32) {
+                     this.openAdminDeathPlayers(player);
+                  } else if (slot == 33) {
+                     this.openAdminSpawnWorlds(player);
+                  } else if (slot == 34 && player.hasPermission("vnmine.command.death.history")) {
+                     player.performCommand("vndeathhistory");
+                  } else if (slot == 35 && player.hasPermission("vnmine.command.army.admin")) {
+                     this.openAdminItemPlayers(player, 0);
+                  } else if (slot == 49) {
+                     this.openMainMenu(player);
+                  }
+                  break;
+               case ADMIN_PLAYERS:
+                  if (slot == 45 && holder.page > 0) {
+                     this.openAdminArmyPlayers(player, holder.page - 1);
+                  } else if (slot == 53) {
+                     this.openAdminArmyPlayers(player, holder.page + 1);
+                  } else if (slot == 49) {
+                     this.openAdminMenu(player);
+                  } else if (choice != null) {
+                     this.openGiveTypeMenu(player, UUID.fromString(choice));
+                  }
+                  break;
+               case GIVE_TYPE:
+                  if (slot == 11) {
+                     this.openClassMenu(player, holder.target, "army");
+                  } else if (slot == 15) {
+                     this.openClassMenu(player, holder.target, "token");
+                  } else if (slot == 22) {
+                     this.openAdminArmyPlayers(player, 0);
+                  }
+                  break;
+               case CLASS_SELECT:
+                  if (slot == 49) {
+                     if (holder.itemType.equals("hire")) {
+                        this.openMainMenu(player);
+                     } else {
+                        this.openGiveTypeMenu(player, holder.target);
+                     }
+                  } else if (choice != null) {
+                     this.openTierMenu(player, holder.target, holder.itemType, choice);
+                  }
+                  break;
+               case TIER_SELECT:
+                  if (slot == 49) {
+                     this.openClassMenu(player, holder.target, holder.itemType);
+                  } else if (choice != null) {
+                     int tier = parsePositiveInt(choice);
+                     player.closeInventory();
+                     switch (holder.itemType) {
+                        case "hire":
+                           this.hire(player, new String[]{"hire", holder.classId, Integer.toString(tier)});
+                           return;
+                        case "token":
+                           Player target = Bukkit.getPlayer(holder.target);
+                           if (target == null) {
+                              player.sendMessage("§cNgười nhận đã offline.");
+                           } else {
+                              this.handleTokenCommand(player, new String[]{"token", "give", target.getName(), holder.classId, Integer.toString(tier)});
+                           }
+
+                           return;
+                        case "army":
+                           Player armyRecipient = Bukkit.getPlayer(holder.target);
+                           if (armyRecipient == null) {
+                              player.sendMessage("§cNgười nhận đã offline.");
+                           } else {
+                              this.handleGiveCommand(player, new String[]{"give", armyRecipient.getName(), "army", holder.classId, Integer.toString(tier)});
+                           }
+
+                           return;
+                        default:
+                           player.sendMessage("§cLoại cấp không hợp lệ.");
+                     }
+                  }
+                  break;
+               case WELCOME_GIFT:
+                  if (slot == 49) {
+                     player.closeInventory();
+                  } else if (choice != null) {
+                     this.selectWelcomeGift(player, choice);
+                  }
+                  break;
+               case ITEM_GIVE_PLAYERS:
+                  if (slot == 45 && holder.page > 0) {
+                     this.openAdminItemPlayers(player, holder.page - 1);
+                  } else if (slot == 53) {
+                     this.openAdminItemPlayers(player, holder.page + 1);
+                  } else if (slot == 49) {
+                     this.openAdminMenu(player);
+                  } else if (choice != null) {
+                     this.openItemGearClassMenu(player, UUID.fromString(choice));
+                  }
+                  break;
+               case ITEM_GIVE_CLASS:
+                  if (slot == 49) {
+                     this.openAdminItemPlayers(player, 0);
+                  } else if (choice != null) {
+                     this.openItemGearMaterialMenu(player, holder.target, choice);
+                  }
+                  break;
+               case ITEM_GIVE_MATERIAL:
+                  if (slot == 49) {
+                     this.openItemGearClassMenu(player, holder.target);
+                  } else if (choice != null) {
+                     this.openItemGearStarsMenu(player, holder.target, holder.classId, choice);
+                  }
+                  break;
+               case ITEM_GIVE_STARS:
+                  if (slot == 49) {
+                     this.openItemGearMaterialMenu(player, holder.target, holder.classId);
+                  } else if (choice != null) {
+                     this.openItemGearSetMenu(player, holder.target, holder.classId, holder.gearMaterial, parsePositiveInt(choice));
+                  }
+                  break;
+               case ITEM_GIVE_SET:
+                  if (slot == 49) {
+                     this.openItemGearStarsMenu(player, holder.target, holder.classId, holder.gearMaterial);
+                  } else if (choice != null) {
+                     this.openItemGearSlotMenu(player, holder.target, holder.classId, holder.gearMaterial, holder.gearStars, choice);
+                  }
+                  break;
+               case ITEM_GIVE_SLOT:
+                  if (slot == 49) {
+                     this.openItemGearSetMenu(player, holder.target, holder.classId, holder.gearMaterial, holder.gearStars);
+                  } else if (choice != null) {
+                     Player target = Bukkit.getPlayer(holder.target);
+                     if (target == null) {
+                        player.sendMessage("§cNgười nhận đã offline; hãy chọn người chơi khác.");
+                        this.openAdminItemPlayers(player, 0);
+                     } else {
+                        this.giveSoldierGear(target, holder.classId, holder.gearMaterial, holder.gearStars, holder.gearSet, choice);
+                        player.sendMessage(
+                           "§aĐã cấp "
+                              + (choice.equals("set") ? "trọn set" : "một món")
+                              + " §e"
+                              + this.classDisplay(holder.classId)
+                              + " "
+                              + this.gearMaterialDisplay(holder.gearMaterial)
+                              + " "
+                              + "★".repeat(holder.gearStars)
+                              + " §acho §e"
+                              + target.getName()
+                              + "§a."
+                        );
+                        target.sendMessage(
+                           "§aBạn nhận được "
+                              + (choice.equals("set") ? "bộ trang bị lính" : "trang bị lính")
+                              + " §e"
+                              + this.classDisplay(holder.classId)
+                              + " "
+                              + this.gearMaterialDisplay(holder.gearMaterial)
+                              + " "
+                              + "★".repeat(holder.gearStars)
+                              + "§a. Chỉ lính mới có thể trang bị vật phẩm này."
+                        );
                         player.closeInventory();
-                    } else {
-                        handleRemoveCommand(player, new String[] {"remove", shortId(unit.id)});
-                        if (!units.containsKey(unit.id)) player.closeInventory();
-                    }
-                }
-            }
-            case ADMIN_PLAYERS -> {
-                if (slot == 45 && holder.page > 0) openAdminArmyPlayers(player, holder.page - 1);
-                else if (slot == 53) openAdminArmyPlayers(player, holder.page + 1);
-                else if (slot == 49) openAdminMenu(player);
-                else if (choice != null) openGiveTypeMenu(player, UUID.fromString(choice));
-            }
-            case GIVE_TYPE -> {
-                if (slot == 11) openClassMenu(player, holder.target, "army");
-                else if (slot == 15) openClassMenu(player, holder.target, "token");
-                else if (slot == 22) openAdminArmyPlayers(player, 0);
-            }
-            case CLASS_SELECT -> {
-                if (slot == 49) {
-                    if (holder.itemType.equals("hire")) openMainMenu(player);
-                    else openGiveTypeMenu(player, holder.target);
-                } else if (choice != null) {
-                    openTierMenu(player, holder.target, holder.itemType, choice);
-                }
-            }
-            case TIER_SELECT -> {
-                if (slot == 49) openClassMenu(player, holder.target, holder.itemType);
-                else if (choice != null) {
-                    int tier = parsePositiveInt(choice);
-                    player.closeInventory();
-                    switch (holder.itemType) {
-                        case "hire" -> hire(player, new String[] {"hire", holder.classId, Integer.toString(tier)});
-                        case "token" -> {
-                            Player target = Bukkit.getPlayer(holder.target);
-                            if (target == null) player.sendMessage("§cNgười nhận đã offline.");
-                            else handleTokenCommand(player, new String[] {"token", "give", target.getName(),
-                                holder.classId, Integer.toString(tier)});
-                        }
-                        case "army" -> {
-                            Player target = Bukkit.getPlayer(holder.target);
-                            if (target == null) player.sendMessage("§cNgười nhận đã offline.");
-                            else handleGiveCommand(player, new String[] {"give", target.getName(), "army",
-                                holder.classId, Integer.toString(tier)});
-                        }
-                        default -> player.sendMessage("§cLoại cấp không hợp lệ.");
-                    }
-                }
-            }
-            case DISASTER_SELECT -> {
-                if (slot == 49) openAdminMenu(player);
-                else if (choice != null) {
-                    if (!player.hasPermission("vnmine.command.disasters")) {
+                     }
+                  }
+                  break;
+               case DISASTER_SELECT:
+                  if (slot == 49) {
+                     this.openAdminMenu(player);
+                  } else if (choice != null) {
+                     if (!player.hasPermission("vnmine.command.disasters")) {
                         player.sendMessage("§cBạn không có quyền gọi thiên tai.");
                         return;
-                    }
-                    int warning = Math.max(1, Math.min(3600,
-                        plugin.getConfig().getInt("menus.admin.warning-seconds", 30)));
-                    int duration = Math.max(1, Math.min(86400,
-                        plugin.getConfig().getInt("menus.admin.duration-seconds", 120)));
-                    if (plugin.getDisasterManager().triggerDisaster(choice, warning, duration)) {
-                        player.sendMessage("§aĐã kích hoạt §e" + plugin.getDisasterManager().getDisasterName(choice) + "§a.");
-                    } else {
+                     }
+
+                     int warning = Math.max(1, Math.min(3600, this.plugin.getConfig().getInt("menus.admin.warning-seconds", 30)));
+                     int duration = Math.max(1, Math.min(86400, this.plugin.getConfig().getInt("menus.admin.duration-seconds", 120)));
+                     if (this.plugin.getDisasterManager().triggerDisaster(choice, warning, duration)) {
+                        player.sendMessage("§aĐã kích hoạt §e" + this.plugin.getDisasterManager().getDisasterName(choice) + "§a.");
+                     } else {
                         player.sendMessage("§cKhông thể kích hoạt thiên tai; có thể đang có sự kiện khác chạy.");
-                    }
-                    player.closeInventory();
-                }
-            }
-            case BOSS_SELECT -> {
-                if (slot == 49) openAdminMenu(player);
-                else if (choice != null) {
-                    if (!player.hasPermission("vnmine.command.bosses")) {
+                     }
+
+                     player.closeInventory();
+                  }
+                  break;
+               case BOSS_SELECT:
+                  if (slot == 49) {
+                     this.openAdminMenu(player);
+                  } else if (choice != null) {
+                     if (!player.hasPermission("vnmine.command.bosses")) {
                         player.sendMessage("§cBạn không có quyền gọi boss.");
                         return;
-                    }
-                    openBossLevelMenu(player, choice);
-                }
-            }
-            case BOSS_LEVEL_SELECT -> {
-                if (slot == 22) openBossMenu(player);
-                else if (choice != null) {
-                    if (!player.hasPermission("vnmine.command.bosses")) {
+                     }
+
+                     this.openBossLevelMenu(player, choice);
+                  }
+                  break;
+               case BOSS_LEVEL_SELECT:
+                  if (slot == 22) {
+                     this.openBossMenu(player);
+                  } else if (choice != null) {
+                     if (!player.hasPermission("vnmine.command.bosses")) {
                         player.sendMessage("§cBạn không có quyền gọi boss.");
                         return;
-                    }
-                    int warning = Math.max(1, Math.min(3600,
-                        plugin.getConfig().getInt("menus.admin.warning-seconds", 30)));
-                    int duration = Math.max(1, Math.min(86400,
-                        plugin.getConfig().getInt("menus.admin.duration-seconds", 120)));
-                    int bossLevel = parsePositiveInt(choice);
-                    if (plugin.getBossEventManager().triggerBoss(holder.classId, bossLevel, warning, duration)) {
-                        player.sendMessage("§aĐã gọi §e" + plugin.getBossEventManager().getBossName(holder.classId)
-                            + " §alevel " + bossLevel + ".");
-                    } else {
+                     }
+
+                     int warning = Math.max(1, Math.min(3600, this.plugin.getConfig().getInt("menus.admin.warning-seconds", 30)));
+                     int duration = Math.max(1, Math.min(86400, this.plugin.getConfig().getInt("menus.admin.duration-seconds", 120)));
+                     int bossLevel = parsePositiveInt(choice);
+                     if (this.plugin.getBossEventManager().triggerBoss(holder.classId, bossLevel, warning, duration)) {
+                        player.sendMessage("§aĐã gọi §e" + this.plugin.getBossEventManager().getBossName(holder.classId) + " §alevel " + bossLevel + ".");
+                     } else {
                         player.sendMessage("§cKhông thể gọi boss; có thể đang có boss khác chạy.");
-                    }
-                    player.closeInventory();
-                }
-            }
-            case ADMIN_TIME -> {
-                if (slot == 11) openTimeDurationMenu(player, "day");
-                else if (slot == 15) openTimeDurationMenu(player, "night");
-                else if (slot == 22) openAdminMenu(player);
-            }
-            case TIME_DURATION -> {
-                if (slot == 22) openTimeMenu(player);
-                else if (choice != null) {
-                    player.closeInventory();
-                    player.performCommand("vntime set " + holder.itemType + " " + choice);
-                }
-            }
-            case ADMIN_DAY -> {
-                if (slot == 22) openAdminMenu(player);
-                else if (choice != null) {
-                    player.closeInventory();
-                    player.performCommand("vnday set " + choice);
-                }
-            }
-            case ADMIN_PROTECT -> {
-                if (slot == 22) openAdminMenu(player);
-                else if (slot == 15) player.performCommand("vnspawn list");
-                else if (slot == 16) openProtectionRemoveMenu(player);
-                else if (choice != null && choice.startsWith("protect:")) {
-                    player.closeInventory();
-                    player.performCommand("vnspawn protect " + choice.substring("protect:".length()));
-                }
-            }
-            case PROTECTION_REMOVE -> {
-                if (slot == 49) openProtectionMenu(player);
-                else if (choice != null) {
-                    player.closeInventory();
-                    player.performCommand("vnspawn remove " + choice);
-                }
-            }
-            case TELEPORT_PLAYERS -> {
-                if (slot == 45 && holder.page > 0) openTeleportPlayers(player, holder.page - 1);
-                else if (slot == 53) openTeleportPlayers(player, holder.page + 1);
-                else if (slot == 49) openAdminMenu(player);
-                else if (choice != null) openTeleportWorlds(player, UUID.fromString(choice));
-            }
-            case TELEPORT_WORLDS -> {
-                if (slot == 49) openTeleportPlayers(player, 0);
-                else if (choice != null) {
-                    Player target = Bukkit.getPlayer(holder.target);
-                    if (target == null) player.sendMessage("§cNgười chơi đã offline.");
-                    else {
+                     }
+
+                     player.closeInventory();
+                  }
+                  break;
+               case ADMIN_TIME:
+                  if (slot == 11) {
+                     this.openTimeDurationMenu(player, "day");
+                  } else if (slot == 15) {
+                     this.openTimeDurationMenu(player, "night");
+                  } else if (slot == 22) {
+                     this.openAdminMenu(player);
+                  }
+                  break;
+               case TIME_DURATION:
+                  if (slot == 22) {
+                     this.openTimeMenu(player);
+                  } else if (choice != null) {
+                     player.closeInventory();
+                     player.performCommand("vntime set " + holder.itemType + " " + choice);
+                  }
+                  break;
+               case ADMIN_DAY:
+                  if (slot == 22) {
+                     this.openAdminMenu(player);
+                  } else if (choice != null) {
+                     player.closeInventory();
+                     player.performCommand("vnday set " + choice);
+                  }
+                  break;
+               case ADMIN_PROTECT:
+                  if (slot == 22) {
+                     this.openAdminMenu(player);
+                  } else if (slot == 15) {
+                     player.performCommand("vnspawn list");
+                  } else if (slot == 16) {
+                     this.openProtectionRemoveMenu(player);
+                  } else if (choice != null && choice.startsWith("protect:")) {
+                     player.closeInventory();
+                     player.performCommand("vnspawn protect " + choice.substring("protect:".length()));
+                  }
+                  break;
+               case PROTECTION_REMOVE:
+                  if (slot == 49) {
+                     this.openProtectionMenu(player);
+                  } else if (choice != null) {
+                     player.closeInventory();
+                     player.performCommand("vnspawn remove " + choice);
+                  }
+                  break;
+               case TELEPORT_PLAYERS:
+                  if (slot == 45 && holder.page > 0) {
+                     this.openTeleportPlayers(player, holder.page - 1);
+                  } else if (slot == 53) {
+                     this.openTeleportPlayers(player, holder.page + 1);
+                  } else if (slot == 49) {
+                     this.openAdminMenu(player);
+                  } else if (choice != null) {
+                     this.openTeleportWorlds(player, UUID.fromString(choice));
+                  }
+                  break;
+               case TELEPORT_WORLDS:
+                  if (slot == 49) {
+                     this.openTeleportPlayers(player, 0);
+                  } else if (choice != null) {
+                     Player target = Bukkit.getPlayer(holder.target);
+                     if (target == null) {
+                        player.sendMessage("§cNgười chơi đã offline.");
+                     } else {
                         player.closeInventory();
                         player.performCommand("tp " + target.getName() + " " + choice);
-                    }
-                }
-            }
-            case ADMIN_USER_PLAYERS -> {
-                if (slot == 45 && holder.page > 0) openAdminUserPlayers(player, holder.page - 1);
-                else if (slot == 53) openAdminUserPlayers(player, holder.page + 1);
-                else if (slot == 49) openAdminMenu(player);
-                else if (choice != null) openAdminUserActions(player, UUID.fromString(choice));
-            }
-            case ADMIN_USER_ACTION -> {
-                if (slot == 22) openAdminUserPlayers(player, 0);
-                else if (slot == 15) openAdminUserGroupSelect(player, holder.target);
-                else if (slot == 16) openAdminUserPermissionActions(player, holder.target);
-                else if (slot == 11 || slot == 13) {
-                    Player target = Bukkit.getPlayer(holder.target);
-                    if (target == null) player.sendMessage("§cNgười chơi đã offline.");
-                    else {
+                     }
+                  }
+                  break;
+               case ADMIN_USER_PLAYERS:
+                  if (slot == 45 && holder.page > 0) {
+                     this.openAdminUserPlayers(player, holder.page - 1);
+                  } else if (slot == 53) {
+                     this.openAdminUserPlayers(player, holder.page + 1);
+                  } else if (slot == 49) {
+                     this.openAdminMenu(player);
+                  } else if (choice != null) {
+                     this.openAdminUserActions(player, UUID.fromString(choice));
+                  }
+                  break;
+               case ADMIN_USER_ACTION:
+                  if (slot == 22) {
+                     this.openAdminUserPlayers(player, 0);
+                  } else if (slot == 15) {
+                     this.openAdminUserGroupSelect(player, holder.target);
+                  } else if (slot == 16) {
+                     this.openAdminUserPermissionActions(player, holder.target);
+                  } else if (slot == 11 || slot == 13) {
+                     Player target = Bukkit.getPlayer(holder.target);
+                     if (target == null) {
+                        player.sendMessage("§cNgười chơi đã offline.");
+                     } else {
                         player.closeInventory();
-                        player.performCommand(slot == 11
-                            ? "vnuser info " + target.getName() : "vnuser reset " + target.getName());
-                    }
-                }
-            }
-            case ADMIN_GROUPS -> {
-                if (slot == 10) player.performCommand("vngroup list");
-                else if (slot == 11) {
-                    if (!player.hasPermission("vnmine.command.groups.manage")) {
+                        player.performCommand(slot == 11 ? "vnuser info " + target.getName() : "vnuser reset " + target.getName());
+                     }
+                  }
+                  break;
+               case ADMIN_GROUPS:
+                  if (slot == 10) {
+                     player.performCommand("vngroup list");
+                  } else if (slot == 11) {
+                     if (!player.hasPermission("vnmine.command.groups.manage")) {
                         player.sendMessage("§cBạn không có quyền quản lý nhóm.");
                         return;
-                    }
-                    awaitingGroupName.add(player.getUniqueId());
-                    player.closeInventory();
-                    player.sendMessage("§eNhập tên nhóm (1-32 ký tự, chữ thường/số/_/-) vào chat.");
-                } else if (slot == 12) openAdminGroupSelect(player, "info");
-                else if (slot == 13) openAdminGroupSelect(player, "delete");
-                else if (slot == 14) openAdminGroupSelect(player, "grant");
-                else if (slot == 15) openAdminGroupSelect(player, "revoke");
-                else if (slot == 22) openAdminMenu(player);
-            }
-            case ADMIN_GROUP_SELECT -> {
-                if (slot == 49) openAdminGroupMenu(player);
-                else if (choice != null) {
-                    switch (holder.itemType) {
-                        case "info" -> {
-                            player.closeInventory();
-                            player.performCommand("vngroup info " + choice);
-                        }
-                        case "delete" -> {
-                            ServiceMenuHolder confirm = createServiceMenu(player,
-                                MenuType.ADMIN_GROUP_DELETE_CONFIRM, null, null, choice, 0, 27,
-                                "Admin • Xóa nhóm " + choice);
-                            confirm.inventory.setItem(11, menuItem(Material.RED_DYE, "§cXác nhận xóa",
-                                List.of("§7Nhóm có thành viên hoặc nhóm hệ thống sẽ được giữ lại.")));
-                            confirm.inventory.setItem(15, menuItem(Material.ARROW, "§7Hủy", List.of()));
-                            player.openInventory(confirm.inventory);
-                        }
-                        case "grant", "revoke" -> openAdminPermissionSelect(player, null,
-                            holder.itemType.equals("grant") ? "group-add" : "group-remove", choice);
-                        default -> { }
-                    }
-                }
-            }
-            case ADMIN_GROUP_DELETE_CONFIRM -> {
-                if (slot == 11) {
-                    player.closeInventory();
-                    player.performCommand("vngroup delete " + holder.classId);
-                } else if (slot == 15) openAdminGroupSelect(player, "delete");
-            }
-            case ADMIN_PERMISSION_SELECT -> {
-                if (slot == 49) {
-                    if (holder.itemType.startsWith("group-")) {
-                        openAdminGroupSelect(player,
-                            holder.itemType.equals("group-add") ? "grant" : "revoke");
-                    } else {
-                        openAdminUserPermissionActions(player, holder.target);
-                    }
-                } else if (choice != null) {
-                    player.closeInventory();
-                    if (holder.itemType.startsWith("group-")) {
+                     }
+
+                     this.awaitingGroupName.add(player.getUniqueId());
+                     player.closeInventory();
+                     player.sendMessage("§eNhập tên nhóm (1-32 ký tự, chữ thường/số/_/-) vào chat.");
+                  } else if (slot == 12) {
+                     this.openAdminGroupSelect(player, "info");
+                  } else if (slot == 13) {
+                     this.openAdminGroupSelect(player, "delete");
+                  } else if (slot == 14) {
+                     this.openAdminGroupSelect(player, "grant");
+                  } else if (slot == 15) {
+                     this.openAdminGroupSelect(player, "revoke");
+                  } else if (slot == 22) {
+                     this.openAdminMenu(player);
+                  }
+                  break;
+               case ADMIN_GROUP_SELECT:
+                  if (slot == 49) {
+                     this.openAdminGroupMenu(player);
+                  } else if (choice != null) {
+                     switch (holder.itemType) {
+                        case "info":
+                           player.closeInventory();
+                           player.performCommand("vngroup info " + choice);
+                           return;
+                        case "delete":
+                           MercenaryManager.ServiceMenuHolder confirm = this.createServiceMenu(
+                              player, MercenaryManager.MenuType.ADMIN_GROUP_DELETE_CONFIRM, null, null, choice, 0, 27, "Admin • Xóa nhóm " + choice
+                           );
+                           confirm.inventory
+                              .setItem(
+                                 11, this.menuItem(Material.RED_DYE, "§cXác nhận xóa", List.of("§7Nhóm có thành viên hoặc nhóm hệ thống sẽ được giữ lại."))
+                              );
+                           confirm.inventory.setItem(15, this.menuItem(Material.ARROW, "§7Hủy", List.of()));
+                           player.openInventory(confirm.inventory);
+                           return;
+                        case "grant":
+                        case "revoke":
+                           this.openAdminPermissionSelect(player, null, holder.itemType.equals("grant") ? "group-add" : "group-remove", choice);
+                     }
+                  }
+                  break;
+               case ADMIN_GROUP_DELETE_CONFIRM:
+                  if (slot == 11) {
+                     player.closeInventory();
+                     player.performCommand("vngroup delete " + holder.classId);
+                  } else if (slot == 15) {
+                     this.openAdminGroupSelect(player, "delete");
+                  }
+                  break;
+               case ADMIN_PERMISSION_SELECT:
+                  if (slot == 49) {
+                     if (holder.itemType.startsWith("group-")) {
+                        this.openAdminGroupSelect(player, holder.itemType.equals("group-add") ? "grant" : "revoke");
+                     } else {
+                        this.openAdminUserPermissionActions(player, holder.target);
+                     }
+                  } else if (choice != null) {
+                     player.closeInventory();
+                     if (holder.itemType.startsWith("group-")) {
                         String action = holder.itemType.equals("group-add") ? "add" : "remove";
                         player.performCommand("vngroup permission " + action + " " + holder.classId + " " + choice);
-                    } else {
+                     } else {
                         Player target = Bukkit.getPlayer(holder.target);
-                        if (target == null) player.sendMessage("§cNgười chơi đã offline.");
-                        else {
-                            String action = holder.itemType.equals("user-add") ? "add" : "remove";
-                            player.performCommand("vnuser permission " + action + " " + target.getName() + " " + choice);
+                        if (target == null) {
+                           player.sendMessage("§cNgười chơi đã offline.");
+                        } else {
+                           String action = holder.itemType.equals("user-add") ? "add" : "remove";
+                           player.performCommand("vnuser permission " + action + " " + target.getName() + " " + choice);
                         }
-                    }
-                }
-            }
-            case ADMIN_USER_GROUP_SELECT -> {
-                if (slot == 49) openAdminUserActions(player, holder.target);
-                else if (choice != null) {
-                    Player target = Bukkit.getPlayer(holder.target);
-                    if (target == null) player.sendMessage("§cNgười chơi đã offline.");
-                    else {
+                     }
+                  }
+                  break;
+               case ADMIN_USER_GROUP_SELECT:
+                  if (slot == 49) {
+                     this.openAdminUserActions(player, holder.target);
+                  } else if (choice != null) {
+                     Player target = Bukkit.getPlayer(holder.target);
+                     if (target == null) {
+                        player.sendMessage("§cNgười chơi đã offline.");
+                     } else {
                         player.closeInventory();
                         player.performCommand("vnuser group " + target.getName() + " " + choice);
-                    }
-                }
-            }
-            case ADMIN_USER_PERMISSION_ACTIONS -> {
-                if (slot == 22) openAdminUserActions(player, holder.target);
-                else if (slot == 11) openAdminPermissionSelect(player, holder.target, "user-add", null);
-                else if (slot == 15) openAdminPermissionSelect(player, holder.target, "user-remove", null);
-            }
-            case ADMIN_SCOREBOARD_CONFIRM -> {
-                if (slot == 11) {
-                    player.closeInventory();
-                    player.performCommand("scoreboard reset");
-                } else if (slot == 15) openAdminMenu(player);
-            }
-            case ADMIN_DEATH_PLAYERS -> {
-                if (slot == 49) openAdminMenu(player);
-                else if (choice != null) {
-                    Player target = Bukkit.getPlayer(UUID.fromString(choice));
-                    if (target == null) player.sendMessage("§cNgười chơi đã offline.");
-                    else {
+                     }
+                  }
+                  break;
+               case ADMIN_USER_PERMISSION_ACTIONS:
+                  if (slot == 22) {
+                     this.openAdminUserActions(player, holder.target);
+                  } else if (slot == 11) {
+                     this.openAdminPermissionSelect(player, holder.target, "user-add", null);
+                  } else if (slot == 15) {
+                     this.openAdminPermissionSelect(player, holder.target, "user-remove", null);
+                  }
+               case ADMIN_USER_PERMISSION_SELECT:
+               default:
+                  break;
+               case ADMIN_SCOREBOARD_CONFIRM:
+                  if (slot == 11) {
+                     player.closeInventory();
+                     player.performCommand("scoreboard reset");
+                  } else if (slot == 15) {
+                     this.openAdminMenu(player);
+                  }
+                  break;
+               case ADMIN_DEATH_PLAYERS:
+                  if (slot == 49) {
+                     this.openAdminMenu(player);
+                  } else if (choice != null) {
+                     Player target = Bukkit.getPlayer(UUID.fromString(choice));
+                     if (target == null) {
+                        player.sendMessage("§cNgười chơi đã offline.");
+                     } else {
                         player.closeInventory();
                         player.performCommand("vn death reset " + target.getName());
-                    }
-                }
+                     }
+                  }
+                  break;
+               case ADMIN_SPAWN_WORLD:
+                  if (slot == 49) {
+                     this.openAdminMenu(player);
+                  } else if (choice != null) {
+                     player.closeInventory();
+                     player.performCommand("vnspawn go " + choice);
+                  }
+                  break;
+               case UNIT_DELETE_CONFIRM:
+                  if (slot != 15 && slot != 22) {
+                     if (slot == 11) {
+                        MercenaryManager.Unit unit = this.units.get(UUID.fromString(holder.itemType));
+                        if (unit != null && unit.owner.equals(player.getUniqueId())) {
+                           this.handleRemoveCommand(player, new String[]{"remove", shortId(unit.id)});
+                           if (!this.units.containsKey(unit.id)) {
+                              player.closeInventory();
+                           }
+                        } else {
+                           player.sendMessage("§cKhông tìm thấy lính cần xóa.");
+                           player.closeInventory();
+                        }
+                     }
+                  } else {
+                     UUID unitId = holder.itemType == null ? null : UUID.fromString(holder.itemType);
+                     MercenaryManager.Unit unit = unitId == null ? null : this.units.get(unitId);
+                     if (unit != null && unit.owner.equals(player.getUniqueId())) {
+                        this.openUnitMenu(player, unit);
+                     } else {
+                        this.openArmyMenu(player, 0);
+                     }
+                  }
             }
-            case ADMIN_SPAWN_WORLD -> {
-                if (slot == 49) openAdminMenu(player);
-                else if (choice != null) {
-                    player.closeInventory();
-                    player.performCommand("vnspawn go " + choice);
-                }
-            }
-        }
-    }
+         }
+      }
+   }
 
-    @EventHandler
+   @EventHandler
     public void onServiceMenuDrag(InventoryDragEvent event) {
         if (event.getView().getTopInventory().getHolder() instanceof ServiceMenuHolder) event.setCancelled(true);
     }
 
-    @EventHandler
-    public void onArmyMenuClick(InventoryClickEvent event) {
-        InventoryHolder inventoryHolder = event.getInventory().getHolder();
-        if (!(inventoryHolder instanceof ArmyMenuHolder)
-                && !(inventoryHolder instanceof UnitMenuHolder)) return;
-        event.setCancelled(true);
-        if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (inventoryHolder instanceof ArmyMenuHolder holder) {
-            if (!holder.owner.equals(player.getUniqueId()) || event.getClickedInventory() != event.getView().getTopInventory()) return;
-            int slot = event.getRawSlot();
-            if (slot == 2) {
-                recall(player, new String[] {"recall"});
-                return;
-            }
-            if (slot == 4) {
-                openClassMenu(player, null, "hire");
-                return;
-            }
-            if (slot == 6) {
-                rest(player, new String[] {"rest"});
-                return;
-            }
-            if (slot == 49) {
-                openMainMenu(player);
-                return;
-            }
-            if (slot == 45 && holder.page > 0) {
-                openArmyMenu(player, holder.page - 1);
-                return;
-            }
-            if (slot == 53) {
-                openArmyMenu(player, holder.page + 1);
-                return;
-            }
-            if (slot < 0 || slot >= 54 || slot == 49) return;
-            int row = slot / 9 - 1;
-            int column = slot % 9;
-            if (row < 0 || row > 3 || column < 1 || column > 7) return;
-            int index = row * 7 + column - 1;
-            if (index < holder.unitIds.size()) {
-                Unit unit = units.get(holder.unitIds.get(index));
-                if (unit != null && unit.owner.equals(player.getUniqueId())) openUnitMenu(player, unit);
-            }
-            return;
-        }
-        UnitMenuHolder holder = (UnitMenuHolder) inventoryHolder;
-        if (!holder.owner.equals(player.getUniqueId())
-                || event.getClickedInventory() != event.getView().getTopInventory()) return;
-        Unit unit = units.get(holder.unit);
-        if (unit == null || !unit.owner.equals(player.getUniqueId())) {
-            openArmyMenu(player, 0);
-            return;
-        }
-        switch (event.getRawSlot()) {
-            case 10 -> updateUnitMode(player, unit, Mode.ATTACK);
-            case 11 -> updateUnitMode(player, unit, Mode.DEFEND);
-            case 12 -> updateUnitMode(player, unit, Mode.PROTECT);
-            case 13 -> toggleMute(player, unit);
-            case 14 -> toggleUnitDeployment(player, unit);
-            case 16 -> openGear(player, new String[] {"gear", shortId(unit.id)});
-            case 17 -> upgradeTier(player, unit);
-            case 22 -> openArmyMenu(player, 0);
-            case 15 -> openUnitDeleteConfirm(player, unit);
+   @EventHandler
+   public void onArmyMenuClick(InventoryClickEvent event) {
+      InventoryHolder inventoryHolder = event.getInventory().getHolder();
+      if (inventoryHolder instanceof MercenaryManager.ArmyMenuHolder || inventoryHolder instanceof MercenaryManager.UnitMenuHolder) {
+         event.setCancelled(true);
+         if (event.getWhoClicked() instanceof Player player) {
+            if (inventoryHolder instanceof MercenaryManager.ArmyMenuHolder holder) {
+               if (holder.owner.equals(player.getUniqueId()) && event.getClickedInventory() == event.getView().getTopInventory()) {
+                  int slot = event.getRawSlot();
+                  if (slot == 2) {
+                     this.recall(player, new String[]{"recall"});
+                  } else if (slot == 4) {
+                     this.openClassMenu(player, null, "hire");
+                  } else if (slot == 6) {
+                     this.rest(player, new String[]{"rest"});
+                  } else if (slot == 49) {
+                     this.openMainMenu(player);
+                  } else if (slot == 45 && holder.page > 0) {
+                     this.openArmyMenu(player, holder.page - 1);
+                  } else if (slot == 53) {
+                     this.openArmyMenu(player, holder.page + 1);
+                  } else if (slot >= 0 && slot < 54 && slot != 49) {
+                     int row = slot / 9 - 1;
+                     int column = slot % 9;
+                     if (row >= 0 && row <= 3 && column >= 1 && column <= 7) {
+                        int index = row * 7 + column - 1;
+                        if (index < holder.unitIds.size()) {
+                           MercenaryManager.Unit unit = this.units.get(holder.unitIds.get(index));
+                           if (unit != null && unit.owner.equals(player.getUniqueId())) {
+                              this.openUnitMenu(player, unit);
+                           }
+                        }
+                     }
+                  }
+               }
+            } else {
+               MercenaryManager.UnitMenuHolder holder = (MercenaryManager.UnitMenuHolder)inventoryHolder;
+               if (holder.owner.equals(player.getUniqueId()) && event.getClickedInventory() == event.getView().getTopInventory()) {
+                  MercenaryManager.Unit unit = this.units.get(holder.unit);
+                  if (unit != null && unit.owner.equals(player.getUniqueId())) {
+                     switch (event.getRawSlot()) {
+                        case 4:
+                           this.openUnitMenu(player, unit);
+                           break;
+                        case 5:
+                        case 6:
+                        case 7:
+                        case 8:
+                        case 9:
+                        case 18:
+                        case 19:
+                        case 20:
+                        case 21:
+                        default:
+                           return;
+                        case 10:
+                           this.updateUnitMode(player, unit, MercenaryManager.Mode.ATTACK);
+                           break;
+                        case 11:
+                           this.updateUnitMode(player, unit, MercenaryManager.Mode.DEFEND);
+                           break;
+                        case 12:
+                           this.updateUnitMode(player, unit, MercenaryManager.Mode.PROTECT);
+                           break;
+                        case 13:
+                           this.toggleMute(player, unit);
+                           break;
+                        case 14:
+                           this.toggleUnitDeployment(player, unit);
+                           break;
+                        case 15:
+                           this.openUnitDeleteConfirm(player, unit);
+                           break;
+                        case 16:
+                           this.openGear(player, new String[]{"gear", shortId(unit.id)});
+                           break;
+                        case 17:
+                           this.upgradeTier(player, unit);
+                           break;
+                        case 22:
+                           this.openArmyMenu(player, 0);
+                     }
 
-            default -> { return; }
-        }
-        if (player.getOpenInventory().getTopInventory().getHolder() instanceof UnitMenuHolder) {
-            openUnitMenu(player, unit);
-        }
-    }
+                     if (player.getOpenInventory().getTopInventory().getHolder() instanceof MercenaryManager.UnitMenuHolder) {
+                        this.openUnitMenu(player, unit);
+                     }
+                  } else {
+                     this.openArmyMenu(player, 0);
+                  }
+               }
+            }
+         }
+      }
+   }
 
     private boolean canUpgrade(Unit unit) {
         return unit.level >= maxLevel && unit.tier < unit.originalTier + 3;
@@ -7595,7 +8920,7 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         player.sendMessage("§a" + displayName(unit) + " đã nâng lên Bậc " + nextTier + "!");
     }
 
-    @EventHandler
+   @EventHandler
     public void onArmyMenuDrag(InventoryDragEvent event) {
         InventoryHolder holder = event.getView().getTopInventory().getHolder();
         if (holder instanceof ArmyMenuHolder || holder instanceof UnitMenuHolder) event.setCancelled(true);
@@ -7679,28 +9004,38 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         openGear(player, unit);
     }
 
-    private void openGear(Player player, Unit unit) {
-        Mob active = activeEntities.get(unit.id);
-        if (active != null && active.isValid()) captureEquipment(unit, active);
-        GearHolder holder = new GearHolder(player.getUniqueId(), unit.id);
-        Inventory inventory = Bukkit.createInventory(holder, 54, "Kho và trang bị #" + shortId(unit.id));
-        holder.inventory = inventory;
-        for (int slot = 0; slot < unit.inventory.length; slot++) {
-            inventory.setItem(slot, cloneOrNull(unit.inventory[slot]));
-        }
-        ItemStack divider = menuItem(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
-        for (int slot = 36; slot < 45; slot++) inventory.setItem(slot, divider.clone());
-        inventory.setItem(45, cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HAND)));
-        inventory.setItem(46, cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HEAD)));
-        inventory.setItem(47, cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.CHEST)));
-        inventory.setItem(48, cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.LEGS)));
-        inventory.setItem(49, cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.FEET)));
-        inventory.setItem(50, cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.OFF_HAND)));
-        inventory.setItem(51, cloneOrNull(unit.horseArmor));
-        for (int slot = 52; slot < 54; slot++) inventory.setItem(slot, divider.clone());
-        player.openInventory(inventory);
-        player.sendMessage("§7Kho lính: 36 ô đầu để chứa đồ; hàng cuối là tay chính, mũ, áo, quần, giày, tay phụ và giáp ngựa.");
-    }
+   private void openGear(Player player, MercenaryManager.Unit unit) {
+      Mob active = this.activeEntities.get(unit.id);
+      if (active != null && active.isValid()) {
+         this.captureEquipment(unit, active);
+      }
+
+      MercenaryManager.GearHolder holder = new MercenaryManager.GearHolder(player.getUniqueId(), unit.id);
+      Inventory inventory = Bukkit.createInventory(holder, 54, "Kho và trang bị #" + shortId(unit.id));
+      holder.inventory = inventory;
+
+      for (int slot = 0; slot < unit.inventory.length; slot++) {
+         inventory.setItem(slot, cloneOrNull(unit.inventory[slot]));
+      }
+
+      ItemStack divider = this.menuItem(Material.GRAY_STAINED_GLASS_PANE, " ", List.of());
+
+      for (int slot = 36; slot < 45; slot++) {
+         inventory.setItem(slot, divider.clone());
+      }
+
+      inventory.setItem(45, cloneOrNull(unit.equipment.get(EquipmentSlot.HAND)));
+      inventory.setItem(46, cloneOrNull(unit.equipment.get(EquipmentSlot.HEAD)));
+      inventory.setItem(47, cloneOrNull(unit.equipment.get(EquipmentSlot.CHEST)));
+      inventory.setItem(48, cloneOrNull(unit.equipment.get(EquipmentSlot.LEGS)));
+      inventory.setItem(49, cloneOrNull(unit.equipment.get(EquipmentSlot.FEET)));
+      inventory.setItem(50, cloneOrNull(unit.equipment.get(EquipmentSlot.OFF_HAND)));
+      inventory.setItem(51, cloneOrNull(unit.horseArmor));
+      inventory.setItem(52, divider.clone());
+      inventory.setItem(53, this.menuItem(Material.ARROW, "§eQuay lại menu lính", List.of("§7Lưu thay đổi và quay lại thông tin lính.")));
+      player.openInventory(inventory);
+      player.sendMessage("§7Kho lính: 36 ô đầu để chứa đồ; hàng cuối là các ô trang bị. Nút mũi tên dưới cùng bên phải để quay lại.");
+   }
 
     private void loadWelcomeGiftClaims() {
         if (!plugin.getDataFolder().exists() && !plugin.getDataFolder().mkdirs()) {
@@ -7858,55 +9193,62 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return holder instanceof GearHolder gearHolder && gearHolder.unit.equals(unitId);
     }
 
-    private void captureGearInventory(Player player, Unit unit, Inventory inventory) {
-        EnumMap<org.bukkit.inventory.EquipmentSlot, ItemStack> equipment =
-            new EnumMap<>(org.bukkit.inventory.EquipmentSlot.class);
-        List<ItemStack> stored = new ArrayList<>();
-        ItemStack bestHorseArmor = null;
-        for (int slot = 0; slot < inventory.getSize(); slot++) {
+   private void captureGearInventory(Player player, MercenaryManager.Unit unit, Inventory inventory) {
+      EnumMap<EquipmentSlot, ItemStack> equipment = new EnumMap<>(EquipmentSlot.class);
+      List<ItemStack> stored = new ArrayList<>();
+
+      for (int slot = 0; slot < inventory.getSize(); slot++) {
+         if (slot != 53) {
             ItemStack item = inventory.getItem(slot);
-            if (isGearDecorationSlot(slot) && isGearDecoration(item)) continue;
-            if (isHorseArmor(item)) {
-                if (bestHorseArmor == null || horseArmorScore(item) > horseArmorScore(bestHorseArmor)) {
-                    if (bestHorseArmor != null) stored.add(bestHorseArmor);
-                    bestHorseArmor = item.clone();
-                } else {
-                    stored.add(item.clone());
-                }
-                continue;
+            if (!this.isGearDecorationSlot(slot) || !this.isGearDecoration(item)) {
+               if (this.isHorseArmor(item)) {
+                  stored.add(item.clone());
+               } else {
+                  EquipmentSlot equipmentSlot = switch (slot) {
+                     case 45 -> EquipmentSlot.HAND;
+                     case 46 -> EquipmentSlot.HEAD;
+                     case 47 -> EquipmentSlot.CHEST;
+                     case 48 -> EquipmentSlot.LEGS;
+                     case 49 -> EquipmentSlot.FEET;
+                     case 50 -> EquipmentSlot.OFF_HAND;
+                     default -> null;
+                  };
+                  if (equipmentSlot != null) {
+                     if (item != null && !item.getType().isAir()) {
+                        if (this.validSoldierGear(item, equipmentSlot)) {
+                           equipment.put(equipmentSlot, item.clone());
+                        } else {
+                           stored.add(item.clone());
+                        }
+                     }
+                  } else {
+                     this.addGearItem(stored, item);
+                  }
+               }
             }
-            org.bukkit.inventory.EquipmentSlot equipmentSlot = switch (slot) {
-                case 45 -> org.bukkit.inventory.EquipmentSlot.HAND;
-                case 46 -> org.bukkit.inventory.EquipmentSlot.HEAD;
-                case 47 -> org.bukkit.inventory.EquipmentSlot.CHEST;
-                case 48 -> org.bukkit.inventory.EquipmentSlot.LEGS;
-                case 49 -> org.bukkit.inventory.EquipmentSlot.FEET;
-                case 50 -> org.bukkit.inventory.EquipmentSlot.OFF_HAND;
-                default -> null;
-            };
-            if (equipmentSlot != null) {
-                if (item != null && !item.getType().isAir()) equipment.put(equipmentSlot, item.clone());
-                continue;
-            }
-            addGearItem(stored, equipment, item);
-        }
-        unit.horseArmor = bestHorseArmor;
-        for (org.bukkit.inventory.EquipmentSlot slot : List.of(
-                org.bukkit.inventory.EquipmentSlot.HAND, org.bukkit.inventory.EquipmentSlot.HEAD,
-                org.bukkit.inventory.EquipmentSlot.CHEST, org.bukkit.inventory.EquipmentSlot.LEGS,
-                org.bukkit.inventory.EquipmentSlot.FEET, org.bukkit.inventory.EquipmentSlot.OFF_HAND)) {
-            unit.equipment.put(slot, cloneOrNull(equipment.get(slot)));
-        }
-        java.util.Arrays.fill(unit.inventory, null);
-        for (int index = 0; index < Math.min(unit.inventory.length, stored.size()); index++) {
-            unit.inventory[index] = stored.get(index).clone();
-        }
-        for (int index = unit.inventory.length; index < stored.size(); index++) {
-            Map<Integer, ItemStack> overflow = player.getInventory().addItem(stored.get(index).clone());
-            overflow.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
-            player.sendMessage("§eKho lính đầy; vật phẩm vượt giới hạn đã trả lại cho bạn.");
-        }
-    }
+         }
+      }
+
+      unit.horseArmor = null;
+
+      for (EquipmentSlot slot : List.of(
+         EquipmentSlot.HAND, EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET, EquipmentSlot.OFF_HAND
+      )) {
+         unit.equipment.put(slot, cloneOrNull(equipment.get(slot)));
+      }
+
+      Arrays.fill(unit.inventory, null);
+
+      for (int index = 0; index < Math.min(unit.inventory.length, stored.size()); index++) {
+         unit.inventory[index] = stored.get(index).clone();
+      }
+
+      for (int index = unit.inventory.length; index < stored.size(); index++) {
+         Map<Integer, ItemStack> overflow = player.getInventory().addItem(new ItemStack[]{stored.get(index).clone()});
+         overflow.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+         player.sendMessage("§eKho lính đầy; vật phẩm vượt giới hạn đã trả lại cho bạn.");
+      }
+   }
 
     private boolean isGearDecorationSlot(int slot) {
         return (slot >= 36 && slot < 45) || slot >= 52;
@@ -7917,14 +9259,11 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             && item.hasItemMeta() && " ".equals(item.getItemMeta().getDisplayName());
     }
 
-    private void addGearItem(List<ItemStack> stored,
-                             EnumMap<org.bukkit.inventory.EquipmentSlot, ItemStack> equipment,
-                             ItemStack item) {
-        if (item == null || item.getType().isAir()) return;
-        org.bukkit.inventory.EquipmentSlot slot = detectedEquipmentSlot(item.getType());
-        if (slot != null && !equipment.containsKey(slot)) equipment.put(slot, item.clone());
-        else stored.add(item.clone());
-    }
+   private void addGearItem(List<ItemStack> stored, ItemStack item) {
+      if (item != null && !item.getType().isAir()) {
+         stored.add(item.clone());
+      }
+   }
 
     private org.bukkit.inventory.EquipmentSlot detectedEquipmentSlot(Material material) {
         String name = material.name();
@@ -7946,6 +9285,132 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         }
         return null;
     }
+
+   private boolean handleSoldierGearCommand(CommandSender sender, String[] args) {
+      if (!sender.hasPermission("vnmine.command.army.admin")) {
+         sender.sendMessage("§cBạn không có quyền cấp trang bị dành cho lính.");
+         return true;
+      }
+
+      if (args.length == 2 && args[1].equalsIgnoreCase("give")) {
+         if (sender instanceof Player player) {
+            this.openAdminItemPlayers(player, 0);
+            return true;
+         } else {
+            sender.sendMessage("§cConsole cần dùng đủ tham số: /vnarmy item give <người chơi> <class> <vật-liệu> <sao> <set> <món|set>.");
+            return true;
+         }
+      } else if (args.length == 8 && args[1].equalsIgnoreCase("give")) {
+         Player target = Bukkit.getPlayerExact(args[2]);
+         String classId = this.normalizeClass(args[3]);
+         String material = this.normalizeGearMaterial(args[4]);
+         int stars = parsePositiveInt(args[5]);
+         String setId = this.normalizeGearSet(args[6]);
+         String itemSlot = args[7].toLowerCase(Locale.ROOT);
+         if (target != null
+            && classId != null
+            && material != null
+            && stars >= 1
+            && stars <= 5
+            && setId != null
+            && this.gearSetIds(classId).contains(setId)
+            && (itemSlot.equals("set") || this.parseGearSlot(itemSlot) != null)) {
+            this.giveSoldierGear(target, classId, material, stars, setId, itemSlot);
+            sender.sendMessage(
+               "§aĐã cấp "
+                  + (itemSlot.equals("set") ? "trọn set" : "món trang bị")
+                  + " §e"
+                  + this.classDisplay(classId)
+                  + " "
+                  + this.gearMaterialDisplay(material)
+                  + " "
+                  + "★".repeat(stars)
+                  + " §acho §e"
+                  + target.getName()
+                  + "§a."
+            );
+            target.sendMessage(
+               "§aBạn nhận được "
+                  + (itemSlot.equals("set") ? "bộ trang bị lính" : "trang bị lính")
+                  + " §e"
+                  + this.classDisplay(classId)
+                  + " "
+                  + this.gearMaterialDisplay(material)
+                  + " "
+                  + "★".repeat(stars)
+                  + "§a. Chỉ lính mới có thể trang bị vật phẩm này."
+            );
+            return true;
+         } else {
+            sender.sendMessage("§cNgười chơi phải online và class, vật liệu, sao, set, slot phải hợp lệ.");
+            return true;
+         }
+      } else {
+         sender.sendMessage(
+            "§eSử dụng: /vnarmy item give <người chơi> <class> <da|đồng|sắt|vàng|kim-cương|netherite> <sao 1-5> <set> <helmet|chestplate|leggings|boots|mainhand|offhand|set>"
+         );
+         return true;
+      }
+   }
+
+   private void giveSoldierGear(Player target, String classId, String material, int stars, String setId, String itemSlot) {
+      if (itemSlot.equals("set")) {
+         for (EquipmentSlot slot : SOLDIER_GEAR_SLOTS) {
+            this.giveItem(target, this.createSoldierGearItem(classId, material, stars, setId, slot));
+         }
+      } else {
+         EquipmentSlot slot = this.parseGearSlot(itemSlot);
+         if (slot == null) {
+            throw new IllegalArgumentException("Unsupported mercenary gear slot.");
+         }
+
+         this.giveItem(target, this.createSoldierGearItem(classId, material, stars, setId, slot));
+      }
+   }
+
+   private String normalizeGearMaterial(String input) {
+      if (input == null) {
+         return null;
+      }
+
+      String normalized = input.toLowerCase(Locale.ROOT).replace('-', '_');
+      return GEAR_MATERIALS.contains(normalized) ? normalized : null;
+   }
+
+   private String normalizeGearSet(String input) {
+      return input != null && input.matches("[a-z0-9_-]{1,32}") ? input.toLowerCase(Locale.ROOT) : null;
+   }
+
+   private EquipmentSlot parseGearSlot(String value) {
+      return switch (value.toLowerCase(Locale.ROOT)) {
+         case "helmet", "head" -> EquipmentSlot.HEAD;
+         case "chestplate", "chest" -> EquipmentSlot.CHEST;
+         case "leggings", "legs" -> EquipmentSlot.LEGS;
+         case "boots", "feet" -> EquipmentSlot.FEET;
+         case "mainhand", "hand" -> EquipmentSlot.HAND;
+         case "offhand", "off_hand" -> EquipmentSlot.OFF_HAND;
+         default -> null;
+      };
+   }
+
+   private List<String> gearSetIds(String classId) {
+      ConfigurationSection section = this.settings.getConfigurationSection("gear-system.sets." + classId);
+      return section != null && !section.getKeys(false).isEmpty()
+         ? section.getKeys(false).stream().filter(key -> key.matches("[a-z0-9_-]{1,32}")).sorted(String.CASE_INSENSITIVE_ORDER).toList()
+         : List.of("standard");
+   }
+
+   private String gearMaterialDisplay(String material) {
+      return switch (material) {
+         case "leather" -> "Da";
+         case "copper" -> "Đồng";
+         case "iron" -> "Sắt";
+         case "gold" -> "Vàng";
+         case "diamond" -> "Kim cương";
+         case "netherite" -> "Netherite";
+         default -> material;
+      };
+   }
 
     private boolean handleTokenCommand(CommandSender sender, String[] args) {
         if (!sender.hasPermission(ADMIN_PERMISSION)) {
@@ -8080,55 +9545,59 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return generic;
     }
 
-    private Mob spawnUnit(Unit unit, Location location) {
-        EntityType type = configuredEntityType(unit);
-        if (type == null || !type.isAlive()) return null;
-        String configuredType = settings.getString("classes." + unit.unitClass + ".entity-type", "");
-        if ("berserker".equals(unit.unitClass) && "PIGLIN_BRUTE".equalsIgnoreCase(configuredType)) {
-            plugin.getLogger().warning("[Army] Refusing to spawn PIGLIN_BRUTE for berserker; "
-                + "using ZOMBIFIED_PIGLIN.");
-        }
-        Entity entity;
-        try {
+   private Mob spawnUnit(MercenaryManager.Unit unit, Location location) {
+      EntityType type = this.configuredEntityType(unit);
+      if (type != null && type.isAlive()) {
+         String configuredType = this.settings.getString("classes." + unit.unitClass + ".entity-type", "");
+         if ("berserker".equals(unit.unitClass) && "PIGLIN_BRUTE".equalsIgnoreCase(configuredType)) {
+            this.plugin.getLogger().warning("[Army] Refusing to spawn PIGLIN_BRUTE for berserker; using ZOMBIFIED_PIGLIN.");
+         }
+
+         Entity entity;
+         try {
             entity = location.getWorld().spawnEntity(location, type);
-        } catch (IllegalArgumentException exception) {
-            plugin.getLogger().log(Level.WARNING, "[Army] Could not spawn class " + unit.unitClass + ".", exception);
+         } catch (IllegalArgumentException exception) {
+            this.plugin.getLogger().log(Level.WARNING, "[Army] Could not spawn class " + unit.unitClass + ".", exception);
             return null;
-        }
-        if (!(entity instanceof Mob mob)) {
-            entity.remove();
-            plugin.getLogger().warning("[Army] Configured entity type is not a Mob: " + type.name());
-            return null;
-        }
-        if (mob instanceof Villager) {
+         }
+
+         if (entity instanceof Mob mob) {
+            if (mob instanceof Villager) {
+               mob.setAware(true);
+               mob.setTarget(null);
+            }
+
+            PersistentDataContainer pdc = mob.getPersistentDataContainer();
+            pdc.set(this.unitKey, PersistentDataType.STRING, unit.id.toString());
+            pdc.set(this.ownerKey, PersistentDataType.STRING, unit.owner.toString());
+            this.preventZombification(mob);
+            if ("paladin".equals(unit.unitClass)) {
+               Horse horse = this.getOrCreateUnitHorse(unit, location);
+               if (horse != null) {
+                  horse.addPassenger(mob);
+               }
+            }
+
+            mob.setPersistent(true);
+            mob.setRemoveWhenFarAway(false);
+            mob.setCanPickupItems(false);
             mob.setAware(true);
             mob.setTarget(null);
-        }
-        PersistentDataContainer pdc = mob.getPersistentDataContainer();
-        pdc.set(unitKey, PersistentDataType.STRING, unit.id.toString());
-        pdc.set(ownerKey, PersistentDataType.STRING, unit.owner.toString());
-        preventZombification(mob);
-        if ("paladin".equals(unit.unitClass)) {
-            Horse horse = getOrCreateUnitHorse(unit, location);
-            if (horse != null) {
-                horse.addPassenger(mob);
-            }
-        }
-        mob.setPersistent(true);
-        mob.setRemoveWhenFarAway(false);
-        mob.setCanPickupItems(false);
-        mob.setAware(true);
-        mob.setTarget(null);
-        updateEntityName(unit, mob);
-        applyStats(unit, mob);
-        org.bukkit.inventory.EquipmentSlot handSlot = org.bukkit.inventory.EquipmentSlot.HAND;
-        ItemStack savedWeapon = unit.equipment.get(handSlot);
-        unit.equipment.put(handSlot, selectBestWeapon(unit, savedWeapon, configuredStartingWeapon(unit)));
-        applyEquipment(unit, mob);
-        unit.entityId = mob.getUniqueId();
-        updateLocation(unit, mob.getLocation());
-        return mob;
-    }
+            this.updateEntityName(unit, mob);
+            this.applyEquipment(unit, mob);
+            this.applyStats(unit, mob);
+            unit.entityId = mob.getUniqueId();
+            this.updateLocation(unit, mob.getLocation());
+            return mob;
+         } else {
+            entity.remove();
+            this.plugin.getLogger().warning("[Army] Configured entity type is not a Mob: " + type.name());
+            return null;
+         }
+      } else {
+         return null;
+      }
+   }
 
     private EntityType configuredEntityType(Unit unit) {
         EntityType configured = EntityType.fromName(
@@ -8199,164 +9668,133 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         applyStats(unit, mob, true);
     }
 
-    private void applyStats(Unit unit, Mob mob, boolean refillHealth) {
-        double baseHealth = settings.getDouble("classes." + unit.unitClass + ".base-health", 24.0);
-        double healthPerLevel = settings.getDouble("classes." + unit.unitClass + ".health-per-level", 4.0);
-        int statRank = statRank(unit);
-        double oldMaximumHealth = maxHealth(mob);
-        double oldHealth = mob.getHealth();
-        double maxHealth;
-        double damage;
-        double armor;
-        if ("guardian".equals(unit.unitClass)) {
-            GuardianStats stats = guardianStats(unit);
-            maxHealth = stats.maxHealth();
-            damage = stats.damage();
-            armor = stats.armor();
-        } else {
-            maxHealth = Math.max(1.0, baseHealth + Math.max(0, statRank - 1) * healthPerLevel);
-            double baseDamage = settings.getDouble("classes." + unit.unitClass + ".base-damage", 4.0);
-            double damagePerLevel = settings.getDouble("classes." + unit.unitClass + ".damage-per-level", 0.5);
-            damage = Math.max(0.0, baseDamage + Math.max(0, statRank - 1) * damagePerLevel);
-            double baseArmor = settings.getDouble("classes." + unit.unitClass + ".base-armor", 0.0);
-            double armorPerLevel = settings.getDouble("classes." + unit.unitClass + ".armor-per-level", 0.0);
-            armor = Math.max(0.0, baseArmor + Math.max(0, statRank - 1) * armorPerLevel);
-        }
-        if (mob.getAttribute(Attribute.MAX_HEALTH) != null) {
-            mob.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth);
-            double updatedHealth = refillHealth || oldMaximumHealth <= 0.0
-                ? maxHealth : Math.min(maxHealth, oldHealth * maxHealth / oldMaximumHealth);
-            mob.setHealth(Math.max(0.0, updatedHealth));
-        }
-        if (mob.getAttribute(Attribute.ATTACK_DAMAGE) != null) {
-            mob.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(damage);
-        }
-        if (mob.getAttribute(Attribute.ARMOR) != null) {
-            mob.getAttribute(Attribute.ARMOR).setBaseValue(armor);
-        }
-    }
+   private void applyStats(MercenaryManager.Unit unit, Mob mob, boolean refillHealth) {
+      double baseHealth = this.settings.getDouble("classes." + unit.unitClass + ".base-health", 24.0);
+      double healthPerLevel = this.settings.getDouble("classes." + unit.unitClass + ".health-per-level", 4.0);
+      int statRank = this.statRank(unit);
+      double oldMaximumHealth = maxHealth(mob);
+      double oldHealth = mob.getHealth();
+      double maxHealth;
+      double damage;
+      double armor;
+      if ("guardian".equals(unit.unitClass)) {
+         MercenaryManager.GuardianStats stats = this.guardianStats(unit);
+         maxHealth = stats.maxHealth();
+         damage = stats.damage();
+         armor = stats.armor();
+      } else {
+         maxHealth = Math.max(1.0, baseHealth + Math.max(0, statRank - 1) * healthPerLevel);
+         double baseDamage = this.settings.getDouble("classes." + unit.unitClass + ".base-damage", 4.0);
+         double damagePerLevel = this.settings.getDouble("classes." + unit.unitClass + ".damage-per-level", 0.5);
+         damage = Math.max(0.0, baseDamage + Math.max(0, statRank - 1) * damagePerLevel);
+         double baseArmor = this.settings.getDouble("classes." + unit.unitClass + ".base-armor", 0.0);
+         double armorPerLevel = this.settings.getDouble("classes." + unit.unitClass + ".armor-per-level", 0.0);
+         armor = Math.max(0.0, baseArmor + Math.max(0, statRank - 1) * armorPerLevel);
+      }
 
-    private void applyEquipment(Unit unit, Mob mob) {
-        EntityEquipment equipment = mob.getEquipment();
-        if (equipment == null) return;
-        ItemStack mainHand = selectBestWeapon(unit,
-            unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HAND), configuredStartingWeapon(unit));
-        ItemStack offHand = selectOffhandItem(unit,
-            unit.equipment.get(org.bukkit.inventory.EquipmentSlot.OFF_HAND));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HAND, cloneOrNull(mainHand));
-        unit.equipment.put(org.bukkit.inventory.EquipmentSlot.OFF_HAND, cloneOrNull(offHand));
-        equipment.setItemInMainHand(mainHand);
-        equipment.setHelmet(cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.HEAD)));
-        equipment.setChestplate(cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.CHEST)));
-        equipment.setLeggings(cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.LEGS)));
-        equipment.setBoots(cloneOrNull(unit.equipment.get(org.bukkit.inventory.EquipmentSlot.FEET)));
-        equipment.setItemInOffHand(offHand);
-        equipment.setItemInMainHandDropChance(0.0f);
-        equipment.setHelmetDropChance(0.0f);
-        equipment.setChestplateDropChance(0.0f);
-        equipment.setLeggingsDropChance(0.0f);
-        equipment.setBootsDropChance(0.0f);
-        equipment.setItemInOffHandDropChance(0.0f);
-    }
+      MercenaryManager.GearStats gear = this.soldierGearStats(unit);
+      maxHealth = Math.min(1024.0, maxHealth + gear.health());
+      armor = Math.min(100.0, armor + gear.armor());
+      damage = Math.max(0.0, damage * (1.0 + gear.damagePercent() / 100.0));
+      if (mob.getAttribute(Attribute.MAX_HEALTH) != null) {
+         mob.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth);
+         double updatedHealth = !refillHealth && !(oldMaximumHealth <= 0.0) ? Math.min(maxHealth, oldHealth * maxHealth / oldMaximumHealth) : maxHealth;
+         mob.setHealth(Math.max(0.0, updatedHealth));
+      }
 
-    private ItemStack configuredStartingWeapon(Unit unit) {
-        String configuredWeapon = settings.getString("classes." + unit.unitClass + ".starting-weapon", "");
-        Material material = Material.matchMaterial(configuredWeapon);
-        if (material == null && "paladin".equals(unit.unitClass)
-                && "IRON_SPEAR".equalsIgnoreCase(configuredWeapon)) {
-            material = Material.TRIDENT;
-        }
-        if (material == null && "paladin".equals(unit.unitClass)
-                && "WOODEN_SPEAR".equalsIgnoreCase(configuredWeapon)) {
-            material = Material.STICK;
-        }
-        return material == null || material.isAir() ? null : new ItemStack(material);
-    }
+      if (mob.getAttribute(Attribute.ATTACK_DAMAGE) != null) {
+         mob.getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(damage);
+      }
 
-    private ItemStack selectBestWeapon(Unit unit, ItemStack current, ItemStack starting) {
-        ItemStack preferred = selectPreferredHandItem(unit, current, "preferred-main-hand-items");
-        if (preferred != null) return preferred;
-        if (!settings.getStringList("classes." + unit.unitClass + ".preferred-main-hand-items").isEmpty()
-                && (starting == null || starting.getType().isAir())) return cloneOrNull(current);
-        ItemStack best = isCompatibleWeapon(current, starting) ? current : null;
-        int bestInventorySlot = -1;
-        if (isWeaponItem(starting) && (best == null || weaponScore(starting) > weaponScore(best))) best = starting;
-        for (int slot = 0; slot < unit.inventory.length; slot++) {
-            ItemStack candidate = unit.inventory[slot];
-            if (isCompatibleWeapon(candidate, starting)
-                    && (best == null || weaponScore(candidate) > weaponScore(best))) {
-                best = candidate;
-                bestInventorySlot = slot;
+      if (mob.getAttribute(Attribute.ARMOR) != null) {
+         mob.getAttribute(Attribute.ARMOR).setBaseValue(armor);
+      }
+   }
+
+   private void applyEquipment(MercenaryManager.Unit unit, Mob mob) {
+      EntityEquipment equipment = mob.getEquipment();
+      if (equipment != null) {
+         this.sanitizeUnitGear(unit);
+
+         for (EquipmentSlot slot : List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)) {
+            ItemStack current = unit.equipment.get(slot);
+            ItemStack selected = this.selectBestSoldierGear(slot, current);
+            if (selected != null) {
+               unit.equipment.put(slot, selected);
+            } else if (current == null || this.validSoldierGear(current, slot)) {
+               unit.equipment.remove(slot);
             }
-        }
-        if (bestInventorySlot >= 0) {
-            unit.inventory[bestInventorySlot] = cloneOrNull(current);
-        } else if (current != null && !current.getType().isAir() && !isWeaponItem(current)
-                && best != current && !storeInUnitInventory(unit, current)) {
-            return current.clone();
-        }
-        return best == null ? cloneOrNull(current) : best.clone();
-    }
+         }
 
-    private ItemStack selectOffhandItem(Unit unit, ItemStack current) {
-        ItemStack preferred = selectPreferredHandItem(unit, current, "preferred-offhand-items");
-        if (preferred != null) return preferred;
-        ItemStack fallback = configuredStartingOffhand(unit);
-        if (fallback != null) return fallback;
-        return cloneOrNull(current);
-    }
+         ItemStack currentMainHand = unit.equipment.get(EquipmentSlot.HAND);
+         ItemStack mainHand = this.selectBestSoldierGear(EquipmentSlot.HAND, currentMainHand);
+         if (mainHand != null) {
+            unit.equipment.put(EquipmentSlot.HAND, mainHand.clone());
+         } else if (currentMainHand == null || this.validSoldierGear(currentMainHand, EquipmentSlot.HAND)) {
+            unit.equipment.remove(EquipmentSlot.HAND);
+         }
 
-    private ItemStack selectPreferredHandItem(Unit unit, ItemStack current, String preferenceKey) {
-        List<String> preferences = settings.getStringList(
-            "classes." + unit.unitClass + "." + preferenceKey);
-        if (preferences.isEmpty()) return null;
-        for (String preference : preferences) {
-            if (matchesPreferredItem(current, preference)) return current.clone();
-            for (int slot = 0; slot < unit.inventory.length; slot++) {
-                ItemStack candidate = unit.inventory[slot];
-                if (!matchesPreferredItem(candidate, preference)) continue;
-                unit.inventory[slot] = cloneOrNull(current);
-                return candidate.clone();
-            }
-        }
-        return null;
-    }
+         if (mainHand == null && !unit.gearCustomized) {
+            mainHand = this.configuredStartingWeapon(unit);
+         }
 
-    private boolean matchesPreferredItem(ItemStack item, String preference) {
-        if (item == null || item.getType().isAir()) return false;
-        Material preferred = Material.matchMaterial(preference);
-        if (preferred == null || item.getType() != preferred) return false;
-        if (preferred == Material.POTION) return isHealingPotionItem(item);
-        if (preferred == Material.SPLASH_POTION || preferred == Material.LINGERING_POTION) {
-            return isBeneficialThrowablePotion(item);
-        }
-        return true;
-    }
+         ItemStack currentOffHand = unit.equipment.get(EquipmentSlot.OFF_HAND);
+         ItemStack offHand = this.selectBestSoldierGear(EquipmentSlot.OFF_HAND, currentOffHand);
+         if (offHand != null) {
+            unit.equipment.put(EquipmentSlot.OFF_HAND, offHand.clone());
+         } else if (currentOffHand == null || this.validSoldierGear(currentOffHand, EquipmentSlot.OFF_HAND)) {
+            unit.equipment.remove(EquipmentSlot.OFF_HAND);
+         }
 
-    private ItemStack configuredStartingOffhand(Unit unit) {
-        Material material = Material.matchMaterial(
-            settings.getString("classes." + unit.unitClass + ".starting-offhand", "AIR"));
-        return material == null || material.isAir() ? null : new ItemStack(material);
-    }
+         if (offHand == null && !unit.gearCustomized) {
+            offHand = this.configuredStartingOffhand(unit);
+         }
 
-    private boolean isCompatibleWeapon(ItemStack candidate, ItemStack starting) {
-        if (!isWeaponItem(candidate)) return false;
-        return starting == null || starting.getType().isAir()
-            || weaponFamily(candidate.getType()).equals(weaponFamily(starting.getType()));
-    }
+         equipment.setItemInMainHand(mainHand);
+         equipment.setHelmet(
+            this.validSoldierGear(unit.equipment.get(EquipmentSlot.HEAD), EquipmentSlot.HEAD) ? cloneOrNull(unit.equipment.get(EquipmentSlot.HEAD)) : null
+         );
+         equipment.setChestplate(
+            this.validSoldierGear(unit.equipment.get(EquipmentSlot.CHEST), EquipmentSlot.CHEST) ? cloneOrNull(unit.equipment.get(EquipmentSlot.CHEST)) : null
+         );
+         equipment.setLeggings(
+            this.validSoldierGear(unit.equipment.get(EquipmentSlot.LEGS), EquipmentSlot.LEGS) ? cloneOrNull(unit.equipment.get(EquipmentSlot.LEGS)) : null
+         );
+         equipment.setBoots(
+            this.validSoldierGear(unit.equipment.get(EquipmentSlot.FEET), EquipmentSlot.FEET) ? cloneOrNull(unit.equipment.get(EquipmentSlot.FEET)) : null
+         );
+         equipment.setItemInOffHand(offHand);
+         equipment.setItemInMainHandDropChance(0.0F);
+         equipment.setHelmetDropChance(0.0F);
+         equipment.setChestplateDropChance(0.0F);
+         equipment.setLeggingsDropChance(0.0F);
+         equipment.setBootsDropChance(0.0F);
+         equipment.setItemInOffHandDropChance(0.0F);
+      }
+   }
 
-    private String weaponFamily(Material material) {
-        String name = material.name();
-        if (name.equals("BOW") || name.equals("CROSSBOW")) return "ranged";
-        if (name.equals("TRIDENT") || name.endsWith("_SPEAR")) return "spear";
-        if (name.endsWith("_HOE")) return "hoe";
-        if (name.equals("SNOWBALL")) return "snowball";
-        if (name.equals("FIRE_CHARGE")) return "fireball";
-        if (name.equals("BLAZE_ROD")) return "magic";
-        if (name.equals("STICK") || name.endsWith("_SWORD") || name.endsWith("_AXE")
-                || name.equals("MACE")) return "melee";
-        return name;
-    }
+   private ItemStack configuredStartingWeapon(MercenaryManager.Unit unit) {
+      String configuredWeapon = this.settings.getString("classes." + unit.unitClass + ".starting-weapon", "");
+      Material material = Material.matchMaterial(configuredWeapon);
+      if (material == null && "paladin".equals(unit.unitClass) && "IRON_SPEAR".equalsIgnoreCase(configuredWeapon)) {
+         material = Material.TRIDENT;
+      }
+
+      if (material == null && "paladin".equals(unit.unitClass) && "WOODEN_SPEAR".equalsIgnoreCase(configuredWeapon)) {
+         material = Material.STICK;
+      }
+
+      return material != null && !material.isAir() ? this.markNativeSoldierGear(new ItemStack(material), unit.unitClass, EquipmentSlot.HAND) : null;
+   }
+
+   private ItemStack selectBestSoldierGear(EquipmentSlot slot, ItemStack current) {
+      return this.validSoldierGear(current, slot) ? current.clone() : null;
+   }
+
+   private ItemStack configuredStartingOffhand(MercenaryManager.Unit unit) {
+      Material material = Material.matchMaterial(this.settings.getString("classes." + unit.unitClass + ".starting-offhand", "AIR"));
+      return material != null && !material.isAir() ? this.markNativeSoldierGear(new ItemStack(material), unit.unitClass, EquipmentSlot.OFF_HAND) : null;
+   }
 
     private boolean isWeaponItem(ItemStack item) {
         if (item == null || item.getType().isAir()) return false;
@@ -8381,20 +9819,6 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
             }
         }
         return false;
-    }
-
-    private int weaponScore(ItemStack item) {
-        String material = item.getType().name();
-        int tier = material.startsWith("NETHERITE_") || material.equals("MACE") ? 6
-            : material.startsWith("DIAMOND_") ? 5
-            : material.startsWith("IRON_") || material.equals("TRIDENT") ? 4
-            : material.startsWith("STONE_") ? 3
-            : material.startsWith("GOLDEN_") ? 2
-            : material.startsWith("WOODEN_") ? 1
-            : material.equals("STICK") ? 0 : -1;
-        int enchantmentBonus = item.getEnchantments().values().stream()
-            .mapToInt(Integer::intValue).sum();
-        return tier * 100 + enchantmentBonus;
     }
 
     private void updateEntityName(Unit unit, Mob mob) {
@@ -8436,22 +9860,46 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         statusPacketListener.remove(unitId);
     }
 
-    private void captureEquipment(Unit unit, Mob mob) {
-        EntityEquipment equipment = mob.getEquipment();
-        if (equipment == null) return;
-        if (mob instanceof PiglinAbstract) {
-            reconcileEquipment(unit, mob, false);
-        } else {
-            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HAND, cloneOrNull(equipment.getItemInMainHand()));
-            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.HEAD, cloneOrNull(equipment.getHelmet()));
-            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.CHEST, cloneOrNull(equipment.getChestplate()));
-            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.LEGS, cloneOrNull(equipment.getLeggings()));
-            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.FEET, cloneOrNull(equipment.getBoots()));
-            unit.equipment.put(org.bukkit.inventory.EquipmentSlot.OFF_HAND, cloneOrNull(equipment.getItemInOffHand()));
-        }
-        Entity mount = mountByUnit.containsKey(unit.id) ? Bukkit.getEntity(mountByUnit.get(unit.id)) : null;
-        if (mount instanceof Horse horse && horse.isValid()) captureHorseArmor(unit.id, horse);
-    }
+   private void captureEquipment(MercenaryManager.Unit unit, Mob mob) {
+      EntityEquipment equipment = mob.getEquipment();
+      if (equipment != null) {
+         if (mob instanceof PiglinAbstract) {
+            this.reconcileEquipment(unit, mob, false);
+         } else {
+            unit.equipment.put(EquipmentSlot.HAND, cloneOrNull(equipment.getItemInMainHand()));
+            unit.equipment.put(EquipmentSlot.HEAD, cloneOrNull(equipment.getHelmet()));
+            unit.equipment.put(EquipmentSlot.CHEST, cloneOrNull(equipment.getChestplate()));
+            unit.equipment.put(EquipmentSlot.LEGS, cloneOrNull(equipment.getLeggings()));
+            unit.equipment.put(EquipmentSlot.FEET, cloneOrNull(equipment.getBoots()));
+            unit.equipment.put(EquipmentSlot.OFF_HAND, cloneOrNull(equipment.getItemInOffHand()));
+         }
+
+         this.sanitizeUnitGear(unit);
+         equipment.setItemInMainHand(
+            this.validSoldierGear(unit.equipment.get(EquipmentSlot.HAND), EquipmentSlot.HAND) ? cloneOrNull(unit.equipment.get(EquipmentSlot.HAND)) : null
+         );
+         equipment.setHelmet(
+            this.validSoldierGear(unit.equipment.get(EquipmentSlot.HEAD), EquipmentSlot.HEAD) ? cloneOrNull(unit.equipment.get(EquipmentSlot.HEAD)) : null
+         );
+         equipment.setChestplate(
+            this.validSoldierGear(unit.equipment.get(EquipmentSlot.CHEST), EquipmentSlot.CHEST) ? cloneOrNull(unit.equipment.get(EquipmentSlot.CHEST)) : null
+         );
+         equipment.setLeggings(
+            this.validSoldierGear(unit.equipment.get(EquipmentSlot.LEGS), EquipmentSlot.LEGS) ? cloneOrNull(unit.equipment.get(EquipmentSlot.LEGS)) : null
+         );
+         equipment.setBoots(
+            this.validSoldierGear(unit.equipment.get(EquipmentSlot.FEET), EquipmentSlot.FEET) ? cloneOrNull(unit.equipment.get(EquipmentSlot.FEET)) : null
+         );
+         equipment.setItemInOffHand(
+            this.validSoldierGear(unit.equipment.get(EquipmentSlot.OFF_HAND), EquipmentSlot.OFF_HAND)
+               ? cloneOrNull(unit.equipment.get(EquipmentSlot.OFF_HAND))
+               : null
+         );
+         if ((this.mountByUnit.containsKey(unit.id) ? Bukkit.getEntity(this.mountByUnit.get(unit.id)) : null) instanceof Horse horse && horse.isValid()) {
+            this.captureHorseArmor(unit.id, horse);
+         }
+      }
+   }
 
     private Mob findExistingEntity(Unit unit) {
         if (unit.entityId != null) {
@@ -8839,17 +10287,17 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return copy;
     }
 
-    private static String slotPath(org.bukkit.inventory.EquipmentSlot slot) {
-        return switch (slot) {
-            case HAND -> "main-hand";
-            case HEAD -> "helmet";
-            case CHEST -> "chestplate";
-            case LEGS -> "leggings";
-            case FEET -> "boots";
-            case OFF_HAND -> "off-hand";
-            default -> slot.name().toLowerCase(Locale.ROOT);
-        };
-    }
+   private static String slotPath(EquipmentSlot slot) {
+      return switch (slot) {
+         case HEAD -> "helmet";
+         case CHEST -> "chestplate";
+         case LEGS -> "leggings";
+         case FEET -> "boots";
+         case HAND -> "main-hand";
+         case OFF_HAND -> "off-hand";
+         default -> slot.name().toLowerCase(Locale.ROOT);
+      };
+   }
 
     private static List<String> matching(String input, String... options) {
         String prefix = input.toLowerCase(Locale.ROOT);
@@ -8858,29 +10306,38 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         return matches;
     }
 
-    private void sendHelp(CommandSender sender) {
-        sender.sendMessage("§6§lQuản lý lính đánh thuê:");
-        sender.sendMessage("§e/vnarmy gui §7- Mở giao diện quản lý đội quân.");
-        sender.sendMessage("§e/vnarmy list [user] §7- Xem đội quân của bạn; admin có thể xem người chơi khác.");
-        sender.sendMessage("§e/vnarmy hire <loại> <bậc> §7- Thuê bằng token, XP và vật phẩm.");
-        sender.sendMessage("§e/vnarmy recall [ID] | rest [ID] §7- Gọi tối đa " + maxDeployedUnits
-            + " lính bậc/level cao nhất hoặc gọi/nghỉ một lính.");
-        sender.sendMessage("§e/vnarmy rename <ID> <tên mới> §7- Đổi tên lính.");
-        sender.sendMessage("§e/vnarmy attack | defend | protect §7- Đổi xu hướng AI của cả đội.");
-        sender.sendMessage("§e/vnarmy gear <ID> §7- Mở kho trang bị cho một lính.");
-        sender.sendMessage("§e/vnarmy mute <ID> §7- Bật/tắt âm thanh của một lính.");
-        sender.sendMessage("§e/vnarmy remove <ID> §7- Xóa lính khỏi đội của bạn.");
-        if (sender.hasPermission(ADMIN_PERMISSION)) {
-            sender.sendMessage("§e/vnarmy remove <user> <ID> §7- Xóa lính của người chơi.");
-            sender.sendMessage("§e/vnarmy clear <user> §7- Xóa toàn bộ lính của người chơi.");
-            sender.sendMessage("§e/vnarmy give <người chơi> token <tier> §7- Cấp lệnh triệu hồi.");
-            sender.sendMessage("§e/vnarmy give <người chơi> army <loại> <tier> §7- Cấp lính trực tiếp.");
-        }
-        sender.sendMessage("§7Loại lính: " + String.join(", ", getClassIds()));
-        sender.sendMessage("§7Bậc thuê: " + String.join(", ", getTierIds())
-            + " §8| §7Cấp tối đa: §f" + maxLevel + " §8| §7Sở hữu: §f" + maxUnits
-            + " §8| §7Triệu hồi: §f" + maxDeployedUnits);
-    }
+   private void sendHelp(CommandSender sender) {
+      sender.sendMessage("§6§lQuản lý lính đánh thuê:");
+      sender.sendMessage("§e/vnarmy gui §7- Mở giao diện quản lý đội quân.");
+      sender.sendMessage("§e/vnarmy list [user] §7- Xem đội quân của bạn; admin có thể xem người chơi khác.");
+      sender.sendMessage("§e/vnarmy hire <loại> <bậc> §7- Thuê bằng token, XP và vật phẩm.");
+      sender.sendMessage("§e/vnarmy recall [ID] | rest [ID] §7- Gọi tối đa " + this.maxDeployedUnits + " lính bậc/level cao nhất hoặc gọi/nghỉ một lính.");
+      sender.sendMessage("§e/vnarmy rename <ID> <tên mới> §7- Đổi tên lính.");
+      sender.sendMessage("§e/vnarmy attack | defend | protect §7- Đổi xu hướng AI của cả đội.");
+      sender.sendMessage("§e/vnarmy gear <ID> §7- Mở kho trang bị cho một lính.");
+      sender.sendMessage("§e/vnarmy mute <ID> §7- Bật/tắt âm thanh của một lính.");
+      sender.sendMessage("§e/vnarmy remove <ID> §7- Xóa lính khỏi đội của bạn.");
+      if (sender.hasPermission("vnmine.command.army.admin")) {
+         sender.sendMessage("§e/vnarmy remove <user> <ID> §7- Xóa lính của người chơi.");
+         sender.sendMessage("§e/vnarmy clear <user> §7- Xóa toàn bộ lính của người chơi.");
+         sender.sendMessage("§e/vnarmy give <người chơi> token <tier> §7- Cấp lệnh triệu hồi.");
+         sender.sendMessage("§e/vnarmy give <người chơi> army <loại> <tier> §7- Cấp lính trực tiếp.");
+         sender.sendMessage("§e/vnarmy item give §7- Mở GUI cấp trang bị lính.");
+         sender.sendMessage("§e/vnarmy item give <người chơi> <class> <vật liệu> <sao> <set> <món|set> §7- Cấp trực tiếp trang bị lính.");
+      }
+
+      sender.sendMessage("§7Loại lính: " + String.join(", ", this.getClassIds()));
+      sender.sendMessage(
+         "§7Bậc thuê: "
+            + String.join(", ", this.getTierIds())
+            + " §8| §7Cấp tối đa: §f"
+            + this.maxLevel
+            + " §8| §7Sở hữu: §f"
+            + this.maxUnits
+            + " §8| §7Triệu hồi: §f"
+            + this.maxDeployedUnits
+      );
+   }
 
     private void cleanupFrostEffects() {
         for (BukkitTask task : frostSkillTasks) task.cancel();
@@ -8950,4 +10407,325 @@ public final class MercenaryManager implements CommandExecutor, TabCompleter, Li
         namePacketListener.close();
         statusPacketListener.close();
     }
+
+   private static final class ArmyMenuHolder implements InventoryHolder {
+      private final UUID owner;
+      private final int page;
+      private final List<UUID> unitIds;
+      private Inventory inventory;
+
+      private ArmyMenuHolder(UUID owner, int page, List<UUID> unitIds) {
+         this.owner = owner;
+         this.page = page;
+         this.unitIds = unitIds;
+      }
+
+      public Inventory getInventory() {
+         return this.inventory;
+      }
+   }
+
+   private static final class FrostEffectSnapshot {
+      private final PotionEffect previousEffect;
+      private final long previousExpiresAt;
+      private int appliedAmplifier;
+      private long appliedExpiresAt;
+
+      private FrostEffectSnapshot(PotionEffect previousEffect, long previousExpiresAt) {
+         this.previousEffect = previousEffect;
+         this.previousExpiresAt = previousExpiresAt;
+      }
+   }
+
+   private static final class FrostFreezeSnapshot {
+      private final int originalFreezeTicks;
+      private final long originalExpiresAt;
+      private long appliedExpiresAt;
+
+      private FrostFreezeSnapshot(int originalFreezeTicks, long originalExpiresAt) {
+         this.originalFreezeTicks = originalFreezeTicks;
+         this.originalExpiresAt = originalExpiresAt;
+      }
+   }
+
+   private static final class GearHolder implements InventoryHolder {
+      private final UUID owner;
+      private final UUID unit;
+      private boolean returnToUnitMenu;
+      private Inventory inventory;
+
+      private GearHolder(UUID owner, UUID unit) {
+         this.owner = owner;
+         this.unit = unit;
+      }
+
+      public Inventory getInventory() {
+         return this.inventory;
+      }
+   }
+
+   private record GearStats(
+      double health,
+      double armor,
+      double damagePercent,
+      double fireDamagePercent,
+      double frostDamagePercent,
+      double cooldownReductionPercent,
+      double attackRangeBlocks,
+      double effectChancePercent,
+      double effectDurationSeconds,
+      double minions,
+      double healingPercent,
+      double natureDamagePercent
+   ) {
+      private static final MercenaryManager.GearStats ZERO = new MercenaryManager.GearStats(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+
+      private MercenaryManager.GearStats plus(MercenaryManager.GearStats other) {
+         return new MercenaryManager.GearStats(
+            this.health + other.health,
+            this.armor + other.armor,
+            this.damagePercent + other.damagePercent,
+            this.fireDamagePercent + other.fireDamagePercent,
+            this.frostDamagePercent + other.frostDamagePercent,
+            this.cooldownReductionPercent + other.cooldownReductionPercent,
+            this.attackRangeBlocks + other.attackRangeBlocks,
+            this.effectChancePercent + other.effectChancePercent,
+            this.effectDurationSeconds + other.effectDurationSeconds,
+            this.minions + other.minions,
+            this.healingPercent + other.healingPercent,
+            this.natureDamagePercent + other.natureDamagePercent
+         );
+      }
+
+      private MercenaryManager.GearStats scaled(double factor) {
+         return new MercenaryManager.GearStats(
+            this.health * factor,
+            this.armor * factor,
+            this.damagePercent * factor,
+            this.fireDamagePercent * factor,
+            this.frostDamagePercent * factor,
+            this.cooldownReductionPercent * factor,
+            this.attackRangeBlocks * factor,
+            this.effectChancePercent * factor,
+            this.effectDurationSeconds * factor,
+            this.minions * factor,
+            this.healingPercent * factor,
+            this.natureDamagePercent * factor
+         );
+      }
+   }
+
+   private static final class GuardianFakeBlockOverlay {
+      private final World world;
+      private final int x;
+      private final int y;
+      private final int z;
+      private final Map<UUID, Long> unitExpiries = new HashMap<>();
+      private final Set<UUID> viewers = new HashSet<>();
+      private long expiresAtMillis;
+      private BukkitTask removalTask;
+
+      private GuardianFakeBlockOverlay(Block block) {
+         this.world = block.getWorld();
+         this.x = block.getX();
+         this.y = block.getY();
+         this.z = block.getZ();
+      }
+
+      private Location location() {
+         return new Location(this.world, this.x, this.y, this.z);
+      }
+   }
+
+   private record GuardianStats(
+      double baseHealth,
+      double tierHealth,
+      double levelHealth,
+      double equipmentHealth,
+      double maxHealth,
+      double baseArmor,
+      double tierArmor,
+      double levelArmor,
+      double armor,
+      double baseDamage,
+      double tierDamage,
+      double levelDamage,
+      double damage
+   ) {
+   }
+
+   private static final class IgniteContext {
+      private final Set<UUID> ignitedTargets = new HashSet<>();
+      private int targetLimit;
+
+      private IgniteContext(int targetLimit) {
+         this.targetLimit = targetLimit;
+      }
+   }
+
+   private enum MenuType {
+      MAIN,
+      ADMIN,
+      ADMIN_PLAYERS,
+      GIVE_TYPE,
+      CLASS_SELECT,
+      TIER_SELECT,
+      WELCOME_GIFT,
+      ITEM_GIVE_PLAYERS,
+      ITEM_GIVE_CLASS,
+      ITEM_GIVE_MATERIAL,
+      ITEM_GIVE_STARS,
+      ITEM_GIVE_SET,
+      ITEM_GIVE_SLOT,
+      DISASTER_SELECT,
+      BOSS_SELECT,
+      BOSS_LEVEL_SELECT,
+      ADMIN_TIME,
+      TIME_DURATION,
+      ADMIN_DAY,
+      ADMIN_PROTECT,
+      PROTECTION_REMOVE,
+      TELEPORT_PLAYERS,
+      TELEPORT_WORLDS,
+      ADMIN_USER_PLAYERS,
+      ADMIN_USER_ACTION,
+      ADMIN_GROUPS,
+      ADMIN_GROUP_SELECT,
+      ADMIN_GROUP_DELETE_CONFIRM,
+      ADMIN_PERMISSION_SELECT,
+      ADMIN_USER_GROUP_SELECT,
+      ADMIN_USER_PERMISSION_ACTIONS,
+      ADMIN_USER_PERMISSION_SELECT,
+      ADMIN_SCOREBOARD_CONFIRM,
+      ADMIN_DEATH_PLAYERS,
+      ADMIN_SPAWN_WORLD,
+      UNIT_DELETE_CONFIRM;
+   }
+
+   private enum Mode {
+      ATTACK,
+      DEFEND,
+      PROTECT;
+   }
+
+   private static final class ServiceMenuHolder implements InventoryHolder {
+      private final UUID viewer;
+      private final MercenaryManager.MenuType type;
+      private final UUID target;
+      private final String itemType;
+      private final String classId;
+      private final int page;
+      private String gearMaterial;
+      private int gearStars;
+      private String gearSet;
+      private final Map<Integer, String> choices = new HashMap<>();
+      private Inventory inventory;
+
+      private ServiceMenuHolder(UUID viewer, MercenaryManager.MenuType type, UUID target, String itemType, String classId, int page) {
+         this.viewer = viewer;
+         this.type = type;
+         this.target = target;
+         this.itemType = itemType;
+         this.classId = classId;
+         this.page = page;
+      }
+
+      public Inventory getInventory() {
+         return this.inventory;
+      }
+   }
+
+   private record StatPart(double value, String color) {
+   }
+
+   private static final class TemporaryFrostBlock {
+      private final String key;
+      private final World world;
+      private final int x;
+      private final int y;
+      private final int z;
+      private final BlockData originalData;
+      private final Material temporaryType;
+      private final UUID ownerUnitId;
+      private BukkitTask removalTask;
+
+      private TemporaryFrostBlock(String key, Block block, Material temporaryType, UUID ownerUnitId) {
+         this.key = key;
+         this.world = block.getWorld();
+         this.x = block.getX();
+         this.y = block.getY();
+         this.z = block.getZ();
+         this.originalData = block.getBlockData().clone();
+         this.temporaryType = temporaryType;
+         this.ownerUnitId = ownerUnitId;
+      }
+   }
+
+   private static final class TemporaryTorch {
+      private final UUID id;
+      private final String worldName;
+      private final int x;
+      private final int y;
+      private final int z;
+      private final long expiresAt;
+
+      private TemporaryTorch(UUID id, String worldName, int x, int y, int z, long expiresAt) {
+         this.id = id;
+         this.worldName = worldName;
+         this.x = x;
+         this.y = y;
+         this.z = z;
+         this.expiresAt = expiresAt;
+      }
+   }
+
+   private static final class Unit {
+      private final UUID id;
+      private final UUID owner;
+      private final String unitClass;
+      private int originalTier;
+      private int tier;
+      private int level = 1;
+      private int experience;
+      private String customName = "";
+      private long recoveryUntilMillis;
+      private boolean gearCustomized;
+      private MercenaryManager.Mode mode;
+      private boolean deployed;
+      private boolean muted;
+      private boolean horseDead;
+      private UUID entityId;
+      private String worldName;
+      private double x;
+      private double y;
+      private double z;
+      private final EnumMap<EquipmentSlot, ItemStack> equipment = new EnumMap<>(EquipmentSlot.class);
+      private final ItemStack[] inventory = new ItemStack[36];
+      private ItemStack horseArmor;
+
+      private Unit(UUID id, UUID owner, String unitClass, int level, MercenaryManager.Mode mode, boolean deployed) {
+         this.id = id;
+         this.owner = owner;
+         this.unitClass = unitClass;
+         this.originalTier = level;
+         this.tier = level;
+         this.mode = mode;
+         this.deployed = deployed;
+      }
+   }
+
+   private static final class UnitMenuHolder implements InventoryHolder {
+      private final UUID owner;
+      private final UUID unit;
+      private Inventory inventory;
+
+      private UnitMenuHolder(UUID owner, UUID unit) {
+         this.owner = owner;
+         this.unit = unit;
+      }
+
+      public Inventory getInventory() {
+         return this.inventory;
+      }
+   }
 }

@@ -1,0 +1,540 @@
+# [VI] Vũ trụ truyện chung cho các di vật boss; mở rộng bằng artifact ID mới.
+# [EN] Shared boss-relic story universe; add new entries with a unique artifact ID.
+universe:
+  title: "Biên Niên Rạn Nứt"
+  premise: "Một vết nứt cổ kết nối các lãnh địa boss; mỗi di vật lưu lại manh mối cho chương kế tiếp."
+  chapters:
+    - "Creeper đánh thức Cổng Vạn Giới bằng Lôi Tâm."
+    - "Địa Mạch Cự Nhân làm rung đường tơ Hoàng Hôn."
+    - "Nhện dẫn người đọc tới Trăng Máu và Mật Lục."
+    - "Cung Vạn Cốt hé lộ cuộc chiến của Kỵ Binh."
+    - "Rìu Đỏ chôn lời phán trong Mộ Sâu."
+    - "Ghast Than Khóc mở màn Vĩnh Dạ."
+    - "Phantom chỉ đường tới Mắt Tận Cùng."
+    - "Long Kiếm gom di vật, đối đầu Wither."
+    - "Cổng còn thức, mở lối cho chương tiếp theo."
+
+artifacts:
+  creeper-relic:
+    boss: creeper_boss
+    item: "Lôi Tâm Hủy Diệt"
+    lore:
+      - "§7Kiếm lõi tích điện sét."
+      - "§8Mỗi nhát truyền lôi lực."
+      - "§8Creeper cổ canh giữ nó."
+      - "§dSấm gọi Địa Mạch thức giấc."
+  creeper-codex:
+    boss: creeper_boss
+    item: "Mật Lục Lôi Tâm Hủy Diệt"
+    lore:
+      - "§7Ghi cách tôi Lôi Tâm."
+      - "§8Nêu cách dồn điện tích."
+      - "§8Chữ cháy từ hang Creeper."
+      - "§dSơ đồ dẫn tới Địa Mạch."
+  giant-relic:
+    boss: giant_boss
+    item: "Rìu Địa Mạch Cự Nhân"
+    lore:
+      - "§7Rìu đúc từ quặng Địa Mạch."
+      - "§8Trọng lượng dồn lực chấn."
+      - "§8Cự Nhân giữ dưới thành cổ."
+      - "§dĐịa chấn gọi đàn Nhện."
+  giant-codex:
+    boss: giant_boss
+    item: "Mật Lục Địa Mạch Cự Nhân"
+    lore:
+      - "§7Bản vẽ rìu của Cự Nhân."
+      - "§8Chỉ cách dồn lực vào cán."
+      - "§8Đá vụn phủ trang sách."
+      - "§dDấu mực dẫn tới ổ Nhện."
+  spider-relic:
+    boss: spider_boss
+    item: "Ủng Tơ Độc Hoàng Hôn"
+    lore:
+      - "§7Ủng bện từ tơ độc cổ."
+      - "§8Đế bám vách, tránh bẫy tơ."
+      - "§8Nhện Hoàng Hôn canh giữ."
+      - "§dTơ tím chỉ về Trăng Máu."
+  spider-codex:
+    boss: spider_boss
+    item: "Mật Lục Tơ Độc Hoàng Hôn"
+    lore:
+      - "§7Sơ đồ dệt tơ gia cố."
+      - "§8Ghi cách chống nọc độc."
+      - "§8Mật mã thuộc ổ Hoàng Hôn."
+      - "§dDẫn tới lều Phù Thủy."
+  witch-relic:
+    boss: witch_boss
+    item: "Dược Thư Trăng Máu"
+    lore:
+      - "§7Dược thư bọc da luyện chú."
+      - "§8Ghi liều thuốc tăng lực."
+      - "§8Phù Thủy giữ dưới Trăng Máu."
+      - "§dCông thức gọi Vạn Cốt."
+  witch-codex:
+    boss: witch_boss
+    item: "Mật Lục Dược Thư Trăng Máu"
+    lore:
+      - "§7Sổ pha chế nguyền dược."
+      - "§8Chỉ cách lọc độc, hồi lực."
+      - "§8Mực đỏ từ lều Trăng Máu."
+      - "§dDẫn tới chiến địa Vạn Cốt."
+  skeleton-relic:
+    boss: skeleton_boss
+    item: "Cung Vạn Cốt Câm Lặng"
+    lore:
+      - "§7Cung ghép từ xương Vạn Cốt."
+      - "§8Dây cung dồn lực xuyên giáp."
+      - "§8Xạ thủ cổ canh Mật Lục."
+      - "§dTên chỉ về Chiến Trường."
+  skeleton-codex:
+    boss: skeleton_boss
+    item: "Mật Lục Cung Vạn Cốt Câm Lặng"
+    lore:
+      - "§7Bản vẽ cung của Vạn Cốt."
+      - "§8Ghi cách kéo dây chính xác."
+      - "§8Mảnh xương giữ trang sách."
+      - "§dTên Ravager nằm bên lề."
+  ravager-relic:
+    boss: ravager_boss
+    item: "Rìu Cuồng Nộ Chiến Trường"
+    lore:
+      - "§7Rìu rèn giữa Chiến Trường."
+      - "§8Lưỡi nặng phá giáp chắn."
+      - "§8Ravager giữ nó qua trận."
+      - "§dDấu rìu hướng về Mộ Sâu."
+  ravager-codex:
+    boss: ravager_boss
+    item: "Mật Lục Rìu Cuồng Nộ Chiến Trường"
+    lore:
+      - "§7Sổ chiến thuật Ravager."
+      - "§8Ghi thế bổ phá khiên."
+      - "§8Bản đồ chỉ trận địa cũ."
+      - "§dMực đỏ dẫn tới Mộ Sâu."
+  vindicator-relic:
+    boss: vindicator_boss
+    item: "Rìu Phán Quyết Đỏ"
+    lore:
+      - "§7Rìu thép của đội hành quyết."
+      - "§8Lưỡi rìu xuyên phòng thủ."
+      - "§8Vindicator canh án lệnh đỏ."
+      - "§dLời phán vọng từ Mộ Sâu."
+  vindicator-codex:
+    boss: vindicator_boss
+    item: "Mật Lục Rìu Phán Quyết Đỏ"
+    lore:
+      - "§7Sổ ghi phán quyết cổ."
+      - "§8Nêu cách chặn đòn bằng rìu."
+      - "§8Dấu son của Vindicator."
+      - "§dTên Zombie khắc cuối trang."
+  zombie-relic:
+    boss: zombie_boss
+    item: "Lưỡi Hái Mộ Sâu"
+    lore:
+      - "§7Lưỡi hái đào từ Mộ Sâu."
+      - "§8Lưỡi cong kéo mục tiêu gần."
+      - "§8Zombie cổ canh mộ sâu."
+      - "§dVết nứt mở đường Nether."
+  zombie-codex:
+    boss: zombie_boss
+    item: "Mật Lục Lưỡi Hái Mộ Sâu"
+    lore:
+      - "§7Bản vẽ lưỡi hái mộ cổ."
+      - "§8Ghi cách giữ lưỡi sắc bén."
+      - "§8Đất mộ phủ gáy sách."
+      - "§dHơi nóng dẫn tới Ghast."
+  ghast-relic:
+    boss: ghast
+    item: "Khúc Cung Than Khóc"
+    lore:
+      - "§7Cung luyện giữa lửa Nether."
+      - "§8Dây tro tăng lực tên bắn."
+      - "§8Ghast Than Khóc canh giữ."
+      - "§dÂm vang gọi Vĩnh Dạ."
+  ghast-codex:
+    boss: ghast
+    item: "Mật Lục Khúc Cung Than Khóc"
+    lore:
+      - "§7Sơ đồ cung chịu nhiệt."
+      - "§8Ghi cách nén lực vào dây."
+      - "§8Tro Ghast phủ nét mực."
+      - "§dBản nhạc mở màn Vĩnh Dạ."
+  phantom-relic:
+    boss: phantom_boss
+    item: "Cung Mộng Ảnh Vĩnh Dạ"
+    lore:
+      - "§7Cung ghép từ cánh Phantom."
+      - "§8Bắn nhẹ, lướt qua bóng đêm."
+      - "§8Chủ nhân săn mộng lúc khuya."
+      - "§dMộng ảnh chỉ về Tận Cùng."
+  phantom-codex:
+    boss: phantom_boss
+    item: "Mật Lục Cung Mộng Ảnh Vĩnh Dạ"
+    lore:
+      - "§7Sổ ghi nhịp bay ban đêm."
+      - "§8Chỉ cách ngắm khi đang lượn."
+      - "§8Dấu cánh phủ mực xanh."
+      - "§dMắt End cuối giấc mơ."
+  enderman-relic:
+    boss: enderman_boss
+    item: "Cuốc Mắt Tận Cùng"
+    lore:
+      - "§7Cuốc khắc từ Mắt Tận Cùng."
+      - "§8Mũi cuốc phá đá cứng nhanh."
+      - "§8Enderman mang qua cổng nứt."
+      - "§dĐường đào dẫn tới Long Kiếm."
+  enderman-codex:
+    boss: enderman_boss
+    item: "Mật Lục Cuốc Mắt Tận Cùng"
+    lore:
+      - "§7Bản đồ các cổng Ender."
+      - "§8Ghi tọa độ dịch chuyển."
+      - "§8Mực tím của kẻ canh cổng."
+      - "§dDẫn đến ổ Rồng Tử Thần."
+  dragon-relic:
+    boss: ender_dragon
+    item: "Long Kiếm Hư Không"
+    lore:
+      - "§7Kiếm tôi bằng vảy rồng End."
+      - "§8Lưỡi kiếm dồn long viêm."
+      - "§8Rồng cổ canh Cổng End."
+      - "§dDi vật hội tụ trước Wither."
+  dragon-codex:
+    boss: ender_dragon
+    item: "Mật Lục Long Kiếm Hư Không"
+    lore:
+      - "§7Ghi thuật rèn Long Kiếm."
+      - "§8Nêu điểm yếu vảy rồng."
+      - "§8Ấn cổ khép vòng di vật."
+      - "§dWither chờ sau Cổng End."
+  wither-relic:
+    boss: wither
+    item: "Lưỡi Hái Ba Đầu Hư Vô"
+    lore:
+      - "§7Lưỡi hái xương Wither cổ."
+      - "§8Mỗi đòn gieo lời nguyền."
+      - "§8Ba Đầu giữ mảnh Rạn Nứt."
+      - "§dChu kỳ khép, cổng còn thức."
+  wither-codex:
+    boss: wither
+    item: "Mật Lục Lưỡi Hái Ba Đầu Hư Vô"
+    lore:
+      - "§7Sổ thuật khống chế Hư Vô."
+      - "§8Ghi cách chịu lời nguyền."
+      - "§8Mực đen từ Ba Đầu Wither."
+      - "§dCổng chờ chương kế tiếp."
+  creeper-relic-common:
+    boss: creeper_boss
+    item: "Kiếm Lôi Tâm"
+    lore:
+      - "§7Kiếm lõi tích điện sét."
+      - "§8Mỗi nhát truyền lôi lực."
+      - "§8Creeper cổ canh giữ nó."
+      - "§dSấm gọi Địa Mạch thức giấc."
+  creeper-codex-common:
+    boss: creeper_boss
+    item: "Mật Lục Lôi Tâm"
+    lore:
+      - "§7Ghi cách tôi Lôi Tâm."
+      - "§8Nêu cách dồn điện tích."
+      - "§8Chữ cháy từ hang Creeper."
+      - "§dSơ đồ dẫn tới Địa Mạch."
+  giant-relic-common:
+    boss: giant_boss
+    item: "Rìu Địa Mạch"
+    lore:
+      - "§7Rìu đúc từ quặng Địa Mạch."
+      - "§8Trọng lượng dồn lực chấn."
+      - "§8Cự Nhân giữ dưới thành cổ."
+      - "§dĐịa chấn gọi đàn Nhện."
+  giant-codex-common:
+    boss: giant_boss
+    item: "Sổ Địa Mạch"
+    lore:
+      - "§7Bản vẽ rìu của Cự Nhân."
+      - "§8Chỉ cách dồn lực vào cán."
+      - "§8Đá vụn phủ trang sách."
+      - "§dDấu mực dẫn tới ổ Nhện."
+  spider-relic-common:
+    boss: spider_boss
+    item: "Ủng Tơ Nhện"
+    lore:
+      - "§7Ủng bện từ tơ độc cổ."
+      - "§8Đế bám vách, tránh bẫy tơ."
+      - "§8Nhện Hoàng Hôn canh giữ."
+      - "§dTơ tím chỉ về Trăng Máu."
+  spider-codex-common:
+    boss: spider_boss
+    item: "Sổ Tơ Nhện"
+    lore:
+      - "§7Sơ đồ dệt tơ gia cố."
+      - "§8Ghi cách chống nọc độc."
+      - "§8Mật mã thuộc ổ Hoàng Hôn."
+      - "§dDẫn tới lều Phù Thủy."
+  witch-relic-common:
+    boss: witch_boss
+    item: "Dược Thư"
+    lore:
+      - "§7Dược thư bọc da luyện chú."
+      - "§8Ghi liều thuốc tăng lực."
+      - "§8Phù Thủy giữ dưới Trăng Máu."
+      - "§dCông thức gọi Vạn Cốt."
+  witch-codex-common:
+    boss: witch_boss
+    item: "Sổ Dược Thư"
+    lore:
+      - "§7Sổ pha chế nguyền dược."
+      - "§8Chỉ cách lọc độc, hồi lực."
+      - "§8Mực đỏ từ lều Trăng Máu."
+      - "§dDẫn tới chiến địa Vạn Cốt."
+  skeleton-relic-common:
+    boss: skeleton_boss
+    item: "Cung Xương"
+    lore:
+      - "§7Cung ghép từ xương Vạn Cốt."
+      - "§8Dây cung dồn lực xuyên giáp."
+      - "§8Xạ thủ cổ canh Mật Lục."
+      - "§dTên chỉ về Chiến Trường."
+  skeleton-codex-common:
+    boss: skeleton_boss
+    item: "Sổ Xương"
+    lore:
+      - "§7Bản vẽ cung của Vạn Cốt."
+      - "§8Ghi cách kéo dây chính xác."
+      - "§8Mảnh xương giữ trang sách."
+      - "§dTên Ravager nằm bên lề."
+  ravager-relic-common:
+    boss: ravager_boss
+    item: "Rìu Chiến Trường"
+    lore:
+      - "§7Rìu rèn giữa Chiến Trường."
+      - "§8Lưỡi nặng phá giáp chắn."
+      - "§8Ravager giữ nó qua trận."
+      - "§dDấu rìu hướng về Mộ Sâu."
+  ravager-codex-common:
+    boss: ravager_boss
+    item: "Sổ Chiến Trường"
+    lore:
+      - "§7Sổ chiến thuật Ravager."
+      - "§8Ghi thế bổ phá khiên."
+      - "§8Bản đồ chỉ trận địa cũ."
+      - "§dMực đỏ dẫn tới Mộ Sâu."
+  vindicator-relic-common:
+    boss: vindicator_boss
+    item: "Rìu Đỏ"
+    lore:
+      - "§7Rìu thép của đội hành quyết."
+      - "§8Lưỡi rìu xuyên phòng thủ."
+      - "§8Vindicator canh án lệnh đỏ."
+      - "§dLời phán vọng từ Mộ Sâu."
+  vindicator-codex-common:
+    boss: vindicator_boss
+    item: "Sổ Rìu Đỏ"
+    lore:
+      - "§7Sổ ghi phán quyết cổ."
+      - "§8Nêu cách chặn đòn bằng rìu."
+      - "§8Dấu son của Vindicator."
+      - "§dTên Zombie khắc cuối trang."
+  zombie-relic-common:
+    boss: zombie_boss
+    item: "Kiếm Mộ Sâu"
+    lore:
+      - "§7Lưỡi hái đào từ Mộ Sâu."
+      - "§8Lưỡi cong kéo mục tiêu gần."
+      - "§8Zombie cổ canh mộ sâu."
+      - "§dVết nứt mở đường Nether."
+  zombie-codex-common:
+    boss: zombie_boss
+    item: "Sổ Mộ Sâu"
+    lore:
+      - "§7Bản vẽ lưỡi hái mộ cổ."
+      - "§8Ghi cách giữ lưỡi sắc bén."
+      - "§8Đất mộ phủ gáy sách."
+      - "§dHơi nóng dẫn tới Ghast."
+  ghast-relic-common:
+    boss: ghast
+    item: "Cung Ghast"
+    lore:
+      - "§7Cung luyện giữa lửa Nether."
+      - "§8Dây tro tăng lực tên bắn."
+      - "§8Ghast Than Khóc canh giữ."
+      - "§dÂm vang gọi Vĩnh Dạ."
+  ghast-codex-common:
+    boss: ghast
+    item: "Sổ Ghast"
+    lore:
+      - "§7Sơ đồ cung chịu nhiệt."
+      - "§8Ghi cách nén lực vào dây."
+      - "§8Tro Ghast phủ nét mực."
+      - "§dBản nhạc mở màn Vĩnh Dạ."
+  phantom-relic-common:
+    boss: phantom_boss
+    item: "Cung Đêm"
+    lore:
+      - "§7Cung ghép từ cánh Phantom."
+      - "§8Bắn nhẹ, lướt qua bóng đêm."
+      - "§8Chủ nhân săn mộng lúc khuya."
+      - "§dMộng ảnh chỉ về Tận Cùng."
+  phantom-codex-common:
+    boss: phantom_boss
+    item: "Sổ Đêm"
+    lore:
+      - "§7Sổ ghi nhịp bay ban đêm."
+      - "§8Chỉ cách ngắm khi đang lượn."
+      - "§8Dấu cánh phủ mực xanh."
+      - "§dMắt End cuối giấc mơ."
+  enderman-relic-common:
+    boss: enderman_boss
+    item: "Cuốc Mắt End"
+    lore:
+      - "§7Cuốc khắc từ Mắt Tận Cùng."
+      - "§8Mũi cuốc phá đá cứng nhanh."
+      - "§8Enderman mang qua cổng nứt."
+      - "§dĐường đào dẫn tới Long Kiếm."
+  enderman-codex-common:
+    boss: enderman_boss
+    item: "Ghi Chép Mắt End"
+    lore:
+      - "§7Bản đồ các cổng Ender."
+      - "§8Ghi tọa độ dịch chuyển."
+      - "§8Mực tím của kẻ canh cổng."
+      - "§dDẫn đến ổ Rồng Tử Thần."
+  dragon-relic-common:
+    boss: ender_dragon
+    item: "Long Kiếm Cổ"
+    lore:
+      - "§7Kiếm tôi bằng vảy rồng End."
+      - "§8Lưỡi kiếm dồn long viêm."
+      - "§8Rồng cổ canh Cổng End."
+      - "§dDi vật hội tụ trước Wither."
+  dragon-codex-common:
+    boss: ender_dragon
+    item: "Mật Lục Long Kiếm"
+    lore:
+      - "§7Ghi thuật rèn Long Kiếm."
+      - "§8Nêu điểm yếu vảy rồng."
+      - "§8Ấn cổ khép vòng di vật."
+      - "§dWither chờ sau Cổng End."
+  wither-relic-common:
+    boss: wither
+    item: "Kiếm Wither"
+    lore:
+      - "§7Lưỡi hái xương Wither cổ."
+      - "§8Mỗi đòn gieo lời nguyền."
+      - "§8Ba Đầu giữ mảnh Rạn Nứt."
+      - "§dChu kỳ khép, cổng còn thức."
+  wither-codex-common:
+    boss: wither
+    item: "Sổ Wither"
+    lore:
+      - "§7Sổ thuật khống chế Hư Vô."
+      - "§8Ghi cách chịu lời nguyền."
+      - "§8Mực đen từ Ba Đầu Wither."
+      - "§dCổng chờ chương kế tiếp."
+
+# [VI] Bộ giáp boss: lore mô tả nguồn gốc và công năng của từng bộ.
+# [EN] Boss armor lore describes each set's origin and defensive role.
+  creeper-armor:
+    boss: creeper_boss
+    item: "Bộ Giáp Lôi Tâm"
+    lore:
+      - "§7Rèn từ thép ám sét."
+      - "§8Tấm giáp tản lực nổ."
+      - "§8Vết cháy ghi dấu Lôi Tâm."
+      - "§dSấm gọi Cự Nhân tỉnh."
+  dragon-armor:
+    boss: ender_dragon
+    item: "Bộ Giáp Long Vảy"
+    lore:
+      - "§7Ghép từ vảy rồng End."
+      - "§8Giữ thân trước long viêm."
+      - "§8Ấn cổ khép vòng di vật."
+      - "§dWither chờ sau Cổng End."
+  enderman-armor:
+    boss: enderman_boss
+    item: "Bộ Giáp Mắt Tận Cùng"
+    lore:
+      - "§7Rèn bên cổng End nứt."
+      - "§8Hạt Ender khóa khe dịch."
+      - "§8Mắt tím soi đường tối."
+      - "§dDẫn lối tới Long Kiếm."
+  ghast-armor:
+    boss: ghast
+    item: "Bộ Giáp Than Khóc"
+    lore:
+      - "§7Tôi trong lửa Nether."
+      - "§8Tro nóng phủ từng mảnh."
+      - "§8Giữ thân giữa vực sâu."
+      - "§dÂm vang mở màn Vĩnh Dạ."
+  giant-armor:
+    boss: giant_boss
+    item: "Bộ Giáp Địa Mạch"
+    lore:
+      - "§7Đúc từ quặng Địa Mạch."
+      - "§8Tấm giáp chịu chấn động."
+      - "§8Khắc dấu thành cổ thất lạc."
+      - "§dDư chấn gọi ổ Nhện."
+  phantom-armor:
+    boss: phantom_boss
+    item: "Bộ Giáp Mộng Ảnh"
+    lore:
+      - "§7May bằng da cánh đêm."
+      - "§8Nhẹ, giữ bước khi lượn."
+      - "§8Mộng ảnh phủ kín viền."
+      - "§dBóng tối dẫn tới Tận Cùng."
+  ravager-armor:
+    boss: ravager_boss
+    item: "Bộ Giáp Chiến Trường"
+    lore:
+      - "§7Tán từ giáp chiến địa."
+      - "§8Đinh thép đỡ cú tông."
+      - "§8Vết máu còn trên giáp."
+      - "§dDấu rìu hướng Mộ Sâu."
+  skeleton-armor:
+    boss: skeleton_boss
+    item: "Bộ Giáp Vạn Cốt"
+    lore:
+      - "§7Ghép từ xương chiến binh."
+      - "§8Nhẹ, khó xuyên thủng."
+      - "§8Ký tự thuộc Vạn Cốt."
+      - "§dTên chỉ Chiến Trường."
+  spider-armor:
+    boss: spider_boss
+    item: "Bộ Giáp Tơ Hoàng Hôn"
+    lore:
+      - "§7Dệt bằng tơ cứng trong hang."
+      - "§8Mặt giáp giữ nọc nhện."
+      - "§8Nút thắt ánh Hoàng Hôn."
+      - "§dSợi cuối dẫn Trăng Máu."
+  vindicator-armor:
+    boss: vindicator_boss
+    item: "Bộ Giáp Phán Quyết"
+    lore:
+      - "§7Tôi trong lò làng đổ nát."
+      - "§8Thép khắc phán quyết đỏ."
+      - "§8Đinh giáp giữ lời thề."
+      - "§dLời án vọng Mộ Sâu."
+  witch-armor:
+    boss: witch_boss
+    item: "Bộ Giáp Trăng Máu"
+    lore:
+      - "§7Khâu dưới ánh Trăng Máu."
+      - "§8Vải giữ độc dược phù chú."
+      - "§8Ký hiệu khóa bình nguyền."
+      - "§dKhói thuốc gọi Vạn Cốt."
+  wither-armor:
+    boss: wither
+    item: "Bộ Giáp Hư Vô"
+    lore:
+      - "§7Rèn giữa tro tàn Hư Vô."
+      - "§8Thép kháng lời nguyền đen."
+      - "§8Ba Đầu khắc ấn trên giáp."
+      - "§dCổng chờ chu kỳ mới."
+  zombie-armor:
+    boss: zombie_boss
+    item: "Bộ Giáp Mộ Sâu"
+    lore:
+      - "§7Vớt từ lòng Mộ Sâu."
+      - "§8Đất mộ tôi cứng mặt thép."
+      - "§8Khóa giáp ngăn tử khí."
+      - "§dVết nứt mở lối Nether."
