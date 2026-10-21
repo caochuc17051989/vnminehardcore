@@ -1,5 +1,10 @@
 # Changelog
 
+## [v2.0.2] - 2026-10-21
+
+### Fixed
+- Build sạch lại JAR để đóng gói đúng danh sách skill mercenary 2.0.0; khắc phục lỗi khởi động `Unknown skill 'GUARDIAN_LINK'` do bytecode cũ trong `target/classes`.
+
 ## [v2.0.0] - 2026-10-21
 
 ### Added
