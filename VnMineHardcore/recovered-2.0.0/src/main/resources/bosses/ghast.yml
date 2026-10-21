@@ -1,0 +1,448 @@
+# ============================================================
+# [GHAST] 👻 GHAST KHỔNG LỒ
+# ============================================================
+boss-id: ghast
+enabled: true
+entity-type: GHAST
+display-name: "§e§lGhast Khổng Lồ"
+# [VI] Class lính của token boss; bậc token theo level boss.
+# [EN] Mercenary class for this boss token; token tier follows the boss level.
+army-token-class: pyromancer
+hp: 1300
+damage-multiplier: 2.5
+# [VI] EXP thưởng cơ bản level 1; mặc định 400, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
+# [EN] Base XP reward at level 1; default 400, valid range 1-1000000; boss level scaling is in _settings.yml.
+experience: 400
+chance: 10
+# [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1800 = 30 phút.
+# [EN] Default boss lifetime after spawning (seconds); 1800 = 30 minutes.
+duration-seconds: 1800
+warning-seconds: 45
+activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
+
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# [VI] Giá trị được khai báo đến level 10; runtime giới hạn HP tối đa của boss ở 1024.
+# [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
+# damage là sát thương cơ sở (tăng theo level); số cầu lửa = level * multiply, tối đa 40.
+hp-by-level:
+  1: 1300
+  2: 2700
+  3: 4300
+  4: 5900
+  5: 7500
+  6: 9100
+  7: 10700
+  8: 13900
+  9: 17100
+  10: 20000
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
+skills:
+  fireball-volley:
+    enabled: true
+    damage: 8.0
+    multiply: 3
+    cooldown-seconds: 12
+    radius: 5.0
+    velocity: 1.2
+    spread: 1.3
+    # [VI] Số cầu lửa nhỏ sau khi tách; mặc định 6; hợp lệ 5-8.
+    # [EN] Small fireballs after split; default 6; valid range 5-8.
+    split-count: 6
+    # [VI] Tốc độ cầu lửa nhỏ; mặc định 1.2; hợp lệ 0.4-3.
+    # [EN] Split fireball speed; default 1.2; valid range 0.4-3.
+    split-velocity: 1.2
+    # [VI] Góc tỏa giữa các cầu lửa (radian); mặc định 0.3; hợp lệ 0.05-1.
+    # [EN] Fan angle between split fireballs (radians); default 0.3; valid range 0.05-1.
+    split-spread: 0.3
+  fiery-drag:
+    enabled: true
+    damage: 0.0
+    multiply: 1
+    cooldown-seconds: 20
+    radius: 5.0
+    velocity: 0.8
+    spread: 0.0
+    # [VI] Lực kéo về Ghast; mặc định 0.8; hợp lệ 0.2-1.5.
+    # [EN] Pull strength toward Ghast; default 0.8; valid range 0.2-1.5.
+    pull-speed: 0.8
+    # [VI] Cho phép tạo block tạm dưới người chơi; mặc định bật; true/false.
+    # [EN] Place temporary floor hazards; enabled by default; true/false.
+    terrain-enabled: true
+    # [VI] Vật liệu nguy hiểm; mặc định MAGMA_BLOCK; hỗ trợ MAGMA_BLOCK hoặc FIRE.
+    # [EN] Hazard material; default MAGMA_BLOCK; supported values: MAGMA_BLOCK or FIRE.
+    terrain-material: MAGMA_BLOCK
+    # [VI] Thời gian block nguy hiểm tồn tại (giây); mặc định 5; hợp lệ 1-30.
+    # [EN] Hazard lifetime (seconds); default 5; valid range 1-30.
+    terrain-duration-seconds: 5
+    # [VI] Danh sách block mặt đất được thay bằng Magma; để trống dùng whitelist an toàn mặc định.
+    # [EN] Ground blocks replaceable by magma; empty uses the safe built-in allowlist.
+    replaceable-blocks: []
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  fireball-shield:
+    enabled: true
+
+immunities:
+  fire: true
+  sunlight-burn: true
+  fall-damage: true
+
+drops:
+  GHAST_TEAR:
+    min-amount: 3
+    max-amount: 8
+    chance: 0.8
+  MAGMA_CREAM:
+    min-amount: 3
+    max-amount: 6
+    chance: 0.7
+  DIAMOND:
+    min-amount: 3
+    max-amount: 6
+    chance: 0.4
+  IRON_INGOT:
+    min-amount: 8
+    max-amount: 15
+    chance: 0.5
+  EMERALD:
+    min-amount: 5
+    max-amount: 10
+    chance: 0.4
+  GUNPOWDER:
+    min-amount: 10
+    max-amount: 20
+    chance: 0.6
+  ENCHANTED_BOOK:
+    min-amount: 1
+    max-amount: 1
+    chance: 0.25
+  FIRE_CHARGE:
+    min-amount: 2
+    max-amount: 5
+    chance: 0.4
+  BLAZE_ROD:
+    min-amount: 2
+    max-amount: 5
+    chance: 0.35
+
+# [VI] Loot quý theo level; level thiếu dùng mốc gần nhất thấp hơn. amount: 1-64, chance: 0.0-1.0.
+# [EN] Rare drops by level; missing tiers inherit the nearest lower tier. amount: 1-64, chance: 0.0-1.0.
+# [VI] enchantments áp dụng trực tiếp; book-enchantments lưu enchant để áp dụng lên vật phẩm.
+# [EN] enchantments apply to the item; book-enchantments are stored for applying to another item.
+# [VI] Mỗi cấp có một di vật riêng; số dòng enchant tăng đúng theo level (1-10).
+#      Số lượng hợp lệ 1-64; chance 0-1; cấp enchant 1-255.
+#      Lore gồm truyền thuyết theo boss và tối đa 4 dòng cho mỗi vật phẩm.
+#      Với cung, từ cấp 8 dùng sách phù phép để giữ đủ dòng enchant tương thích.
+# [EN] Each tier has a unique relic; enchantment lines increase with level (1-10).
+#      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
+#      Each item's lore tells the boss-specific legend in at most 4 lines.
+#      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+# [VI] Tạo bộ giáp bốn món cho boss này; vật liệu và enchant tự tăng theo level.
+# [EN] Generate this boss's four-piece armor set; materials and enchants scale by level.
+armor-set:
+  # [VI] Bật/tắt bộ giáp; mặc định true.
+  # [EN] Enable or disable the armor set; default true.
+  enabled: true
+  # [VI] Tên bộ giáp dùng cho mũ, áo, quần và ủng.
+  # [EN] Armor set name prefix used by the helmet, chestplate, leggings, and boots.
+  name: "§c§lGiáp Tro Than Khóc"
+  # [VI] ID lore trong story.yml; phải trỏ tới một mục artifacts hợp lệ.
+  # [EN] Lore ID in story.yml; must reference a valid artifacts entry.
+  story-id: ghast-armor
+  # [VI] Mốc cấp tối thiểu cho vật liệu; từ 1 sắt, 4 kim cương, 7 netherite.
+  # [EN] Minimum level for each material tier; iron at 1, diamond at 4, netherite at 7.
+  material-tiers:
+    1: IRON
+    4: DIAMOND
+    7: NETHERITE
+  piece-names:
+    helmet: "Mũ Tro Khóc"
+    chestplate: "Áo Than Hồng"
+    leggings: "Quần Tàn Lửa"
+    boots: "Ủng Bước Nether"
+  enchantments:
+    helmet: [fire_protection, respiration, unbreaking]
+    chestplate: [fire_protection, unbreaking, thorns]
+    leggings: [protection, swift_sneak, unbreaking]
+    boots: [fire_protection, feather_falling, soul_speed, unbreaking]
+  bonuses:
+    2: {damage-reduction-percent: 0.10, damage-causes: [FIRE, FIRE_TICK, LAVA]}
+    3: {damage-reduction-percent: 0.15, damage-causes: [FIRE, FIRE_TICK, LAVA]}
+    4: {damage-reduction-percent: 0.22, damage-causes: [FIRE, FIRE_TICK, LAVA]}
+
+level-drops:
+  1:
+    - material: BOW
+      name: "§e§lCung Ghast · Cấp 1"
+      story-id: ghast-relic-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        power: 3
+    - material: ENCHANTED_BOOK
+      name: "§e§lSổ Ghast · Cấp 1"
+      story-id: ghast-codex-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        power: 3
+
+  2:
+    - material: BOW
+      name: "§e§lCung Ghast · Cấp 2"
+      story-id: ghast-relic-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        power: 3
+        punch: 2
+    - material: ENCHANTED_BOOK
+      name: "§e§lSổ Ghast · Cấp 2"
+      story-id: ghast-codex-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        power: 3
+        punch: 2
+
+  3:
+    - material: BOW
+      name: "§e§lKhúc Cung Than Khóc · Cấp 3"
+      story-id: ghast-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        power: 4
+        punch: 2
+        flame: 1
+    - material: ENCHANTED_BOOK
+      name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 3"
+      story-id: ghast-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        power: 4
+        punch: 2
+        flame: 1
+
+  4:
+    - material: BOW
+      name: "§e§lKhúc Cung Than Khóc · Cấp 4"
+      story-id: ghast-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        power: 5
+        punch: 2
+        flame: 1
+        infinity: 1
+    - material: ENCHANTED_BOOK
+      name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 4"
+      story-id: ghast-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        power: 5
+        punch: 2
+        flame: 1
+        infinity: 1
+  5:
+    - material: BOW
+      name: "§e§lKhúc Cung Than Khóc · Cấp 5"
+      story-id: ghast-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        power: 6
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 4
+    - material: ENCHANTED_BOOK
+      name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 5"
+      story-id: ghast-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        power: 6
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 4
+
+  6:
+    - material: BOW
+      name: "§e§lKhúc Cung Than Khóc · Cấp 6"
+      story-id: ghast-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
+    - material: ENCHANTED_BOOK
+      name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 6"
+      story-id: ghast-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
+
+  7:
+    - material: BOW
+      name: "§e§lKhúc Cung Than Khóc · Cấp 7"
+      story-id: ghast-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
+        vanishing_curse: 1
+    - material: ENCHANTED_BOOK
+      name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 7"
+      story-id: ghast-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        power: 7
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 5
+        mending: 1
+        vanishing_curse: 1
+
+  8:
+    - material: ENCHANTED_BOOK
+      name: "§e§lKhúc Cung Than Khóc · Cấp 8"
+      story-id: ghast-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        power: 8
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 6
+        mending: 1
+        vanishing_curse: 1
+        protection: 7
+    - material: ENCHANTED_BOOK
+      name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 8"
+      story-id: ghast-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        power: 8
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 6
+        mending: 1
+        vanishing_curse: 1
+        protection: 7
+
+  9:
+    - material: ENCHANTED_BOOK
+      name: "§e§lKhúc Cung Than Khóc · Cấp 9"
+      story-id: ghast-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        power: 9
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 7
+        mending: 1
+        vanishing_curse: 1
+        protection: 8
+        thorns: 7
+    - material: ENCHANTED_BOOK
+      name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 9"
+      story-id: ghast-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        power: 9
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 7
+        mending: 1
+        vanishing_curse: 1
+        protection: 8
+        thorns: 7
+
+  10:
+    - material: ENCHANTED_BOOK
+      name: "§e§lKhúc Cung Than Khóc · Cấp 10"
+      story-id: ghast-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      book-enchantments:
+        power: 10
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 8
+        mending: 1
+        vanishing_curse: 1
+        protection: 9
+        thorns: 8
+        looting: 8
+    - material: ENCHANTED_BOOK
+      name: "§e§lMật Lục Khúc Cung Than Khóc · Cấp 10"
+      story-id: ghast-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        power: 10
+        punch: 2
+        flame: 1
+        infinity: 1
+        unbreaking: 8
+        mending: 1
+        vanishing_curse: 1
+        protection: 9
+        thorns: 8
+        looting: 8

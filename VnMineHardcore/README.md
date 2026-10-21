@@ -45,6 +45,7 @@ Yêu cầu runtime: Java 25+ và ProtocolLib `5.5.0-SNAPSHOT` dev-build có hỗ
 | `/vngroup ...` | Tạo/xóa nhóm, xem nhóm, cấp/thu hồi quyền nhóm | `vnmine.command.groups.manage` |
 | `/vnuser ...` | Xem/gán nhóm, cấp/thu hồi quyền cá nhân, reset người chơi | `vnmine.command.users.manage` |
 | `/vnarmy ...` | Thuê/quản lý lính, đổi chế độ AI và trang bị | `vnmine.command.army` |
+| `/vnarmy item give ...` | Admin cấp một món hoặc trọn set gear cho lính | `vnmine.command.army.admin` |
 
 Ví dụ gọi boss Wither level 3, cảnh báo 30 giây, tồn tại 120 giây:
 `/vnboss wither 3 30 120`.
@@ -293,6 +294,16 @@ cho chủ để không phụ thuộc khoảng cách nhặt orb.
 `give ... army` cấp lính trực tiếp và vẫn tôn trọng giới hạn quân số;
 `give ... token` cấp token chung bậc.
 
+Gear lính đánh thuê có class, vật liệu (leather, copper, iron, gold, diamond,
+netherite), 1-5 sao, set và slot riêng; chỉ mercenary có thể trang bị. Chỉ số
+được tính từ `classes.<class>.gear-stats`, hệ số vật liệu/sao, bonus set đủ
+2/4/6 món và giới hạn trong `gear-system`. Người chơi có quyền army mở GUI gear
+boss bằng `/vnarmy item give`; admin có thể cấp trực tiếp bằng
+`/vnarmy item give <player> <class> <material> <stars> <set> <slot|set>`.
+Slot hợp lệ: `helmet`, `chestplate`, `leggings`, `boots`, `mainhand`, `offhand`
+hoặc `set`. Quyền cấp gear dùng node admin hiện có
+`vnmine.command.army.admin`.
+
 Tên hiển thị trên entity dùng tiền tố `[Tên chủ]` xanh lá sáng, đậm với chủ;
 người chơi khác thấy tiền tố xanh da trời sáng, đậm. ProtocolLib cung cấp metadata
 riêng theo người xem. Dữ liệu
@@ -499,6 +510,16 @@ before armor and the global mob-damage multiplier (default 5, valid 0-100).
 Spider melee uses native mob attacks rather than an additional repeated
 scripted hit.
 
+Version 2.0.0 adds global boss controls in `bosses/_settings.yml`: randomized
+HP by level (level 1: 2000-4000, level 10: 45000-50000), configurable scaling
+for selected boss types, flight-height and combat-distance limits, weighted
+target selection, projectile dodging, three tactical phases, and coordination
+of summoned minions. Global `max-player-hit-damage` defaults to 6 damage per
+hit; the spider-specific cap can further limit its skill hits. Default boss
+lifetime is 1800 seconds (30 minutes); legacy boss files at 1200 seconds are
+migrated. Boss kills can also drop a randomized mercenary gear set by boss
+level using `mercenary-gear-drops`.
+
 `reward-damage-threshold-percent` in `bosses/_settings.yml` defaults to 50.
 Each player's actual damage is accumulated against the boss's maximum HP; only
 players who deal strictly more than the configured percentage qualify for
@@ -576,7 +597,7 @@ trong file boss có thể tùy chỉnh `material`, `name`,
 hoặc `book-enchantments` (sách có enchant để áp dụng vào item). Boss tự nhiên
 chỉ lên level theo ngưỡng đang cấu hình trong `bosses/_settings.yml`;
 `/vnboss` vẫn cho phép gọi boss ở level được chọn. Khi boss xuất hiện, server
-broadcast loot có thể rơi ở level đó và tỉ lệ từng món. Mọi boss tồn tại mặc định 20 phút;
+broadcast loot có thể rơi ở level đó và tỉ lệ từng món. Mọi boss tồn tại mặc định 30 phút;
 bộ đếm roll boss kế tiếp tạm dừng trong khi cảnh báo hoặc boss đang hoạt động.
 
 `scoreboard.yml` cấu hình chu kỳ reset (`reset.every-game-days`, mặc định 100

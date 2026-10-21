@@ -1,0 +1,440 @@
+# ============================================================
+# [ENDERMAN BOSS] 👁️ ENDERMAN BOSS
+# ============================================================
+boss-id: enderman_boss
+enabled: true
+entity-type: ENDERMAN
+display-name: "§5§lEnderman Boss"
+# [VI] Class lính của token boss; bậc token theo level boss.
+# [EN] Mercenary class for this boss token; token tier follows the boss level.
+army-token-class: ranger
+hp: 1150
+damage-multiplier: 2.2
+# [VI] EXP thưởng cơ bản level 1; mặc định 300, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
+# [EN] Base XP reward at level 1; default 300, valid range 1-1000000; boss level scaling is in _settings.yml.
+experience: 300
+chance: 10
+# [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1800 = 30 phút.
+# [EN] Default boss lifetime after spawning (seconds); 1800 = 30 minutes.
+duration-seconds: 1800
+warning-seconds: 45
+activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
+
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# [VI] Giá trị được khai báo đến level 10; runtime giới hạn HP tối đa của boss ở 1024.
+# [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
+# damage là sát thương cơ sở và tăng theo level; multiply cấu hình số lần/độ mạnh skill.
+hp-by-level:
+  1: 1150
+  2: 2450
+  3: 3950
+  4: 5450
+  5: 6950
+  6: 8450
+  7: 9950
+  8: 12900
+  9: 16000
+  10: 19000
+# [VI] Khóa chung mỗi skill: enabled (true/false), damage (0-1024, tăng theo level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 block),
+#      velocity (0.2-4), spread (0-3.14 radian). Giá trị bên dưới là mặc định.
+# [EN] Common skill keys: enabled (true/false), damage (0-1024, scales by level),
+#      multiply (0-40), cooldown-seconds (1-86400), radius (1-64 blocks),
+#      velocity (0.2-4), spread (0-3.14 radians). Values below are defaults.
+skills:
+  void-snatch:
+    enabled: true
+    damage: 8.0
+    multiply: 1
+    cooldown-seconds: 12
+    radius: 4.0
+    velocity: 1.0
+    spread: 0.0
+    # [VI] Khoảng cách teleport ra sau mục tiêu (block); mặc định 1.5; hợp lệ 0.5-4.
+    # [EN] Teleport offset behind target (blocks); default 1.5; valid range 0.5-4.
+    behind-distance: 1.5
+  end-rift:
+    enabled: true
+    damage: 0.0
+    multiply: 1
+    cooldown-seconds: 20
+    radius: 4.0
+    velocity: 1.0
+    spread: 0.0
+    # [VI] Nửa chiều dài chữ thập (block); mặc định 6; hợp lệ 2-12.
+    # [EN] Cross half-length (blocks); default 6; valid range 2-12.
+    length: 5
+    # [VI] Nửa bề rộng dải particle (block); mặc định 1; hợp lệ 0-2.
+    # [EN] Hazard half-width (blocks); default 1; valid range 0-2.
+    half-width: 1
+    # [VI] Thời gian báo hiệu trước khi hất tung (tick); mặc định 30; hợp lệ 10-100.
+    # [EN] Warning before launch (ticks); default 30; valid range 10-100.
+    warning-ticks: 30
+
+# [VI] Trait dùng khóa enabled; mặc định bật, chỉ nhận true hoặc false.
+# [EN] Traits use enabled; on by default and accepts true or false.
+traits:
+  hydro-phobic-aura:
+    enabled: true
+    # [VI] Bán kính aura khi ở nước/mưa (block); mặc định 5; hợp lệ 1-12.
+    # [EN] Aura radius while touching water/rain (blocks); default 5; valid range 1-12.
+    radius: 4.0
+    # [VI] Độ bền giáp bị ăn mòn mỗi lần; mặc định 1; hợp lệ 0-5.
+    # [EN] Armor durability consumed per pulse; default 1; valid range 0-5.
+    armor-damage: 1
+    # [VI] Hồi aura (giây); mặc định 3; hợp lệ 1-30.
+    # [EN] Aura cooldown (seconds); default 3; valid range 1-30.
+    cooldown-seconds: 3
+
+immunities:
+  potion-effects:
+    - SLOWNESS
+
+drops:
+  ENDER_PEARL:
+    min-amount: 8
+    max-amount: 20
+    chance: 0.9
+  DIAMOND:
+    min-amount: 4
+    max-amount: 8
+    chance: 0.4
+  IRON_INGOT:
+    min-amount: 10
+    max-amount: 18
+    chance: 0.5
+  EMERALD:
+    min-amount: 8
+    max-amount: 15
+    chance: 0.5
+  OBSIDIAN:
+    min-amount: 5
+    max-amount: 15
+    chance: 0.6
+  ENDER_CHEST:
+    min-amount: 1
+    max-amount: 1
+    chance: 0.2
+  ENCHANTED_BOOK:
+    min-amount: 1
+    max-amount: 1
+    chance: 0.25
+  CHORUS_FRUIT:
+    min-amount: 5
+    max-amount: 12
+    chance: 0.4
+
+# [VI] Loot quý theo level; level thiếu dùng mốc gần nhất thấp hơn. amount: 1-64, chance: 0.0-1.0.
+# [EN] Rare drops by level; missing tiers inherit the nearest lower tier. amount: 1-64, chance: 0.0-1.0.
+# [VI] enchantments áp dụng trực tiếp; book-enchantments lưu enchant để áp dụng lên vật phẩm.
+# [EN] enchantments apply to the item; book-enchantments are stored for applying to another item.
+# [VI] Mỗi cấp có một di vật riêng; số dòng enchant tăng đúng theo level (1-10).
+#      Số lượng hợp lệ 1-64; chance 0-1; cấp enchant 1-255.
+#      Lore gồm truyền thuyết theo boss và tối đa 4 dòng cho mỗi vật phẩm.
+#      Với cung, từ cấp 8 dùng sách phù phép để giữ đủ dòng enchant tương thích.
+# [EN] Each tier has a unique relic; enchantment lines increase with level (1-10).
+#      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
+#      Each item's lore tells the boss-specific legend in at most 4 lines.
+#      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+# [VI] Tạo bộ giáp bốn món cho boss này; vật liệu và enchant tự tăng theo level.
+# [EN] Generate this boss's four-piece armor set; materials and enchants scale by level.
+armor-set:
+  # [VI] Bật/tắt bộ giáp; mặc định true.
+  # [EN] Enable or disable the armor set; default true.
+  enabled: true
+  # [VI] Tên bộ giáp dùng cho mũ, áo, quần và ủng.
+  # [EN] Armor set name prefix used by the helmet, chestplate, leggings, and boots.
+  name: "§5§lGiáp Mắt Tận Cùng"
+  # [VI] ID lore trong story.yml; phải trỏ tới một mục artifacts hợp lệ.
+  # [EN] Lore ID in story.yml; must reference a valid artifacts entry.
+  story-id: enderman-armor
+  # [VI] Mốc cấp tối thiểu cho vật liệu; từ 1 sắt, 4 kim cương, 7 netherite.
+  # [EN] Minimum level for each material tier; iron at 1, diamond at 4, netherite at 7.
+  material-tiers:
+    1: IRON
+    4: DIAMOND
+    7: NETHERITE
+  piece-names:
+    helmet: "Mũ Mắt Tím"
+    chestplate: "Áo Khe Nứt"
+    leggings: "Quần Bước Không Gian"
+    boots: "Ủng Lối End"
+  enchantments:
+    helmet: [protection, respiration, unbreaking]
+    chestplate: [protection, unbreaking, thorns]
+    leggings: [protection, swift_sneak, unbreaking]
+    boots: [protection, feather_falling, soul_speed, depth_strider]
+  bonuses:
+    2: {damage-reduction-percent: 0.10, damage-causes: [FALL]}
+    3: {damage-reduction-percent: 0.15, damage-causes: [FALL]}
+    4: {damage-reduction-percent: 0.20, damage-causes: [ENTITY_ATTACK, ENTITY_SWEEP_ATTACK]}
+
+level-drops:
+  1:
+    - material: IRON_PICKAXE
+      name: "§5§lCuốc Mắt End · Cấp 1"
+      story-id: enderman-relic-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        efficiency: 3
+    - material: ENCHANTED_BOOK
+      name: "§5§lGhi Chép Mắt End · Cấp 1"
+      story-id: enderman-codex-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        efficiency: 3
+
+  2:
+    - material: IRON_PICKAXE
+      name: "§5§lCuốc Mắt End · Cấp 2"
+      story-id: enderman-relic-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        efficiency: 3
+        fortune: 1
+    - material: ENCHANTED_BOOK
+      name: "§5§lGhi Chép Mắt End · Cấp 2"
+      story-id: enderman-codex-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        efficiency: 3
+        fortune: 1
+
+  3:
+    - material: DIAMOND_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 3"
+      story-id: enderman-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        efficiency: 4
+        fortune: 2
+        silk_touch: 1
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 3"
+      story-id: enderman-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        efficiency: 4
+        fortune: 2
+        silk_touch: 1
+
+  4:
+    - material: DIAMOND_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 4"
+      story-id: enderman-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        efficiency: 5
+        fortune: 3
+        silk_touch: 1
+        unbreaking: 3
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 4"
+      story-id: enderman-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        efficiency: 5
+        fortune: 3
+        silk_touch: 1
+        unbreaking: 3
+  5:
+    - material: DIAMOND_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 5"
+      story-id: enderman-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        efficiency: 6
+        fortune: 4
+        silk_touch: 1
+        unbreaking: 4
+        mending: 1
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 5"
+      story-id: enderman-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        efficiency: 6
+        fortune: 4
+        silk_touch: 1
+        unbreaking: 4
+        mending: 1
+
+  6:
+    - material: NETHERITE_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 6"
+      story-id: enderman-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        efficiency: 7
+        fortune: 5
+        silk_touch: 1
+        unbreaking: 5
+        mending: 1
+        sharpness: 7
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 6"
+      story-id: enderman-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        efficiency: 7
+        fortune: 5
+        silk_touch: 1
+        unbreaking: 5
+        mending: 1
+        sharpness: 7
+
+  7:
+    - material: NETHERITE_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 7"
+      story-id: enderman-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        efficiency: 7
+        fortune: 5
+        silk_touch: 1
+        unbreaking: 5
+        mending: 1
+        sharpness: 7
+        smite: 7
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 7"
+      story-id: enderman-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        efficiency: 7
+        fortune: 5
+        silk_touch: 1
+        unbreaking: 5
+        mending: 1
+        sharpness: 7
+        smite: 7
+
+  8:
+    - material: NETHERITE_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 8"
+      story-id: enderman-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        efficiency: 8
+        fortune: 6
+        silk_touch: 1
+        unbreaking: 6
+        mending: 1
+        sharpness: 8
+        smite: 8
+        bane_of_arthropods: 8
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 8"
+      story-id: enderman-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        efficiency: 8
+        fortune: 6
+        silk_touch: 1
+        unbreaking: 6
+        mending: 1
+        sharpness: 8
+        smite: 8
+        bane_of_arthropods: 8
+
+  9:
+    - material: NETHERITE_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 9"
+      story-id: enderman-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        efficiency: 9
+        fortune: 7
+        silk_touch: 1
+        unbreaking: 7
+        mending: 1
+        sharpness: 9
+        smite: 9
+        bane_of_arthropods: 9
+        fire_aspect: 2
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 9"
+      story-id: enderman-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        efficiency: 9
+        fortune: 7
+        silk_touch: 1
+        unbreaking: 7
+        mending: 1
+        sharpness: 9
+        smite: 9
+        bane_of_arthropods: 9
+        fire_aspect: 2
+
+  10:
+    - material: NETHERITE_PICKAXE
+      name: "§5§lCuốc Mắt Tận Cùng · Cấp 10"
+      story-id: enderman-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        efficiency: 10
+        fortune: 8
+        silk_touch: 1
+        unbreaking: 8
+        mending: 1
+        sharpness: 10
+        smite: 10
+        bane_of_arthropods: 10
+        fire_aspect: 2
+        vanishing_curse: 1
+    - material: ENCHANTED_BOOK
+      name: "§5§lMật Lục Cuốc Mắt Tận Cùng · Cấp 10"
+      story-id: enderman-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        efficiency: 10
+        fortune: 8
+        silk_touch: 1
+        unbreaking: 8
+        mending: 1
+        sharpness: 10
+        smite: 10
+        bane_of_arthropods: 10
+        fire_aspect: 2
+        vanishing_curse: 1

@@ -1,0 +1,406 @@
+# ============================================================
+# [WITHER] ☠ WITHER HUYỀN THOẠI
+# ============================================================
+# [VI] Wither Huyền Thoại - Boss mạnh nhất trong số các boss
+# [EN] Legendary Wither - The strongest among all bosses
+
+boss-id: wither
+enabled: true
+entity-type: WITHER
+display-name: "§e☠ §c§lWither Huyền Thoại §e☠"
+# [VI] Class lính của token boss; bậc token theo level boss.
+# [EN] Mercenary class for this boss token; token tier follows the boss level.
+army-token-class: medic
+hp: 1600
+damage-multiplier: 2.0
+# [VI] EXP thưởng cơ bản level 1; mặc định 1500, hợp lệ 1-1000000; level boss nhân theo _settings.yml.
+# [EN] Base XP reward at level 1; default 1500, valid range 1-1000000; boss level scaling is in _settings.yml.
+experience: 1500
+chance: 10
+# [VI] Thời gian boss tồn tại mặc định sau khi xuất hiện (giây); 1800 = 30 phút.
+# [EN] Default boss lifetime after spawning (seconds); 1800 = 30 minutes.
+duration-seconds: 1800
+warning-seconds: 60
+activity-radius: 100 # Max horizontal distance from this boss's spawn location (blocks).
+
+# HP tối đa theo từng level; level không khai báo sẽ dùng mức gần nhất thấp hơn.
+# [VI] Giá trị được khai báo đến level 10; runtime giới hạn HP tối đa của boss ở 1024.
+# [EN] HP values are provided through level 10; runtime caps boss HP at 1024.
+# damage là sát thương cơ sở (tăng theo level); số skull = level * multiply, tối đa 40.
+hp-by-level:
+  1: 1600
+  2: 3100
+  3: 4700
+  4: 6300
+  5: 7900
+  6: 9500
+  7: 11100
+  8: 14300
+  9: 17600
+  10: 20000
+skills:
+  skull-volley:
+    enabled: true
+    damage: 9.0
+    multiply: 3
+    cooldown-seconds: 12
+    radius: 4.0
+    velocity: 1.2
+    spread: 1.0
+
+# ===== MIỄN NHIỄM / IMMUNITIES =====
+# [VI] Các hiệu ứng boss này miễn nhiễm
+# [EN] Effects this boss is immune to
+immunities:
+  fire: true
+  poison: true
+  wither: true
+  sunlight-burn: true
+  fall-damage: true
+  potion-effects:
+    - SLOWNESS
+    - WEAKNESS
+
+# ===== DROPS / VẬT PHẨM RƠI =====
+drops:
+  NETHERITE_INGOT:
+    min-amount: 2
+    max-amount: 5
+    chance: 1.0
+  DIAMOND:
+    min-amount: 5
+    max-amount: 10
+    chance: 0.8
+  EMERALD:
+    min-amount: 10
+    max-amount: 20
+    chance: 0.7
+  IRON_INGOT:
+    min-amount: 15
+    max-amount: 30
+    chance: 0.6
+  GOLD_INGOT:
+    min-amount: 10
+    max-amount: 20
+    chance: 0.6
+  DIAMOND_BLOCK:
+    min-amount: 1
+    max-amount: 3
+    chance: 0.5
+  WITHER_SKELETON_SKULL:
+    min-amount: 1
+    max-amount: 2
+    chance: 0.4
+  ENCHANTED_BOOK:
+    min-amount: 1
+    max-amount: 2
+    chance: 0.3
+  NETHER_STAR:
+    min-amount: 1
+    max-amount: 1
+    chance: 0.2
+  BEACON:
+    min-amount: 1
+    max-amount: 1
+    chance: 0.1
+
+# [VI] Loot quý theo level; level thiếu dùng mốc gần nhất thấp hơn. amount: 1-64, chance: 0.0-1.0.
+# [EN] Rare drops by level; missing tiers inherit the nearest lower tier. amount: 1-64, chance: 0.0-1.0.
+# [VI] enchantments áp dụng trực tiếp; book-enchantments lưu enchant để áp dụng lên vật phẩm.
+# [EN] enchantments apply to the item; book-enchantments are stored for applying to another item.
+# [VI] Mỗi cấp có một di vật riêng; số dòng enchant tăng đúng theo level (1-10).
+#      Số lượng hợp lệ 1-64; chance 0-1; cấp enchant 1-255.
+#      Lore gồm truyền thuyết theo boss và tối đa 4 dòng cho mỗi vật phẩm.
+#      Với cung, từ cấp 8 dùng sách phù phép để giữ đủ dòng enchant tương thích.
+# [EN] Each tier has a unique relic; enchantment lines increase with level (1-10).
+#      Valid amount 1-64, chance 0-1, and enchantment level 1-255.
+#      Each item's lore tells the boss-specific legend in at most 4 lines.
+#      Bow relics use enchanted books from tier 8 to preserve compatible enchantments.
+# [VI] Tạo bộ giáp bốn món cho boss này; vật liệu và enchant tự tăng theo level.
+# [EN] Generate this boss's four-piece armor set; materials and enchants scale by level.
+armor-set:
+  # [VI] Bật/tắt bộ giáp; mặc định true.
+  # [EN] Enable or disable the armor set; default true.
+  enabled: true
+  # [VI] Tên bộ giáp dùng cho mũ, áo, quần và ủng.
+  # [EN] Armor set name prefix used by the helmet, chestplate, leggings, and boots.
+  name: "§8§lGiáp Ba Đầu Hư Vô"
+  # [VI] ID lore trong story.yml; phải trỏ tới một mục artifacts hợp lệ.
+  # [EN] Lore ID in story.yml; must reference a valid artifacts entry.
+  story-id: wither-armor
+  # [VI] Mốc cấp tối thiểu cho vật liệu; từ 1 sắt, 4 kim cương, 7 netherite.
+  # [EN] Minimum level for each material tier; iron at 1, diamond at 4, netherite at 7.
+  material-tiers:
+    1: IRON
+    4: DIAMOND
+    7: NETHERITE
+
+level-drops:
+  1:
+    - material: IRON_SWORD
+      name: "§c§lKiếm Wither · Cấp 1"
+      story-id: wither-relic-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 3
+    - material: ENCHANTED_BOOK
+      name: "§c§lSổ Wither · Cấp 1"
+      story-id: wither-codex-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 3
+
+  2:
+    - material: IRON_SWORD
+      name: "§c§lKiếm Wither · Cấp 2"
+      story-id: wither-relic-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 3
+        smite: 3
+    - material: ENCHANTED_BOOK
+      name: "§c§lSổ Wither · Cấp 2"
+      story-id: wither-codex-common
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 3
+        smite: 3
+
+  3:
+    - material: DIAMOND_SWORD
+      name: "§c§lLưỡi Hái Ba Đầu Hư Vô · Cấp 3"
+      story-id: wither-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Lưỡi Hái Ba Đầu Hư Vô · Cấp 3"
+      story-id: wither-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 4
+        smite: 4
+        bane_of_arthropods: 4
+
+  4:
+    - material: DIAMOND_SWORD
+      name: "§c§lLưỡi Hái Ba Đầu Hư Vô · Cấp 4"
+      story-id: wither-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 5
+        smite: 5
+        bane_of_arthropods: 5
+        knockback: 2
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Lưỡi Hái Ba Đầu Hư Vô · Cấp 4"
+      story-id: wither-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 5
+        smite: 5
+        bane_of_arthropods: 5
+        knockback: 2
+  5:
+    - material: DIAMOND_SWORD
+      name: "§c§lLưỡi Hái Ba Đầu Hư Vô · Cấp 5"
+      story-id: wither-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 6
+        smite: 6
+        bane_of_arthropods: 6
+        knockback: 2
+        fire_aspect: 2
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Lưỡi Hái Ba Đầu Hư Vô · Cấp 5"
+      story-id: wither-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 6
+        smite: 6
+        bane_of_arthropods: 6
+        knockback: 2
+        fire_aspect: 2
+
+  6:
+    - material: NETHERITE_SWORD
+      name: "§c§lLưỡi Hái Ba Đầu Hư Vô · Cấp 6"
+      story-id: wither-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        knockback: 2
+        fire_aspect: 2
+        looting: 5
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Lưỡi Hái Ba Đầu Hư Vô · Cấp 6"
+      story-id: wither-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        knockback: 2
+        fire_aspect: 2
+        looting: 5
+
+  7:
+    - material: NETHERITE_SWORD
+      name: "§c§lLưỡi Hái Ba Đầu Hư Vô · Cấp 7"
+      story-id: wither-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        knockback: 2
+        fire_aspect: 2
+        looting: 5
+        unbreaking: 5
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Lưỡi Hái Ba Đầu Hư Vô · Cấp 7"
+      story-id: wither-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 7
+        smite: 7
+        bane_of_arthropods: 7
+        knockback: 2
+        fire_aspect: 2
+        looting: 5
+        unbreaking: 5
+
+  8:
+    - material: NETHERITE_SWORD
+      name: "§c§lLưỡi Hái Ba Đầu Hư Vô · Cấp 8"
+      story-id: wither-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 8
+        smite: 8
+        bane_of_arthropods: 8
+        knockback: 2
+        fire_aspect: 2
+        looting: 6
+        unbreaking: 6
+        mending: 1
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Lưỡi Hái Ba Đầu Hư Vô · Cấp 8"
+      story-id: wither-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 8
+        smite: 8
+        bane_of_arthropods: 8
+        knockback: 2
+        fire_aspect: 2
+        looting: 6
+        unbreaking: 6
+        mending: 1
+
+  9:
+    - material: NETHERITE_SWORD
+      name: "§c§lLưỡi Hái Ba Đầu Hư Vô · Cấp 9"
+      story-id: wither-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 9
+        smite: 9
+        bane_of_arthropods: 9
+        knockback: 2
+        fire_aspect: 2
+        looting: 7
+        unbreaking: 7
+        mending: 1
+        sweeping_edge: 7
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Lưỡi Hái Ba Đầu Hư Vô · Cấp 9"
+      story-id: wither-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 9
+        smite: 9
+        bane_of_arthropods: 9
+        knockback: 2
+        fire_aspect: 2
+        looting: 7
+        unbreaking: 7
+        mending: 1
+        sweeping_edge: 7
+
+  10:
+    - material: NETHERITE_SWORD
+      name: "§c§lLưỡi Hái Ba Đầu Hư Vô · Cấp 10"
+      story-id: wither-relic
+      min-amount: 1
+      max-amount: 1
+      chance: 0.65
+      enchantments:
+        sharpness: 10
+        smite: 10
+        bane_of_arthropods: 10
+        knockback: 2
+        fire_aspect: 2
+        looting: 8
+        unbreaking: 8
+        mending: 1
+        sweeping_edge: 8
+        vanishing_curse: 1
+    - material: ENCHANTED_BOOK
+      name: "§c§lMật Lục Lưỡi Hái Ba Đầu Hư Vô · Cấp 10"
+      story-id: wither-codex
+      min-amount: 1
+      max-amount: 1
+      chance: 0.30
+      book-enchantments:
+        sharpness: 10
+        smite: 10
+        bane_of_arthropods: 10
+        knockback: 2
+        fire_aspect: 2
+        looting: 8
+        unbreaking: 8
+        mending: 1
+        sweeping_edge: 8
+        vanishing_curse: 1

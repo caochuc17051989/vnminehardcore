@@ -1,0 +1,68 @@
+# ============================================================
+# [CHORUS EXPLOSION] 🌀 CHORUS EXPLOSION
+# ============================================================
+# [VI] Teleport ngẫu nhiên, damage. Chỉ ở The End.
+# [EN] Random teleport, damage. The End only.
+
+disaster-id: chorus-explosion
+# [VI] Bật/tắt Chorus Explosion; mặc định tắt để tránh sự kiện ngoài ý muốn.
+# [EN] Enable/disable Chorus Explosion; disabled by default to prevent unintended events.
+# [VI] Giá trị hợp lệ: true hoặc false.
+# [EN] Valid values: true or false.
+enabled: false
+chance: 1
+name: "§d§l🌀 Chorus Explosion"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Người chơi trong world_the_end bị dịch chuyển ngẫu nhiên; ngoài trời còn chịu sát thương. Rời world_the_end để tránh hoàn toàn."
+duration-seconds: 120
+effect-interval-seconds: 6
+warning-seconds: 120
+
+conditions:
+  only-night: false
+  only-day: false
+  worlds: ["world_the_end"]
+  min-players-online: 1
+
+start-title: "§d§l🌀 Chorus Explosion"
+start-subtitle: "Không gian vỡ vụn!"
+start-sound: ENTITY_WITHER_SPAWN
+start-sound-volume: 1.0
+start-sound-pitch: 0.8
+
+actions:
+  - type: damage
+    condition:
+      require-outdoor: true
+      ignore-safe-zone: false
+    targets:
+      player:
+        weight: 100
+        worlds: ["world_the_end"]
+    damage: 1.0
+    ignore-armor: false
+
+  - type: teleport_random
+    condition:
+      require-outdoor: false
+      ignore-safe-zone: true
+    targets:
+      all_players:
+        weight: 100
+        worlds: ["world_the_end"]
+    radius: 30
+
+  - type: action_bar
+    condition:
+      require-outdoor: false
+      ignore-safe-zone: true
+    targets:
+      all_players:
+        weight: 100
+        worlds: ["world_the_end"]
+    message: "§d§l🌀 Chorus! Bạn sẽ biến mất bất cứ lúc nào!"
+
+on-end:
+  - type: broadcast
+    message: "§a🌀 Chorus Explosion đã kết thúc."

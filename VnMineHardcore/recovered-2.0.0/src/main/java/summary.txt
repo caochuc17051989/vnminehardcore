@@ -1,0 +1,9 @@
+Summary for VnMineHardcore/target/VnMineHardcore-2.0.0.jar
+Decompiled with CFR 0.152
+
+
+com.vnmine.hardcore.managers.MercenaryManager
+----------------------------
+
+onMercenaryKillExperience(org.bukkit.event.entity.EntityDeathEvent )
+  Unable to fully structure code

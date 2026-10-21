@@ -1,0 +1,97 @@
+# ============================================================
+# [METEOR] ☄️ MƯA SAO BĂNG
+# ============================================================
+# [VI] Thiên thạch rơi, fireball bay chéo từ trời xuống, gây nổ và cháy.
+#      Xảy ra ở Overworld. An toàn khi ở trong nhà.
+# [EN] Meteors fall, fireballs fly diagonally from the sky, cause explosions and fire.
+#      Occurs in Overworld. Safe indoors.
+# [VI] Cấu hình fireball:
+#   - fireball-height: Độ cao spawn fireball (block)
+#   - fireball-speed: Tốc độ bay của fireball
+#   - fireball-type: SMALL (SmallFireball - Blaze) hoặc LARGE (Fireball - Ghast)
+#   - explosion-fire: true = gây cháy khi nổ
+#   - fire-ticks: Thời gian cháy kéo dài (ticks, 20 ticks = 1 giây)
+#   - damage: Sát thương lên entity trong bán kính
+# [EN] Fireball config:
+#   - fireball-height: Fireball spawn height (blocks)
+#   - fireball-speed: Fireball travel speed
+#   - fireball-type: SMALL (SmallFireball - Blaze) or LARGE (Fireball - Ghast)
+#   - explosion-fire: true = causes fire on explosion
+#   - fire-ticks: Fire duration (ticks, 20 ticks = 1 second)
+#   - damage: Damage to entities in radius
+
+disaster-id: meteor
+enabled: true
+chance: 5
+name: "§6§l☄️ Mưa Sao Băng"
+# [VI] Mô tả tác động và gợi ý phòng tránh hiển thị trong chat; giá trị bên dưới là mặc định.
+# [EN] Effect and prevention summary shown in chat; the value below is the default.
+chat-description: "Fireball và vụ nổ có thể gây sát thương, cháy và phá block ở ngoài trời. Ở trong nhà có mái che chắc chắn."
+duration-seconds: 60
+effect-interval-seconds: 5
+warning-seconds: 120
+
+conditions:
+  only-night: false
+  only-day: false
+  worlds: ["overworld"]
+  min-players-online: 1
+
+start-title: "§6§l☄️ Mưa Sao Băng"
+start-subtitle: "Thiên thạch đang rơi!"
+start-sound: ENTITY_WITHER_SPAWN
+start-sound-volume: 1.0
+start-sound-pitch: 0.8
+
+actions:
+  # ===== 1. FIREBALL TỪ TRỜI RƠI XUỐNG =====
+  # [VI] Fireball bay chéo từ trên trời xuống, gây nổ + cháy khi va chạm
+  # [EN] Fireballs fly diagonally from the sky, causing explosion + fire on impact
+  - type: fireball_rain
+    condition:
+      require-outdoor: true
+      ignore-safe-zone: false
+    targets:
+      player:
+        weight: 100
+    count-per-target: 3
+    radius: 20
+    fireball-height: 60
+    fireball-speed: 1.5
+    fireball-type: SMALL
+    explosion-power: 3.0
+    explosion-fire: true
+    explosion-break-blocks: true
+    fire-ticks: 100
+    damage: 6.0
+    delay-ticks: 20
+
+  # ===== 2. NỔ MẶT ĐẤT =====
+  # [VI] Nổ bổ sung tại mặt đất xung quanh người chơi
+  # [EN] Additional explosions on the ground around players
+  - type: explosion
+    condition:
+      require-outdoor: true
+      ignore-safe-zone: false
+    targets:
+      player:
+        weight: 100
+    count-per-player: 2
+    radius: 15
+    explosion-power: 3.0
+    explosion-fire: true
+    explosion-break-blocks: true
+
+  # ===== 3. THÔNG BÁO =====
+  - type: action_bar
+    condition:
+      require-outdoor: false
+      ignore-safe-zone: true
+    targets:
+      all_players:
+        weight: 100
+    message: "§6§l☄️ Mưa sao băng! Tránh xa khu vực trống!"
+
+on-end:
+  - type: broadcast
+    message: "§a☄️ Mưa sao băng đã kết thúc."
